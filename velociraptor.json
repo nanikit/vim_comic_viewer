@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "bundle": "deno run --unstable --allow-read --allow-write --allow-env --allow-net https://deno.land/x/denopack@0.10.0/cli.ts --config denopack_config.ts --dir dist --input"
+  }
+}

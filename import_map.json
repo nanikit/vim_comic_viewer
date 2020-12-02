@@ -1,0 +1,8 @@
+{
+  "imports": {
+    "react": "./src/empty.ts",
+    "react-dom": "./src/empty.ts",
+    "@stitches/core": "./src/empty.ts",
+    "@stitches/react": "./src/empty.ts"
+  }
+}
