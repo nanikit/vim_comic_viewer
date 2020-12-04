@@ -4,14 +4,14 @@
     {
       "label": "denopack",
       "type": "shell",
-      "command": "denopack --config denopack_config.ts --dir dist --input ${file}",
+      "command": "denopack --config denopack_config.ts -o vim_comic_viewer.user.js --input ${workspaceFolder}/src/mod.ts",
       "group": "build",
       "problemMatcher": []
     },
     {
       "label": "denopack watch",
       "type": "shell",
-      "command": "denopack --config denopack_config.ts --dir dist --watch ${fileDirname} --input ${file}",
+      "command": "denopack --config denopack_config.ts -o vim_comic_viewer.user.js --watch src --input ${workspaceFolder}/src/mod.ts",
       "group": {
         "kind": "build",
         "isDefault": true
