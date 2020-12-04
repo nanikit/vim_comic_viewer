@@ -2,6 +2,7 @@
 import { ComicSource, ViewerSource } from './types.ts';
 import { timeout } from './utils.ts';
 import { initializeViewer } from './viewer.tsx';
+export * as types from './types.ts';
 export * as utils from './utils.ts';
 
 const initializeWithSource = async (source: ComicSource) => {
