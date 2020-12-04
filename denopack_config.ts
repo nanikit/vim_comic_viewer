@@ -12,7 +12,7 @@ const config: RollupOptions = {
       banner: `// ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      1.0.0
+// @version      1.0.1
 // @namespace    https://openuserjs.org/users/keut
 // @exclude      *
 // @match        http://unused-field.space/
