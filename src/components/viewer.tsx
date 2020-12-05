@@ -1,8 +1,7 @@
 /** @jsx createElement */
-import { useFullscreenElement } from './hooks/use_fullscreen_element.ts';
-import { usePageNavigator } from './hooks/use_page_navigator.ts';
-import { usePageReducer } from './hooks/use_page_reducer.ts';
-import { ComicSource, ImageSource } from './types.ts';
+import { useFullscreenElement } from '../hooks/use_fullscreen_element.ts';
+import { usePageNavigator } from '../hooks/use_page_navigator.ts';
+import { ComicSource, ImageSource } from '../types.ts';
 import {
   createElement,
   React,
@@ -10,38 +9,9 @@ import {
   useEffect,
   useRef,
   useState,
-} from './vendors/react.ts';
-import { render } from './vendors/react_dom.ts';
-import { styled } from './vendors/stitches.ts';
-
-const Image = styled('img', {
-  height: '100vh',
-  maxWidth: '100vw',
-  objectFit: 'contain',
-  margin: '4px 1px',
-});
-
-const Page = ({
-  source,
-  observer,
-  ...props
-}: {
-  source: ImageSource;
-  observer?: IntersectionObserver;
-}) => {
-  const { src, onError } = usePageReducer(source);
-  const ref = useRef<HTMLImageElement>();
-
-  useEffect(() => {
-    const target = ref.current;
-    if (target && observer) {
-      observer.observe(target);
-      return () => observer.unobserve(target);
-    }
-  }, [observer, ref.current]);
-
-  return <Image ref={ref} src={src} onError={onError} loading="lazy" {...props} />;
-};
+} from '../vendors/react.ts';
+import { styled } from '../vendors/stitches.ts';
+import { Page } from './page.tsx';
 
 const ImageContainer = styled('div', {
   backgroundColor: '#eee',
@@ -52,7 +22,7 @@ const ImageContainer = styled('div', {
   overflowY: 'auto',
 });
 
-const Viewer = ({ source, ...props }: { source: ComicSource }) => {
+export const Viewer = ({ source, ...props }: { source: ComicSource }) => {
   const [images, setImages] = useState<ImageSource[]>();
   const [status, setStatus] = useState<'loading' | 'complete' | 'error'>('loading');
   const navigator = usePageNavigator();
@@ -155,6 +125,4 @@ const Viewer = ({ source, ...props }: { source: ComicSource }) => {
   );
 };
 
-export const initializeViewer = (root: HTMLDivElement, source: ComicSource) => {
-  render(<Viewer source={source} />, root);
-};
+export const initializeViewer = (root: HTMLDivElement, source: ComicSource) => {};

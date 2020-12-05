@@ -1,5 +1,5 @@
 {
   "scripts": {
-    "bundle": "deno run --unstable --allow-run --allow-read --allow-write --allow-env https://deno.land/x/denopack@0.10.0/cli.ts --config denopack_config.ts -o vim_comic_viewer.user.js --input"
+    "bundle": "deno run --unstable --allow-run --allow-read --allow-write --allow-env https://deno.land/x/denopack@0.10.0/cli.ts --config denopack_config.ts -o vim_comic_viewer.user.js --input src/mod.tsx"
   }
 }
