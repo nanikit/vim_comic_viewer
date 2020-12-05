@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      1.2.0
+// @version      1.3.0
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -248,9 +248,6 @@ const Viewer = ({ source, ...props }) => {
         break;
       case "k":
         navigator.goPrevious();
-        break;
-      case "o":
-        window.close();
         break;
     }
   }, [

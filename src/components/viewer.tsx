@@ -38,9 +38,6 @@ export const Viewer = ({ source, ...props }: { source: ComicSource }) => {
         case 'k':
           navigator.goPrevious();
           break;
-        case 'o':
-          window.close();
-          break;
         default:
           break;
       }
