@@ -13,7 +13,7 @@ const postprocessPlugin = {
   banner: `// ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      1.0.1
+// @version      1.1.0
 // @namespace    https://openuserjs.org/users/keut
 // @exclude      *
 // @match        http://unused-field.space/
