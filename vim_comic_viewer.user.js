@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      1.1.0
-// @namespace    https://openuserjs.org/users/keut
+// @version      1.1.1
+// @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
-// @author       keut
+// @author       nanikit
 // @license      MIT
 // ==/UserScript==
 
