@@ -7,31 +7,28 @@ type IntersectedPages = {
 
 export const usePageNavigator = () => {
   const [observer, setObserver] = useState<IntersectionObserver>();
-  const [captures] = useState([{ entries: [], isSorted: true }] as IntersectedPages[]);
+  const [pages] = useState({ entries: [], isSorted: true } as IntersectedPages);
 
-  const sortAndGetAnchor = useCallback(
-    (pages: IntersectedPages) => {
-      const first = pages.entries?.[0]?.target;
-      if (!pages.isSorted && !!first) {
-        const children = [
-          ...((first.parentElement!.children as unknown) as Iterable<Element>),
-        ];
-        pages.entries.sort((a, b) => {
-          const aRatio = Math.round(a.intersectionRatio * 10);
-          const bRatio = Math.round(b.intersectionRatio * 10);
-          const aIndex = children.indexOf(a.target);
-          const bIndex = children.indexOf(b.target);
-          return (bRatio - aRatio) * 10 + (bIndex - aIndex);
-        });
-        pages.isSorted = true;
-      }
-      return pages.entries?.[0]?.target;
-    },
-    [captures],
-  );
+  const sortAndGetAnchor = useCallback(() => {
+    const first = pages.entries?.[0]?.target;
+    if (!pages.isSorted && !!first) {
+      const children = [
+        ...((first.parentElement!.children as unknown) as Iterable<Element>),
+      ];
+      pages.entries.sort((a, b) => {
+        const aRatio = Math.round(a.intersectionRatio * 10);
+        const bRatio = Math.round(b.intersectionRatio * 10);
+        const aIndex = children.indexOf(a.target);
+        const bIndex = children.indexOf(b.target);
+        return (bRatio - aRatio) * 10 + (bIndex - aIndex);
+      });
+      pages.isSorted = true;
+    }
+    return pages.entries?.[0]?.target;
+  }, [pages]);
 
   const goNext = useCallback(() => {
-    const anchor = sortAndGetAnchor(captures[0]);
+    const anchor = sortAndGetAnchor();
     if (!anchor) {
       return;
     }
@@ -50,7 +47,7 @@ export const usePageNavigator = () => {
   }, [sortAndGetAnchor]);
 
   const goPrevious = useCallback(() => {
-    const anchor = sortAndGetAnchor(captures[0]);
+    const anchor = sortAndGetAnchor();
     if (!anchor) {
       return;
     }
@@ -69,18 +66,18 @@ export const usePageNavigator = () => {
   }, [sortAndGetAnchor]);
 
   const restore = useCallback(() => {
-    const anchor = sortAndGetAnchor(captures[1]);
+    const anchor = sortAndGetAnchor();
     if (!anchor) {
       return;
     }
 
     anchor.scrollIntoView({ block: 'center' });
-  }, [captures, sortAndGetAnchor]);
+  }, [pages, sortAndGetAnchor]);
 
   useEffect(() => {
     const newObserver = new IntersectionObserver(
       (entries) => {
-        let newIntersections = captures[0].entries;
+        let newIntersections = pages.entries;
         for (const entry of entries) {
           newIntersections = newIntersections.filter(
             (item) => item.target !== entry.target,
@@ -89,20 +86,20 @@ export const usePageNavigator = () => {
             newIntersections.push(entry);
           }
         }
-        captures.unshift({
-          entries: newIntersections,
-          isSorted: false,
-        });
-        captures.splice(2);
-        console.log(captures[0].entries);
+        pages.entries = newIntersections;
       },
       {
         threshold: [0.01, 0.5],
       },
     );
     setObserver(newObserver);
-    return () => newObserver.disconnect();
-  }, [captures]);
+    window.addEventListener('resize', restore);
+
+    return () => {
+      newObserver.disconnect();
+      window.removeEventListener('resize', restore);
+    };
+  }, [pages]);
 
   return useMemo(
     () => ({

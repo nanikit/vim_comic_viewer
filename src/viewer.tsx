@@ -1,9 +1,8 @@
 /** @jsx createElement */
-import { useFullscreen } from './hooks/use_fullscreen.ts';
+import { useFullscreenElement } from './hooks/use_fullscreen_element.ts';
 import { usePageNavigator } from './hooks/use_page_navigator.ts';
 import { usePageReducer } from './hooks/use_page_reducer.ts';
 import { ComicSource, ImageSource } from './types.ts';
-import { timeout } from './utils.ts';
 import {
   createElement,
   React,
@@ -58,6 +57,7 @@ const Viewer = ({ source, ...props }: { source: ComicSource }) => {
   const [status, setStatus] = useState<'loading' | 'complete' | 'error'>('loading');
   const navigator = usePageNavigator();
   const ref = useRef<HTMLDivElement>();
+  const fullscreenElement = useFullscreenElement();
 
   const handleNavigation = useCallback(
     (event: React.KeyboardEvent) => {
@@ -89,38 +89,48 @@ const Viewer = ({ source, ...props }: { source: ComicSource }) => {
     }
   }, [source]);
 
-  const onEnterFullscreen = useCallback(async () => {
-    ref.current?.focus?.();
-    await timeout(102);
-    navigator.restore();
-  }, [ref.current]);
-
-  const onExitFullscreen = useCallback(async () => {
-    await timeout(102);
-    navigator.restore();
-  }, [navigator]);
-
-  const toggleFullscreen = useFullscreen(ref, {
-    onEnter: onEnterFullscreen,
-    onExit: onExitFullscreen,
-  });
-
   useEffect(() => {
     const globalKeyHandler = async (event: KeyboardEvent) => {
       if (event.key === 'i') {
-        toggleFullscreen();
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        } else {
+          await ref?.current?.requestFullscreen?.();
+        }
       }
     };
 
     window.addEventListener('keydown', globalKeyHandler);
-    return () => {
-      window.removeEventListener('keydown', globalKeyHandler);
-    };
-  }, [navigator]);
+    return () => window.removeEventListener('keydown', globalKeyHandler);
+  }, [navigator, ref.current]);
 
   useEffect(() => {
     ref.current?.focus?.();
   }, [ref.current]);
+
+  useEffect(() => {
+    if (!ref.current) {
+      return;
+    }
+    const style = ref.current.style;
+    const fullscreenStyle = {
+      display: 'flex',
+      position: 'fixed',
+      top: 0,
+      bottom: 0,
+      overflow: 'auto',
+    };
+    if (fullscreenElement && style.position !== 'fixed') {
+      Object.assign(style, fullscreenStyle);
+      navigator.restore();
+      ref.current.focus();
+    } else if (!fullscreenElement && style.position === 'fixed') {
+      for (const property of Object.keys(fullscreenStyle)) {
+        style.removeProperty(property);
+      }
+      navigator.restore();
+    }
+  }, [ref.current, fullscreenElement, navigator]);
 
   useEffect(() => {
     fetchSource();
@@ -130,17 +140,12 @@ const Viewer = ({ source, ...props }: { source: ComicSource }) => {
     <ImageContainer
       ref={ref}
       className="vim_comic_viewer"
-      css={{
-        '&&:fullscreen': {
-          display: 'flex',
-        },
-      }}
       tabIndex={-1}
       onKeyDown={handleNavigation}
       {...props}
     >
       {status === 'complete' ? (
-        images?.map((image, index) => (
+        images?.map?.((image, index) => (
           <Page key={index} source={image} observer={navigator.observer} />
         )) || false
       ) : (
