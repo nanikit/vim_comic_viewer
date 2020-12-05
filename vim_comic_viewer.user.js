@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      1.1.1
+// @version      1.2.0
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -14,66 +14,28 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 
 var react = require("react");
-var reactDom = require("react-dom");
 var react$1 = require("@stitches/react");
+var reactDom = require("react-dom");
 
-const timeout = (millisecond) =>
-  new Promise((resolve) => setTimeout(resolve, millisecond));
-const waitDomContent = (document) =>
-  document.readyState === "loading"
-    ? new Promise((r) =>
-      document.addEventListener("readystatechange", r, {
-        once: true,
-      })
-    )
-    : true;
-const insertCss = (css) => {
-  const style = document.createElement("style");
-  style.innerHTML = css;
-  document.head.append(style);
-};
-
-var utils = /*#__PURE__*/ Object.freeze({
-  __proto__: null,
-  timeout: timeout,
-  waitDomContent: waitDomContent,
-  insertCss: insertCss,
-});
-
-const waitFullscreenChange = () =>
-  new Promise((resolve) => {
-    document.addEventListener("fullscreenchange", () =>
-      resolve(document.fullscreenElement), {
-      once: true,
-    });
-  });
-const useFullscreen = (ref, { onEnter, onExit }) => {
-  const toggle = react.useCallback(async () => {
-    if (document.fullscreenElement) {
-      return document.exitFullscreen();
-    } else {
-      await ref.current.requestFullscreen();
-      await onEnter?.();
-      while (await waitFullscreenChange());
-      await onExit?.();
-    }
-  }, [
-    onEnter,
-    onExit,
-    ref.current,
-  ]);
-  return toggle;
+const useFullscreenElement = () => {
+  const [element, setElement] = react.useState(
+    document.fullscreenElement || undefined,
+  );
+  react.useEffect(() => {
+    const notify = () => setElement(document.fullscreenElement || undefined);
+    document.addEventListener("fullscreenchange", notify);
+    return () => document.removeEventListener("fullscreenchange", notify);
+  }, []);
+  return element;
 };
 
 const usePageNavigator = () => {
   const [observer, setObserver] = react.useState();
-  const [captures] = react.useState([
-    {
-      entries: [],
-      isSorted: true,
-    },
-  ]);
-  const sortAndGetAnchor = react.useCallback((pages) => {
+  const [pages] = react.useState({
+    entries: [],
+    isSorted: true,
+  });
+  const sortAndGetAnchor = react.useCallback(() => {
     const first = pages.entries?.[0]?.target;
     if (!pages.isSorted && !!first) {
       const children = [
@@ -90,10 +52,10 @@ const usePageNavigator = () => {
     }
     return pages.entries?.[0]?.target;
   }, [
-    captures,
+    pages,
   ]);
   const goNext = react.useCallback(() => {
-    const anchor = sortAndGetAnchor(captures[0]);
+    const anchor = sortAndGetAnchor();
     if (!anchor) {
       return;
     }
@@ -114,7 +76,7 @@ const usePageNavigator = () => {
     sortAndGetAnchor,
   ]);
   const goPrevious = react.useCallback(() => {
-    const anchor = sortAndGetAnchor(captures[0]);
+    const anchor = sortAndGetAnchor();
     if (!anchor) {
       return;
     }
@@ -135,7 +97,7 @@ const usePageNavigator = () => {
     sortAndGetAnchor,
   ]);
   const restore = react.useCallback(() => {
-    const anchor = sortAndGetAnchor(captures[1]);
+    const anchor = sortAndGetAnchor();
     if (!anchor) {
       return;
     }
@@ -143,12 +105,12 @@ const usePageNavigator = () => {
       block: "center",
     });
   }, [
-    captures,
+    pages,
     sortAndGetAnchor,
   ]);
   react.useEffect(() => {
     const newObserver = new IntersectionObserver((entries) => {
-      let newIntersections = captures[0].entries;
+      let newIntersections = pages.entries;
       for (const entry of entries) {
         newIntersections = newIntersections.filter((item) =>
           item.target !== entry.target
@@ -157,12 +119,7 @@ const usePageNavigator = () => {
           newIntersections.push(entry);
         }
       }
-      captures.unshift({
-        entries: newIntersections,
-        isSorted: false,
-      });
-      captures.splice(2);
-      console.log(captures[0].entries);
+      pages.entries = newIntersections;
     }, {
       threshold: [
         0.01,
@@ -170,9 +127,13 @@ const usePageNavigator = () => {
       ],
     });
     setObserver(newObserver);
-    return () => newObserver.disconnect();
+    window.addEventListener("resize", restore);
+    return () => {
+      newObserver.disconnect();
+      window.removeEventListener("resize", restore);
+    };
   }, [
-    captures,
+    pages,
   ]);
   return react.useMemo(() => ({
     goNext,
@@ -186,6 +147,8 @@ const usePageNavigator = () => {
     observer,
   ]);
 };
+
+const { styled, css } = react$1.createStyled({});
 
 const init = (source) => {
   if (typeof source === "string") {
@@ -234,8 +197,6 @@ const usePageReducer = (source) => {
   };
 };
 
-const { styled, css } = react$1.createStyled({});
-
 const Image = styled("img", {
   height: "100vh",
   maxWidth: "100vw",
@@ -265,6 +226,7 @@ const Page = ({ source, observer, ...props }) => {
     }, props),
   );
 };
+
 const ImageContainer = styled("div", {
   backgroundColor: "#eee",
   display: "flex",
@@ -278,6 +240,7 @@ const Viewer = ({ source, ...props }) => {
   const [status, setStatus] = react.useState("loading");
   const navigator = usePageNavigator();
   const ref = react.useRef();
+  const fullscreenElement = useFullscreenElement();
   const handleNavigation = react.useCallback((event) => {
     switch (event.key) {
       case "j":
@@ -305,40 +268,53 @@ const Viewer = ({ source, ...props }) => {
   }, [
     source,
   ]);
-  const onEnterFullscreen = react.useCallback(async () => {
-    ref.current?.focus?.();
-    await timeout(102);
-    navigator.restore();
-  }, [
-    ref.current,
-  ]);
-  const onExitFullscreen = react.useCallback(async () => {
-    await timeout(102);
-    navigator.restore();
-  }, [
-    navigator,
-  ]);
-  const toggleFullscreen = useFullscreen(ref, {
-    onEnter: onEnterFullscreen,
-    onExit: onExitFullscreen,
-  });
   react.useEffect(() => {
     const globalKeyHandler = async (event) => {
       if (event.key === "i") {
-        toggleFullscreen();
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        } else {
+          await ref?.current?.requestFullscreen?.();
+        }
       }
     };
     window.addEventListener("keydown", globalKeyHandler);
-    return () => {
-      window.removeEventListener("keydown", globalKeyHandler);
-    };
+    return () => window.removeEventListener("keydown", globalKeyHandler);
   }, [
     navigator,
+    ref.current,
   ]);
   react.useEffect(() => {
     ref.current?.focus?.();
   }, [
     ref.current,
+  ]);
+  react.useEffect(() => {
+    if (!ref.current) {
+      return;
+    }
+    const style = ref.current.style;
+    const fullscreenStyle = {
+      display: "flex",
+      position: "fixed",
+      top: 0,
+      bottom: 0,
+      overflow: "auto",
+    };
+    if (fullscreenElement && style.position !== "fixed") {
+      Object.assign(style, fullscreenStyle);
+      navigator.restore();
+      ref.current.focus();
+    } else if (!fullscreenElement && style.position === "fixed") {
+      for (const property of Object.keys(fullscreenStyle)) {
+        style.removeProperty(property);
+      }
+      navigator.restore();
+    }
+  }, [
+    ref.current,
+    fullscreenElement,
+    navigator,
   ]);
   react.useEffect(() => {
     fetchSource();
@@ -350,16 +326,11 @@ const Viewer = ({ source, ...props }) => {
     Object.assign({
       ref: ref,
       className: "vim_comic_viewer",
-      css: {
-        "&&:fullscreen": {
-          display: "flex",
-        },
-      },
       tabIndex: -1,
       onKeyDown: handleNavigation,
     }, props),
     status === "complete"
-      ? images?.map((image, index) =>
+      ? images?.map?.((image, index) =>
         react.createElement(Page, {
           key: index,
           source: image,
@@ -373,25 +344,47 @@ const Viewer = ({ source, ...props }) => {
       ),
   );
 };
-const initializeViewer = (root, source) => {
-  reactDom.render(
-    react.createElement(Viewer, {
-      source: source,
-    }),
-    root,
-  );
+
+const timeout = (millisecond) =>
+  new Promise((resolve) => setTimeout(resolve, millisecond));
+const waitDomContent = (document) =>
+  document.readyState === "loading"
+    ? new Promise((r) =>
+      document.addEventListener("readystatechange", r, {
+        once: true,
+      })
+    )
+    : true;
+const insertCss = (css) => {
+  const style = document.createElement("style");
+  style.innerHTML = css;
+  document.head.append(style);
 };
+
+var utils = /*#__PURE__*/ Object.freeze({
+  __proto__: null,
+  timeout: timeout,
+  waitDomContent: waitDomContent,
+  insertCss: insertCss,
+});
 
 var types = /*#__PURE__*/ Object.freeze({
   __proto__: null,
 });
 
+/** @jsx createElement */
+/// <reference lib="dom" />
 const initializeWithSource = async (source) => {
   const root = document.createElement("div");
   while (true) {
     if (document.body) {
       document.body.append(root);
-      initializeViewer(root, source);
+      reactDom.render(
+        react.createElement(Viewer, {
+          source: source,
+        }),
+        root,
+      );
       break;
     }
     await timeout(1);
