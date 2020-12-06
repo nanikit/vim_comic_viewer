@@ -6,9 +6,13 @@ import { styled } from '../vendors/stitches.ts';
 
 const Image = styled('img', {
   height: '100vh',
-  maxWidth: '100vw',
+  maxHeight: '100%',
+  maxWidth: '100%',
   objectFit: 'contain',
   margin: '4px 1px',
+  '@media print': {
+    margin: 0,
+  },
 });
 
 export const Page = ({
