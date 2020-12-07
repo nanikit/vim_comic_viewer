@@ -1,39 +1,108 @@
 import { useCallback, useEffect, useMemo, useState } from '../vendors/react.ts';
+import { useIntersection } from './use_intersection.ts';
 
-type IntersectedPages = {
-  isSorted: boolean;
-  entries: IntersectionObserverEntry[];
-};
+const useResize = <T, E extends Element>(
+  target: E | undefined,
+  transformer: (target?: ResizeObserverEntry) => T,
+): T => {
+  const [value, setValue] = useState(() => transformer(undefined));
 
-export const usePageNavigator = () => {
-  const [observer, setObserver] = useState<IntersectionObserver>();
-  const [pages] = useState({ entries: [], isSorted: true } as IntersectedPages);
-
-  const sortAndGetAnchor = useCallback(() => {
-    const first = pages.entries?.[0]?.target;
-    if (!pages.isSorted && !!first) {
-      const children = [
-        ...((first.parentElement!.children as unknown) as Iterable<Element>),
-      ];
-      pages.entries.sort((a, b) => {
-        const aRatio = Math.round(a.intersectionRatio * 10);
-        const bRatio = Math.round(b.intersectionRatio * 10);
-        const aIndex = children.indexOf(a.target);
-        const bIndex = children.indexOf(b.target);
-        return (bRatio - aRatio) * 10 + (bIndex - aIndex);
-      });
-      pages.isSorted = true;
-    }
-    return pages.entries?.[0]?.target;
-  }, [pages]);
-
-  const goNext = useCallback(() => {
-    const anchor = sortAndGetAnchor();
-    if (!anchor) {
+  useEffect(() => {
+    if (!target) {
       return;
     }
 
-    let cursor = anchor;
+    const observer = new ResizeObserver((entries) => {
+      setValue(transformer(entries[0]));
+    });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [target, transformer]);
+
+  return value;
+};
+
+const useScroll = <T, E extends Element>(
+  container: E | undefined,
+  transformer: (container?: Event) => T,
+): T => {
+  const [value, setValue] = useState(() => transformer(undefined));
+
+  useEffect(() => {
+    if (!container) {
+      return;
+    }
+
+    const callback = (event: Event) => {
+      setValue(transformer(event));
+    };
+    container.addEventListener('scroll', callback);
+    return () => container.removeEventListener('scroll', callback);
+  }, [container, transformer]);
+
+  return value;
+};
+
+const getCurrentPage = (container: HTMLElement, entries: IntersectionObserverEntry[]) => {
+  if (!entries.length) {
+    return container.firstElementChild || undefined;
+  }
+
+  const children = [...((container.children as unknown) as Iterable<Element>)];
+  const fullyVisibles = entries.filter((x) => x.intersectionRatio === 1);
+  if (fullyVisibles.length) {
+    fullyVisibles.sort((a, b) => {
+      return children.indexOf(a.target) - children.indexOf(b.target);
+    });
+    return fullyVisibles[Math.floor(fullyVisibles.length / 2)].target;
+  }
+
+  return entries.sort((a, b) => {
+    const ratio = {
+      a: a.intersectionRatio,
+      b: b.intersectionRatio,
+    };
+    const index = {
+      a: children.indexOf(a.target),
+      b: children.indexOf(b.target),
+    };
+    return (ratio.b - ratio.a) * 10000 + (index.a - index.b);
+  })[0].target;
+};
+
+export const usePageNavigator = (container?: HTMLElement) => {
+  const [anchor, setAnchor] = useState({
+    currentPage: undefined as HTMLElement | undefined,
+    ratio: 0.5,
+  });
+
+  const intersectionOption = useMemo(() => ({ threshold: [0.01, 0.5, 1] }), []);
+  const { entries, observer } = useIntersection(intersectionOption);
+
+  const getAnchor = useCallback(() => {
+    if (!container || entries.length === 0) {
+      return anchor;
+    }
+
+    const page = getCurrentPage(container, entries) as HTMLElement;
+    const y = container.scrollTop + container.clientHeight / 2;
+    const newRatio = (y - page.offsetTop) / page.clientHeight;
+    const newAnchor = { currentPage: page, ratio: newRatio };
+    return newAnchor;
+  }, [anchor, container, entries]);
+
+  const resetAnchor = useCallback(() => {
+    setAnchor(getAnchor());
+  }, [getAnchor]);
+
+  const { currentPage, ratio } = anchor;
+
+  const goNext = useCallback(() => {
+    let cursor = (currentPage || getAnchor().currentPage) as Element;
+    if (!cursor) {
+      return;
+    }
+
     const originBound = cursor.getBoundingClientRect();
     while (cursor.nextElementSibling) {
       const next = cursor.nextElementSibling;
@@ -44,15 +113,14 @@ export const usePageNavigator = () => {
       }
       cursor = next;
     }
-  }, [sortAndGetAnchor]);
+  }, [currentPage, getAnchor]);
 
   const goPrevious = useCallback(() => {
-    const anchor = sortAndGetAnchor();
-    if (!anchor) {
+    let cursor = (currentPage || getAnchor().currentPage) as Element;
+    if (!cursor) {
       return;
     }
 
-    let cursor = anchor;
     const originBound = cursor.getBoundingClientRect();
     while (cursor.previousElementSibling) {
       const previous = cursor.previousElementSibling;
@@ -63,51 +131,24 @@ export const usePageNavigator = () => {
       }
       cursor = previous;
     }
-  }, [sortAndGetAnchor]);
+  }, [currentPage, getAnchor]);
 
-  const restore = useCallback(() => {
-    const anchor = sortAndGetAnchor();
-    if (!anchor) {
+  const restoreScroll = useCallback(() => {
+    if (!container || ratio === undefined || currentPage === undefined) {
       return;
     }
 
-    anchor.scrollIntoView({ block: 'center' });
-  }, [pages, sortAndGetAnchor]);
+    const restoredY = currentPage.offsetTop + currentPage.clientHeight * (ratio - 0.5);
+    container.scroll({ top: restoredY });
+  }, [container, currentPage, ratio]);
 
-  useEffect(() => {
-    const newObserver = new IntersectionObserver(
-      (entries) => {
-        let newIntersections = pages.entries;
-        for (const entry of entries) {
-          newIntersections = newIntersections.filter(
-            (item) => item.target !== entry.target,
-          );
-          if (entry.isIntersecting) {
-            newIntersections.push(entry);
-          }
-        }
-        pages.entries = newIntersections;
-      },
-      {
-        threshold: [0.01, 0.5],
-      },
-    );
-    setObserver(newObserver);
-    window.addEventListener('resize', restore);
+  useScroll(container, resetAnchor);
+  useResize(container, restoreScroll);
+  useEffect(resetAnchor, [entries]);
 
-    return () => {
-      newObserver.disconnect();
-      window.removeEventListener('resize', restore);
-    };
-  }, [pages]);
-
-  return useMemo(
-    () => ({
-      goNext,
-      goPrevious,
-      restore,
-      observer,
-    }),
-    [goNext, goPrevious, restore, observer],
-  );
+  return useMemo(() => ({ goNext, goPrevious, observer }), [
+    goNext,
+    goPrevious,
+    observer,
+  ]);
 };

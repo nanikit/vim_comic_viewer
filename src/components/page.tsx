@@ -5,8 +5,7 @@ import { createElement, useEffect, useRef } from '../vendors/react.ts';
 import { styled } from '../vendors/stitches.ts';
 
 const Image = styled('img', {
-  height: '100vh',
-  maxHeight: '100%',
+  height: '100%',
   maxWidth: '100%',
   objectFit: 'contain',
   margin: '4px 1px',

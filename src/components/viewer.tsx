@@ -15,6 +15,7 @@ import { Page } from './page.tsx';
 
 const ImageContainer = styled('div', {
   backgroundColor: '#eee',
+  height: '100%',
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
@@ -25,8 +26,8 @@ const ImageContainer = styled('div', {
 export const Viewer = ({ source, ...props }: { source: ComicSource }) => {
   const [images, setImages] = useState<ImageSource[]>();
   const [status, setStatus] = useState<'loading' | 'complete' | 'error'>('loading');
-  const navigator = usePageNavigator();
   const ref = useRef<HTMLDivElement>();
+  const navigator = usePageNavigator(ref.current);
   const fullscreenElement = useFullscreenElement();
 
   const handleNavigation = useCallback(
@@ -89,13 +90,13 @@ export const Viewer = ({ source, ...props }: { source: ComicSource }) => {
     };
     if (fullscreenElement && style.position !== 'fixed') {
       Object.assign(style, fullscreenStyle);
-      navigator.restore();
+      // navigator.restore();
       ref.current.focus();
     } else if (!fullscreenElement && style.position === 'fixed') {
       for (const property of Object.keys(fullscreenStyle)) {
         style.removeProperty(property);
       }
-      navigator.restore();
+      // navigator.restore();
     }
   }, [ref.current, fullscreenElement, navigator]);
 
@@ -121,5 +122,3 @@ export const Viewer = ({ source, ...props }: { source: ComicSource }) => {
     </ImageContainer>
   );
 };
-
-export const initializeViewer = (root: HTMLDivElement, source: ComicSource) => {};

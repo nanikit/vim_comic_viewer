@@ -29,37 +29,143 @@ const useFullscreenElement = () => {
   return element;
 };
 
-const usePageNavigator = () => {
+const useIntersectionObserver = (callback, options) => {
   const [observer, setObserver] = react.useState();
-  const [pages] = react.useState({
-    entries: [],
-    isSorted: true,
-  });
-  const sortAndGetAnchor = react.useCallback(() => {
-    const first = pages.entries?.[0]?.target;
-    if (!pages.isSorted && !!first) {
-      const children = [
-        ...first.parentElement.children,
-      ];
-      pages.entries.sort((a, b) => {
-        const aRatio = Math.round(a.intersectionRatio * 10);
-        const bRatio = Math.round(b.intersectionRatio * 10);
-        const aIndex = children.indexOf(a.target);
-        const bIndex = children.indexOf(b.target);
-        return (bRatio - aRatio) * 10 + (bIndex - aIndex);
-      });
-      pages.isSorted = true;
-    }
-    return pages.entries?.[0]?.target;
+  react.useEffect(() => {
+    const newObserver = new IntersectionObserver(callback, options);
+    setObserver(newObserver);
+    return () => newObserver.disconnect();
   }, [
-    pages,
+    callback,
+    options,
   ]);
-  const goNext = react.useCallback(() => {
-    const anchor = sortAndGetAnchor();
-    if (!anchor) {
+  return observer;
+};
+const useIntersection = (options) => {
+  const [entries, setEntries] = react.useState([]);
+  const memo = react.useRef(new Map());
+  const recordIntersection = react.useCallback((newEntries) => {
+    const memoized = memo.current;
+    for (const entry of newEntries) {
+      if (entry.isIntersecting) {
+        memoized.set(entry.target, entry);
+      } else {
+        memoized.delete(entry.target);
+      }
+    }
+    setEntries([
+      ...memoized.values(),
+    ]);
+  }, []);
+  const observer = useIntersectionObserver(recordIntersection, options);
+  return {
+    entries,
+    observer,
+  };
+};
+
+const useResize = (target, transformer) => {
+  const [value, setValue] = react.useState(() => transformer(undefined));
+  react.useEffect(() => {
+    if (!target) {
       return;
     }
-    let cursor = anchor;
+    const observer = new ResizeObserver((entries) =>
+      setValue(transformer(entries[0]))
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [
+    target,
+  ]);
+  return value;
+};
+const useScroll = (container, transformer) => {
+  const [value, setValue] = react.useState(() => transformer(undefined));
+  react.useEffect(() => {
+    if (!container) {
+      return;
+    }
+    const callback = (event) => {
+      setValue(transformer(event));
+    };
+    container.addEventListener("scroll", callback);
+    return () => container.removeEventListener("scroll", callback);
+  }, [
+    container,
+    transformer,
+  ]);
+  return value;
+};
+const getCurrentPage = (container, entries) => {
+  if (!entries.length) {
+    return container.firstElementChild || undefined;
+  }
+  const children = [
+    ...container.children,
+  ];
+  const fullyVisibles = entries.filter((x) => x.intersectionRatio === 1);
+  if (fullyVisibles.length) {
+    fullyVisibles.sort((a, b) => {
+      return children.indexOf(a.target) - children.indexOf(b.target);
+    });
+    return fullyVisibles[Math.floor(fullyVisibles.length / 2)].target;
+  }
+  return entries.sort((a, b) => {
+    const ratio = {
+      a: a.intersectionRatio,
+      b: b.intersectionRatio,
+    };
+    const index = {
+      a: children.indexOf(a.target),
+      b: children.indexOf(b.target),
+    };
+    return (ratio.b - ratio.a) * 10000 + (index.a - index.b);
+  })[0].target;
+};
+const usePageNavigator = (container) => {
+  const [anchor, setAnchor] = react.useState({
+    currentPage: undefined,
+    ratio: 0.5,
+  });
+  const intersectionOption = react.useMemo(() => ({
+    threshold: [
+      0.001,
+      0.5,
+      1,
+    ],
+  }), []);
+  const { entries, observer } = useIntersection(intersectionOption);
+  const getAnchor = react.useCallback(() => {
+    if (!container) {
+      return {
+        currentPage: undefined,
+        ratio: 0.5,
+      };
+    }
+    const page = getCurrentPage(container, entries);
+    const y = container.scrollTop + container.clientHeight / 2;
+    const newRatio = (y - page.offsetTop) / page.clientHeight;
+    const newAnchor = {
+      currentPage: page,
+      ratio: newRatio,
+    };
+    return newAnchor;
+  }, [
+    container,
+    entries,
+  ]);
+  const resetAnchor = react.useCallback(() => {
+    setAnchor(getAnchor());
+  }, [
+    getAnchor,
+  ]);
+  const { currentPage, ratio } = anchor;
+  const goNext = react.useCallback(() => {
+    let cursor = currentPage || getAnchor().currentPage;
+    if (!cursor) {
+      return;
+    }
     const originBound = cursor.getBoundingClientRect();
     while (cursor.nextElementSibling) {
       const next = cursor.nextElementSibling;
@@ -73,14 +179,14 @@ const usePageNavigator = () => {
       cursor = next;
     }
   }, [
-    sortAndGetAnchor,
+    currentPage,
+    getAnchor,
   ]);
   const goPrevious = react.useCallback(() => {
-    const anchor = sortAndGetAnchor();
-    if (!anchor) {
+    let cursor = currentPage || getAnchor().currentPage;
+    if (!cursor) {
       return;
     }
-    let cursor = anchor;
     const originBound = cursor.getBoundingClientRect();
     while (cursor.previousElementSibling) {
       const previous = cursor.previousElementSibling;
@@ -94,56 +200,35 @@ const usePageNavigator = () => {
       cursor = previous;
     }
   }, [
-    sortAndGetAnchor,
+    currentPage,
+    getAnchor,
   ]);
-  const restore = react.useCallback(() => {
-    const anchor = sortAndGetAnchor();
-    if (!anchor) {
+  const restoreScroll = react.useCallback(() => {
+    if (!container || ratio === undefined || currentPage === undefined) {
       return;
     }
-    anchor.scrollIntoView({
-      block: "center",
+    const restoredY = currentPage.offsetTop +
+      currentPage.clientHeight * (ratio - 0.5);
+    container.scroll({
+      top: restoredY,
     });
   }, [
-    pages,
-    sortAndGetAnchor,
+    container,
+    currentPage,
+    ratio,
   ]);
-  react.useEffect(() => {
-    const newObserver = new IntersectionObserver((entries) => {
-      let newIntersections = pages.entries;
-      for (const entry of entries) {
-        newIntersections = newIntersections.filter((item) =>
-          item.target !== entry.target
-        );
-        if (entry.isIntersecting) {
-          newIntersections.push(entry);
-        }
-      }
-      pages.entries = newIntersections;
-    }, {
-      threshold: [
-        0.01,
-        0.5,
-      ],
-    });
-    setObserver(newObserver);
-    window.addEventListener("resize", restore);
-    return () => {
-      newObserver.disconnect();
-      window.removeEventListener("resize", restore);
-    };
-  }, [
-    pages,
+  useScroll(container, resetAnchor);
+  useResize(container, restoreScroll);
+  react.useEffect(resetAnchor, [
+    entries,
   ]);
   return react.useMemo(() => ({
     goNext,
     goPrevious,
-    restore,
     observer,
   }), [
     goNext,
     goPrevious,
-    restore,
     observer,
   ]);
 };
@@ -198,10 +283,13 @@ const usePageReducer = (source) => {
 };
 
 const Image = styled("img", {
-  height: "100vh",
-  maxWidth: "100vw",
+  height: "100%",
+  maxWidth: "100%",
   objectFit: "contain",
   margin: "4px 1px",
+  "@media print": {
+    margin: 0,
+  },
 });
 const Page = ({ source, observer, ...props }) => {
   const { src, onError } = usePageReducer(source);
@@ -229,6 +317,7 @@ const Page = ({ source, observer, ...props }) => {
 
 const ImageContainer = styled("div", {
   backgroundColor: "#eee",
+  height: "100%",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
@@ -238,8 +327,8 @@ const ImageContainer = styled("div", {
 const Viewer = ({ source, ...props }) => {
   const [images, setImages] = react.useState();
   const [status, setStatus] = react.useState("loading");
-  const navigator = usePageNavigator();
   const ref = react.useRef();
+  const navigator = usePageNavigator(ref.current);
   const fullscreenElement = useFullscreenElement();
   const handleNavigation = react.useCallback((event) => {
     switch (event.key) {
@@ -300,13 +389,12 @@ const Viewer = ({ source, ...props }) => {
     };
     if (fullscreenElement && style.position !== "fixed") {
       Object.assign(style, fullscreenStyle);
-      navigator.restore();
+      // navigator.restore();
       ref.current.focus();
     } else if (!fullscreenElement && style.position === "fixed") {
       for (const property of Object.keys(fullscreenStyle)) {
         style.removeProperty(property);
       }
-      navigator.restore();
     }
   }, [
     ref.current,
@@ -371,14 +459,19 @@ var types = /*#__PURE__*/ Object.freeze({
 
 /** @jsx createElement */
 /// <reference lib="dom" />
+const getDefaultRoot = () => {
+  const div = document.createElement("div");
+  div.style.height = "100vh";
+  return div;
+};
 const initializeWithSource = async (source) => {
-  const root = document.createElement("div");
+  const root = source?.getRoot?.() || getDefaultRoot();
   while (true) {
     if (document.body) {
       document.body.append(root);
       reactDom.render(
         react.createElement(Viewer, {
-          source: source,
+          source: source.comicSource,
         }),
         root,
       );
@@ -391,10 +484,10 @@ const initialize = async (sourceOrSources) => {
   if (Array.isArray(sourceOrSources)) {
     const source = sourceOrSources.find((x) => x.isApplicable());
     if (source) {
-      await initializeWithSource(source.comicSource);
+      await initializeWithSource(source);
     }
   } else {
-    await initializeWithSource(sourceOrSources.comicSource);
+    await initializeWithSource(sourceOrSources);
   }
 };
 
