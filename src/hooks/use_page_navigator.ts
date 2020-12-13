@@ -22,27 +22,6 @@ const useResize = <T, E extends Element>(
   return value;
 };
 
-const useScroll = <T, E extends Element>(
-  container: E | undefined,
-  transformer: (container?: Event) => T,
-): T => {
-  const [value, setValue] = useState(() => transformer(undefined));
-
-  useEffect(() => {
-    if (!container) {
-      return;
-    }
-
-    const callback = (event: Event) => {
-      setValue(transformer(event));
-    };
-    container.addEventListener('scroll', callback);
-    return () => container.removeEventListener('scroll', callback);
-  }, [container, transformer]);
-
-  return value;
-};
-
 const getCurrentPage = (container: HTMLElement, entries: IntersectionObserverEntry[]) => {
   if (!entries.length) {
     return container.firstElementChild || undefined;
@@ -142,7 +121,6 @@ export const usePageNavigator = (container?: HTMLElement) => {
     container.scroll({ top: restoredY });
   }, [container, currentPage, ratio]);
 
-  useScroll(container, resetAnchor);
   useResize(container, restoreScroll);
   useEffect(resetAnchor, [entries]);
 
