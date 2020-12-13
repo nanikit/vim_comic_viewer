@@ -11,3 +11,9 @@ export const insertCss = (css: string) => {
   style.innerHTML = css;
   document.head.append(style);
 };
+
+export const waitBody = async (document: HTMLDocument) => {
+  while (!document.body) {
+    await timeout(1);
+  }
+};

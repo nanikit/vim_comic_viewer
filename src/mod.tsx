@@ -1,38 +1,56 @@
 /** @jsx createElement */
 /// <reference lib="dom" />
 import { Viewer } from './components/viewer.tsx';
-import { ViewerSource } from './types.ts';
-import { timeout } from './utils.ts';
-import { createElement } from './vendors/react.ts';
+import { ViewerController, ViewerSource } from './types.ts';
+import { waitBody } from './utils.ts';
+import { createElement, createRef } from './vendors/react.ts';
 import { render } from './vendors/react_dom.ts';
 export * as types from './types.ts';
 export * as utils from './utils.ts';
 
-const getDefaultRoot = () => {
+const getDefaultRoot = async () => {
   const div = document.createElement('div');
   div.style.height = '100vh';
+  await waitBody(document);
+  document.body.append(div);
   return div;
 };
 
-const initializeWithSource = async (source: ViewerSource) => {
-  const root = source?.getRoot?.() || getDefaultRoot();
-  while (true) {
-    if (document.body) {
-      document.body.append(root);
-      render(<Viewer source={source.comicSource} />, root);
-      break;
-    }
-    await timeout(1);
-  }
+export const initialize = (root: HTMLElement): ViewerController => {
+  const ref = createRef<ViewerController>();
+  render(<Viewer ref={ref} />, root);
+  return new Proxy(ref, {
+    get: (target, ...args) => {
+      return Reflect.get(target.current as any, ...args);
+    },
+  }) as any;
 };
 
-export const initialize = async (sourceOrSources: ViewerSource | ViewerSource[]) => {
-  if (Array.isArray(sourceOrSources)) {
-    const source = sourceOrSources.find((x) => x.isApplicable());
-    if (source) {
-      await initializeWithSource(source);
-    }
+export const initializeWithDefault = async (source: ViewerSource) => {
+  const root = source.getRoot?.() || (await getDefaultRoot());
+  const controller = initialize(root);
+  controller.setSource(source.comicSource);
+  const div = await controller.refPromise;
+  if (source.withController) {
+    source.withController(controller, div);
   } else {
-    await initializeWithSource(sourceOrSources);
+    div.addEventListener('keydown', (event) => {
+      switch (event.key) {
+        case 'j':
+          controller.goNext();
+          break;
+        case 'k':
+          controller.goPrevious();
+          break;
+        default:
+          break;
+      }
+    });
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'i') {
+        controller.toggleFullscreen();
+      }
+    });
   }
+  return controller;
 };

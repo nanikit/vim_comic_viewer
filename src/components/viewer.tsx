@@ -1,12 +1,15 @@
 /** @jsx createElement */
+import { useDeferred } from '../hooks/use_deferred.ts';
 import { useFullscreenElement } from '../hooks/use_fullscreen_element.ts';
 import { usePageNavigator } from '../hooks/use_page_navigator.ts';
-import { ComicSource, ImageSource } from '../types.ts';
+import { ImageSource, ViewerController } from '../types.ts';
 import {
   createElement,
-  React,
+  forwardRef,
+  Ref,
   useCallback,
   useEffect,
+  useImperativeHandle,
   useRef,
   useState,
 } from '../vendors/react.ts';
@@ -23,31 +26,25 @@ const ImageContainer = styled('div', {
   overflowY: 'auto',
 });
 
-export const Viewer = ({ source, ...props }: { source: ComicSource }) => {
+const Viewer_ = (props: unknown, handleRef: Ref<ViewerController>) => {
   const [images, setImages] = useState<ImageSource[]>();
   const [status, setStatus] = useState<'loading' | 'complete' | 'error'>('loading');
   const ref = useRef<HTMLDivElement>();
   const navigator = usePageNavigator(ref.current);
   const fullscreenElement = useFullscreenElement();
+  const { promise: refPromise, resolve: resolveRef } = useDeferred<HTMLDivElement>();
 
-  const handleNavigation = useCallback(
-    (event: React.KeyboardEvent) => {
-      switch (event.key) {
-        case 'j':
-          navigator.goNext();
-          break;
-        case 'k':
-          navigator.goPrevious();
-          break;
-        default:
-          break;
-      }
-    },
-    [navigator],
-  );
+  const toggleFullscreen = useCallback(async () => {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    } else {
+      await ref.current?.requestFullscreen?.();
+    }
+  }, []);
 
-  const fetchSource = useCallback(async () => {
+  const setSource = useCallback(async (source) => {
     try {
+      setStatus('loading');
       setImages(await source());
       setStatus('complete');
     } catch (error) {
@@ -55,25 +52,26 @@ export const Viewer = ({ source, ...props }: { source: ComicSource }) => {
       console.log(error);
       throw error;
     }
-  }, [source]);
+  }, []);
+
+  useImperativeHandle(
+    handleRef,
+    () => ({
+      goNext: navigator.goNext,
+      goPrevious: navigator.goPrevious,
+      toggleFullscreen,
+      refPromise,
+      setSource,
+    }),
+    [navigator.goNext, navigator.goPrevious, toggleFullscreen, refPromise, setSource],
+  );
 
   useEffect(() => {
-    const globalKeyHandler = async (event: KeyboardEvent) => {
-      if (event.key === 'i') {
-        if (document.fullscreenElement) {
-          await document.exitFullscreen();
-        } else {
-          await ref?.current?.requestFullscreen?.();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', globalKeyHandler);
-    return () => window.removeEventListener('keydown', globalKeyHandler);
-  }, [navigator, ref.current]);
-
-  useEffect(() => {
+    if (!ref.current) {
+      return;
+    }
     ref.current?.focus?.();
+    resolveRef(ref.current);
   }, [ref.current]);
 
   useEffect(() => {
@@ -90,28 +88,16 @@ export const Viewer = ({ source, ...props }: { source: ComicSource }) => {
     };
     if (fullscreenElement && style.position !== 'fixed') {
       Object.assign(style, fullscreenStyle);
-      // navigator.restore();
       ref.current.focus();
     } else if (!fullscreenElement && style.position === 'fixed') {
       for (const property of Object.keys(fullscreenStyle)) {
         style.removeProperty(property);
       }
-      // navigator.restore();
     }
   }, [ref.current, fullscreenElement, navigator]);
 
-  useEffect(() => {
-    fetchSource();
-  }, [fetchSource]);
-
   return (
-    <ImageContainer
-      ref={ref}
-      className="vim_comic_viewer"
-      tabIndex={-1}
-      onKeyDown={handleNavigation}
-      {...props}
-    >
+    <ImageContainer ref={ref} className="vim_comic_viewer" tabIndex={-1} {...props}>
       {status === 'complete' ? (
         images?.map?.((image, index) => (
           <Page key={index} source={image} observer={navigator.observer} />
@@ -122,3 +108,5 @@ export const Viewer = ({ source, ...props }: { source: ComicSource }) => {
     </ImageContainer>
   );
 };
+
+export const Viewer = forwardRef(Viewer_);
