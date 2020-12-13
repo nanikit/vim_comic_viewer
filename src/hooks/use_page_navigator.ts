@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from '../vendors/react.ts';
+import { useCallback, useEffect, useMemo, useRef, useState } from '../vendors/react.ts';
 import { useIntersection } from './use_intersection.ts';
 
 const useResize = <T, E extends Element>(
@@ -6,6 +6,8 @@ const useResize = <T, E extends Element>(
   transformer: (target?: ResizeObserverEntry) => T,
 ): T => {
   const [value, setValue] = useState(() => transformer(undefined));
+  const callbackRef = useRef(transformer);
+  callbackRef.current = transformer;
 
   useEffect(() => {
     if (!target) {
@@ -13,11 +15,11 @@ const useResize = <T, E extends Element>(
     }
 
     const observer = new ResizeObserver((entries) => {
-      setValue(transformer(entries[0]));
+      setValue(callbackRef.current(entries[0]));
     });
     observer.observe(target);
     return () => observer.disconnect();
-  }, [target, transformer]);
+  }, [target, callbackRef]);
 
   return value;
 };
