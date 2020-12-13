@@ -24,6 +24,17 @@ const ImageContainer = styled('div', {
   alignItems: 'center',
   flexFlow: 'row-reverse wrap',
   overflowY: 'auto',
+  variants: {
+    fullscreen: {
+      true: {
+        display: 'flex',
+        position: 'fixed',
+        top: 0,
+        bottom: 0,
+        overflow: 'auto',
+      },
+    },
+  },
 });
 
 const Viewer_ = (props: unknown, handleRef: Ref<ViewerController>) => {
@@ -75,29 +86,19 @@ const Viewer_ = (props: unknown, handleRef: Ref<ViewerController>) => {
   }, [ref.current]);
 
   useEffect(() => {
-    if (!ref.current) {
-      return;
+    if (ref.current && fullscreenElement === ref.current) {
+      ref.current?.focus?.();
     }
-    const style = ref.current.style;
-    const fullscreenStyle = {
-      display: 'flex',
-      position: 'fixed',
-      top: 0,
-      bottom: 0,
-      overflow: 'auto',
-    };
-    if (fullscreenElement && style.position !== 'fixed') {
-      Object.assign(style, fullscreenStyle);
-      ref.current.focus();
-    } else if (!fullscreenElement && style.position === 'fixed') {
-      for (const property of Object.keys(fullscreenStyle)) {
-        style.removeProperty(property);
-      }
-    }
-  }, [ref.current, fullscreenElement, navigator]);
+  }, [ref.current, fullscreenElement]);
 
   return (
-    <ImageContainer ref={ref} className="vim_comic_viewer" tabIndex={-1} {...props}>
+    <ImageContainer
+      ref={ref}
+      tabIndex={-1}
+      className="vim_comic_viewer"
+      fullscreen={fullscreenElement === ref.current}
+      {...props}
+    >
       {status === 'complete' ? (
         images?.map?.((image, index) => (
           <Page key={index} source={image} observer={navigator.observer} />
