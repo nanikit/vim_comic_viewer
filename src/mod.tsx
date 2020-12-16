@@ -26,6 +26,9 @@ export const initialize = (root: HTMLElement): ViewerController => {
   }) as any;
 };
 
+const isModifierPressing = (event: KeyboardEvent) =>
+  event.ctrlKey || event.shiftKey || event.altKey;
+
 export const initializeWithDefault = async (source: ViewerSource) => {
   const root = source.getRoot?.() || (await getDefaultRoot());
   const controller = initialize(root);
@@ -35,6 +38,9 @@ export const initializeWithDefault = async (source: ViewerSource) => {
     source.withController(controller, div);
   } else {
     div.addEventListener('keydown', (event) => {
+      if (isModifierPressing(event)) {
+        return;
+      }
       switch (event.key) {
         case 'j':
           controller.goNext();
@@ -47,6 +53,9 @@ export const initializeWithDefault = async (source: ViewerSource) => {
       }
     });
     window.addEventListener('keydown', (event) => {
+      if (isModifierPressing(event)) {
+        return;
+      }
       if (event.key === 'i') {
         controller.toggleFullscreen();
       }

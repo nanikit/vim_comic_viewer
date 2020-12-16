@@ -471,6 +471,8 @@ const initialize = (root) => {
     },
   });
 };
+const isModifierPressing = (event) =>
+  event.ctrlKey || event.shiftKey || event.altKey;
 const initializeWithDefault = async (source) => {
   const root = source.getRoot?.() || await getDefaultRoot();
   const controller = initialize(root);
@@ -480,6 +482,9 @@ const initializeWithDefault = async (source) => {
     source.withController(controller, div);
   } else {
     div.addEventListener("keydown", (event) => {
+      if (isModifierPressing(event)) {
+        return;
+      }
       switch (event.key) {
         case "j":
           controller.goNext();
@@ -490,6 +495,9 @@ const initializeWithDefault = async (source) => {
       }
     });
     window.addEventListener("keydown", (event) => {
+      if (isModifierPressing(event)) {
+        return;
+      }
       if (event.key === "i") {
         controller.toggleFullscreen();
       }
