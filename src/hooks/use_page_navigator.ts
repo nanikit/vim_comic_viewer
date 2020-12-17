@@ -58,10 +58,16 @@ export const usePageNavigator = (container?: HTMLElement) => {
   });
   const { currentPage, ratio } = anchor;
 
+  const ignoreIntersection = useRef(false);
+
   const resetAnchor = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       if (!container?.clientHeight || entries.length === 0) {
-        return anchor;
+        return;
+      }
+      if (ignoreIntersection.current) {
+        ignoreIntersection.current = false;
+        return;
       }
 
       const page = getCurrentPage(container, entries) as HTMLElement;
@@ -74,6 +80,7 @@ export const usePageNavigator = (container?: HTMLElement) => {
   );
 
   const goNext = useCallback(() => {
+    ignoreIntersection.current = false;
     if (!currentPage) {
       return;
     }
@@ -92,6 +99,7 @@ export const usePageNavigator = (container?: HTMLElement) => {
   }, [currentPage]);
 
   const goPrevious = useCallback(() => {
+    ignoreIntersection.current = false;
     if (!currentPage) {
       return;
     }
@@ -116,6 +124,7 @@ export const usePageNavigator = (container?: HTMLElement) => {
 
     const restoredY = currentPage.offsetTop + currentPage.clientHeight * (ratio - 0.5);
     container.scroll({ top: restoredY });
+    ignoreIntersection.current = true;
   }, [container, currentPage, ratio]);
 
   const intersectionOption = useMemo(() => ({ threshold: [0.01, 0.5, 1] }), []);

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      2.0.0
+// @version      2.1.0
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -58,10 +58,9 @@ const useIntersectionObserver = (callback, options) => {
   ]);
   return observer;
 };
-const useIntersection = (options) => {
-  const [entries, setEntries] = react.useState([]);
+const useIntersection = (callback, options) => {
   const memo = react.useRef(new Map());
-  const recordIntersection = react.useCallback((newEntries) => {
+  const filterIntersections = react.useCallback((newEntries) => {
     const memoized = memo.current;
     for (const entry of newEntries) {
       if (entry.isIntersecting) {
@@ -70,15 +69,13 @@ const useIntersection = (options) => {
         memoized.delete(entry.target);
       }
     }
-    setEntries([
+    callback([
       ...memoized.values(),
     ]);
-  }, []);
-  const observer = useIntersectionObserver(recordIntersection, options);
-  return {
-    entries,
-    observer,
-  };
+  }, [
+    callback,
+  ]);
+  return useIntersectionObserver(filterIntersections, options);
 };
 
 const useResize = (target, transformer) => {
@@ -131,17 +128,15 @@ const usePageNavigator = (container) => {
     currentPage: undefined,
     ratio: 0.5,
   });
-  const intersectionOption = react.useMemo(() => ({
-    threshold: [
-      0.01,
-      0.5,
-      1,
-    ],
-  }), []);
-  const { entries, observer } = useIntersection(intersectionOption);
-  const getAnchor = react.useCallback(() => {
-    if (!container || entries.length === 0) {
-      return anchor;
+  const { currentPage, ratio } = anchor;
+  const ignoreIntersection = react.useRef(false);
+  const resetAnchor = react.useCallback((entries) => {
+    if (!container?.clientHeight || entries.length === 0) {
+      return;
+    }
+    if (ignoreIntersection.current) {
+      ignoreIntersection.current = false;
+      return;
     }
     const page = getCurrentPage(container, entries);
     const y = container.scrollTop + container.clientHeight / 2;
@@ -150,24 +145,17 @@ const usePageNavigator = (container) => {
       currentPage: page,
       ratio: newRatio,
     };
-    return newAnchor;
+    setAnchor(newAnchor);
   }, [
-    anchor,
     container,
-    entries,
   ]);
-  const resetAnchor = react.useCallback(() => {
-    setAnchor(getAnchor());
-  }, [
-    getAnchor,
-  ]);
-  const { currentPage, ratio } = anchor;
   const goNext = react.useCallback(() => {
-    let cursor = currentPage || getAnchor().currentPage;
-    if (!cursor) {
+    ignoreIntersection.current = false;
+    if (!currentPage) {
       return;
     }
-    const originBound = cursor.getBoundingClientRect();
+    const originBound = currentPage.getBoundingClientRect();
+    let cursor = currentPage;
     while (cursor.nextElementSibling) {
       const next = cursor.nextElementSibling;
       const nextBound = next.getBoundingClientRect();
@@ -181,14 +169,14 @@ const usePageNavigator = (container) => {
     }
   }, [
     currentPage,
-    getAnchor,
   ]);
   const goPrevious = react.useCallback(() => {
-    let cursor = currentPage || getAnchor().currentPage;
-    if (!cursor) {
+    ignoreIntersection.current = false;
+    if (!currentPage) {
       return;
     }
-    const originBound = cursor.getBoundingClientRect();
+    const originBound = currentPage.getBoundingClientRect();
+    let cursor = currentPage;
     while (cursor.previousElementSibling) {
       const previous = cursor.previousElementSibling;
       const previousBound = previous.getBoundingClientRect();
@@ -202,7 +190,6 @@ const usePageNavigator = (container) => {
     }
   }, [
     currentPage,
-    getAnchor,
   ]);
   const restoreScroll = react.useCallback(() => {
     if (!container || ratio === undefined || currentPage === undefined) {
@@ -213,15 +200,21 @@ const usePageNavigator = (container) => {
     container.scroll({
       top: restoredY,
     });
+    ignoreIntersection.current = true;
   }, [
     container,
     currentPage,
     ratio,
   ]);
+  const intersectionOption = react.useMemo(() => ({
+    threshold: [
+      0.01,
+      0.5,
+      1,
+    ],
+  }), []);
+  const observer = useIntersection(resetAnchor, intersectionOption);
   useResize(container, restoreScroll);
-  react.useEffect(resetAnchor, [
-    entries,
-  ]);
   return react.useMemo(() => ({
     goNext,
     goPrevious,
