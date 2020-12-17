@@ -56,35 +56,30 @@ export const usePageNavigator = (container?: HTMLElement) => {
     currentPage: undefined as HTMLElement | undefined,
     ratio: 0.5,
   });
-
-  const intersectionOption = useMemo(() => ({ threshold: [0.01, 0.5, 1] }), []);
-  const { entries, observer } = useIntersection(intersectionOption);
-
-  const getAnchor = useCallback(() => {
-    if (!container || entries.length === 0) {
-      return anchor;
-    }
-
-    const page = getCurrentPage(container, entries) as HTMLElement;
-    const y = container.scrollTop + container.clientHeight / 2;
-    const newRatio = (y - page.offsetTop) / page.clientHeight;
-    const newAnchor = { currentPage: page, ratio: newRatio };
-    return newAnchor;
-  }, [anchor, container, entries]);
-
-  const resetAnchor = useCallback(() => {
-    setAnchor(getAnchor());
-  }, [getAnchor]);
-
   const { currentPage, ratio } = anchor;
 
+  const resetAnchor = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      if (!container?.clientHeight || entries.length === 0) {
+        return anchor;
+      }
+
+      const page = getCurrentPage(container, entries) as HTMLElement;
+      const y = container.scrollTop + container.clientHeight / 2;
+      const newRatio = (y - page.offsetTop) / page.clientHeight;
+      const newAnchor = { currentPage: page, ratio: newRatio };
+      setAnchor(newAnchor);
+    },
+    [container],
+  );
+
   const goNext = useCallback(() => {
-    let cursor = (currentPage || getAnchor().currentPage) as Element;
-    if (!cursor) {
+    if (!currentPage) {
       return;
     }
 
-    const originBound = cursor.getBoundingClientRect();
+    const originBound = currentPage.getBoundingClientRect();
+    let cursor = currentPage as Element;
     while (cursor.nextElementSibling) {
       const next = cursor.nextElementSibling;
       const nextBound = next.getBoundingClientRect();
@@ -94,15 +89,15 @@ export const usePageNavigator = (container?: HTMLElement) => {
       }
       cursor = next;
     }
-  }, [currentPage, getAnchor]);
+  }, [currentPage]);
 
   const goPrevious = useCallback(() => {
-    let cursor = (currentPage || getAnchor().currentPage) as Element;
-    if (!cursor) {
+    if (!currentPage) {
       return;
     }
 
-    const originBound = cursor.getBoundingClientRect();
+    const originBound = currentPage.getBoundingClientRect();
+    let cursor = currentPage as Element;
     while (cursor.previousElementSibling) {
       const previous = cursor.previousElementSibling;
       const previousBound = previous.getBoundingClientRect();
@@ -112,7 +107,7 @@ export const usePageNavigator = (container?: HTMLElement) => {
       }
       cursor = previous;
     }
-  }, [currentPage, getAnchor]);
+  }, [currentPage]);
 
   const restoreScroll = useCallback(() => {
     if (!container || ratio === undefined || currentPage === undefined) {
@@ -123,8 +118,10 @@ export const usePageNavigator = (container?: HTMLElement) => {
     container.scroll({ top: restoredY });
   }, [container, currentPage, ratio]);
 
+  const intersectionOption = useMemo(() => ({ threshold: [0.01, 0.5, 1] }), []);
+  const observer = useIntersection(resetAnchor, intersectionOption);
+
   useResize(container, restoreScroll);
-  useEffect(resetAnchor, [entries]);
 
   return useMemo(() => ({ goNext, goPrevious, observer }), [
     goNext,

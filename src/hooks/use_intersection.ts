@@ -15,29 +15,26 @@ const useIntersectionObserver = (
   return observer;
 };
 
-export const useIntersection = (
+export const useIntersection = <T>(
+  callback: (entries: IntersectionObserverEntry[]) => T,
   options?: IntersectionObserverInit,
-): {
-  entries: IntersectionObserverEntry[];
-  observer?: IntersectionObserver;
-} => {
-  const [entries, setEntries] = useState([] as IntersectionObserverEntry[]);
-
+): IntersectionObserver | undefined => {
   const memo = useRef(new Map<Element, IntersectionObserverEntry>());
 
-  const recordIntersection = useCallback((newEntries: IntersectionObserverEntry[]) => {
-    const memoized = memo.current;
-    for (const entry of newEntries) {
-      if (entry.isIntersecting) {
-        memoized.set(entry.target, entry);
-      } else {
-        memoized.delete(entry.target);
+  const filterIntersections = useCallback(
+    (newEntries: IntersectionObserverEntry[]) => {
+      const memoized = memo.current;
+      for (const entry of newEntries) {
+        if (entry.isIntersecting) {
+          memoized.set(entry.target, entry);
+        } else {
+          memoized.delete(entry.target);
+        }
       }
-    }
-    setEntries([...memoized.values()]);
-  }, []);
+      callback([...memoized.values()]);
+    },
+    [callback],
+  );
 
-  const observer = useIntersectionObserver(recordIntersection, options);
-
-  return { entries, observer };
+  return useIntersectionObserver(filterIntersections, options);
 };
