@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      2.1.0
+// @version      2.2.0
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -466,6 +466,9 @@ const initialize = (root) => {
 };
 const isModifierPressing = (event) =>
   event.ctrlKey || event.shiftKey || event.altKey;
+const isTyping = (event) =>
+  event.target?.tagName?.match?.(/INPUT|TEXTAREA/) ||
+  event.target?.isContentEditable;
 const initializeWithDefault = async (source) => {
   const root = source.getRoot?.() || await getDefaultRoot();
   const controller = initialize(root);
@@ -475,7 +478,7 @@ const initializeWithDefault = async (source) => {
     source.withController(controller, div);
   } else {
     div.addEventListener("keydown", (event) => {
-      if (isModifierPressing(event)) {
+      if (isModifierPressing(event) || isTyping(event)) {
         return;
       }
       switch (event.key) {
