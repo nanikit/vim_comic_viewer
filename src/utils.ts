@@ -17,3 +17,7 @@ export const waitBody = async (document: HTMLDocument) => {
     await timeout(1);
   }
 };
+
+export const isTyping = (event: KeyboardEvent) =>
+  (event.target as HTMLElement)?.tagName?.match?.(/INPUT|TEXTAREA/) ||
+  (event.target as HTMLElement)?.isContentEditable;

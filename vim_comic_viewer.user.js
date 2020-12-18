@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      2.2.0
+// @version      2.3.0
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -428,6 +428,9 @@ const waitBody = async (document) => {
     await timeout(1);
   }
 };
+const isTyping = (event) =>
+  event.target?.tagName?.match?.(/INPUT|TEXTAREA/) ||
+  event.target?.isContentEditable;
 
 var utils = /*#__PURE__*/ Object.freeze({
   __proto__: null,
@@ -435,6 +438,7 @@ var utils = /*#__PURE__*/ Object.freeze({
   waitDomContent: waitDomContent,
   insertCss: insertCss,
   waitBody: waitBody,
+  isTyping: isTyping,
 });
 
 var types = /*#__PURE__*/ Object.freeze({
@@ -466,9 +470,6 @@ const initialize = (root) => {
 };
 const isModifierPressing = (event) =>
   event.ctrlKey || event.shiftKey || event.altKey;
-const isTyping = (event) =>
-  event.target?.tagName?.match?.(/INPUT|TEXTAREA/) ||
-  event.target?.isContentEditable;
 const initializeWithDefault = async (source) => {
   const root = source.getRoot?.() || await getDefaultRoot();
   const controller = initialize(root);

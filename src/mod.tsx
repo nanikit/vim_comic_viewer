@@ -2,7 +2,7 @@
 /// <reference lib="dom" />
 import { Viewer } from './components/viewer.tsx';
 import { ViewerController, ViewerSource } from './types.ts';
-import { waitBody } from './utils.ts';
+import { isTyping, waitBody } from './utils.ts';
 import { createElement, createRef } from './vendors/react.ts';
 import { render } from './vendors/react_dom.ts';
 export * as types from './types.ts';
@@ -28,10 +28,6 @@ export const initialize = (root: HTMLElement): ViewerController => {
 
 const isModifierPressing = (event: KeyboardEvent) =>
   event.ctrlKey || event.shiftKey || event.altKey;
-
-const isTyping = (event: KeyboardEvent) =>
-  (event.target as HTMLElement)?.tagName?.match?.(/INPUT|TEXTAREA/) ||
-  (event.target as HTMLElement)?.isContentEditable;
 
 export const initializeWithDefault = async (source: ViewerSource) => {
   const root = source.getRoot?.() || (await getDefaultRoot());
