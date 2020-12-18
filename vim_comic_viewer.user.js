@@ -468,8 +468,8 @@ const initialize = (root) => {
     },
   });
 };
-const isModifierPressing = (event) =>
-  event.ctrlKey || event.shiftKey || event.altKey;
+const maybeNotHotkey = (event) =>
+  event.ctrlKey || event.shiftKey || event.altKey || isTyping(event);
 const initializeWithDefault = async (source) => {
   const root = source.getRoot?.() || await getDefaultRoot();
   const controller = initialize(root);
@@ -479,7 +479,7 @@ const initializeWithDefault = async (source) => {
     source.withController(controller, div);
   } else {
     div.addEventListener("keydown", (event) => {
-      if (isModifierPressing(event) || isTyping(event)) {
+      if (maybeNotHotkey(event)) {
         return;
       }
       switch (event.key) {
@@ -492,7 +492,7 @@ const initializeWithDefault = async (source) => {
       }
     });
     window.addEventListener("keydown", (event) => {
-      if (isModifierPressing(event)) {
+      if (maybeNotHotkey(event)) {
         return;
       }
       if (event.key === "i") {

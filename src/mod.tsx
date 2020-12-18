@@ -26,8 +26,8 @@ export const initialize = (root: HTMLElement): ViewerController => {
   }) as any;
 };
 
-const isModifierPressing = (event: KeyboardEvent) =>
-  event.ctrlKey || event.shiftKey || event.altKey;
+const maybeNotHotkey = (event: KeyboardEvent) =>
+  event.ctrlKey || event.shiftKey || event.altKey || isTyping(event);
 
 export const initializeWithDefault = async (source: ViewerSource) => {
   const root = source.getRoot?.() || (await getDefaultRoot());
@@ -38,7 +38,7 @@ export const initializeWithDefault = async (source: ViewerSource) => {
     source.withController(controller, div);
   } else {
     div.addEventListener('keydown', (event) => {
-      if (isModifierPressing(event) || isTyping(event)) {
+      if (maybeNotHotkey(event)) {
         return;
       }
       switch (event.key) {
@@ -53,7 +53,7 @@ export const initializeWithDefault = async (source: ViewerSource) => {
       }
     });
     window.addEventListener('keydown', (event) => {
-      if (isModifierPressing(event)) {
+      if (maybeNotHotkey(event)) {
         return;
       }
       if (event.key === 'i') {
