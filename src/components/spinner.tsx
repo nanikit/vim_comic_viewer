@@ -1,13 +1,5 @@
 /** @jsx createElement */
-import { usePageReducer } from '../hooks/use_page_reducer.ts';
-import { ImageSource } from '../types.ts';
-import {
-  createElement,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from '../vendors/react.ts';
+import { createElement } from '../vendors/react.ts';
 import { css, styled } from '../vendors/stitches.ts';
 
 const stretch = css.keyframes({
@@ -53,7 +45,7 @@ const SpinnerContainer = styled('div', {
   },
 });
 
-const Spinner = () => (
+export const Spinner = () => (
   <SpinnerContainer>
     <div />
     <div />
@@ -61,7 +53,7 @@ const Spinner = () => (
   </SpinnerContainer>
 );
 
-const Overlay = styled('div', {
+export const Overlay = styled('div', {
   position: 'relative',
   maxWidth: '100%',
   height: '100%',
@@ -78,46 +70,8 @@ const Overlay = styled('div', {
   },
 });
 
-const Image = styled('img', {
+export const Image = styled('img', {
   position: 'relative',
   height: '100%',
   objectFit: 'contain',
 });
-
-export const Page = ({
-  source,
-  observer,
-  ...props
-}: {
-  source: ImageSource;
-  observer?: IntersectionObserver;
-}) => {
-  const [isLoaded, setLoaded] = useState(false);
-  const { src, onError } = usePageReducer(source);
-  const ref = useRef<HTMLImageElement>();
-
-  const clearSpinner = useCallback(() => {
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    const target = ref.current;
-    if (target && observer) {
-      observer.observe(target);
-      return () => observer.unobserve(target);
-    }
-  }, [observer, ref.current]);
-
-  return (
-    <Overlay ref={ref} placeholder={!isLoaded}>
-      <Spinner />
-      <Image
-        src={src}
-        onLoad={clearSpinner}
-        onError={onError}
-        loading="lazy"
-        {...props}
-      />
-    </Overlay>
-  );
-};

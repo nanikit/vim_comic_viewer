@@ -1,6 +1,6 @@
 /** @jsx createElement */
 /// <reference lib="dom" />
-import { Viewer } from './components/viewer.tsx';
+import { Viewer } from './containers/viewer.tsx';
 import { ViewerController, ViewerSource } from './types.ts';
 import { isTyping, waitBody } from './utils.ts';
 import { createElement, createRef } from './vendors/react.ts';
