@@ -31,9 +31,6 @@ const denoFmt = async (code: string) => {
   return decoded;
 };
 
-const json = Deno.readTextFileSync('./tsconfig.json');
-const compilerOptions = JSON.parse(json).compilerOptions;
-
 const postprocessPlugin = {
   name: 'postprocess-plugin',
 
@@ -64,8 +61,12 @@ const postprocessPlugin = {
   },
 };
 
+const json = Deno.readTextFileSync('./tsconfig.json');
+const compilerOptions = JSON.parse(json).compilerOptions;
+const importMap = JSON.parse(Deno.readTextFileSync('./import_map.json'));
+
 const config: RollupOptions = {
-  external: ['react', 'react-dom', '@stitches/react'],
+  external: [...Object.keys(importMap.imports)],
   plugins: [...useCache({ compilerOptions }), postprocessPlugin],
   output: {
     format: 'cjs',
