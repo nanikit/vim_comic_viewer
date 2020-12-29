@@ -5,7 +5,7 @@ import { defer, Deferred, useDeferred } from '../hooks/use_deferred.ts';
 import { useFullscreenElement } from '../hooks/use_fullscreen_element.ts';
 import { usePageNavigator } from '../hooks/use_page_navigator.ts';
 import { download } from '../services/downloader.ts';
-import { ComicSource, ImageSource, ViewerController } from '../types.ts';
+import { ComicSource, ImageSource, ViewerController, ViewerOptions } from '../types.ts';
 import {
   createElement,
   forwardRef,
@@ -20,6 +20,7 @@ import { unmountComponentAtNode } from '../vendors/react_dom.ts';
 import { Page } from './page.tsx';
 
 const Viewer_ = (props: unknown, refHandle: Ref<ViewerController>) => {
+  const [options, setOptions] = useState<ViewerOptions>();
   const [images, setImages] = useState<ImageSource[]>();
   const [status, setStatus] = useState<'loading' | 'complete' | 'error'>('loading');
   const [hasDownload, setDownload] = useState<Deferred<JSZip>>();
@@ -69,7 +70,7 @@ const Viewer_ = (props: unknown, refHandle: Ref<ViewerController>) => {
       goPrevious: navigator.goPrevious,
       toggleFullscreen,
       refPromise,
-      setSource,
+      setOptions,
       download: queueDownload,
       unmount: () => ref.current && unmountComponentAtNode(ref.current),
     }),
@@ -97,6 +98,10 @@ const Viewer_ = (props: unknown, refHandle: Ref<ViewerController>) => {
     }
   }, [ref.current, fullscreenElement]);
 
+  useEffect(() => {
+    setSource(options?.source || (() => []));
+  }, [options?.source]);
+
   return (
     <ScrollableLayout
       ref={ref}
@@ -107,7 +112,12 @@ const Viewer_ = (props: unknown, refHandle: Ref<ViewerController>) => {
     >
       {status === 'complete' ? (
         images?.map?.((image, index) => (
-          <Page key={index} source={image} observer={navigator.observer} />
+          <Page
+            key={index}
+            source={image}
+            observer={navigator.observer}
+            {...options?.imageProps}
+          />
         )) || false
       ) : (
         <p>{status === 'error' ? '에러가 발생했습니다' : '로딩 중...'}</p>

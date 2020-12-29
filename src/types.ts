@@ -1,7 +1,11 @@
 import type { JSZip } from 'jszip';
 
+export type ViewerOptions = {
+  source?: ComicSource;
+  imageProps?: Record<string, string>;
+};
 export type ViewerController = {
-  setSource: (source: ComicSource) => void;
+  setOptions: (options: ViewerOptions) => void;
   goNext: () => void;
   goPrevious: () => void;
   toggleFullscreen: () => void;
@@ -16,5 +20,5 @@ export type ViewerSource = {
   getRoot?: () => HTMLElement;
   withController?: (controller: ViewerController, ref: HTMLDivElement) => void;
 };
-export type ComicSource = () => Promise<ImageSource[]>;
+export type ComicSource = () => ImageSource[] | Promise<ImageSource[]>;
 export type ImageSource = string | string[];

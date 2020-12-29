@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      2.3.0
+// @version      3.0.0
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -13,9 +13,58 @@
 
 Object.defineProperty(exports, "__esModule", { value: true });
 
-var react = require("react");
-var react$1 = require("@stitches/react");
+var react = require("@stitches/react");
+var react$1 = require("react");
 var reactDom = require("react-dom");
+
+function _interopNamespace(e) {
+  if (e && e.__esModule) return e;
+  else {
+    var n = Object.create(null);
+    if (e) {
+      Object.keys(e).forEach(function (k) {
+        if (k !== "default") {
+          var d = Object.getOwnPropertyDescriptor(e, k);
+          Object.defineProperty(
+            n,
+            k,
+            d.get ? d : {
+              enumerable: true,
+              get: function () {
+                return e[k];
+              },
+            },
+          );
+        }
+      });
+    }
+    n["default"] = e;
+    return Object.freeze(n);
+  }
+}
+
+const { styled, css } = react.createStyled({});
+
+const ScrollableLayout = styled("div", {
+  backgroundColor: "#eee",
+  height: "100%",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  flexFlow: "row-reverse wrap",
+  overflowY: "auto",
+  variants: {
+    fullscreen: {
+      true: {
+        display: "flex",
+        position: "fixed",
+        top: 0,
+        bottom: 0,
+        overflow: "auto",
+      },
+    },
+  },
+});
 
 const defer = () => {
   let resolve, reject;
@@ -30,15 +79,15 @@ const defer = () => {
   };
 };
 const useDeferred = () => {
-  const [deferred] = react.useState(defer);
+  const [deferred] = react$1.useState(defer);
   return deferred;
 };
 
 const useFullscreenElement = () => {
-  const [element, setElement] = react.useState(
+  const [element, setElement] = react$1.useState(
     document.fullscreenElement || undefined,
   );
-  react.useEffect(() => {
+  react$1.useEffect(() => {
     const notify = () => setElement(document.fullscreenElement || undefined);
     document.addEventListener("fullscreenchange", notify);
     return () => document.removeEventListener("fullscreenchange", notify);
@@ -47,8 +96,8 @@ const useFullscreenElement = () => {
 };
 
 const useIntersectionObserver = (callback, options) => {
-  const [observer, setObserver] = react.useState();
-  react.useEffect(() => {
+  const [observer, setObserver] = react$1.useState();
+  react$1.useEffect(() => {
     const newObserver = new IntersectionObserver(callback, options);
     setObserver(newObserver);
     return () => newObserver.disconnect();
@@ -59,8 +108,8 @@ const useIntersectionObserver = (callback, options) => {
   return observer;
 };
 const useIntersection = (callback, options) => {
-  const memo = react.useRef(new Map());
-  const filterIntersections = react.useCallback((newEntries) => {
+  const memo = react$1.useRef(new Map());
+  const filterIntersections = react$1.useCallback((newEntries) => {
     const memoized = memo.current;
     for (const entry of newEntries) {
       if (entry.isIntersecting) {
@@ -79,10 +128,10 @@ const useIntersection = (callback, options) => {
 };
 
 const useResize = (target, transformer) => {
-  const [value, setValue] = react.useState(() => transformer(undefined));
-  const callbackRef = react.useRef(transformer);
+  const [value, setValue] = react$1.useState(() => transformer(undefined));
+  const callbackRef = react$1.useRef(transformer);
   callbackRef.current = transformer;
-  react.useEffect(() => {
+  react$1.useEffect(() => {
     if (!target) {
       return;
     }
@@ -124,13 +173,13 @@ const getCurrentPage = (container, entries) => {
   })[0].target;
 };
 const usePageNavigator = (container) => {
-  const [anchor, setAnchor] = react.useState({
+  const [anchor, setAnchor] = react$1.useState({
     currentPage: undefined,
     ratio: 0.5,
   });
   const { currentPage, ratio } = anchor;
-  const ignoreIntersection = react.useRef(false);
-  const resetAnchor = react.useCallback((entries) => {
+  const ignoreIntersection = react$1.useRef(false);
+  const resetAnchor = react$1.useCallback((entries) => {
     if (!container?.clientHeight || entries.length === 0) {
       return;
     }
@@ -149,7 +198,7 @@ const usePageNavigator = (container) => {
   }, [
     container,
   ]);
-  const goNext = react.useCallback(() => {
+  const goNext = react$1.useCallback(() => {
     ignoreIntersection.current = false;
     if (!currentPage) {
       return;
@@ -170,7 +219,7 @@ const usePageNavigator = (container) => {
   }, [
     currentPage,
   ]);
-  const goPrevious = react.useCallback(() => {
+  const goPrevious = react$1.useCallback(() => {
     ignoreIntersection.current = false;
     if (!currentPage) {
       return;
@@ -191,7 +240,7 @@ const usePageNavigator = (container) => {
   }, [
     currentPage,
   ]);
-  const restoreScroll = react.useCallback(() => {
+  const restoreScroll = react$1.useCallback(() => {
     if (!container || ratio === undefined || currentPage === undefined) {
       return;
     }
@@ -206,7 +255,7 @@ const usePageNavigator = (container) => {
     currentPage,
     ratio,
   ]);
-  const intersectionOption = react.useMemo(() => ({
+  const intersectionOption = react$1.useMemo(() => ({
     threshold: [
       0.01,
       0.5,
@@ -215,7 +264,7 @@ const usePageNavigator = (container) => {
   }), []);
   const observer = useIntersection(resetAnchor, intersectionOption);
   useResize(container, restoreScroll);
-  return react.useMemo(() => ({
+  return react$1.useMemo(() => ({
     goNext,
     goPrevious,
     observer,
@@ -226,7 +275,152 @@ const usePageNavigator = (container) => {
   ]);
 };
 
-const { styled, css } = react$1.createStyled({});
+const download = async (images, deferred) => {
+  const { default: jszip } = await Promise.resolve().then(function () {
+    return /*#__PURE__*/ _interopNamespace(require("jszip"));
+  });
+  const aborter = new AbortController();
+  const downloadFile = async (url) => {
+    const response = await fetch(url, {
+      signal: aborter.signal,
+    });
+    const blob = await response.blob();
+    return {
+      url,
+      blob,
+    };
+  };
+  const downloadImage = async (source) => {
+    if (Array.isArray(source)) {
+      for (const url of source) {
+        try {
+          return await downloadFile(url);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+      return {
+        url: "",
+        blob: new Blob([
+          JSON.stringify(source),
+        ]),
+      };
+    }
+    try {
+      return await downloadFile(source);
+    } catch (error) {
+      console.log(error);
+      return {
+        url: "",
+        blob: new Blob([
+          source,
+        ]),
+      };
+    }
+  };
+  const cancellation = async () => {
+    try {
+      await deferred.promise;
+    } catch {
+      aborter.abort();
+    }
+    return Symbol();
+  };
+  const tasks = Promise.all(images.map(downloadImage));
+  const result = await Promise.race([
+    cancellation(),
+    tasks,
+  ]);
+  if (typeof result === "symbol") {
+    console.log("download cancelled");
+    return;
+  }
+  const pad = (index) => `${index}`.padStart(cipher, "0");
+  const cipher = Math.ceil(Math.log10(images.length)) + 1;
+  const getName = (url, index) => {
+    const path = new URL(url).pathname;
+    const extension = path.substr(path.lastIndexOf("."));
+    const name = `${pad(index)}${extension}`;
+    return name;
+  };
+  const zip = jszip();
+  for (let i = 0; i < result.length; i++) {
+    const file = result[i];
+    zip.file(getName(file.url, i), file.blob);
+  }
+  deferred.resolve(zip);
+};
+
+const stretch = css.keyframes({
+  "0%": {
+    top: "8px",
+    height: "64px",
+  },
+  "50%": {
+    top: "24px",
+    height: "32px",
+  },
+  "100%": {
+    top: "24px",
+    height: "32px",
+  },
+});
+const SpinnerContainer = styled("div", {
+  position: "absolute",
+  left: "0",
+  top: "0",
+  right: "0",
+  bottom: "0",
+  margin: "auto",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  div: {
+    display: "inline-block",
+    width: "16px",
+    margin: "0 4px",
+    background: "#fff",
+    animation: `${stretch} 1.2s cubic-bezier(0, 0.5, 0.5, 1) infinite`,
+  },
+  "div:nth-child(1)": {
+    "animation-delay": "-0.24s",
+  },
+  "div:nth-child(2)": {
+    "animation-delay": "-0.12s",
+  },
+  "div:nth-child(3)": {
+    "animation-delay": "0",
+  },
+});
+const Spinner = () =>
+  react$1.createElement(
+    SpinnerContainer,
+    null,
+    react$1.createElement("div", null),
+    react$1.createElement("div", null),
+    react$1.createElement("div", null),
+  );
+const Overlay = styled("div", {
+  position: "relative",
+  maxWidth: "100%",
+  height: "100%",
+  variants: {
+    placeholder: {
+      true: {
+        width: "45%",
+      },
+    },
+  },
+  margin: "4px 1px",
+  "@media print": {
+    margin: 0,
+  },
+});
+const Image1 = styled("img", {
+  position: "relative",
+  height: "100%",
+  objectFit: "contain",
+});
 
 const init = (source) => {
   if (typeof source === "string") {
@@ -265,8 +459,8 @@ const reducer = (state, action) => {
   };
 };
 const usePageReducer = (source) => {
-  const [state, dispatch] = react.useReducer(reducer, source, init);
-  const onError = react.useCallback(() => {
+  const [state, dispatch] = react$1.useReducer(reducer, source, init);
+  const onError = react$1.useCallback(() => {
     dispatch("next");
   }, []);
   return {
@@ -275,19 +469,14 @@ const usePageReducer = (source) => {
   };
 };
 
-const Image1 = styled("img", {
-  height: "100%",
-  maxWidth: "100%",
-  objectFit: "contain",
-  margin: "4px 1px",
-  "@media print": {
-    margin: 0,
-  },
-});
 const Page = ({ source, observer, ...props }) => {
+  const [isLoaded, setLoaded] = react$1.useState(false);
   const { src, onError } = usePageReducer(source);
-  const ref = react.useRef();
-  react.useEffect(() => {
+  const ref = react$1.useRef();
+  const clearSpinner = react$1.useCallback(() => {
+    setLoaded(true);
+  }, []);
+  react$1.useEffect(() => {
     const target = ref.current;
     if (target && observer) {
       observer.observe(target);
@@ -297,52 +486,41 @@ const Page = ({ source, observer, ...props }) => {
     observer,
     ref.current,
   ]);
-  return react.createElement(
-    Image1,
-    Object.assign({
+  return react$1.createElement(
+    Overlay,
+    {
       ref: ref,
-      src: src,
-      onError: onError,
-      loading: "lazy",
-    }, props),
+      placeholder: !isLoaded,
+    },
+    react$1.createElement(Spinner, null),
+    react$1.createElement(
+      Image1,
+      Object.assign({
+        src: src,
+        onLoad: clearSpinner,
+        onError: onError,
+      }, props),
+    ),
   );
 };
 
-const ImageContainer = styled("div", {
-  backgroundColor: "#eee",
-  height: "100%",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  flexFlow: "row-reverse wrap",
-  overflowY: "auto",
-  variants: {
-    fullscreen: {
-      true: {
-        display: "flex",
-        position: "fixed",
-        top: 0,
-        bottom: 0,
-        overflow: "auto",
-      },
-    },
-  },
-});
-const Viewer_ = (props, handleRef) => {
-  const [images, setImages] = react.useState();
-  const [status, setStatus] = react.useState("loading");
-  const ref = react.useRef();
+const Viewer_ = (props, refHandle) => {
+  const [options, setOptions] = react$1.useState();
+  const [images, setImages] = react$1.useState();
+  const [status, setStatus] = react$1.useState("loading");
+  const [hasDownload, setDownload] = react$1.useState();
+  const ref = react$1.useRef();
   const navigator = usePageNavigator(ref.current);
   const fullscreenElement = useFullscreenElement();
   const { promise: refPromise, resolve: resolveRef } = useDeferred();
-  const toggleFullscreen = react.useCallback(async () => {
+  const toggleFullscreen = react$1.useCallback(async () => {
     if (document.fullscreenElement) {
       await document.exitFullscreen();
     } else {
       await ref.current?.requestFullscreen?.();
     }
   }, []);
-  const setSource = react.useCallback(async (source) => {
+  const setSource = react$1.useCallback(async (source) => {
     try {
       setStatus("loading");
       setImages(await source());
@@ -353,20 +531,38 @@ const Viewer_ = (props, handleRef) => {
       throw error;
     }
   }, []);
-  react.useImperativeHandle(handleRef, () => ({
+  const queueDownload = react$1.useCallback(() => {
+    if (hasDownload) {
+      hasDownload.reject(new Error("You requested another download"));
+    }
+    if (!images) {
+      return;
+    }
+    const deferred = defer();
+    setDownload(deferred);
+    download(images, deferred);
+    return deferred.promise;
+  }, [
+    images,
+    hasDownload,
+  ]);
+  react$1.useImperativeHandle(refHandle, () => ({
     goNext: navigator.goNext,
     goPrevious: navigator.goPrevious,
     toggleFullscreen,
     refPromise,
-    setSource,
+    setOptions,
+    download: queueDownload,
+    unmount: () => ref.current && reactDom.unmountComponentAtNode(ref.current),
   }), [
     navigator.goNext,
     navigator.goPrevious,
     toggleFullscreen,
     refPromise,
     setSource,
+    queueDownload,
   ]);
-  react.useEffect(() => {
+  react$1.useEffect(() => {
     if (!ref.current) {
       return;
     }
@@ -375,7 +571,7 @@ const Viewer_ = (props, handleRef) => {
   }, [
     ref.current,
   ]);
-  react.useEffect(() => {
+  react$1.useEffect(() => {
     if (ref.current && fullscreenElement === ref.current) {
       ref.current?.focus?.();
     }
@@ -383,8 +579,13 @@ const Viewer_ = (props, handleRef) => {
     ref.current,
     fullscreenElement,
   ]);
-  return react.createElement(
-    ImageContainer,
+  react$1.useEffect(() => {
+    setSource(options?.source || (() => []));
+  }, [
+    options?.source,
+  ]);
+  return react$1.createElement(
+    ScrollableLayout,
     Object.assign({
       ref: ref,
       tabIndex: -1,
@@ -393,20 +594,23 @@ const Viewer_ = (props, handleRef) => {
     }, props),
     status === "complete"
       ? images?.map?.((image, index) =>
-        react.createElement(Page, {
-          key: index,
-          source: image,
-          observer: navigator.observer,
-        })
+        react$1.createElement(
+          Page,
+          Object.assign({
+            key: index,
+            source: image,
+            observer: navigator.observer,
+          }, options?.imageProps),
+        )
       ) || false
-      : react.createElement(
+      : react$1.createElement(
         "p",
         null,
         status === "error" ? "에러가 발생했습니다" : "로딩 중...",
       ),
   );
 };
-const Viewer = react.forwardRef(Viewer_);
+const Viewer = react$1.forwardRef(Viewer_);
 
 const timeout = (millisecond) =>
   new Promise((resolve) => setTimeout(resolve, millisecond));
@@ -431,6 +635,18 @@ const waitBody = async (document) => {
 const isTyping = (event) =>
   event.target?.tagName?.match?.(/INPUT|TEXTAREA/) ||
   event.target?.isContentEditable;
+const saveAs = async (blob, name) => {
+  const a = document.createElement("a");
+  a.download = name;
+  a.rel = "noopener";
+  a.href = URL.createObjectURL(blob);
+  a.click();
+  await timeout(40000);
+  URL.revokeObjectURL(a.href);
+};
+const getSafeFileName = (str) => {
+  return str.replace(/[<>:"/\\|?*\x00-\x1f]+/gi, "").trim() || "download";
+};
 
 var utils = /*#__PURE__*/ Object.freeze({
   __proto__: null,
@@ -439,6 +655,8 @@ var utils = /*#__PURE__*/ Object.freeze({
   insertCss: insertCss,
   waitBody: waitBody,
   isTyping: isTyping,
+  saveAs: saveAs,
+  getSafeFileName: getSafeFileName,
 });
 
 var types = /*#__PURE__*/ Object.freeze({
@@ -455,9 +673,9 @@ const getDefaultRoot = async () => {
   return div;
 };
 const initialize = (root) => {
-  const ref = react.createRef();
+  const ref = react$1.createRef();
   reactDom.render(
-    react.createElement(Viewer, {
+    react$1.createElement(Viewer, {
       ref: ref,
     }),
     root,
@@ -473,36 +691,52 @@ const maybeNotHotkey = (event) =>
 const initializeWithDefault = async (source) => {
   const root = source.getRoot?.() || await getDefaultRoot();
   const controller = initialize(root);
-  controller.setSource(source.comicSource);
+  const defaultKeyHandler = async (event) => {
+    if (maybeNotHotkey(event)) {
+      return;
+    }
+    switch (event.key) {
+      case "j":
+        controller.goNext();
+        break;
+      case "k":
+        controller.goPrevious();
+        break;
+      case ";": {
+        const zip = await controller.download();
+        if (!zip) {
+          return;
+        }
+        const blob = await zip.generateAsync({
+          type: "blob",
+        });
+        saveAs(blob, `${getSafeFileName(document.title)}.zip`);
+        break;
+      }
+    }
+  };
+  const defaultGlobalKeyHandler = (event) => {
+    if (maybeNotHotkey(event)) {
+      return;
+    }
+    if (event.key === "i") {
+      controller.toggleFullscreen();
+    }
+  };
+  controller.setOptions({
+    source: source.comicSource,
+  });
   const div = await controller.refPromise;
   if (source.withController) {
     source.withController(controller, div);
   } else {
-    div.addEventListener("keydown", (event) => {
-      if (maybeNotHotkey(event)) {
-        return;
-      }
-      switch (event.key) {
-        case "j":
-          controller.goNext();
-          break;
-        case "k":
-          controller.goPrevious();
-          break;
-      }
-    });
-    window.addEventListener("keydown", (event) => {
-      if (maybeNotHotkey(event)) {
-        return;
-      }
-      if (event.key === "i") {
-        controller.toggleFullscreen();
-      }
-    });
+    div.addEventListener("keydown", defaultKeyHandler);
+    window.addEventListener("keydown", defaultGlobalKeyHandler);
   }
   return controller;
 };
 
+exports.download = download;
 exports.initialize = initialize;
 exports.initializeWithDefault = initializeWithDefault;
 exports.types = types;

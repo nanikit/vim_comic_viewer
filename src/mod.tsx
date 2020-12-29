@@ -68,7 +68,7 @@ export const initializeWithDefault = async (source: ViewerSource) => {
     }
   };
 
-  controller.setSource(source.comicSource);
+  controller.setOptions({ source: source.comicSource });
   const div = await controller.refPromise;
   if (source.withController) {
     source.withController(controller, div);
