@@ -1,9 +1,13 @@
+import type { JSZip } from 'jszip';
+
 export type ViewerController = {
+  setSource: (source: ComicSource) => void;
   goNext: () => void;
   goPrevious: () => void;
   toggleFullscreen: () => void;
+  download: () => Promise<JSZip> | undefined;
   refPromise: Promise<HTMLDivElement>;
-  setSource: (source: ComicSource) => void;
+  unmount: () => void;
 };
 export type ViewerSource = {
   name: string;

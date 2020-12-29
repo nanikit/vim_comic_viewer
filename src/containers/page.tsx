@@ -37,13 +37,7 @@ export const Page = ({
   return (
     <Overlay ref={ref} placeholder={!isLoaded}>
       <Spinner />
-      <Image
-        src={src}
-        onLoad={clearSpinner}
-        onError={onError}
-        loading="lazy"
-        {...props}
-      />
+      <Image src={src} onLoad={clearSpinner} onError={onError} {...props} />
     </Overlay>
   );
 };

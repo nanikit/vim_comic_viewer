@@ -1,9 +1,11 @@
 /** @jsx createElement */
+import type { JSZip } from 'jszip';
 import { ScrollableLayout } from '../components/scrollable_layout.ts';
-import { useDeferred } from '../hooks/use_deferred.ts';
+import { defer, Deferred, useDeferred } from '../hooks/use_deferred.ts';
 import { useFullscreenElement } from '../hooks/use_fullscreen_element.ts';
 import { usePageNavigator } from '../hooks/use_page_navigator.ts';
-import { ImageSource, ViewerController } from '../types.ts';
+import { download } from '../services/downloader.ts';
+import { ComicSource, ImageSource, ViewerController } from '../types.ts';
 import {
   createElement,
   forwardRef,
@@ -14,11 +16,13 @@ import {
   useRef,
   useState,
 } from '../vendors/react.ts';
+import { unmountComponentAtNode } from '../vendors/react_dom.ts';
 import { Page } from './page.tsx';
 
-const Viewer_ = (props: unknown, handleRef: Ref<ViewerController>) => {
+const Viewer_ = (props: unknown, refHandle: Ref<ViewerController>) => {
   const [images, setImages] = useState<ImageSource[]>();
   const [status, setStatus] = useState<'loading' | 'complete' | 'error'>('loading');
+  const [hasDownload, setDownload] = useState<Deferred<JSZip>>();
   const ref = useRef<HTMLDivElement>();
   const navigator = usePageNavigator(ref.current);
   const fullscreenElement = useFullscreenElement();
@@ -32,7 +36,7 @@ const Viewer_ = (props: unknown, handleRef: Ref<ViewerController>) => {
     }
   }, []);
 
-  const setSource = useCallback(async (source) => {
+  const setSource = useCallback(async (source: ComicSource) => {
     try {
       setStatus('loading');
       setImages(await source());
@@ -44,16 +48,39 @@ const Viewer_ = (props: unknown, handleRef: Ref<ViewerController>) => {
     }
   }, []);
 
+  const queueDownload = useCallback(() => {
+    if (hasDownload) {
+      hasDownload.reject(new Error('You requested another download'));
+    }
+    if (!images) {
+      return;
+    }
+
+    const deferred = defer<JSZip>();
+    setDownload(deferred);
+    download(images, deferred);
+    return deferred.promise;
+  }, [images, hasDownload]);
+
   useImperativeHandle(
-    handleRef,
+    refHandle,
     () => ({
       goNext: navigator.goNext,
       goPrevious: navigator.goPrevious,
       toggleFullscreen,
       refPromise,
       setSource,
+      download: queueDownload,
+      unmount: () => ref.current && unmountComponentAtNode(ref.current),
     }),
-    [navigator.goNext, navigator.goPrevious, toggleFullscreen, refPromise, setSource],
+    [
+      navigator.goNext,
+      navigator.goPrevious,
+      toggleFullscreen,
+      refPromise,
+      setSource,
+      queueDownload,
+    ],
   );
 
   useEffect(() => {

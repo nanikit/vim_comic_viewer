@@ -2,9 +2,10 @@
 /// <reference lib="dom" />
 import { Viewer } from './containers/viewer.tsx';
 import { ViewerController, ViewerSource } from './types.ts';
-import { isTyping, waitBody } from './utils.ts';
+import { getSafeFileName, isTyping, saveAs, waitBody } from './utils.ts';
 import { createElement, createRef } from './vendors/react.ts';
 import { render } from './vendors/react_dom.ts';
+export { download } from './services/downloader.ts';
 export * as types from './types.ts';
 export * as utils from './utils.ts';
 
@@ -32,34 +33,49 @@ const maybeNotHotkey = (event: KeyboardEvent) =>
 export const initializeWithDefault = async (source: ViewerSource) => {
   const root = source.getRoot?.() || (await getDefaultRoot());
   const controller = initialize(root);
+
+  const defaultKeyHandler = async (event: KeyboardEvent): Promise<void> => {
+    if (maybeNotHotkey(event)) {
+      return;
+    }
+    switch (event.key) {
+      case 'j':
+        controller.goNext();
+        break;
+      case 'k':
+        controller.goPrevious();
+        break;
+      case ';': {
+        const zip = await controller.download();
+        if (!zip) {
+          return;
+        }
+        const blob = await zip.generateAsync({ type: 'blob' });
+        saveAs(blob, `${getSafeFileName(document.title)}.zip`);
+        break;
+      }
+      default:
+        break;
+    }
+  };
+
+  const defaultGlobalKeyHandler = (event: KeyboardEvent): void => {
+    if (maybeNotHotkey(event)) {
+      return;
+    }
+    if (event.key === 'i') {
+      controller.toggleFullscreen();
+    }
+  };
+
   controller.setSource(source.comicSource);
   const div = await controller.refPromise;
   if (source.withController) {
     source.withController(controller, div);
   } else {
-    div.addEventListener('keydown', (event) => {
-      if (maybeNotHotkey(event)) {
-        return;
-      }
-      switch (event.key) {
-        case 'j':
-          controller.goNext();
-          break;
-        case 'k':
-          controller.goPrevious();
-          break;
-        default:
-          break;
-      }
-    });
-    window.addEventListener('keydown', (event) => {
-      if (maybeNotHotkey(event)) {
-        return;
-      }
-      if (event.key === 'i') {
-        controller.toggleFullscreen();
-      }
-    });
+    div.addEventListener('keydown', defaultKeyHandler);
+    window.addEventListener('keydown', defaultGlobalKeyHandler);
   }
+
   return controller;
 };

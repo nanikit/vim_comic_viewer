@@ -1,12 +1,12 @@
 import { useState } from '../vendors/react.ts';
 
-type Deferred<T> = {
+export type Deferred<T> = {
   promise: Promise<T>;
   resolve: (value: T) => void;
   reject: (error: unknown) => void;
 };
 
-const defer = <T>(): Deferred<T> => {
+export const defer = <T>(): Deferred<T> => {
   let resolve, reject;
   const promise = new Promise<T>((res, rej) => {
     resolve = res;
