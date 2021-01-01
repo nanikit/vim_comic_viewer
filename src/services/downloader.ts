@@ -1,15 +1,42 @@
 /** @jsx createElement */
-import { JSZip } from 'jszip';
-import { Deferred } from '../hooks/use_deferred.ts';
+import type { JSZip } from 'jszip';
 import { ImageSource } from '../types.ts';
+import { defer } from '../utils.ts';
 
-export const download = async (images: ImageSource[], deferred: Deferred<JSZip>) => {
-  const { default: jszip } = await import('jszip');
+export type DownloadOptions = {
+  onError?: (error: unknown) => void;
+  onProgress?: (event: { rejected: number; settled: number }) => void;
+};
+
+export const download = async (
+  images: ImageSource[],
+  options?: DownloadOptions,
+): Promise<{
+  zip: Promise<JSZip>;
+  cancel: () => void;
+}> => {
+  const { onError, onProgress } = options || {};
+  const { JSZip } = await import('jszip');
   const aborter = new AbortController();
+  let resolvedCount = 0;
+  let rejectedCount = 0;
 
-  const downloadFile = async (url: string) => {
+  const downloadFile = async (url: string): Promise<Blob> => {
     const response = await fetch(url, { signal: aborter.signal });
-    const blob = await response.blob();
+    return response.blob();
+  };
+
+  const reportProgress = () => {
+    const settled = resolvedCount + rejectedCount;
+    onProgress?.({ settled, rejected: rejectedCount });
+  };
+
+  const downloadAndProgress = async (
+    url: string,
+  ): Promise<{ url: string; blob: Blob }> => {
+    const blob = await downloadFile(url);
+    resolvedCount++;
+    reportProgress();
     return { url, blob };
   };
 
@@ -19,51 +46,67 @@ export const download = async (images: ImageSource[], deferred: Deferred<JSZip>)
     if (Array.isArray(source)) {
       for (const url of source) {
         try {
-          return await downloadFile(url);
+          return await downloadAndProgress(url);
         } catch (error) {
-          console.log(error);
+          onError?.(error);
         }
       }
-      return { url: '', blob: new Blob([JSON.stringify(source)]) };
+      rejectedCount++;
+      reportProgress();
+      return { url: '', blob: new Blob([source.join('\n')]) };
     }
 
     try {
-      return await downloadFile(source);
+      return await downloadAndProgress(source);
     } catch (error) {
-      console.log(error);
+      onError?.(error);
+      rejectedCount++;
+      reportProgress();
       return { url: '', blob: new Blob([source]) };
     }
   };
 
-  const cancellation = async () => {
-    try {
-      await deferred.promise;
-    } catch {
-      aborter.abort();
+  const deferred = defer<JSZip>();
+  const tasks = images!.map(downloadImage);
+
+  const archive = async () => {
+    const cancellation = async () => {
+      try {
+        await deferred.promise;
+      } catch {
+        aborter.abort();
+      }
+      return Symbol();
+    };
+
+    const checkout = Promise.all(tasks);
+    const result = await Promise.race([cancellation(), checkout]);
+    if (typeof result === 'symbol') {
+      console.log('download cancelled');
+      return;
     }
-    return Symbol();
+
+    const pad = (index: number) => `${index}`.padStart(cipher, '0');
+    const cipher = Math.ceil(Math.log10(tasks.length)) + 1;
+    const getName = (url: string, index: number) => {
+      const path = new URL(url).pathname;
+      const extension = path.substr(path.lastIndexOf('.'));
+      const name = `${pad(index)}${extension || '.jpg'}`;
+      return name;
+    };
+
+    const zip = JSZip();
+    for (let i = 0; i < result.length; i++) {
+      const file = result[i];
+      zip.file(getName(file.url, i), file.blob);
+    }
+    deferred.resolve(zip);
   };
 
-  const tasks = Promise.all(images!.map(downloadImage));
-  const result = await Promise.race([cancellation(), tasks]);
-  if (typeof result === 'symbol') {
-    console.log('download cancelled');
-    return;
-  }
+  archive();
 
-  const pad = (index: number) => `${index}`.padStart(cipher, '0');
-  const cipher = Math.ceil(Math.log10(images.length)) + 1;
-  const getName = (url: string, index: number) => {
-    const path = new URL(url).pathname;
-    const extension = path.substr(path.lastIndexOf('.'));
-    const name = `${pad(index)}${extension}`;
-    return name;
+  return {
+    zip: deferred.promise,
+    cancel: () => deferred.reject(new Error('cancelled')),
   };
-
-  const zip = jszip();
-  for (let i = 0; i < result.length; i++) {
-    const file = result[i];
-    zip.file(getName(file.url, i), file.blob);
-  }
-  deferred.resolve(zip);
 };

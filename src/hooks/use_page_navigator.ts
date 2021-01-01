@@ -51,6 +51,12 @@ const getCurrentPage = (container: HTMLElement, entries: IntersectionObserverEnt
   })[0].target;
 };
 
+export type PageNavigator = {
+  goPrevious: () => void;
+  goNext: () => void;
+  observer?: IntersectionObserver;
+};
+
 export const usePageNavigator = (container?: HTMLElement) => {
   const [anchor, setAnchor] = useState({
     currentPage: undefined as HTMLElement | undefined,
