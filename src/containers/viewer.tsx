@@ -1,11 +1,12 @@
 /** @jsx createElement */
 import type { JSZip } from 'jszip';
 import { ScrollableLayout } from '../components/scrollable_layout.ts';
-import { defer, Deferred, useDeferred } from '../hooks/use_deferred.ts';
+import { useDeferred } from '../hooks/use_deferred.ts';
 import { useFullscreenElement } from '../hooks/use_fullscreen_element.ts';
 import { usePageNavigator } from '../hooks/use_page_navigator.ts';
 import { download } from '../services/downloader.ts';
 import { ComicSource, ImageSource, ViewerController, ViewerOptions } from '../types.ts';
+import { defer, Deferred } from '../utils.ts';
 import {
   createElement,
   forwardRef,

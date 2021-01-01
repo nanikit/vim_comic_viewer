@@ -35,3 +35,18 @@ export const saveAs = async (blob: Blob, name: string) => {
 export const getSafeFileName = (str: string) => {
   return str.replace(/[<>:"/\\|?*\x00-\x1f]+/gi, '').trim() || 'download';
 };
+
+export type Deferred<T> = {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+  reject: (error: unknown) => void;
+};
+
+export const defer = <T>(): Deferred<T> => {
+  let resolve, reject;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject } as any;
+};
