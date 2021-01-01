@@ -77,29 +77,37 @@ const getAsyncReducer = (dispatch: Dispatch<PureViewerAction>) => {
   let images = [] as ImageSource[];
   let cancelDownload: (() => void) | undefined;
 
+  const setInnerState = (state: Partial<ViewerState>) => {
+    dispatch({ type: ActionType.SetState, state });
+  };
+
   const setState = async (state: Partial<ViewerState>) => {
     const source = state.options?.source;
     if (source) {
       try {
-        dispatch({ type: ActionType.SetState, state: { status: 'loading', images: [] } });
+        setInnerState({ status: 'loading', images: [] });
         images = await source();
-        dispatch({
-          type: ActionType.SetState,
-          state: { status: 'complete', images },
-        });
+        setInnerState({ status: 'complete', images });
       } catch (error) {
-        dispatch({ type: ActionType.SetState, state: { status: 'error' } });
+        setInnerState({ status: 'error' });
         console.log(error);
         throw error;
       }
     } else {
-      dispatch({ type: ActionType.SetState, state: state });
+      setInnerState(state);
     }
+  };
+
+  const clearCancel = () => {
+    setInnerState({ cancelDownload: undefined });
+    cancelDownload = undefined;
   };
 
   const startDownload = async (options?: DownloadOptions) => {
     if (cancelDownload) {
       cancelDownload();
+      clearCancel();
+      return;
     }
     if (!images.length) {
       return;
@@ -108,11 +116,12 @@ const getAsyncReducer = (dispatch: Dispatch<PureViewerAction>) => {
     const { zip, cancel } = await download(images, options);
     cancelDownload = () => {
       cancel();
-      cancelDownload = undefined;
+      clearCancel();
     };
+    setInnerState({ cancelDownload });
 
     const result = await zip;
-    cancelDownload = undefined;
+    clearCancel();
     return result;
   };
 

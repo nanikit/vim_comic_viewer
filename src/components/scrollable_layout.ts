@@ -1,6 +1,7 @@
 import { styled } from '../vendors/stitches.ts';
 
 export const ScrollableLayout = styled('div', {
+  position: 'relative',
   backgroundColor: '#eee',
   height: '100%',
   display: 'flex',

@@ -9,7 +9,7 @@ export type ViewerController = {
   goNext: () => void;
   goPrevious: () => void;
   toggleFullscreen: () => void;
-  download: () => Promise<JSZip> | undefined;
+  download: () => Promise<JSZip | undefined>;
   refPromise: Promise<HTMLDivElement>;
   unmount: () => void;
 };

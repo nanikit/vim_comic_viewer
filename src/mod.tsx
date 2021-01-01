@@ -47,7 +47,7 @@ export const initializeWithDefault = async (source: ViewerSource) => {
         break;
       case ';': {
         const zip = await controller.download();
-        if (!zip) {
+        if (!zip /* isCancelled */) {
           return;
         }
         const blob = await zip.generateAsync({ type: 'blob' });
