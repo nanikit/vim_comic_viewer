@@ -1,5 +1,5 @@
 import { ComicSource, ImageSource } from '../types.ts';
-import { gmFetch } from './gm_fetch.ts';
+import { fetchBlob } from './gm_fetch.ts';
 
 export const imageSourceToIterable = (source: ImageSource): AsyncIterable<string> => {
   if (typeof source === 'string') {
@@ -14,19 +14,6 @@ export const imageSourceToIterable = (source: ImageSource): AsyncIterable<string
     })();
   } else {
     return source();
-  }
-};
-
-const fetchBlob = async (url: string) => {
-  try {
-    const response = await fetch(url);
-    return await response.blob();
-  } catch (error) {
-    if (gmFetch) {
-      return await gmFetch(url).blob();
-    } else {
-      throw error;
-    }
   }
 };
 

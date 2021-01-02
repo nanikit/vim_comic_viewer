@@ -2,6 +2,7 @@
 import JSZip from 'jszip';
 import { ImageSource } from '../types.ts';
 import { defer } from '../utils.ts';
+import { fetchBlob } from './gm_fetch.ts';
 import { imageSourceToIterable } from './user_utils.ts';
 
 export type DownloadProgress = {
@@ -32,11 +33,6 @@ export const download = async (
   let zipPercent = 0;
   let cancelled = false;
 
-  const downloadFile = async (url: string): Promise<Blob> => {
-    const response = await fetch(url, { signal: aborter.signal });
-    return response.blob();
-  };
-
   const reportProgress = () => {
     const total = images.length;
     const settled = resolvedCount + rejectedCount;
@@ -49,7 +45,7 @@ export const download = async (
     const errors = [];
     for await (const url of imageSourceToIterable(source)) {
       try {
-        const blob = await downloadFile(url);
+        const blob = await fetchBlob(url);
         resolvedCount++;
         reportProgress();
         return { url, blob };

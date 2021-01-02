@@ -1,13 +1,26 @@
 import { GM_xmlhttpRequest } from './tampermonkey.ts';
 
+export const fetchBlob = async (url: string, init?: RequestInit) => {
+  try {
+    const response = await fetch(url, init);
+    return await response.blob();
+  } catch (error) {
+    const isOriginDifferent = new URL(url).origin !== location.origin;
+    if (isOriginDifferent && gmFetch) {
+      return await gmFetch(url, init).blob();
+    } else {
+      throw error;
+    }
+  }
+};
+
 const GMxhr = GM_xmlhttpRequest;
 export const gmFetch = GMxhr
   ? (
       resource: string,
-      init?: Pick<RequestInit, 'body' | 'headers'>,
-    ): { abort: () => void } & Pick<Body, 'blob' | 'json' | 'text'> => {
+      init?: Pick<RequestInit, 'body' | 'headers' | 'signal'>,
+    ): Pick<Body, 'blob' | 'json' | 'text'> => {
       const method = init?.body ? 'POST' : 'GET';
-      let abort = undefined as any;
       const xhr = (type: 'blob' | 'json' | 'text') => {
         return new Promise<any>((resolve, reject) => {
           const request = GMxhr({
@@ -26,11 +39,14 @@ export const gmFetch = GMxhr
             onerror: reject,
             onabort: reject,
           }) as any;
-          abort = request.abort.bind(request);
+          if (init?.signal) {
+            init.signal.addEventListener('abort', () => {
+              request.abort();
+            });
+          }
         });
       };
       return {
-        abort,
         blob: () => xhr('blob'),
         json: () => xhr('json'),
         text: () => xhr('text'),
