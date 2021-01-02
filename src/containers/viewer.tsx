@@ -77,6 +77,19 @@ const Viewer_ = (props: unknown, refHandle: Ref<ViewerController>) => {
     }
   }, [ref.current, fullscreenElement]);
 
+  useEffect(() => {
+    if (!text) {
+      return;
+    }
+    // https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload#Example
+    const guard = (event: Event) => {
+      event.preventDefault();
+      event.returnValue = '' as any;
+    };
+    window.addEventListener('beforeunload', guard);
+    return () => window.removeEventListener('beforeunload', guard);
+  }, [!text]);
+
   return (
     <ScrollableLayout
       ref={ref}
@@ -97,7 +110,7 @@ const Viewer_ = (props: unknown, refHandle: Ref<ViewerController>) => {
       ) : (
         <p>{status === 'error' ? '에러가 발생했습니다' : '로딩 중...'}</p>
       )}
-      {text && (
+      {!!text && (
         <CircularProgress
           radius={50}
           strokeWidth={10}
