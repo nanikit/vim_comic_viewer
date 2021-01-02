@@ -1,5 +1,5 @@
 /** @jsx createElement */
-import type { JSZip } from 'jszip';
+import JSZip from 'jszip';
 import { ImageSource } from '../types.ts';
 import { defer } from '../utils.ts';
 import { imageSourceToIterable } from './user_utils.ts';
@@ -26,7 +26,6 @@ export const download = async (
   cancel: () => void;
 }> => {
   const { onError, onProgress } = options || {};
-  const { default: JSZip } = await import('jszip');
   const aborter = new AbortController();
   let resolvedCount = 0;
   let rejectedCount = 0;
