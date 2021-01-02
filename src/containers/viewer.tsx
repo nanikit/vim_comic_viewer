@@ -28,17 +28,22 @@ const Viewer_ = (props: unknown, refHandle: Ref<ViewerController>) => {
     dispatch,
   ] = useViewerReducer(ref);
 
-  const [{ value, text }, setProgress] = useState({ value: 0, text: '' });
+  const [{ value, text, error }, setProgress] = useState({
+    value: 0,
+    text: '',
+    error: false,
+  });
   const cache = { text: '' };
   const reportProgress = useCallback(
     (event: DownloadProgress) => {
       const value = (event.settled / images.length) * 0.9 + event.zipPercent * 0.001;
       const text = `${(value * 100).toFixed(1)}%`;
-      if (value === 1 || event.cancelled) {
-        setProgress({ value: 0, text: '' });
+      const error = !!event.rejected;
+      if ((value === 1 && !error) || event.cancelled) {
+        setProgress({ value: 0, text: '', error: false });
       } else if (text !== cache.text) {
         cache.text = text;
-        setProgress({ value, text });
+        setProgress({ value, text, error });
       }
     },
     [images.length],
@@ -78,7 +83,7 @@ const Viewer_ = (props: unknown, refHandle: Ref<ViewerController>) => {
   }, [ref.current, fullscreenElement]);
 
   useEffect(() => {
-    if (!text) {
+    if (error || !text) {
       return;
     }
     // https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload#Example
@@ -88,7 +93,7 @@ const Viewer_ = (props: unknown, refHandle: Ref<ViewerController>) => {
     };
     window.addEventListener('beforeunload', guard);
     return () => window.removeEventListener('beforeunload', guard);
-  }, [!text]);
+  }, [error || !text]);
 
   return (
     <ScrollableLayout
@@ -116,6 +121,7 @@ const Viewer_ = (props: unknown, refHandle: Ref<ViewerController>) => {
           strokeWidth={10}
           value={value}
           text={text}
+          error={error}
           onClick={cancelDownload}
         />
       )}

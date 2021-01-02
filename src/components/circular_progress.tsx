@@ -6,6 +6,17 @@ const Svg = styled('svg', {
   position: 'fixed',
   top: '8px',
   right: '8px',
+  cursor: 'pointer',
+  ':hover': {
+    filter: 'hue-rotate(-145deg)',
+  },
+  variants: {
+    error: {
+      true: {
+        filter: 'hue-rotate(140deg)',
+      },
+    },
+  },
 });
 
 const Circle = styled('circle', {
@@ -39,6 +50,7 @@ export const CircularProgress = (
     strokeWidth: number;
     value: number;
     text?: string;
+    error?: boolean;
   } & Record<string, unknown>,
 ) => {
   const { radius, strokeWidth, value, text, ...otherProps } = props;
