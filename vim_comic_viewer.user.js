@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      3.0.0
+// @version      3.0.1
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -795,6 +795,7 @@ const Image1 = styled("img", {
   position: "relative",
   height: "100%",
   objectFit: "contain",
+  maxWidth: "100%",
 });
 
 var PageActionType;

@@ -74,4 +74,5 @@ export const Image = styled('img', {
   position: 'relative',
   height: '100%',
   objectFit: 'contain',
+  maxWidth: '100%',
 });
