@@ -17,19 +17,28 @@ export const imageSourceToIterable = (source: ImageSource): AsyncIterable<string
   }
 };
 
+const fetchBlob = async (url: string) => {
+  try {
+    const response = await fetch(url);
+    return await response.blob();
+  } catch (error) {
+    if (gmFetch) {
+      return await gmFetch(url).blob();
+    } else {
+      throw error;
+    }
+  }
+};
+
 export const transformToBlobUrl = (source: ComicSource): ComicSource => async () => {
   const imageSources = await source();
-  // @ts-ignore: 2274
-  const corsFetch = (('GM_xmlhttpRequest' in window
-    ? gmFetch
-    : fetch) as unknown) as typeof fetch;
+
   return imageSources.map(
     (imageSource) =>
       async function* () {
         for await (const url of imageSourceToIterable(imageSource)) {
           try {
-            const response = await corsFetch(url);
-            const blob = await response.blob();
+            const blob = await fetchBlob(url);
             yield URL.createObjectURL(blob);
           } catch (error) {
             console.log(error);

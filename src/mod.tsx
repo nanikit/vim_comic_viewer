@@ -6,6 +6,7 @@ import { getSafeFileName, isTyping, saveAs, waitBody } from './utils.ts';
 import { createElement, createRef } from './vendors/react.ts';
 import { render } from './vendors/react_dom.ts';
 export { download } from './services/downloader.ts';
+export { transformToBlobUrl } from './services/user_utils.ts';
 export * as types from './types.ts';
 export * as utils from './utils.ts';
 

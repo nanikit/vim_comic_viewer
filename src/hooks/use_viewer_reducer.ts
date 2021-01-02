@@ -87,6 +87,11 @@ const getAsyncReducer = (dispatch: Dispatch<PureViewerAction>) => {
       try {
         setInnerState({ status: 'loading', images: [] });
         images = await source();
+        if (!Array.isArray(images)) {
+          console.log(`Invalid comic source type: ${typeof images}`);
+          setInnerState({ status: 'error' });
+          return;
+        }
         setInnerState({ status: 'complete', images });
       } catch (error) {
         setInnerState({ status: 'error' });
