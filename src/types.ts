@@ -21,4 +21,4 @@ export type ViewerSource = {
   withController?: (controller: ViewerController, ref: HTMLDivElement) => void;
 };
 export type ComicSource = () => ImageSource[] | Promise<ImageSource[]>;
-export type ImageSource = string | string[];
+export type ImageSource = string | string[] | (() => AsyncIterable<string>);

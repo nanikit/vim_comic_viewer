@@ -2,6 +2,7 @@
 import type { JSZip } from 'jszip';
 import { ImageSource } from '../types.ts';
 import { defer } from '../utils.ts';
+import { imageSourceToIterable } from './user_utils.ts';
 
 export type DownloadProgress = {
   total: number;
@@ -43,39 +44,24 @@ export const download = async (
     onProgress?.({ total, settled, rejected: rejectedCount, cancelled, zipPercent });
   };
 
-  const downloadAndProgress = async (
-    url: string,
-  ): Promise<{ url: string; blob: Blob }> => {
-    const blob = await downloadFile(url);
-    resolvedCount++;
-    reportProgress();
-    return { url, blob };
-  };
-
   const downloadImage = async (
     source: ImageSource,
   ): Promise<{ url: string; blob: Blob }> => {
-    if (Array.isArray(source)) {
-      for (const url of source) {
-        try {
-          return await downloadAndProgress(url);
-        } catch (error) {
-          onError?.(error);
-        }
+    const errors = [];
+    for await (const url of imageSourceToIterable(source)) {
+      try {
+        const blob = await downloadFile(url);
+        resolvedCount++;
+        reportProgress();
+        return { url, blob };
+      } catch (error) {
+        errors.push(error);
+        onError?.(error);
       }
-      rejectedCount++;
-      reportProgress();
-      return { url: '', blob: new Blob([source.join('\n')]) };
     }
-
-    try {
-      return await downloadAndProgress(source);
-    } catch (error) {
-      onError?.(error);
-      rejectedCount++;
-      reportProgress();
-      return { url: '', blob: new Blob([source]) };
-    }
+    rejectedCount++;
+    reportProgress();
+    return { url: '', blob: new Blob([errors.map((x) => x.toString()).join('\n\n')]) };
   };
 
   const deferred = defer<JSZip | undefined>();
@@ -98,17 +84,13 @@ export const download = async (
       return;
     }
 
-    const cipher = Math.ceil(Math.log10(tasks.length)) + 1;
+    const cipher = Math.floor(Math.log10(tasks.length)) + 1;
     const getExtension = (url: string) => {
       if (!url) {
         return '.txt';
       }
-      try {
-        const path = new URL(url).pathname;
-        return path.substr(path.lastIndexOf('.')) || '.jpg';
-      } catch {
-        return '.jpg';
-      }
+      const extension = url.match(/\.[^/?#]{3,4}?(?=[?#]|$)/);
+      return extension || '.jpg';
     };
     const getName = (url: string, index: number) => {
       const pad = `${index}`.padStart(cipher, '0');

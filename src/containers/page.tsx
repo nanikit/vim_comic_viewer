@@ -1,14 +1,8 @@
 /** @jsx createElement */
 import { Image, Overlay, Spinner } from '../components/spinner.tsx';
 import { usePageReducer } from '../hooks/use_page_reducer.ts';
-import { ImageSource } from '../types.ts';
-import {
-  createElement,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from '../vendors/react.ts';
+import type { ImageSource } from '../types.ts';
+import { createElement, useEffect, useRef } from '../vendors/react.ts';
 
 export const Page = ({
   source,
@@ -18,13 +12,8 @@ export const Page = ({
   source: ImageSource;
   observer?: IntersectionObserver;
 }) => {
-  const [isLoaded, setLoaded] = useState(false);
-  const { src, onError } = usePageReducer(source);
+  const [{ status, src, ...imageProps }] = usePageReducer(source);
   const ref = useRef<HTMLImageElement>();
-
-  const clearSpinner = useCallback(() => {
-    setLoaded(true);
-  }, []);
 
   useEffect(() => {
     const target = ref.current;
@@ -35,9 +24,9 @@ export const Page = ({
   }, [observer, ref.current]);
 
   return (
-    <Overlay ref={ref} placeholder={!isLoaded}>
-      <Spinner />
-      <Image src={src} onLoad={clearSpinner} onError={onError} {...props} />
+    <Overlay ref={ref} placeholder={status === 'loading'}>
+      {status === 'loading' && <Spinner />}
+      <Image {...(src ? { src } : {})} {...imageProps} {...props} />
     </Overlay>
   );
 };
