@@ -49,6 +49,28 @@ const Viewer_ = (props: unknown, refHandle: Ref<ViewerController>) => {
     [images.length],
   );
 
+  const navigate = useCallback((event: MouseEvent) => {
+    const height = ref.current?.clientHeight;
+    if (!height || event.button !== 0) {
+      return;
+    }
+
+    event.preventDefault();
+    window.getSelection()?.empty?.();
+    const isTop = event.clientY < height / 2;
+    if (isTop) {
+      dispatch({ type: ActionType.GoPrevious });
+    } else {
+      dispatch({ type: ActionType.GoNext });
+    }
+  }, []);
+
+  const blockSelection = useCallback((event: MouseEvent) => {
+    if (event.detail >= 2) {
+      event.preventDefault();
+    }
+  }, []);
+
   useImperativeHandle(
     refHandle,
     () => ({
@@ -101,6 +123,8 @@ const Viewer_ = (props: unknown, refHandle: Ref<ViewerController>) => {
       tabIndex={-1}
       className="vim_comic_viewer"
       fullscreen={fullscreenElement === ref.current}
+      onClick={navigate as any}
+      onMouseDown={blockSelection as any}
       {...props}
     >
       {status === 'complete' ? (

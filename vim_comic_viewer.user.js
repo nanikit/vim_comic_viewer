@@ -116,6 +116,8 @@ const CircularProgress = (props) => {
 };
 
 const ScrollableLayout = styled("div", {
+  // chrome user-agent style override
+  outline: 0,
   position: "relative",
   backgroundColor: "#eee",
   height: "100%",
@@ -975,6 +977,29 @@ const Viewer_ = (props, refHandle) => {
   }, [
     images.length,
   ]);
+  const navigate = react$1.useCallback((event) => {
+    const height = ref.current?.clientHeight;
+    if (!height || event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    window.getSelection()?.empty?.();
+    const isTop = event.clientY < height / 2;
+    if (isTop) {
+      dispatch({
+        type: ActionType.GoPrevious,
+      });
+    } else {
+      dispatch({
+        type: ActionType.GoNext,
+      });
+    }
+  }, []);
+  const blockSelection = react$1.useCallback((event) => {
+    if (event.detail >= 2) {
+      event.preventDefault();
+    }
+  }, []);
   react$1.useImperativeHandle(refHandle, () => ({
     refPromise,
     goNext: () =>
@@ -1051,6 +1076,8 @@ const Viewer_ = (props, refHandle) => {
       tabIndex: -1,
       className: "vim_comic_viewer",
       fullscreen: fullscreenElement === ref.current,
+      onClick: navigate,
+      onMouseDown: blockSelection,
     }, props),
     status === "complete"
       ? images?.map?.((image, index) =>
