@@ -7,9 +7,10 @@ import { imageSourceToIterable } from './user_utils.ts';
 
 export type DownloadProgress = {
   total: number;
+  started: number;
   rejected: number;
   settled: number;
-  cancelled?: boolean;
+  isCancelled?: boolean;
   /** jszip generateAsync onUpdate */
   zipPercent: number;
 };
@@ -28,21 +29,31 @@ export const download = async (
 }> => {
   const { onError, onProgress } = options || {};
   const aborter = new AbortController();
+  let startedCount = 0;
   let resolvedCount = 0;
   let rejectedCount = 0;
   let zipPercent = 0;
-  let cancelled = false;
+  let isCancelled = false;
 
   const reportProgress = () => {
     const total = images.length;
     const settled = resolvedCount + rejectedCount;
-    onProgress?.({ total, settled, rejected: rejectedCount, cancelled, zipPercent });
+    onProgress?.({
+      total,
+      started: startedCount,
+      settled,
+      rejected: rejectedCount,
+      isCancelled,
+      zipPercent,
+    });
   };
 
   const downloadImage = async (
     source: ImageSource,
   ): Promise<{ url: string; blob: Blob }> => {
     const errors = [];
+    startedCount++;
+    reportProgress();
     for await (const url of imageSourceToIterable(source)) {
       try {
         const blob = await fetchBlob(url);
@@ -74,7 +85,7 @@ export const download = async (
     const checkout = Promise.all(tasks);
     const result = await Promise.race([cancellation(), checkout]);
     if (typeof result === 'symbol') {
-      cancelled = true;
+      isCancelled = true;
       reportProgress();
       return;
     }

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      3.1.0
+// @version      3.2.0
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -27,9 +27,9 @@ var JSZip__default = /*#__PURE__*/ _interopDefaultLegacy(JSZip);
 const { styled, css } = react.createStyled({});
 
 const Svg = styled("svg", {
-  position: "fixed",
-  top: "8px",
-  right: "8px",
+  position: "absolute",
+  bottom: "8px",
+  left: "8px",
   cursor: "pointer",
   ":hover": {
     filter: "hue-rotate(-145deg)",
@@ -115,6 +115,78 @@ const CircularProgress = (props) => {
   );
 };
 
+const Svg$1 = styled("svg", {
+  position: "absolute",
+  width: "40px",
+  bottom: "8px",
+  opacity: "50%",
+  filter: "drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)",
+  color: "black",
+  ":hover": {
+    opacity: "100%",
+    transform: "scale(1.1)",
+  },
+});
+const downloadCss = {
+  left: "8px",
+};
+const fullscreenCss = {
+  right: "24px",
+};
+const DownloadIcon = (props) =>
+  react$1.createElement(
+    Svg$1,
+    Object.assign({
+      version: "1.1",
+      xmlns: "http://www.w3.org/2000/svg",
+      x: "0px",
+      y: "0px",
+      viewBox: "0 -34.51 122.88 122.87",
+      css: downloadCss,
+    }, props),
+    react$1.createElement(
+      "g",
+      null,
+      react$1.createElement("path", {
+        d: "M58.29,42.08V3.12C58.29,1.4,59.7,0,61.44,0s3.15,1.4,3.15,3.12v38.96L79.1,29.4c1.3-1.14,3.28-1.02,4.43,0.27 s1.03,3.25-0.27,4.39L63.52,51.3c-1.21,1.06-3.01,1.03-4.18-0.02L39.62,34.06c-1.3-1.14-1.42-3.1-0.27-4.39 c1.15-1.28,3.13-1.4,4.43-0.27L58.29,42.08L58.29,42.08L58.29,42.08z M0.09,47.43c-0.43-1.77,0.66-3.55,2.43-3.98 c1.77-0.43,3.55,0.66,3.98,2.43c1.03,4.26,1.76,7.93,2.43,11.3c3.17,15.99,4.87,24.57,27.15,24.57h52.55 c20.82,0,22.51-9.07,25.32-24.09c0.67-3.6,1.4-7.5,2.44-11.78c0.43-1.77,2.21-2.86,3.98-2.43c1.77,0.43,2.85,2.21,2.43,3.98 c-0.98,4.02-1.7,7.88-2.36,11.45c-3.44,18.38-5.51,29.48-31.8,29.48H36.07C8.37,88.36,6.3,77.92,2.44,58.45 C1.71,54.77,0.98,51.08,0.09,47.43L0.09,47.43z",
+      }),
+    ),
+  );
+const FullscreenIcon = (props) =>
+  react$1.createElement(
+    Svg$1,
+    Object.assign({
+      version: "1.1",
+      xmlns: "http://www.w3.org/2000/svg",
+      x: "0px",
+      y: "0px",
+      viewBox: "0 0 122.88 122.87",
+      css: fullscreenCss,
+    }, props),
+    react$1.createElement(
+      "g",
+      null,
+      react$1.createElement("path", {
+        d: "M122.88,77.63v41.12c0,2.28-1.85,4.12-4.12,4.12H77.33v-9.62h35.95c0-12.34,0-23.27,0-35.62H122.88L122.88,77.63z M77.39,9.53V0h41.37c2.28,0,4.12,1.85,4.12,4.12v41.18h-9.63V9.53H77.39L77.39,9.53z M9.63,45.24H0V4.12C0,1.85,1.85,0,4.12,0h41 v9.64H9.63V45.24L9.63,45.24z M45.07,113.27v9.6H4.12c-2.28,0-4.12-1.85-4.12-4.13V77.57h9.63v35.71H45.07L45.07,113.27z",
+      }),
+    ),
+  );
+
+const Container = styled("div", {
+  position: "relative",
+  height: "100%",
+});
+const UiLayer = styled("div", {
+  position: "absolute",
+  top: "0",
+  left: "0",
+  right: "0",
+  bottom: "0",
+  pointerEvents: "none",
+  "> *": {
+    pointerEvents: "auto",
+  },
+});
 const ScrollableLayout = styled("div", {
   // chrome user-agent style override
   outline: 0,
@@ -174,6 +246,15 @@ const saveAs = async (blob, name) => {
 const getSafeFileName = (str) => {
   return str.replace(/[<>:"/\\|?*\x00-\x1f]+/gi, "").trim() || "download";
 };
+const saveZipAs = async (zip) => {
+  if (!zip) {
+    return;
+  }
+  const blob = await zip.generateAsync({
+    type: "blob",
+  });
+  return saveAs(blob, `${getSafeFileName(document.title)}.zip`);
+};
 const defer = () => {
   let resolve, reject;
   const promise = new Promise((res, rej) => {
@@ -196,6 +277,7 @@ var utils = /*#__PURE__*/ Object.freeze({
   isTyping: isTyping,
   saveAs: saveAs,
   getSafeFileName: getSafeFileName,
+  saveZipAs: saveZipAs,
   defer: defer,
 });
 
@@ -303,23 +385,27 @@ const transformToBlobUrl = (source) =>
 const download = async (images, options) => {
   const { onError, onProgress } = options || {};
   const aborter = new AbortController();
+  let startedCount = 0;
   let resolvedCount = 0;
   let rejectedCount = 0;
   let zipPercent = 0;
-  let cancelled = false;
+  let isCancelled = false;
   const reportProgress = () => {
     const total = images.length;
     const settled = resolvedCount + rejectedCount;
     onProgress?.({
       total,
+      started: startedCount,
       settled,
       rejected: rejectedCount,
-      cancelled,
+      isCancelled,
       zipPercent,
     });
   };
   const downloadImage = async (source) => {
     const errors = [];
+    startedCount++;
+    reportProgress();
     for await (const url of imageSourceToIterable(source)) {
       try {
         const blob = await fetchBlob(url);
@@ -359,7 +445,7 @@ const download = async (images, options) => {
       checkout,
     ]);
     if (typeof result === "symbol") {
-      cancelled = true;
+      isCancelled = true;
       reportProgress();
       return;
     }
@@ -956,11 +1042,13 @@ const Viewer_ = (props, refHandle) => {
     text: "",
   };
   const reportProgress = react$1.useCallback((event) => {
-    const value = event.settled / images.length * 0.9 +
-      event.zipPercent * 0.001;
+    const { total, started, settled, rejected, isCancelled, zipPercent } =
+      event;
+    const value = started / total * 0.1 + settled / total * 0.7 +
+      zipPercent * 0.002;
     const text = `${(value * 100).toFixed(1)}%`;
-    const error = !!event.rejected;
-    if (value === 1 && !error || event.cancelled) {
+    const error = !!rejected;
+    if (value === 1 && !error || isCancelled) {
       setProgress({
         value: 0,
         text: "",
@@ -974,16 +1062,13 @@ const Viewer_ = (props, refHandle) => {
         error,
       });
     }
-  }, [
-    images.length,
-  ]);
+  }, []);
   const navigate = react$1.useCallback((event) => {
     const height = ref.current?.clientHeight;
     if (!height || event.button !== 0) {
       return;
     }
     event.preventDefault();
-    window.getSelection()?.empty?.();
     const isTop = event.clientY < height / 2;
     if (isTop) {
       dispatch({
@@ -999,9 +1084,44 @@ const Viewer_ = (props, refHandle) => {
     if (event.detail >= 2) {
       event.preventDefault();
     }
+    if (event.buttons === 3) {
+      dispatch({
+        type: ActionType.ToggleFullscreen,
+      });
+      event.preventDefault();
+    }
   }, []);
+  const toggleFullscreen = react$1.useCallback(() => {
+    dispatch({
+      type: ActionType.ToggleFullscreen,
+    });
+  }, []);
+  const download = react$1.useCallback(() => {
+    return dispatch({
+      type: ActionType.Download,
+      options: {
+        onError: console.log,
+        onProgress: reportProgress,
+      },
+    });
+  }, [
+    reportProgress,
+  ]);
+  const downloadAndSave = react$1.useCallback(async () => {
+    const zip = await download();
+    await saveZipAs(zip);
+  }, [
+    download,
+  ]);
   react$1.useImperativeHandle(refHandle, () => ({
     refPromise,
+    setOptions: (options) =>
+      dispatch({
+        type: ActionType.SetState,
+        state: {
+          options,
+        },
+      }),
     goNext: () =>
       dispatch({
         type: ActionType.GoNext,
@@ -1010,25 +1130,9 @@ const Viewer_ = (props, refHandle) => {
       dispatch({
         type: ActionType.GoPrevious,
       }),
-    toggleFullscreen: () =>
-      dispatch({
-        type: ActionType.ToggleFullscreen,
-      }),
-    setOptions: (options) =>
-      dispatch({
-        type: ActionType.SetState,
-        state: {
-          options,
-        },
-      }),
-    download: () =>
-      dispatch({
-        type: ActionType.Download,
-        options: {
-          onError: console.log,
-          onProgress: reportProgress,
-        },
-      }),
+    toggleFullscreen,
+    downloadAndSave,
+    download,
     unmount: () =>
       dispatch({
         type: ActionType.Unmount,
@@ -1036,7 +1140,7 @@ const Viewer_ = (props, refHandle) => {
   }), [
     dispatch,
     refPromise,
-    reportProgress,
+    downloadAndSave,
   ]);
   react$1.useEffect(() => {
     if (!ref.current) {
@@ -1070,39 +1174,55 @@ const Viewer_ = (props, refHandle) => {
     error || !text,
   ]);
   return react$1.createElement(
-    ScrollableLayout,
-    Object.assign({
+    Container,
+    {
       ref: ref,
       tabIndex: -1,
       className: "vim_comic_viewer",
-      fullscreen: fullscreenElement === ref.current,
-      onClick: navigate,
-      onMouseDown: blockSelection,
-    }, props),
-    status === "complete"
-      ? images?.map?.((image, index) =>
-        react$1.createElement(
-          Page,
-          Object.assign({
-            key: index,
-            source: image,
-            observer: navigator.observer,
-          }, options?.imageProps),
-        )
-      ) || false
-      : react$1.createElement(
-        "p",
-        null,
-        status === "error" ? "에러가 발생했습니다" : "로딩 중...",
-      ),
-    !!text && react$1.createElement(CircularProgress, {
-      radius: 50,
-      strokeWidth: 10,
-      value: value,
-      text: text,
-      error: error,
-      onClick: cancelDownload,
-    }),
+    },
+    react$1.createElement(
+      ScrollableLayout,
+      Object.assign({
+        fullscreen: fullscreenElement === ref.current,
+        onClick: navigate,
+        onMouseDown: blockSelection,
+      }, props),
+      status === "complete"
+        ? images?.map?.((image, index) =>
+          react$1.createElement(
+            Page,
+            Object.assign({
+              key: index,
+              source: image,
+              observer: navigator.observer,
+            }, options?.imageProps),
+          )
+        ) || false
+        : react$1.createElement(
+          "p",
+          null,
+          status === "error" ? "에러가 발생했습니다" : "로딩 중...",
+        ),
+    ),
+    react$1.createElement(
+      UiLayer,
+      null,
+      react$1.createElement(FullscreenIcon, {
+        onClick: toggleFullscreen,
+      }),
+      text
+        ? react$1.createElement(CircularProgress, {
+          radius: 50,
+          strokeWidth: 10,
+          value: value,
+          text: text,
+          error: error,
+          onClick: cancelDownload,
+        })
+        : react$1.createElement(DownloadIcon, {
+          onClick: downloadAndSave,
+        }),
+    ),
   );
 };
 const Viewer = react$1.forwardRef(Viewer_);
@@ -1151,14 +1271,7 @@ const initializeWithDefault = async (source) => {
         controller.goPrevious();
         break;
       case ";": {
-        const zip = await controller.download();
-        if (!zip) {
-          return;
-        }
-        const blob = await zip.generateAsync({
-          type: "blob",
-        });
-        saveAs(blob, `${getSafeFileName(document.title)}.zip`);
+        await controller.downloadAndSave();
         break;
       }
     }

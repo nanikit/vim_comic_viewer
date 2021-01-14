@@ -3,9 +3,9 @@ import { createElement } from '../vendors/react.ts';
 import { styled } from '../vendors/stitches.ts';
 
 const Svg = styled('svg', {
-  position: 'fixed',
-  top: '8px',
-  right: '8px',
+  position: 'absolute',
+  bottom: '8px',
+  left: '8px',
   cursor: 'pointer',
   ':hover': {
     filter: 'hue-rotate(-145deg)',

@@ -2,7 +2,7 @@
 /// <reference lib="dom" />
 import { Viewer } from './containers/viewer.tsx';
 import { ViewerController, ViewerSource } from './types.ts';
-import { getSafeFileName, isTyping, saveAs, waitBody } from './utils.ts';
+import { isTyping, waitBody } from './utils.ts';
 import { createElement, createRef } from './vendors/react.ts';
 import { render } from './vendors/react_dom.ts';
 export { download } from './services/downloader.ts';
@@ -47,12 +47,7 @@ export const initializeWithDefault = async (source: ViewerSource) => {
         controller.goPrevious();
         break;
       case ';': {
-        const zip = await controller.download();
-        if (!zip /* isCancelled */) {
-          return;
-        }
-        const blob = await zip.generateAsync({ type: 'blob' });
-        saveAs(blob, `${getSafeFileName(document.title)}.zip`);
+        await (controller as any).downloadAndSave();
         break;
       }
       default:
