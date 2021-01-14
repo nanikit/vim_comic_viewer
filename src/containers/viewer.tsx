@@ -23,12 +23,13 @@ import { Page } from './page.tsx';
 
 const Viewer_ = (props: unknown, refHandle: Ref<ViewerController>) => {
   const ref = useRef<HTMLDivElement>();
+  const scrollRef = useRef<HTMLDivElement>();
   const fullscreenElement = useFullscreenElement();
   const { promise: refPromise, resolve: resolveRef } = useDeferred<HTMLDivElement>();
   const [
     { options, images, navigator, status, cancelDownload },
     dispatch,
-  ] = useViewerReducer(ref);
+  ] = useViewerReducer(ref, scrollRef);
 
   const [{ value, text, error }, setProgress] = useState({
     value: 0,
@@ -137,6 +138,7 @@ const Viewer_ = (props: unknown, refHandle: Ref<ViewerController>) => {
   return (
     <Container ref={ref} tabIndex={-1} className="vim_comic_viewer">
       <ScrollableLayout
+        ref={scrollRef}
         fullscreen={fullscreenElement === ref.current}
         onClick={navigate as any}
         onMouseDown={blockSelection as any}

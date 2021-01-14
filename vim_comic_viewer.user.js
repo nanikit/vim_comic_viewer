@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      3.2.0
+// @version      3.2.1
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -788,8 +788,8 @@ const getAsyncReducer = (dispatch) => {
     }
   };
 };
-const useViewerReducer = (ref) => {
-  const navigator = usePageNavigator(ref.current);
+const useViewerReducer = (ref, scrollRef) => {
+  const navigator = usePageNavigator(scrollRef.current);
   const [state, dispatch] = react$1.useReducer(reducer, {
     ref,
     navigator,
@@ -1029,10 +1029,11 @@ const Page = ({ source, observer, ...props }) => {
 
 const Viewer_ = (props, refHandle) => {
   const ref = react$1.useRef();
+  const scrollRef = react$1.useRef();
   const fullscreenElement = useFullscreenElement();
   const { promise: refPromise, resolve: resolveRef } = useDeferred();
   const [{ options, images, navigator, status, cancelDownload }, dispatch] =
-    useViewerReducer(ref);
+    useViewerReducer(ref, scrollRef);
   const [{ value, text, error }, setProgress] = react$1.useState({
     value: 0,
     text: "",
@@ -1183,6 +1184,7 @@ const Viewer_ = (props, refHandle) => {
     react$1.createElement(
       ScrollableLayout,
       Object.assign({
+        ref: scrollRef,
         fullscreen: fullscreenElement === ref.current,
         onClick: navigate,
         onMouseDown: blockSelection,

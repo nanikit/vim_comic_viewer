@@ -142,8 +142,11 @@ const getAsyncReducer = (dispatch: Dispatch<PureViewerAction>) => {
   };
 };
 
-export const useViewerReducer = (ref: MutableRefObject<HTMLDivElement | undefined>) => {
-  const navigator = usePageNavigator(ref.current);
+export const useViewerReducer = (
+  ref: MutableRefObject<HTMLDivElement | undefined>,
+  scrollRef: MutableRefObject<HTMLDivElement | undefined>,
+) => {
+  const navigator = usePageNavigator(scrollRef.current);
 
   const [state, dispatch] = useReducer(reducer, {
     ref,
