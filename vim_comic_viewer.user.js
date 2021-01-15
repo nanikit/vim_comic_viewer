@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      3.2.1
+// @version      3.2.2
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -175,17 +175,6 @@ const FullscreenIcon = (props) =>
 const Container = styled("div", {
   position: "relative",
   height: "100%",
-});
-const UiLayer = styled("div", {
-  position: "absolute",
-  top: "0",
-  left: "0",
-  right: "0",
-  bottom: "0",
-  pointerEvents: "none",
-  "> *": {
-    pointerEvents: "auto",
-  },
 });
 const ScrollableLayout = styled("div", {
   // chrome user-agent style override
@@ -1206,25 +1195,21 @@ const Viewer_ = (props, refHandle) => {
           status === "error" ? "에러가 발생했습니다" : "로딩 중...",
         ),
     ),
-    react$1.createElement(
-      UiLayer,
-      null,
-      react$1.createElement(FullscreenIcon, {
-        onClick: toggleFullscreen,
+    react$1.createElement(FullscreenIcon, {
+      onClick: toggleFullscreen,
+    }),
+    text
+      ? react$1.createElement(CircularProgress, {
+        radius: 50,
+        strokeWidth: 10,
+        value: value,
+        text: text,
+        error: error,
+        onClick: cancelDownload,
+      })
+      : react$1.createElement(DownloadIcon, {
+        onClick: downloadAndSave,
       }),
-      text
-        ? react$1.createElement(CircularProgress, {
-          radius: 50,
-          strokeWidth: 10,
-          value: value,
-          text: text,
-          error: error,
-          onClick: cancelDownload,
-        })
-        : react$1.createElement(DownloadIcon, {
-          onClick: downloadAndSave,
-        }),
-    ),
   );
 };
 const Viewer = react$1.forwardRef(Viewer_);

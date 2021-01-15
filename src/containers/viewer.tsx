@@ -2,7 +2,7 @@
 import type { JSZip } from 'jszip';
 import { CircularProgress } from '../components/circular_progress.tsx';
 import { DownloadIcon, FullscreenIcon } from '../components/icons.tsx';
-import { Container, ScrollableLayout, UiLayer } from '../components/scrollable_layout.ts';
+import { Container, ScrollableLayout } from '../components/scrollable_layout.ts';
 import { useDeferred } from '../hooks/use_deferred.ts';
 import { useFullscreenElement } from '../hooks/use_fullscreen_element.ts';
 import { ActionType, useViewerReducer } from '../hooks/use_viewer_reducer.ts';
@@ -157,21 +157,19 @@ const Viewer_ = (props: unknown, refHandle: Ref<ViewerController>) => {
           <p>{status === 'error' ? '에러가 발생했습니다' : '로딩 중...'}</p>
         )}
       </ScrollableLayout>
-      <UiLayer>
-        <FullscreenIcon onClick={toggleFullscreen} />
-        {text ? (
-          <CircularProgress
-            radius={50}
-            strokeWidth={10}
-            value={value}
-            text={text}
-            error={error}
-            onClick={cancelDownload}
-          />
-        ) : (
-          <DownloadIcon onClick={downloadAndSave} />
-        )}
-      </UiLayer>
+      <FullscreenIcon onClick={toggleFullscreen} />
+      {text ? (
+        <CircularProgress
+          radius={50}
+          strokeWidth={10}
+          value={value}
+          text={text}
+          error={error}
+          onClick={cancelDownload}
+        />
+      ) : (
+        <DownloadIcon onClick={downloadAndSave} />
+      )}
     </Container>
   );
 };
