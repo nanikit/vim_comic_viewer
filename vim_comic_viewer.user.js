@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      3.2.2
+// @version      3.2.3
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -379,7 +379,14 @@ const download = async (images, options) => {
   let rejectedCount = 0;
   let zipPercent = 0;
   let isCancelled = false;
+  let hasCancelled = false;
   const reportProgress = () => {
+    if (hasCancelled) {
+      return;
+    }
+    if (isCancelled) {
+      hasCancelled = true;
+    }
     const total = images.length;
     const settled = resolvedCount + rejectedCount;
     onProgress?.({

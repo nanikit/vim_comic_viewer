@@ -34,8 +34,16 @@ export const download = async (
   let rejectedCount = 0;
   let zipPercent = 0;
   let isCancelled = false;
+  let hasCancelled = false;
 
   const reportProgress = () => {
+    if (hasCancelled) {
+      return;
+    }
+    if (isCancelled) {
+      hasCancelled = true;
+    }
+
     const total = images.length;
     const settled = resolvedCount + rejectedCount;
     onProgress?.({
