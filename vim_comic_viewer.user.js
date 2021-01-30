@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      3.2.3
+// @version      3.3.0
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -181,6 +181,7 @@ const ScrollableLayout = styled("div", {
   outline: 0,
   position: "relative",
   backgroundColor: "#eee",
+  width: "100%",
   height: "100%",
   display: "flex",
   justifyContent: "center",

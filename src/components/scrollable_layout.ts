@@ -7,6 +7,7 @@ export const ScrollableLayout = styled('div', {
   outline: 0,
   position: 'relative',
   backgroundColor: '#eee',
+  width: '100%',
   height: '100%',
   display: 'flex',
   justifyContent: 'center',
