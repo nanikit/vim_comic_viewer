@@ -1,4 +1,4 @@
-import { useEffect, useState } from "../vendors/react.ts";
+import { useEffect, useState } from "react";
 
 export const useFullscreenElement = (): Element | undefined => {
   const [element, setElement] = useState(

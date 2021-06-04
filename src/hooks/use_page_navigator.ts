@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "../vendors/react.ts";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIntersection } from "./use_intersection.ts";
 
 const useResize = <T, E extends Element>(

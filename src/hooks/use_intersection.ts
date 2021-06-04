@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "../vendors/react.ts";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const useIntersectionObserver = (
   callback: IntersectionObserverCallback,

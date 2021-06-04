@@ -21,7 +21,7 @@ import {
   useImperativeHandle,
   useRef,
   useState,
-} from "../vendors/react.ts";
+} from "react";
 import { Page } from "./page.tsx";
 
 const Viewer_ = (props: unknown, refHandle: Ref<ViewerController>) => {

@@ -6,8 +6,8 @@ import {
   useEffect,
   useReducer,
   useState,
-} from "../vendors/react.ts";
-import { unmountComponentAtNode } from "../vendors/react_dom.ts";
+} from "react";
+import { unmountComponentAtNode } from "react-dom";
 import { PageNavigator, usePageNavigator } from "./use_page_navigator.ts";
 
 type ViewerStatus = "loading" | "complete" | "error";

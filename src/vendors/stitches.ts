@@ -1,3 +1,3 @@
-import { createStyled } from "./stitches_react.ts";
+import { createCss } from "@stitches/react";
 
-export const { styled, css } = createStyled({});
+export const { styled, css, keyframes } = createCss({});

@@ -2,7 +2,7 @@
 import { Image, Overlay, Spinner } from "../components/spinner.tsx";
 import { usePageReducer } from "../hooks/use_page_reducer.ts";
 import type { ImageSource } from "../types.ts";
-import { createElement, useEffect, useRef } from "../vendors/react.ts";
+import { createElement, useEffect, useRef } from "react";
 
 export const Page = ({
   source,

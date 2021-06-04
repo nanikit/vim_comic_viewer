@@ -1,12 +1,6 @@
 import { imageSourceToIterable } from "../services/user_utils.ts";
 import { ImageSource } from "../types.ts";
-import {
-  Dispatch,
-  useCallback,
-  useEffect,
-  useReducer,
-  useState,
-} from "../vendors/react.ts";
+import { Dispatch, useCallback, useEffect, useReducer, useState } from "react";
 
 type PageState = { src?: string; status: "loading" | "complete" | "error" };
 

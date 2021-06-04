@@ -24,7 +24,7 @@ function _interopDefaultLegacy(e) {
 
 var JSZip__default = /*#__PURE__*/ _interopDefaultLegacy(JSZip);
 
-const { styled, css } = react.createStyled({});
+const { styled, css, keyframes } = react.createCss({});
 
 const Svg = styled("svg", {
   position: "absolute",
@@ -811,7 +811,7 @@ const useViewerReducer = (ref, scrollRef) => {
   ];
 };
 
-const stretch = css.keyframes({
+const stretch = keyframes({
   "0%": {
     top: "8px",
     height: "64px",
@@ -1220,7 +1220,7 @@ const Viewer_ = (props, refHandle) => {
       }),
   ));
 };
-const Viewer = react$1.forwardRef(Viewer_);
+const Viewer = /*#__PURE__*/ react$1.forwardRef(Viewer_);
 
 var types = /*#__PURE__*/ Object.freeze({
   __proto__: null,
@@ -1236,7 +1236,7 @@ const getDefaultRoot = async () => {
   return div;
 };
 const initialize = (root) => {
-  const ref = react$1.createRef();
+  const ref = /*#__PURE__*/ react$1.createRef();
   reactDom.render(
     /*#__PURE__*/ react$1.createElement(Viewer, {
       ref: ref,

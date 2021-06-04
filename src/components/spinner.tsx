@@ -1,8 +1,8 @@
 /** @jsx createElement */
-import { createElement } from "../vendors/react.ts";
-import { css, styled } from "../vendors/stitches.ts";
+import { createElement } from "react";
+import { keyframes, styled } from "../vendors/stitches.ts";
 
-const stretch = css.keyframes({
+const stretch = keyframes({
   "0%": {
     top: "8px",
     height: "64px",

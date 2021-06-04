@@ -3,8 +3,8 @@
 import { Viewer } from "./containers/viewer.tsx";
 import { ViewerController, ViewerSource } from "./types.ts";
 import { isTyping, waitBody } from "./utils.ts";
-import { createElement, createRef } from "./vendors/react.ts";
-import { render } from "./vendors/react_dom.ts";
+import { createElement, createRef } from "react";
+import { render } from "react-dom";
 export { download } from "./services/downloader.ts";
 export { transformToBlobUrl } from "./services/user_utils.ts";
 export * as types from "./types.ts";
