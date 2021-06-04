@@ -10,4 +10,4 @@ Basic shortcut is
 
 - k: previous page
 
-- o: close tab
+- ;: download images
