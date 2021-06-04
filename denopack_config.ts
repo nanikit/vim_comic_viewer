@@ -2,13 +2,14 @@ import {
   OutputOptions,
   RollupOptions,
   useCache,
-} from 'https://deno.land/x/denopack@0.10.0/mod.ts';
+} from "https://raw.githubusercontent.com/kt3k/denopack/chore/deno-1.7.1/mod.ts";
+import { iter } from "https://deno.land/std@0.97.0/io/util.ts";
 
 const denoFmt = async (code: string) => {
   const process = Deno.run({
-    cmd: ['deno', 'fmt', '-'],
-    stdin: 'piped',
-    stdout: 'piped',
+    cmd: ["deno", "fmt", "-"],
+    stdin: "piped",
+    stdout: "piped",
   });
   const input = new TextEncoder().encode(code);
   await process.stdin.write(input);
@@ -17,7 +18,7 @@ const denoFmt = async (code: string) => {
   const formatteds = [];
   const accumulates = [0];
   let sum = 0;
-  for await (const chunk of Deno.iter(process.stdout)) {
+  for await (const chunk of iter(process.stdout)) {
     formatteds.push(new Uint8Array(chunk));
     sum += chunk.length;
     accumulates.push(sum);
@@ -32,7 +33,7 @@ const denoFmt = async (code: string) => {
 };
 
 const postprocessPlugin = {
-  name: 'postprocess-plugin',
+  name: "postprocess-plugin",
 
   banner: `// ==UserScript==
 // @name         vim comic viewer
@@ -52,7 +53,7 @@ const postprocessPlugin = {
     _isWrite: boolean,
   ) => {
     for (const [_name, output] of Object.entries(bundle)) {
-      if (output.type !== 'chunk') {
+      if (output.type !== "chunk") {
         continue;
       }
 
@@ -61,25 +62,25 @@ const postprocessPlugin = {
   },
 };
 
-const json = Deno.readTextFileSync('./tsconfig.json');
+const json = Deno.readTextFileSync("./tsconfig.json");
 const compilerOptions = JSON.parse(json).compilerOptions;
-const importMap = JSON.parse(Deno.readTextFileSync('./import_map.json'));
+const importMap = JSON.parse(Deno.readTextFileSync("./import_map.json"));
 
 const config: RollupOptions = {
   external: [...Object.keys(importMap.imports)],
   plugins: [...useCache({ compilerOptions }), postprocessPlugin],
   output: {
-    format: 'cjs',
+    format: "cjs",
   },
 };
 
 type AssetInfo = {
-  type: 'asset';
+  type: "asset";
 };
 
 type ChunkInfo = {
   code: string;
-  type: 'chunk';
+  type: "chunk";
 };
 
 export default config;
