@@ -1,15 +1,17 @@
-import type { JSZip } from 'jszip';
+import type { JSZip } from "jszip";
 
 export const timeout = (millisecond: number) =>
   new Promise((resolve) => setTimeout(resolve, millisecond));
 
 export const waitDomContent = (document: HTMLDocument) =>
-  document.readyState === 'loading'
-    ? new Promise((r) => document.addEventListener('readystatechange', r, { once: true }))
+  document.readyState === "loading"
+    ? new Promise((r) =>
+      document.addEventListener("readystatechange", r, { once: true })
+    )
     : true;
 
 export const insertCss = (css: string) => {
-  const style = document.createElement('style');
+  const style = document.createElement("style");
   style.innerHTML = css;
   document.head.append(style);
 };
@@ -25,9 +27,9 @@ export const isTyping = (event: KeyboardEvent) =>
   (event.target as HTMLElement)?.isContentEditable;
 
 export const saveAs = async (blob: Blob, name: string) => {
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.download = name;
-  a.rel = 'noopener';
+  a.rel = "noopener";
   a.href = URL.createObjectURL(blob);
   a.click();
   await timeout(40000);
@@ -35,14 +37,14 @@ export const saveAs = async (blob: Blob, name: string) => {
 };
 
 export const getSafeFileName = (str: string) => {
-  return str.replace(/[<>:"/\\|?*\x00-\x1f]+/gi, '').trim() || 'download';
+  return str.replace(/[<>:"/\\|?*\x00-\x1f]+/gi, "").trim() || "download";
 };
 
 export const saveZipAs = async (zip?: JSZip) => {
   if (!zip /* isCancelled */) {
     return;
   }
-  const blob = await zip.generateAsync({ type: 'blob' });
+  const blob = await zip.generateAsync({ type: "blob" });
   return saveAs(blob, `${getSafeFileName(document.title)}.zip`);
 };
 

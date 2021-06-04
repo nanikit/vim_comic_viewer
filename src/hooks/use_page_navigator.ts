@@ -1,5 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from '../vendors/react.ts';
-import { useIntersection } from './use_intersection.ts';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "../vendors/react.ts";
+import { useIntersection } from "./use_intersection.ts";
 
 const useResize = <T, E extends Element>(
   target: E | undefined,
@@ -24,7 +30,10 @@ const useResize = <T, E extends Element>(
   return value;
 };
 
-const getCurrentPage = (container: HTMLElement, entries: IntersectionObserverEntry[]) => {
+const getCurrentPage = (
+  container: HTMLElement,
+  entries: IntersectionObserverEntry[],
+) => {
   if (!entries.length) {
     return container.firstElementChild || undefined;
   }
@@ -97,7 +106,7 @@ export const usePageNavigator = (container?: HTMLElement) => {
       const next = cursor.nextElementSibling;
       const nextBound = next.getBoundingClientRect();
       if (originBound.bottom < nextBound.top) {
-        next.scrollIntoView({ block: 'center' });
+        next.scrollIntoView({ block: "center" });
         break;
       }
       cursor = next;
@@ -116,7 +125,7 @@ export const usePageNavigator = (container?: HTMLElement) => {
       const previous = cursor.previousElementSibling;
       const previousBound = previous.getBoundingClientRect();
       if (previousBound.bottom < originBound.top) {
-        previous.scrollIntoView({ block: 'center' });
+        previous.scrollIntoView({ block: "center" });
         break;
       }
       cursor = previous;
@@ -128,7 +137,8 @@ export const usePageNavigator = (container?: HTMLElement) => {
       return;
     }
 
-    const restoredY = currentPage.offsetTop + currentPage.clientHeight * (ratio - 0.5);
+    const restoredY = currentPage.offsetTop +
+      currentPage.clientHeight * (ratio - 0.5);
     container.scroll({ top: restoredY });
     ignoreIntersection.current = true;
   }, [container, currentPage, ratio]);

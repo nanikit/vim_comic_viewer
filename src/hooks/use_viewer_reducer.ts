@@ -1,16 +1,16 @@
-import { download, DownloadOptions } from '../services/downloader.ts';
-import { ImageSource, ViewerOptions } from '../types.ts';
+import { download, DownloadOptions } from "../services/downloader.ts";
+import { ImageSource, ViewerOptions } from "../types.ts";
 import {
   Dispatch,
   MutableRefObject,
   useEffect,
   useReducer,
   useState,
-} from '../vendors/react.ts';
-import { unmountComponentAtNode } from '../vendors/react_dom.ts';
-import { PageNavigator, usePageNavigator } from './use_page_navigator.ts';
+} from "../vendors/react.ts";
+import { unmountComponentAtNode } from "../vendors/react_dom.ts";
+import { PageNavigator, usePageNavigator } from "./use_page_navigator.ts";
 
-type ViewerStatus = 'loading' | 'complete' | 'error';
+type ViewerStatus = "loading" | "complete" | "error";
 
 export type ViewerState = {
   ref: MutableRefObject<HTMLDivElement | undefined>;
@@ -32,12 +32,12 @@ export const enum ActionType {
 
 type PureViewerAction =
   | {
-      type:
-        | ActionType.GoNext
-        | ActionType.GoPrevious
-        | ActionType.ToggleFullscreen
-        | ActionType.Unmount;
-    }
+    type:
+      | ActionType.GoNext
+      | ActionType.GoPrevious
+      | ActionType.ToggleFullscreen
+      | ActionType.Unmount;
+  }
   | { type: ActionType.SetState; state: Partial<ViewerState> };
 
 export type ViewerAction =
@@ -85,16 +85,16 @@ const getAsyncReducer = (dispatch: Dispatch<PureViewerAction>) => {
     const source = state.options?.source;
     if (source) {
       try {
-        setInnerState({ status: 'loading', images: [] });
+        setInnerState({ status: "loading", images: [] });
         images = await source();
         if (!Array.isArray(images)) {
           console.log(`Invalid comic source type: ${typeof images}`);
-          setInnerState({ status: 'error' });
+          setInnerState({ status: "error" });
           return;
         }
-        setInnerState({ status: 'complete', images });
+        setInnerState({ status: "complete", images });
       } catch (error) {
-        setInnerState({ status: 'error' });
+        setInnerState({ status: "error" });
         console.log(error);
         throw error;
       }
@@ -153,7 +153,7 @@ export const useViewerReducer = (
     navigator,
     options: {},
     images: [],
-    status: 'loading',
+    status: "loading",
   });
   const [asyncDispatch] = useState(() => getAsyncReducer(dispatch));
 

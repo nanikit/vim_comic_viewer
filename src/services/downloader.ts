@@ -1,9 +1,9 @@
 /** @jsx createElement */
-import JSZip from 'jszip';
-import { ImageSource } from '../types.ts';
-import { defer } from '../utils.ts';
-import { fetchBlob } from './gm_fetch.ts';
-import { imageSourceToIterable } from './user_utils.ts';
+import JSZip from "jszip";
+import { ImageSource } from "../types.ts";
+import { defer } from "../utils.ts";
+import { fetchBlob } from "./gm_fetch.ts";
+import { imageSourceToIterable } from "./user_utils.ts";
 
 export type DownloadProgress = {
   total: number;
@@ -75,7 +75,10 @@ export const download = async (
     }
     rejectedCount++;
     reportProgress();
-    return { url: '', blob: new Blob([errors.map((x) => x.toString()).join('\n\n')]) };
+    return {
+      url: "",
+      blob: new Blob([errors.map((x) => x.toString()).join("\n\n")]),
+    };
   };
 
   const deferred = defer<JSZip | undefined>();
@@ -92,7 +95,7 @@ export const download = async (
 
     const checkout = Promise.all(tasks);
     const result = await Promise.race([cancellation(), checkout]);
-    if (typeof result === 'symbol') {
+    if (typeof result === "symbol") {
       isCancelled = true;
       reportProgress();
       return;
@@ -101,13 +104,13 @@ export const download = async (
     const cipher = Math.floor(Math.log10(tasks.length)) + 1;
     const getExtension = (url: string) => {
       if (!url) {
-        return '.txt';
+        return ".txt";
       }
       const extension = url.match(/\.[^/?#]{3,4}?(?=[?#]|$)/);
-      return extension || '.jpg';
+      return extension || ".jpg";
     };
     const getName = (url: string, index: number) => {
-      const pad = `${index}`.padStart(cipher, '0');
+      const pad = `${index}`.padStart(cipher, "0");
       const name = `${pad}${getExtension(url)}`;
       return name;
     };
@@ -121,15 +124,18 @@ export const download = async (
     const proxy = new Proxy(zip, {
       get: (target, property, receiver) => {
         const ret = Reflect.get(target, property, receiver);
-        if (property !== 'generateAsync') {
+        if (property !== "generateAsync") {
           return ret;
         }
         return ((options, onUpdate) =>
-          (ret.bind(target) as typeof zip.generateAsync)(options, (metadata) => {
-            zipPercent = metadata.percent;
-            reportProgress();
-            onUpdate?.(metadata);
-          })) as typeof zip.generateAsync;
+          (ret.bind(target) as typeof zip.generateAsync)(
+            options,
+            (metadata) => {
+              zipPercent = metadata.percent;
+              reportProgress();
+              onUpdate?.(metadata);
+            },
+          )) as typeof zip.generateAsync;
       },
     }) as any;
     deferred.resolve(proxy);

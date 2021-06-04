@@ -1,4 +1,4 @@
-import type { JSZip } from 'jszip';
+import type { JSZip } from "jszip";
 
 export type ViewerOptions = {
   source?: ComicSource;

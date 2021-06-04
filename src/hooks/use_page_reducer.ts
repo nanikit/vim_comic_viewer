@@ -1,14 +1,14 @@
-import { imageSourceToIterable } from '../services/user_utils.ts';
-import { ImageSource } from '../types.ts';
+import { imageSourceToIterable } from "../services/user_utils.ts";
+import { ImageSource } from "../types.ts";
 import {
   Dispatch,
   useCallback,
   useEffect,
   useReducer,
   useState,
-} from '../vendors/react.ts';
+} from "../vendors/react.ts";
 
-type PageState = { src?: string; status: 'loading' | 'complete' | 'error' };
+type PageState = { src?: string; status: "loading" | "complete" | "error" };
 
 const enum PageActionType {
   SetState,
@@ -48,13 +48,13 @@ const getAsyncReducer = (dispatch: Dispatch<PageAction>) => {
       }
 
       if (item.done) {
-        setState({ src: undefined, status: 'error' });
+        setState({ src: undefined, status: "error" });
       } else {
-        setState({ src: item.value, status: 'loading' });
+        setState({ src: item.value, status: "loading" });
       }
     } catch (error) {
       console.error(error);
-      setState({ src: undefined, status: 'error' });
+      setState({ src: undefined, status: "error" });
     }
   };
 
@@ -76,7 +76,7 @@ const getAsyncReducer = (dispatch: Dispatch<PageAction>) => {
 };
 
 export const usePageReducer = (source: ImageSource) => {
-  const [state, dispatch] = useReducer(reducer, { status: 'loading' });
+  const [state, dispatch] = useReducer(reducer, { status: "loading" });
   const [asyncDispatch] = useState(() => getAsyncReducer(dispatch));
 
   const onError = useCallback(() => {
@@ -84,7 +84,10 @@ export const usePageReducer = (source: ImageSource) => {
   }, []);
 
   const onLoad = useCallback(() => {
-    asyncDispatch({ type: PageActionType.SetState, state: { status: 'complete' } });
+    asyncDispatch({
+      type: PageActionType.SetState,
+      state: { status: "complete" },
+    });
   }, []);
 
   useEffect(() => {

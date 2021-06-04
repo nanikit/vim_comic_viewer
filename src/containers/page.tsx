@@ -1,8 +1,8 @@
 /** @jsx createElement */
-import { Image, Overlay, Spinner } from '../components/spinner.tsx';
-import { usePageReducer } from '../hooks/use_page_reducer.ts';
-import type { ImageSource } from '../types.ts';
-import { createElement, useEffect, useRef } from '../vendors/react.ts';
+import { Image, Overlay, Spinner } from "../components/spinner.tsx";
+import { usePageReducer } from "../hooks/use_page_reducer.ts";
+import type { ImageSource } from "../types.ts";
+import { createElement, useEffect, useRef } from "../vendors/react.ts";
 
 export const Page = ({
   source,
@@ -24,8 +24,8 @@ export const Page = ({
   }, [observer, ref.current]);
 
   return (
-    <Overlay ref={ref} placeholder={status === 'loading'}>
-      {status === 'loading' && <Spinner />}
+    <Overlay ref={ref} placeholder={status === "loading"}>
+      {status === "loading" && <Spinner />}
       <Image {...(src ? { src } : {})} {...imageProps} {...props} />
     </Overlay>
   );
