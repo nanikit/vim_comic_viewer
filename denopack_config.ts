@@ -62,7 +62,7 @@ const postprocessPlugin = {
   },
 };
 
-const json = Deno.readTextFileSync("./tsconfig.json");
+const json = Deno.readTextFileSync("./deno.tsconfig.json");
 const compilerOptions = JSON.parse(json).compilerOptions;
 const importMap = JSON.parse(Deno.readTextFileSync("./import_map.json"));
 
