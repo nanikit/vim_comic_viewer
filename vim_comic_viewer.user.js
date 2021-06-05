@@ -26,7 +26,7 @@ var JSZip__default = /*#__PURE__*/ _interopDefaultLegacy(JSZip);
 
 const { styled, css, keyframes } = react.createCss({});
 
-const Svg = styled("svg", {
+const Svg$1 = styled("svg", {
   position: "absolute",
   bottom: "8px",
   left: "8px",
@@ -91,7 +91,7 @@ const CircularProgress = (props) => {
   const center = radius + strokeWidth / 2;
   const side = center * 2;
   return (/*#__PURE__*/ react$1.createElement(
-    Svg,
+    Svg$1,
     Object.assign({
       height: side,
       width: side,
@@ -115,7 +115,7 @@ const CircularProgress = (props) => {
   ));
 };
 
-const Svg$1 = styled("svg", {
+const Svg = styled("svg", {
   position: "absolute",
   width: "40px",
   bottom: "8px",
@@ -135,7 +135,7 @@ const fullscreenCss = {
 };
 const DownloadIcon = (props) =>
   /*#__PURE__*/ react$1.createElement(
-    Svg$1,
+    Svg,
     Object.assign({
       version: "1.1",
       xmlns: "http://www.w3.org/2000/svg",
@@ -154,7 +154,7 @@ const DownloadIcon = (props) =>
   );
 const FullscreenIcon = (props) =>
   /*#__PURE__*/ react$1.createElement(
-    Svg$1,
+    Svg,
     Object.assign({
       version: "1.1",
       xmlns: "http://www.w3.org/2000/svg",
@@ -676,7 +676,7 @@ var ActionType;
   ActionType[ActionType["SetState"] = 4] = "SetState";
   ActionType[ActionType["Download"] = 5] = "Download";
 })(ActionType || (ActionType = {}));
-const reducer = (state, action) => {
+const reducer$1 = (state, action) => {
   switch (action.type) {
     case ActionType.SetState:
       return {
@@ -707,7 +707,7 @@ const reducer = (state, action) => {
   }
   return state;
 };
-const getAsyncReducer = (dispatch) => {
+const getAsyncReducer$1 = (dispatch) => {
   let images = [];
   let cancelDownload;
   const setInnerState = (state) => {
@@ -787,14 +787,14 @@ const getAsyncReducer = (dispatch) => {
 };
 const useViewerReducer = (ref, scrollRef) => {
   const navigator = usePageNavigator(scrollRef.current);
-  const [state, dispatch] = react$1.useReducer(reducer, {
+  const [state, dispatch] = react$1.useReducer(reducer$1, {
     ref,
     navigator,
     options: {},
     images: [],
     status: "loading",
   });
-  const [asyncDispatch] = react$1.useState(() => getAsyncReducer(dispatch));
+  const [asyncDispatch] = react$1.useState(() => getAsyncReducer$1(dispatch));
   react$1.useEffect(() => {
     dispatch({
       type: ActionType.SetState,
@@ -889,7 +889,7 @@ var PageActionType;
   PageActionType[PageActionType["SetSource"] = 1] = "SetSource";
   PageActionType[PageActionType["Fallback"] = 2] = "Fallback";
 })(PageActionType || (PageActionType = {}));
-const reducer$1 = (state, action) => {
+const reducer = (state, action) => {
   switch (action.type) {
     case PageActionType.SetState:
       return {
@@ -901,7 +901,7 @@ const reducer$1 = (state, action) => {
       return state;
   }
 };
-const getAsyncReducer$1 = (dispatch) => {
+const getAsyncReducer = (dispatch) => {
   const empty = async function* () {
   }();
   let iterator = empty;
@@ -953,10 +953,10 @@ const getAsyncReducer$1 = (dispatch) => {
   };
 };
 const usePageReducer = (source) => {
-  const [state, dispatch] = react$1.useReducer(reducer$1, {
+  const [state, dispatch] = react$1.useReducer(reducer, {
     status: "loading",
   });
-  const [asyncDispatch] = react$1.useState(() => getAsyncReducer$1(dispatch));
+  const [asyncDispatch] = react$1.useState(() => getAsyncReducer(dispatch));
   const onError = react$1.useCallback(() => {
     asyncDispatch({
       type: PageActionType.Fallback,
