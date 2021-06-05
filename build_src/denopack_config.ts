@@ -62,9 +62,11 @@ const postprocessPlugin = {
   },
 };
 
-const json = Deno.readTextFileSync("./deno.tsconfig.json");
+const json = Deno.readTextFileSync("./build_src/deno.tsconfig.json");
 const compilerOptions = JSON.parse(json).compilerOptions;
-const importMap = JSON.parse(Deno.readTextFileSync("./import_map.json"));
+const importMap = JSON.parse(
+  Deno.readTextFileSync("./build_src/import_map.json"),
+);
 
 const config: RollupOptions = {
   external: [...Object.keys(importMap.imports)],

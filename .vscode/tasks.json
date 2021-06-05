@@ -4,14 +4,14 @@
     {
       "label": "denopack",
       "type": "shell",
-      "command": "deno run --unstable --allow-all https://raw.githubusercontent.com/kt3k/denopack/chore/deno-1.7.1/cli.ts --config denopack_config.ts -o vim_comic_viewer.user.js --input ${workspaceFolder}/src/mod.tsx",
+      "command": "deno run --unstable --allow-all https://raw.githubusercontent.com/kt3k/denopack/chore/deno-1.7.1/cli.ts --config build_src/denopack_config.ts -o vim_comic_viewer.user.js --input ${workspaceFolder}/src/mod.tsx",
       "group": "build",
       "problemMatcher": []
     },
     {
       "label": "denopack watch",
       "type": "shell",
-      "command": "deno run --unstable --allow-all https://raw.githubusercontent.com/kt3k/denopack/chore/deno-1.7.1/cli.ts --config denopack_config.ts -o vim_comic_viewer.user.js --input ${workspaceFolder}/src/mod.tsx --watch src",
+      "command": "deno run --unstable --allow-all https://raw.githubusercontent.com/kt3k/denopack/chore/deno-1.7.1/cli.ts --config build_src/denopack_config.ts -o vim_comic_viewer.user.js --input ${workspaceFolder}/src/mod.tsx --watch src",
       "group": {
         "kind": "build",
         "isDefault": true
