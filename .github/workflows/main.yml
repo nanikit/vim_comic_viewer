@@ -15,24 +15,17 @@ on:
     branches: [main]
 
 jobs:
-  checkout:
+  check:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-  setup:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Setup Deno
-        uses: denoland/setup-deno@4a4e59637fa62bd6c086a216c7e4c5b457ea9e79
+    - name: Setup deno
+      uses: denoland/setup-deno@4a4e59637fa62bd6c086a216c7e4c5b457ea9e79
 
-  test:
-    needs: [checkout, setup]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Verify formatting
-        run: deno fmt --check
+    - name: Verify formatting
+      run: deno fmt --check
 
       # - name: Run linter
       #   run: deno lint
