@@ -2,21 +2,13 @@
 /// <reference lib="dom" />
 import { Viewer } from "./containers/viewer.tsx";
 import { ViewerController, ViewerSource } from "./types.ts";
-import { isTyping, waitBody } from "./utils.ts";
+import { isTyping } from "./utils.ts";
 import { createElement, createRef } from "react";
 import { render } from "react-dom";
 export { download } from "./services/downloader.ts";
 export { transformToBlobUrl } from "./services/user_utils.ts";
 export * as types from "./types.ts";
 export * as utils from "./utils.ts";
-
-const getDefaultRoot = async () => {
-  const div = document.createElement("div");
-  div.style.height = "100vh";
-  await waitBody(document);
-  document.body.append(div);
-  return div;
-};
 
 export const initialize = (root: HTMLElement): ViewerController => {
   const ref = createRef<ViewerController>();
@@ -30,6 +22,16 @@ export const initialize = (root: HTMLElement): ViewerController => {
 
 const maybeNotHotkey = (event: KeyboardEvent) =>
   event.ctrlKey || event.shiftKey || event.altKey || isTyping(event);
+
+const getDefaultRoot = async () => {
+  const div = document.createElement("div");
+  div.setAttribute(
+    "style",
+    "width: 0; height: 0; position: fixed; top: 0; bottom: 0;",
+  );
+  document.body.append(div);
+  return div;
+};
 
 export const initializeWithDefault = async (source: ViewerSource) => {
   const root = source.getRoot?.() || (await getDefaultRoot());

@@ -16,12 +16,6 @@ export const insertCss = (css: string) => {
   document.head.append(style);
 };
 
-export const waitBody = async (document: HTMLDocument) => {
-  while (!document.body) {
-    await timeout(1);
-  }
-};
-
 export const isTyping = (event: KeyboardEvent) =>
   (event.target as HTMLElement)?.tagName?.match?.(/INPUT|TEXTAREA/) ||
   (event.target as HTMLElement)?.isContentEditable;
