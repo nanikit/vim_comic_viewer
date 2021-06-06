@@ -6,7 +6,7 @@ const postprocessPlugin: Plugin = {
   banner: `// ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      3.4.1
+// @version      3.4.2
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -15,8 +15,8 @@ const postprocessPlugin: Plugin = {
 // @resource     jszip            https://cdn.jsdelivr.net/npm/jszip@3.6.0/dist/jszip.min.js
 // @resource     react            https://cdn.jsdelivr.net/npm/react@17.0.2/umd/react.production.min.js
 // @resource     react-dom        https://cdn.jsdelivr.net/npm/react-dom@17.0.2/umd/react-dom.production.min.js
-// @resource     @stitches/core   https://cdn.jsdelivr.net/npm/@stitches/core@0.2.0-canary.2/dist/index.cjs
-// @resource     @stitches/react  https://cdn.jsdelivr.net/npm/@stitches/react@0.2.0-canary.2/dist/index.cjs
+// @resource     @stitches/core   https://cdn.jsdelivr.net/npm/@stitches/core@0.1.9/dist/index.cjs
+// @resource     @stitches/react  https://cdn.jsdelivr.net/npm/@stitches/react@0.1.9/dist/index.cjs
 // ==/UserScript==
 `,
 
