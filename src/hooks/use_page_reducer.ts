@@ -20,7 +20,6 @@ const reducer = (state: PageState, action: PageAction) => {
     case PageActionType.SetState:
       return { ...state, ...action.state };
     default:
-      debugger;
       return state;
   }
 };

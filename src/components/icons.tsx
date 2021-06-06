@@ -18,7 +18,7 @@ const Svg = styled("svg", {
 const downloadCss = { left: "8px" };
 const fullscreenCss = { right: "24px" };
 
-export const DownloadIcon = (props: any) => (
+export const DownloadIcon = (props: unknown) => (
   <Svg
     version="1.1"
     xmlns="http://www.w3.org/2000/svg"
@@ -36,7 +36,7 @@ export const DownloadIcon = (props: any) => (
   </Svg>
 );
 
-export const FullscreenIcon = (props: any) => (
+export const FullscreenIcon = (props: unknown) => (
   <Svg
     version="1.1"
     xmlns="http://www.w3.org/2000/svg"
