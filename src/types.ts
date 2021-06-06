@@ -15,8 +15,8 @@ export type ViewerController = {
 };
 export type ViewerSource = {
   name: string;
-  isApplicable: () => boolean;
   comicSource: ComicSource;
+  isApplicable?: () => boolean;
   getRoot?: () => HTMLElement;
   withController?: (controller: ViewerController, ref: HTMLDivElement) => void;
 };
