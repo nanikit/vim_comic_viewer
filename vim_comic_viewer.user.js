@@ -1,12 +1,17 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      3.3.0
+// @version      3.4.1
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
 // @author       nanikit
 // @license      MIT
+// @resource     jszip            https://cdn.jsdelivr.net/npm/jszip@3.6.0/dist/jszip.min.js
+// @resource     react            https://cdn.jsdelivr.net/npm/react@17.0.2/umd/react.production.min.js
+// @resource     react-dom        https://cdn.jsdelivr.net/npm/react-dom@17.0.2/umd/react-dom.production.min.js
+// @resource     @stitches/core   https://cdn.jsdelivr.net/npm/@stitches/core@0.2.0-canary.2/dist/index.cjs
+// @resource     @stitches/react  https://cdn.jsdelivr.net/npm/@stitches/react@0.2.0-canary.2/dist/index.cjs
 // ==/UserScript==
 
 "use strict";
@@ -216,11 +221,6 @@ const insertCss = (css) => {
   style.innerHTML = css;
   document.head.append(style);
 };
-const waitBody = async (document) => {
-  while (!document.body) {
-    await timeout(1);
-  }
-};
 const isTyping = (event) =>
   event.target?.tagName?.match?.(/INPUT|TEXTAREA/) ||
   event.target?.isContentEditable;
@@ -263,7 +263,6 @@ var utils = /*#__PURE__*/ Object.freeze({
   timeout: timeout,
   waitDomContent: waitDomContent,
   insertCss: insertCss,
-  waitBody: waitBody,
   isTyping: isTyping,
   saveAs: saveAs,
   getSafeFileName: getSafeFileName,
@@ -372,7 +371,7 @@ const transformToBlobUrl = (source) =>
     );
   };
 
-const download = async (images, options) => {
+const download = (images, options) => {
   const { onError, onProgress } = options || {};
   const aborter = new AbortController();
   let startedCount = 0;
@@ -701,9 +700,6 @@ const reducer$1 = (state, action) => {
         reactDom.unmountComponentAtNode(state.ref.current);
       }
       break;
-    default:
-      debugger;
-      break;
   }
   return state;
 };
@@ -897,7 +893,6 @@ const reducer = (state, action) => {
         ...action.state,
       };
     default:
-      debugger;
       return state;
   }
 };
@@ -1228,13 +1223,6 @@ var types = /*#__PURE__*/ Object.freeze({
 
 /** @jsx createElement */
 /// <reference lib="dom" />
-const getDefaultRoot = async () => {
-  const div = document.createElement("div");
-  div.style.height = "100vh";
-  await waitBody(document);
-  document.body.append(div);
-  return div;
-};
 const initialize = (root) => {
   const ref = /*#__PURE__*/ react$1.createRef();
   reactDom.render(
@@ -1251,6 +1239,15 @@ const initialize = (root) => {
 };
 const maybeNotHotkey = (event) =>
   event.ctrlKey || event.shiftKey || event.altKey || isTyping(event);
+const getDefaultRoot = async () => {
+  const div = document.createElement("div");
+  div.setAttribute(
+    "style",
+    "width: 0; height: 0; position: fixed; top: 0; bottom: 0;",
+  );
+  document.body.append(div);
+  return div;
+};
 const initializeWithDefault = async (source) => {
   const root = source.getRoot?.() || await getDefaultRoot();
   const controller = initialize(root);
