@@ -37,7 +37,7 @@ export const denoFmt = async (code: string) => {
   return decoded;
 };
 
-const readJson = async (path: string | URL): Promise<any> => {
+const readJson = async (path: string | URL) => {
   const json = await Deno.readTextFile(path);
   return JSON.parse(json);
 };

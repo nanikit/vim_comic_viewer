@@ -20,13 +20,13 @@ export type DownloadOptions = {
   onProgress?: (event: DownloadProgress) => void;
 };
 
-export const download = async (
+export const download = (
   images: ImageSource[],
   options?: DownloadOptions,
-): Promise<{
+): {
   zip: Promise<JSZip | undefined>;
   cancel: () => void;
-}> => {
+} => {
   const { onError, onProgress } = options || {};
   const aborter = new AbortController();
   let startedCount = 0;

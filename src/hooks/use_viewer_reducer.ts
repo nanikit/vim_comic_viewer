@@ -67,7 +67,6 @@ const reducer = (state: ViewerState, action: PureViewerAction) => {
       }
       break;
     default:
-      debugger;
       break;
   }
   return state;
