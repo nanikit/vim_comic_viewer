@@ -117,7 +117,7 @@ const getAsyncReducer = (dispatch: Dispatch<PureViewerAction>) => {
       return;
     }
 
-    const { zip, cancel } = await download(images, options);
+    const { zip, cancel } = download(images, options);
     cancelDownload = () => {
       cancel();
       clearCancel();

@@ -4,6 +4,7 @@ export type ViewerOptions = {
   source?: ComicSource;
   imageProps?: Record<string, string>;
 };
+
 export type ViewerController = {
   setOptions: (options: ViewerOptions) => void;
   goNext: () => void;
@@ -13,6 +14,7 @@ export type ViewerController = {
   refPromise: Promise<HTMLDivElement>;
   unmount: () => void;
 };
+
 export type ViewerSource = {
   name: string;
   comicSource: ComicSource;
@@ -20,5 +22,7 @@ export type ViewerSource = {
   getRoot?: () => HTMLElement;
   withController?: (controller: ViewerController, ref: HTMLDivElement) => void;
 };
+
 export type ComicSource = () => ImageSource[] | Promise<ImageSource[]>;
+
 export type ImageSource = string | string[] | (() => AsyncIterable<string>);

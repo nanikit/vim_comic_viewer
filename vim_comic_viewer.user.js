@@ -758,7 +758,7 @@ const getAsyncReducer$1 = (dispatch) => {
     if (!images.length) {
       return;
     }
-    const { zip, cancel } = await download(images, options);
+    const { zip, cancel } = download(images, options);
     cancelDownload = () => {
       cancel();
       clearCancel();
