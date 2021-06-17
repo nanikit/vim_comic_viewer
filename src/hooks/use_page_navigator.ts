@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useIntersection } from "./use_intersection.ts";
 
 const useResize = <T, E extends Element>(
@@ -60,36 +60,28 @@ export type PageNavigator = {
   observer?: IntersectionObserver;
 };
 
-export const usePageNavigator = (container?: HTMLElement) => {
-  const [anchor, setAnchor] = useState({
-    currentPage: undefined as HTMLElement | undefined,
-    ratio: 0.5,
-  });
-  const { currentPage, ratio } = anchor;
+const makePageNavigator = (container?: HTMLElement) => {
+  let currentPage: HTMLElement | undefined;
+  let ratio: number | undefined;
+  let ignoreIntersection = false;
 
-  const ignoreIntersection = useRef(false);
+  const resetAnchor = (entries: IntersectionObserverEntry[]) => {
+    if (!container?.clientHeight || entries.length === 0) {
+      return;
+    }
+    if (ignoreIntersection) {
+      ignoreIntersection = false;
+      return;
+    }
 
-  const resetAnchor = useCallback(
-    (entries: IntersectionObserverEntry[]) => {
-      if (!container?.clientHeight || entries.length === 0) {
-        return;
-      }
-      if (ignoreIntersection.current) {
-        ignoreIntersection.current = false;
-        return;
-      }
+    const page = getCurrentPage(container, entries) as HTMLElement;
+    const y = container.scrollTop + container.clientHeight / 2;
+    currentPage = page;
+    ratio = (y - page.offsetTop) / page.clientHeight;
+  };
 
-      const page = getCurrentPage(container, entries) as HTMLElement;
-      const y = container.scrollTop + container.clientHeight / 2;
-      const newRatio = (y - page.offsetTop) / page.clientHeight;
-      const newAnchor = { currentPage: page, ratio: newRatio };
-      setAnchor(newAnchor);
-    },
-    [container],
-  );
-
-  const goNext = useCallback(() => {
-    ignoreIntersection.current = false;
+  const goNext = () => {
+    ignoreIntersection = false;
     if (!currentPage) {
       return;
     }
@@ -105,10 +97,10 @@ export const usePageNavigator = (container?: HTMLElement) => {
       }
       cursor = next;
     }
-  }, [currentPage]);
+  };
 
-  const goPrevious = useCallback(() => {
-    ignoreIntersection.current = false;
+  const goPrevious = () => {
+    ignoreIntersection = false;
     if (!currentPage) {
       return;
     }
@@ -124,9 +116,9 @@ export const usePageNavigator = (container?: HTMLElement) => {
       }
       cursor = previous;
     }
-  }, [currentPage]);
+  };
 
-  const restoreScroll = useCallback(() => {
+  const restoreScroll = () => {
     if (!container || ratio === undefined || currentPage === undefined) {
       return;
     }
@@ -134,17 +126,24 @@ export const usePageNavigator = (container?: HTMLElement) => {
     const restoredY = currentPage.offsetTop +
       currentPage.clientHeight * (ratio - 0.5);
     container.scroll({ top: restoredY });
-    ignoreIntersection.current = true;
-  }, [container, currentPage, ratio]);
+    ignoreIntersection = true;
+  };
 
-  const intersectionOption = useMemo(() => ({ threshold: [0.01, 0.5, 1] }), []);
-  const observer = useIntersection(resetAnchor, intersectionOption);
+  const intersectionOption = { threshold: [0.01, 0.5, 1] };
 
-  useResize(container, restoreScroll);
+  return new class PageNavigator {
+    goNext = goNext;
+    goPrevious = goPrevious;
+    observer: IntersectionObserver | undefined;
+    useInstance = () => {
+      this.observer = useIntersection(resetAnchor, intersectionOption);
+      useResize(container, restoreScroll);
+    };
+  }();
+};
 
-  return useMemo(() => ({ goNext, goPrevious, observer }), [
-    goNext,
-    goPrevious,
-    observer,
-  ]);
+export const usePageNavigator = (container?: HTMLElement): PageNavigator => {
+  const navigator = useMemo(() => makePageNavigator(container), [container]);
+  navigator.useInstance();
+  return navigator;
 };
