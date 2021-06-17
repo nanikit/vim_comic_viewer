@@ -563,34 +563,25 @@ const getCurrentPage = (container, entries) => {
     return (ratio.b - ratio.a) * 10000 + (index.a - index.b);
   })[0].target;
 };
-const usePageNavigator = (container) => {
-  const [anchor, setAnchor] = react$1.useState({
-    currentPage: undefined,
-    ratio: 0.5,
-  });
-  const { currentPage, ratio } = anchor;
-  const ignoreIntersection = react$1.useRef(false);
-  const resetAnchor = react$1.useCallback((entries) => {
+const makePageNavigator = (container) => {
+  let currentPage;
+  let ratio;
+  let ignoreIntersection = false;
+  const resetAnchor = (entries) => {
     if (!container?.clientHeight || entries.length === 0) {
       return;
     }
-    if (ignoreIntersection.current) {
-      ignoreIntersection.current = false;
+    if (ignoreIntersection) {
+      ignoreIntersection = false;
       return;
     }
     const page = getCurrentPage(container, entries);
     const y = container.scrollTop + container.clientHeight / 2;
-    const newRatio = (y - page.offsetTop) / page.clientHeight;
-    const newAnchor = {
-      currentPage: page,
-      ratio: newRatio,
-    };
-    setAnchor(newAnchor);
-  }, [
-    container,
-  ]);
-  const goNext = react$1.useCallback(() => {
-    ignoreIntersection.current = false;
+    currentPage = page;
+    ratio = (y - page.offsetTop) / page.clientHeight;
+  };
+  const goNext = () => {
+    ignoreIntersection = false;
     if (!currentPage) {
       return;
     }
@@ -607,11 +598,9 @@ const usePageNavigator = (container) => {
       }
       cursor = next;
     }
-  }, [
-    currentPage,
-  ]);
-  const goPrevious = react$1.useCallback(() => {
-    ignoreIntersection.current = false;
+  };
+  const goPrevious = () => {
+    ignoreIntersection = false;
     if (!currentPage) {
       return;
     }
@@ -628,10 +617,8 @@ const usePageNavigator = (container) => {
       }
       cursor = previous;
     }
-  }, [
-    currentPage,
-  ]);
-  const restoreScroll = react$1.useCallback(() => {
+  };
+  const restoreScroll = () => {
     if (!container || ratio === undefined || currentPage === undefined) {
       return;
     }
@@ -640,30 +627,31 @@ const usePageNavigator = (container) => {
     container.scroll({
       top: restoredY,
     });
-    ignoreIntersection.current = true;
-  }, [
-    container,
-    currentPage,
-    ratio,
-  ]);
-  const intersectionOption = react$1.useMemo(() => ({
+    ignoreIntersection = true;
+  };
+  const intersectionOption = {
     threshold: [
       0.01,
       0.5,
       1,
     ],
-  }), []);
-  const observer = useIntersection(resetAnchor, intersectionOption);
-  useResize(container, restoreScroll);
-  return react$1.useMemo(() => ({
-    goNext,
-    goPrevious,
-    observer,
-  }), [
-    goNext,
-    goPrevious,
-    observer,
+  };
+  return new class PageNavigator {
+    goNext = goNext;
+    goPrevious = goPrevious;
+    observer;
+    useInstance = () => {
+      this.observer = useIntersection(resetAnchor, intersectionOption);
+      useResize(container, restoreScroll);
+    };
+  }();
+};
+const usePageNavigator = (container) => {
+  const navigator = react$1.useMemo(() => makePageNavigator(container), [
+    container,
   ]);
+  navigator.useInstance();
+  return navigator;
 };
 
 var ActionType;
