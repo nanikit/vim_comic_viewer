@@ -1,5 +1,5 @@
 /** @jsx createElement */
-import { createElement } from "react";
+import { createElement, HTMLProps } from "react";
 import { styled } from "../vendors/stitches.ts";
 
 const Svg = styled("svg", {
@@ -18,7 +18,7 @@ const Svg = styled("svg", {
 const downloadCss = { left: "8px" };
 const fullscreenCss = { right: "24px" };
 
-export const DownloadIcon = (props: unknown) => (
+export const DownloadIcon = (props: HTMLProps<SVGElement>) => (
   <Svg
     version="1.1"
     xmlns="http://www.w3.org/2000/svg"
@@ -36,7 +36,7 @@ export const DownloadIcon = (props: unknown) => (
   </Svg>
 );
 
-export const FullscreenIcon = (props: unknown) => (
+export const FullscreenIcon = (props: HTMLProps<SVGElement>) => (
   <Svg
     version="1.1"
     xmlns="http://www.w3.org/2000/svg"

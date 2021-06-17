@@ -15,6 +15,7 @@ import { saveZipAs } from "../utils.ts";
 import {
   createElement,
   forwardRef,
+  HTMLProps,
   Ref,
   useCallback,
   useEffect,
@@ -24,7 +25,10 @@ import {
 } from "react";
 import { Page } from "./page.tsx";
 
-const Viewer_ = (props: unknown, refHandle: Ref<ViewerController>) => {
+const Viewer_ = (
+  props: HTMLProps<HTMLDivElement>,
+  refHandle: Ref<ViewerController>,
+) => {
   const ref = useRef<HTMLDivElement>();
   const scrollRef = useRef<HTMLDivElement>();
   const fullscreenElement = useFullscreenElement();
