@@ -1,17 +1,14 @@
 /** @jsx createElement */
-import type { JSZip } from "jszip";
 import { CircularProgress } from "../components/circular_progress.tsx";
 import { DownloadIcon, FullscreenIcon } from "../components/icons.tsx";
 import {
   Container,
   ScrollableLayout,
 } from "../components/scrollable_layout.ts";
-import { useDeferred } from "../hooks/use_deferred.ts";
 import { useFullscreenElement } from "../hooks/use_fullscreen_element.ts";
-import { ActionType, useViewerReducer } from "../hooks/use_viewer_reducer.ts";
+import { useViewerController } from "../hooks/use_viewer_controller.ts";
 import type { DownloadProgress } from "../services/downloader.ts";
-import { ViewerController, ViewerOptions } from "../types.ts";
-import { saveZipAs } from "../utils.ts";
+import { ViewerController } from "../types.ts";
 import {
   createElement,
   forwardRef,
@@ -32,13 +29,16 @@ const Viewer_ = (
   const ref = useRef<HTMLDivElement>();
   const scrollRef = useRef<HTMLDivElement>();
   const fullscreenElement = useFullscreenElement();
-  const { promise: refPromise, resolve: resolveRef } = useDeferred<
-    HTMLDivElement
-  >();
-  const [
-    { options, images, navigator, status, cancelDownload },
-    dispatch,
-  ] = useViewerReducer(ref, scrollRef);
+  const controller = useViewerController({ ref, scrollRef });
+  const {
+    options,
+    images,
+    navigator,
+    status,
+    downloadAndSave,
+    cancelDownload,
+    toggleFullscreen,
+  } = controller;
 
   const [{ value, text, error }, setProgress] = useState({
     value: 0,
@@ -61,6 +61,10 @@ const Viewer_ = (
     }
   }, []);
 
+  const downloadWithProgress = () => {
+    downloadAndSave({ onProgress: reportProgress, onError: console.log });
+  };
+
   const navigate = useCallback((event: MouseEvent) => {
     const height = ref.current?.clientHeight;
     if (!height || event.button !== 0) {
@@ -70,11 +74,11 @@ const Viewer_ = (
 
     const isTop = event.clientY < height / 2;
     if (isTop) {
-      dispatch({ type: ActionType.GoPrevious });
+      controller.goPrevious();
     } else {
-      dispatch({ type: ActionType.GoNext });
+      controller.goNext();
     }
-  }, []);
+  }, [controller]);
 
   const blockSelection = useCallback((event: MouseEvent) => {
     if (event.detail >= 2) {
@@ -82,50 +86,12 @@ const Viewer_ = (
     }
 
     if (event.buttons === 3) {
-      dispatch({ type: ActionType.ToggleFullscreen });
+      controller.toggleFullscreen();
       event.preventDefault();
     }
-  }, []);
+  }, [controller]);
 
-  const toggleFullscreen = useCallback(() => {
-    dispatch({ type: ActionType.ToggleFullscreen });
-  }, []);
-
-  const download = useCallback(() => {
-    return dispatch({
-      type: ActionType.Download,
-      options: { onError: console.log, onProgress: reportProgress },
-    }) as Promise<JSZip>;
-  }, [reportProgress]);
-
-  const downloadAndSave = useCallback(async () => {
-    const zip = await download();
-    await saveZipAs(zip);
-  }, [download]);
-
-  useImperativeHandle(
-    refHandle,
-    () => ({
-      refPromise,
-      setOptions: (options: ViewerOptions) =>
-        dispatch({ type: ActionType.SetState, state: { options } }),
-      goNext: () => dispatch({ type: ActionType.GoNext }),
-      goPrevious: () => dispatch({ type: ActionType.GoPrevious }),
-      toggleFullscreen,
-      downloadAndSave,
-      download,
-      unmount: () => dispatch({ type: ActionType.Unmount }),
-    }),
-    [dispatch, refPromise, downloadAndSave],
-  );
-
-  useEffect(() => {
-    if (!ref.current) {
-      return;
-    }
-    ref.current?.focus?.();
-    resolveRef(ref.current);
-  }, [ref.current]);
+  useImperativeHandle(refHandle, () => controller, [controller]);
 
   useEffect(() => {
     if (ref.current && fullscreenElement === ref.current) {
@@ -151,8 +117,8 @@ const Viewer_ = (
       <ScrollableLayout
         ref={scrollRef}
         fullscreen={fullscreenElement === ref.current}
-        onClick={navigate as any}
-        onMouseDown={blockSelection as any}
+        onClick={navigate}
+        onMouseDown={blockSelection}
         {...props}
       >
         {status === "complete"
@@ -183,7 +149,7 @@ const Viewer_ = (
           />
         )
         : (
-          <DownloadIcon onClick={downloadAndSave} />
+          <DownloadIcon onClick={downloadWithProgress} />
         )}
     </Container>
   );

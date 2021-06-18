@@ -6,12 +6,12 @@ export type ViewerOptions = {
 };
 
 export type ViewerController = {
+  readonly container: HTMLDivElement | undefined;
   setOptions: (options: ViewerOptions) => void;
   goNext: () => void;
   goPrevious: () => void;
   toggleFullscreen: () => void;
   download: () => Promise<JSZip | undefined>;
-  refPromise: Promise<HTMLDivElement>;
   unmount: () => void;
 };
 
