@@ -13,11 +13,7 @@ export * as utils from "./utils.ts";
 export const initialize = (root: HTMLElement): ViewerController => {
   const ref = createRef<ViewerController>();
   render(<Viewer ref={ref} />, root);
-  return new Proxy(ref, {
-    get: (target, ...args) => {
-      return Reflect.get(target.current as any, ...args);
-    },
-  }) as any;
+  return ref.current!;
 };
 
 const maybeNotHotkey = (event: KeyboardEvent) =>
@@ -27,7 +23,7 @@ const getDefaultRoot = async () => {
   const div = document.createElement("div");
   div.setAttribute(
     "style",
-    "width: 0; height: 0; position: fixed; top: 0; bottom: 0;",
+    "width: 0; height: 0; position: fixed;",
   );
   document.body.append(div);
   return div;
@@ -67,7 +63,7 @@ export const initializeWithDefault = async (source: ViewerSource) => {
   };
 
   controller.setOptions({ source: source.comicSource });
-  const div = await controller.refPromise;
+  const div = controller.container!;
   if (source.withController) {
     source.withController(controller, div);
   } else {

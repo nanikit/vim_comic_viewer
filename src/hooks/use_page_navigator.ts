@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
 import { useIntersection } from "./use_intersection.ts";
 
 const useResize = <T, E extends Element>(
@@ -60,12 +60,15 @@ export type PageNavigator = {
   observer?: IntersectionObserver;
 };
 
-const makePageNavigator = (container?: HTMLElement) => {
+const makePageNavigator = (
+  ref: MutableRefObject<HTMLDivElement | undefined>,
+) => {
   let currentPage: HTMLElement | undefined;
   let ratio: number | undefined;
   let ignoreIntersection = false;
 
   const resetAnchor = (entries: IntersectionObserverEntry[]) => {
+    const container = ref.current;
     if (!container?.clientHeight || entries.length === 0) {
       return;
     }
@@ -119,6 +122,7 @@ const makePageNavigator = (container?: HTMLElement) => {
   };
 
   const restoreScroll = () => {
+    const container = ref.current;
     if (!container || ratio === undefined || currentPage === undefined) {
       return;
     }
@@ -130,20 +134,27 @@ const makePageNavigator = (container?: HTMLElement) => {
   };
 
   const intersectionOption = { threshold: [0.01, 0.5, 1] };
+  let observer: IntersectionObserver | undefined;
 
-  return new class PageNavigator {
-    goNext = goNext;
-    goPrevious = goPrevious;
-    observer: IntersectionObserver | undefined;
-    useInstance = () => {
-      this.observer = useIntersection(resetAnchor, intersectionOption);
-      useResize(container, restoreScroll);
-    };
-  }();
+  const useInstance = () => {
+    observer = useIntersection(resetAnchor, intersectionOption);
+    useResize(ref.current, restoreScroll);
+  };
+
+  return {
+    get observer() {
+      return observer;
+    },
+    goNext,
+    goPrevious,
+    useInstance,
+  };
 };
 
-export const usePageNavigator = (container?: HTMLElement): PageNavigator => {
-  const navigator = useMemo(() => makePageNavigator(container), [container]);
+export const usePageNavigator = (
+  ref: MutableRefObject<HTMLDivElement | undefined>,
+): PageNavigator => {
+  const navigator = useMemo(() => makePageNavigator(ref), [ref]);
   navigator.useInstance();
   return navigator;
 };

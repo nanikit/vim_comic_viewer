@@ -206,6 +206,18 @@ const ScrollableLayout = styled("div", {
   },
 });
 
+const useFullscreenElement = () => {
+  const [element, setElement] = react$1.useState(
+    document.fullscreenElement || undefined,
+  );
+  react$1.useEffect(() => {
+    const notify = () => setElement(document.fullscreenElement || undefined);
+    document.addEventListener("fullscreenchange", notify);
+    return () => document.removeEventListener("fullscreenchange", notify);
+  }, []);
+  return element;
+};
+
 const timeout = (millisecond) =>
   new Promise((resolve) => setTimeout(resolve, millisecond));
 const waitDomContent = (document) =>
@@ -269,23 +281,6 @@ var utils = /*#__PURE__*/ Object.freeze({
   saveZipAs: saveZipAs,
   defer: defer,
 });
-
-const useDeferred = () => {
-  const [deferred] = react$1.useState(defer);
-  return deferred;
-};
-
-const useFullscreenElement = () => {
-  const [element, setElement] = react$1.useState(
-    document.fullscreenElement || undefined,
-  );
-  react$1.useEffect(() => {
-    const notify = () => setElement(document.fullscreenElement || undefined);
-    document.addEventListener("fullscreenchange", notify);
-    return () => document.removeEventListener("fullscreenchange", notify);
-  }, []);
-  return element;
-};
 
 const GM_xmlhttpRequest = module.config().GM_xmlhttpRequest;
 
@@ -563,11 +558,12 @@ const getCurrentPage = (container, entries) => {
     return (ratio.b - ratio.a) * 10000 + (index.a - index.b);
   })[0].target;
 };
-const makePageNavigator = (container) => {
+const makePageNavigator = (ref) => {
   let currentPage;
   let ratio;
   let ignoreIntersection = false;
   const resetAnchor = (entries) => {
+    const container = ref.current;
     if (!container?.clientHeight || entries.length === 0) {
       return;
     }
@@ -619,6 +615,7 @@ const makePageNavigator = (container) => {
     }
   };
   const restoreScroll = () => {
+    const container = ref.current;
     if (!container || ratio === undefined || currentPage === undefined) {
       return;
     }
@@ -636,163 +633,127 @@ const makePageNavigator = (container) => {
       1,
     ],
   };
-  return new class PageNavigator {
-    goNext = goNext;
-    goPrevious = goPrevious;
-    observer;
-    useInstance = () => {
-      this.observer = useIntersection(resetAnchor, intersectionOption);
-      useResize(container, restoreScroll);
-    };
-  }();
+  let observer;
+  const useInstance = () => {
+    observer = useIntersection(resetAnchor, intersectionOption);
+    useResize(ref.current, restoreScroll);
+  };
+  return {
+    get observer() {
+      return observer;
+    },
+    goNext,
+    goPrevious,
+    useInstance,
+  };
 };
-const usePageNavigator = (container) => {
-  const navigator = react$1.useMemo(() => makePageNavigator(container), [
-    container,
+const usePageNavigator = (ref) => {
+  const navigator = react$1.useMemo(() => makePageNavigator(ref), [
+    ref,
   ]);
   navigator.useInstance();
   return navigator;
 };
 
-var ActionType;
-(function (ActionType) {
-  ActionType[ActionType["GoPrevious"] = 0] = "GoPrevious";
-  ActionType[ActionType["GoNext"] = 1] = "GoNext";
-  ActionType[ActionType["ToggleFullscreen"] = 2] = "ToggleFullscreen";
-  ActionType[ActionType["Unmount"] = 3] = "Unmount";
-  ActionType[ActionType["SetState"] = 4] = "SetState";
-  ActionType[ActionType["Download"] = 5] = "Download";
-})(ActionType || (ActionType = {}));
-const reducer$1 = (state, action) => {
-  switch (action.type) {
-    case ActionType.SetState:
-      return {
-        ...state,
-        ...action.state,
-      };
-    case ActionType.GoPrevious:
-      state.navigator.goPrevious();
-      break;
-    case ActionType.GoNext:
-      state.navigator.goNext();
-      break;
-    case ActionType.ToggleFullscreen:
-      if (document.fullscreenElement) {
-        document.exitFullscreen();
-      } else {
-        state.ref.current?.requestFullscreen?.();
-      }
-      break;
-    case ActionType.Unmount:
-      if (state.ref.current) {
-        reactDom.unmountComponentAtNode(state.ref.current);
-      }
-      break;
-  }
-  return state;
-};
-const getAsyncReducer$1 = (dispatch) => {
+const makeViewerController = ({ ref, navigator, rerender }) => {
+  let options = {};
   let images = [];
+  let status = "loading";
   let cancelDownload;
-  const setInnerState = (state) => {
-    dispatch({
-      type: ActionType.SetState,
-      state,
-    });
-  };
-  const setState = async (state) => {
-    const source = state.options?.source;
-    if (source) {
-      try {
-        setInnerState({
-          status: "loading",
-          images: [],
-        });
-        images = await source();
-        if (!Array.isArray(images)) {
-          console.log(`Invalid comic source type: ${typeof images}`);
-          setInnerState({
-            status: "error",
-          });
-          return;
-        }
-        setInnerState({
-          status: "complete",
-          images,
-        });
-      } catch (error) {
-        setInnerState({
-          status: "error",
-        });
-        console.log(error);
-        throw error;
-      }
-    } else {
-      setInnerState(state);
-    }
-  };
-  const clearCancel = () => {
-    setInnerState({
-      cancelDownload: undefined,
-    });
-    cancelDownload = undefined;
-  };
   const startDownload = async (options) => {
-    if (cancelDownload) {
-      cancelDownload();
-      clearCancel();
-      return;
-    }
     if (!images.length) {
       return;
     }
     const { zip, cancel } = download(images, options);
     cancelDownload = () => {
       cancel();
-      clearCancel();
+      cancelDownload = undefined;
     };
-    setInnerState({
-      cancelDownload,
-    });
     const result = await zip;
-    clearCancel();
+    cancelDownload = undefined;
     return result;
   };
-  return (action) => {
-    switch (action.type) {
-      case ActionType.Download:
-        return startDownload(action.options);
-      case ActionType.SetState:
-        return setState(action.state);
-      default:
-        return dispatch(action);
+  const downloadAndSave = async (options) => {
+    const zip = await startDownload(options);
+    await saveZipAs(zip);
+  };
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      ref.current?.requestFullscreen();
     }
   };
+  const loadImages = async (source) => {
+    try {
+      [status, images] = [
+        "loading",
+        [],
+      ];
+      rerender();
+      images = await source();
+      if (!Array.isArray(images)) {
+        console.log(`Invalid comic source type: ${typeof images}`);
+        status = "error";
+        return;
+      }
+      [status, images] = [
+        "complete",
+        images,
+      ];
+    } catch (error) {
+      status = "error";
+      console.log(error);
+      throw error;
+    } finally {
+      rerender();
+    }
+  };
+  return {
+    get options() {
+      return options;
+    },
+    get images() {
+      return images;
+    },
+    get status() {
+      return status;
+    },
+    get cancelDownload() {
+      return cancelDownload;
+    },
+    get container() {
+      return ref.current;
+    },
+    setOptions: async (value) => {
+      options = value;
+      const { source } = value;
+      if (source) {
+        await loadImages(source);
+      }
+    },
+    navigator,
+    goPrevious: navigator.goPrevious,
+    goNext: navigator.goNext,
+    toggleFullscreen,
+    download: startDownload,
+    downloadAndSave,
+    unmount: () => reactDom.unmountComponentAtNode(ref.current),
+  };
 };
-const useViewerReducer = (ref, scrollRef) => {
-  const navigator = usePageNavigator(scrollRef.current);
-  const [state, dispatch] = react$1.useReducer(reducer$1, {
+const useViewerController = ({ ref, scrollRef }) => {
+  const [, rerender] = react$1.useReducer(() => ({}), {});
+  const navigator = usePageNavigator(scrollRef);
+  const controller = react$1.useMemo(() =>
+    makeViewerController({
+      ref,
+      navigator,
+      rerender,
+    }), [
     ref,
     navigator,
-    options: {},
-    images: [],
-    status: "loading",
-  });
-  const [asyncDispatch] = react$1.useState(() => getAsyncReducer$1(dispatch));
-  react$1.useEffect(() => {
-    dispatch({
-      type: ActionType.SetState,
-      state: {
-        navigator,
-      },
-    });
-  }, [
-    navigator,
   ]);
-  return [
-    state,
-    asyncDispatch,
-  ];
+  return controller;
 };
 
 const stretch = keyframes({
@@ -1011,9 +972,19 @@ const Viewer_ = (props, refHandle) => {
   const ref = react$1.useRef();
   const scrollRef = react$1.useRef();
   const fullscreenElement = useFullscreenElement();
-  const { promise: refPromise, resolve: resolveRef } = useDeferred();
-  const [{ options, images, navigator, status, cancelDownload }, dispatch] =
-    useViewerReducer(ref, scrollRef);
+  const controller = useViewerController({
+    ref,
+    scrollRef,
+  });
+  const {
+    options,
+    images,
+    navigator,
+    status,
+    downloadAndSave,
+    cancelDownload,
+    toggleFullscreen,
+  } = controller;
   const [{ value, text, error }, setProgress] = react$1.useState({
     value: 0,
     text: "",
@@ -1044,6 +1015,12 @@ const Viewer_ = (props, refHandle) => {
       });
     }
   }, []);
+  const downloadWithProgress = () => {
+    downloadAndSave({
+      onProgress: reportProgress,
+      onError: console.log,
+    });
+  };
   const navigate = react$1.useCallback((event) => {
     const height = ref.current?.clientHeight;
     if (!height || event.button !== 0) {
@@ -1052,85 +1029,26 @@ const Viewer_ = (props, refHandle) => {
     event.preventDefault();
     const isTop = event.clientY < height / 2;
     if (isTop) {
-      dispatch({
-        type: ActionType.GoPrevious,
-      });
+      controller.goPrevious();
     } else {
-      dispatch({
-        type: ActionType.GoNext,
-      });
+      controller.goNext();
     }
-  }, []);
+  }, [
+    controller,
+  ]);
   const blockSelection = react$1.useCallback((event) => {
     if (event.detail >= 2) {
       event.preventDefault();
     }
     if (event.buttons === 3) {
-      dispatch({
-        type: ActionType.ToggleFullscreen,
-      });
+      controller.toggleFullscreen();
       event.preventDefault();
     }
-  }, []);
-  const toggleFullscreen = react$1.useCallback(() => {
-    dispatch({
-      type: ActionType.ToggleFullscreen,
-    });
-  }, []);
-  const download = react$1.useCallback(() => {
-    return dispatch({
-      type: ActionType.Download,
-      options: {
-        onError: console.log,
-        onProgress: reportProgress,
-      },
-    });
   }, [
-    reportProgress,
+    controller,
   ]);
-  const downloadAndSave = react$1.useCallback(async () => {
-    const zip = await download();
-    await saveZipAs(zip);
-  }, [
-    download,
-  ]);
-  react$1.useImperativeHandle(refHandle, () => ({
-    refPromise,
-    setOptions: (options) =>
-      dispatch({
-        type: ActionType.SetState,
-        state: {
-          options,
-        },
-      }),
-    goNext: () =>
-      dispatch({
-        type: ActionType.GoNext,
-      }),
-    goPrevious: () =>
-      dispatch({
-        type: ActionType.GoPrevious,
-      }),
-    toggleFullscreen,
-    downloadAndSave,
-    download,
-    unmount: () =>
-      dispatch({
-        type: ActionType.Unmount,
-      }),
-  }), [
-    dispatch,
-    refPromise,
-    downloadAndSave,
-  ]);
-  react$1.useEffect(() => {
-    if (!ref.current) {
-      return;
-    }
-    ref.current?.focus?.();
-    resolveRef(ref.current);
-  }, [
-    ref.current,
+  react$1.useImperativeHandle(refHandle, () => controller, [
+    controller,
   ]);
   react$1.useEffect(() => {
     if (ref.current && fullscreenElement === ref.current) {
@@ -1199,7 +1117,7 @@ const Viewer_ = (props, refHandle) => {
         onClick: cancelDownload,
       })
       : /*#__PURE__*/ react$1.createElement(DownloadIcon, {
-        onClick: downloadAndSave,
+        onClick: downloadWithProgress,
       }),
   ));
 };
@@ -1219,20 +1137,13 @@ const initialize = (root) => {
     }),
     root,
   );
-  return new Proxy(ref, {
-    get: (target, ...args) => {
-      return Reflect.get(target.current, ...args);
-    },
-  });
+  return ref.current;
 };
 const maybeNotHotkey = (event) =>
   event.ctrlKey || event.shiftKey || event.altKey || isTyping(event);
 const getDefaultRoot = async () => {
   const div = document.createElement("div");
-  div.setAttribute(
-    "style",
-    "width: 0; height: 0; position: fixed; top: 0; bottom: 0;",
-  );
+  div.setAttribute("style", "width: 0; height: 0; position: fixed;");
   document.body.append(div);
   return div;
 };
@@ -1267,7 +1178,7 @@ const initializeWithDefault = async (source) => {
   controller.setOptions({
     source: source.comicSource,
   });
-  const div = await controller.refPromise;
+  const div = controller.container;
   if (source.withController) {
     source.withController(controller, div);
   } else {
