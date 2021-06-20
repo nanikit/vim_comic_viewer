@@ -55,8 +55,15 @@ export const Spinner = () => (
 
 export const Overlay = styled("div", {
   position: "relative",
+  margin: "4px 1px",
   maxWidth: "100%",
   height: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  "@media print": {
+    margin: 0,
+  },
   variants: {
     placeholder: {
       true: {
@@ -64,10 +71,13 @@ export const Overlay = styled("div", {
       },
     },
   },
-  margin: "4px 1px",
-  "@media print": {
-    margin: 0,
-  },
+});
+
+export const ColumnNowrap = styled("div", {
+  display: "flex",
+  flexFlow: "column nowrap",
+  alignItems: "center",
+  justifyContent: "center",
 });
 
 export const Image = styled("img", {
