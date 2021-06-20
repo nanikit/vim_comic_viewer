@@ -7,7 +7,7 @@ const Svg = styled("svg", {
   bottom: "8px",
   left: "8px",
   cursor: "pointer",
-  ":hover": {
+  "&:hover": {
     filter: "hue-rotate(-145deg)",
   },
   variants: {
