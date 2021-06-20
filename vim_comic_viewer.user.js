@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      3.4.4
+// @version      4.0.0
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -719,6 +719,13 @@ const makeViewerController = ({ ref, navigator, rerender }) => {
   };
   const loadImages = async (source) => {
     try {
+      if (!source) {
+        [status, images] = [
+          "complete",
+          [],
+        ];
+        return;
+      }
       [status, images] = [
         "loading",
         [],
@@ -759,9 +766,10 @@ const makeViewerController = ({ ref, navigator, rerender }) => {
       return ref.current;
     },
     setOptions: async (value) => {
-      options = value;
       const { source } = value;
-      if (source) {
+      const isSourceChanged = source !== options.source;
+      options = value;
+      if (isSourceChanged) {
         await loadImages(source);
       }
     },
@@ -970,7 +978,53 @@ const Page = ({ source, observer, ...props }) => {
   ));
 };
 
+const maybeNotHotkey = (event) =>
+  event.ctrlKey || event.shiftKey || event.altKey || isTyping(event);
+const useDefault = ({ enable, controller }) => {
+  const defaultKeyHandler = async (event) => {
+    if (maybeNotHotkey(event)) {
+      return;
+    }
+    switch (event.key) {
+      case "j":
+        controller.goNext();
+        break;
+      case "k":
+        controller.goPrevious();
+        break;
+      case ";": {
+        await controller.downloadAndSave();
+        break;
+      }
+    }
+  };
+  const defaultGlobalKeyHandler = (event) => {
+    if (maybeNotHotkey(event)) {
+      return;
+    }
+    if (event.key === "i") {
+      controller.toggleFullscreen();
+    }
+  };
+  react$1.useEffect(() => {
+    if (!controller || !enable) {
+      return;
+    }
+    controller.container.addEventListener("keydown", defaultKeyHandler);
+    window.addEventListener("keydown", defaultGlobalKeyHandler);
+    return () => {
+      controller.container.removeEventListener("keydown", defaultKeyHandler);
+      window.removeEventListener("keydown", defaultGlobalKeyHandler);
+    };
+  }, [
+    controller,
+    enable,
+  ]);
+};
+
 const Viewer_ = (props, refHandle) => {
+  const { useDefault: enableDefault, options: viewerOptions, ...otherProps } =
+    props;
   const ref = react$1.useRef();
   const scrollRef = react$1.useRef();
   const fullscreenElement = useFullscreenElement();
@@ -1049,8 +1103,18 @@ const Viewer_ = (props, refHandle) => {
   }, [
     controller,
   ]);
+  useDefault({
+    enable: props.useDefault,
+    controller,
+  });
   react$1.useImperativeHandle(refHandle, () => controller, [
     controller,
+  ]);
+  react$1.useEffect(() => {
+    controller.setOptions(viewerOptions);
+  }, [
+    controller,
+    viewerOptions,
   ]);
   react$1.useEffect(() => {
     if (ref.current && fullscreenElement === ref.current) {
@@ -1088,7 +1152,7 @@ const Viewer_ = (props, refHandle) => {
         fullscreen: fullscreenElement === ref.current,
         onClick: navigate,
         onMouseDown: blockSelection,
-      }, props),
+      }, otherProps),
       status === "complete"
         ? images?.map?.((image, index) =>
           /*#__PURE__*/ react$1.createElement(
@@ -1131,68 +1195,28 @@ var types = /*#__PURE__*/ Object.freeze({
 
 /** @jsx createElement */
 /// <reference lib="dom" />
-const initialize = (root) => {
-  const ref = /*#__PURE__*/ react$1.createRef();
-  reactDom.render(
-    /*#__PURE__*/ react$1.createElement(Viewer, {
-      ref: ref,
-    }),
-    root,
-  );
-  return ref.current;
-};
-const maybeNotHotkey = (event) =>
-  event.ctrlKey || event.shiftKey || event.altKey || isTyping(event);
-const getDefaultRoot = async () => {
+const getDefaultRoot = () => {
   const div = document.createElement("div");
   div.setAttribute("style", "width: 0; height: 0; position: fixed;");
   document.body.append(div);
   return div;
 };
-const initializeWithDefault = async (source) => {
-  const root = source.getRoot?.() || await getDefaultRoot();
-  const controller = initialize(root);
-  const defaultKeyHandler = async (event) => {
-    if (maybeNotHotkey(event)) {
-      return;
-    }
-    switch (event.key) {
-      case "j":
-        controller.goNext();
-        break;
-      case "k":
-        controller.goPrevious();
-        break;
-      case ";": {
-        await controller.downloadAndSave();
-        break;
-      }
-    }
-  };
-  const defaultGlobalKeyHandler = (event) => {
-    if (maybeNotHotkey(event)) {
-      return;
-    }
-    if (event.key === "i") {
-      controller.toggleFullscreen();
-    }
-  };
-  controller.setOptions({
-    source: source.comicSource,
-  });
-  const div = controller.container;
-  if (source.withController) {
-    source.withController(controller, div);
-  } else {
-    div.addEventListener("keydown", defaultKeyHandler);
-    window.addEventListener("keydown", defaultGlobalKeyHandler);
-  }
-  return controller;
+const initialize = async (options) => {
+  const ref = /*#__PURE__*/ react$1.createRef();
+  reactDom.render(
+    /*#__PURE__*/ react$1.createElement(Viewer, {
+      ref: ref,
+      options: options,
+      useDefault: true,
+    }),
+    getDefaultRoot(),
+  );
+  return ref.current;
 };
 
+exports.Viewer = Viewer;
 exports.download = download;
 exports.initialize = initialize;
-exports.initializeWithDefault = initializeWithDefault;
 exports.transformToBlobUrl = transformToBlobUrl;
 exports.types = types;
 exports.utils = utils;

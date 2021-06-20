@@ -15,14 +15,6 @@ export type ViewerController = {
   unmount: () => void;
 };
 
-export type ViewerSource = {
-  name: string;
-  comicSource: ComicSource;
-  isApplicable?: () => boolean;
-  getRoot?: () => HTMLElement;
-  withController?: (controller: ViewerController, ref: HTMLDivElement) => void;
-};
-
 export type ComicSource = () => ImageSource[] | Promise<ImageSource[]>;
 
 export type ImageSource = string | string[] | (() => AsyncIterable<string>);

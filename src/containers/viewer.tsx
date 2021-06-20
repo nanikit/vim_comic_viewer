@@ -8,7 +8,7 @@ import {
 import { useFullscreenElement } from "../hooks/use_fullscreen_element.ts";
 import { useViewerController } from "../hooks/use_viewer_controller.ts";
 import type { DownloadProgress } from "../services/downloader.ts";
-import { ViewerController } from "../types.ts";
+import { ViewerController, ViewerOptions } from "../types.ts";
 import {
   createElement,
   forwardRef,
@@ -21,11 +21,17 @@ import {
   useState,
 } from "react";
 import { Page } from "./page.tsx";
+import { useDefault } from "../hooks/use_default.ts";
 
 const Viewer_ = (
-  props: HTMLProps<HTMLDivElement>,
+  props: HTMLProps<HTMLDivElement> & {
+    useDefault?: boolean;
+    options: ViewerOptions;
+  },
   refHandle: Ref<ViewerController>,
 ) => {
+  const { useDefault: enableDefault, options: viewerOptions, ...otherProps } =
+    props;
   const ref = useRef<HTMLDivElement>();
   const scrollRef = useRef<HTMLDivElement>();
   const fullscreenElement = useFullscreenElement();
@@ -91,7 +97,13 @@ const Viewer_ = (
     }
   }, [controller]);
 
+  useDefault({ enable: props.useDefault, controller });
+
   useImperativeHandle(refHandle, () => controller, [controller]);
+
+  useEffect(() => {
+    controller.setOptions(viewerOptions);
+  }, [controller, viewerOptions]);
 
   useEffect(() => {
     if (ref.current && fullscreenElement === ref.current) {
@@ -119,7 +131,7 @@ const Viewer_ = (
         fullscreen={fullscreenElement === ref.current}
         onClick={navigate}
         onMouseDown={blockSelection}
-        {...props}
+        {...otherProps}
       >
         {status === "complete"
           ? (
