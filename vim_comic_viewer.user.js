@@ -176,6 +176,39 @@ const FullscreenIcon = (props) =>
       }),
     ),
   );
+const ErrorIcon = styled("svg", {
+  width: "10vmin",
+  height: "10vmin",
+  fill: "hsl(0, 50%, 20%)",
+  margin: "2rem",
+});
+const CircledX = (props) => {
+  return (/*#__PURE__*/ react$1.createElement(
+    ErrorIcon,
+    Object.assign(
+      {
+        version: "1.1",
+        id: "Layer_1",
+        xmlns: "http://www.w3.org/2000/svg",
+        x: "0px",
+        y: "0px",
+        viewBox: "0 0 122.881 122.88",
+        "enable-background": "new 0 0 122.881 122.88",
+      },
+      props,
+      {
+        crossOrigin: "",
+      },
+    ),
+    /*#__PURE__*/ react$1.createElement(
+      "g",
+      null,
+      /*#__PURE__*/ react$1.createElement("path", {
+        d: "M61.44,0c16.966,0,32.326,6.877,43.445,17.996c11.119,11.118,17.996,26.479,17.996,43.444 c0,16.967-6.877,32.326-17.996,43.444C93.766,116.003,78.406,122.88,61.44,122.88c-16.966,0-32.326-6.877-43.444-17.996 C6.877,93.766,0,78.406,0,61.439c0-16.965,6.877-32.326,17.996-43.444C29.114,6.877,44.474,0,61.44,0L61.44,0z M80.16,37.369 c1.301-1.302,3.412-1.302,4.713,0c1.301,1.301,1.301,3.411,0,4.713L65.512,61.444l19.361,19.362c1.301,1.301,1.301,3.411,0,4.713 c-1.301,1.301-3.412,1.301-4.713,0L60.798,66.157L41.436,85.52c-1.301,1.301-3.412,1.301-4.713,0c-1.301-1.302-1.301-3.412,0-4.713 l19.363-19.362L36.723,42.082c-1.301-1.302-1.301-3.412,0-4.713c1.301-1.302,3.412-1.302,4.713,0l19.363,19.362L80.16,37.369 L80.16,37.369z M100.172,22.708C90.26,12.796,76.566,6.666,61.44,6.666c-15.126,0-28.819,6.13-38.731,16.042 C12.797,32.62,6.666,46.314,6.666,61.439c0,15.126,6.131,28.82,16.042,38.732c9.912,9.911,23.605,16.042,38.731,16.042 c15.126,0,28.82-6.131,38.732-16.042c9.912-9.912,16.043-23.606,16.043-38.732C116.215,46.314,110.084,32.62,100.172,22.708 L100.172,22.708z",
+      }),
+    ),
+  ));
+};
 
 const Container = styled("div", {
   position: "relative",
@@ -807,8 +840,15 @@ const Spinner = () =>
   );
 const Overlay = styled("div", {
   position: "relative",
+  margin: "4px 1px",
   maxWidth: "100%",
   height: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  "@media print": {
+    margin: 0,
+  },
   variants: {
     placeholder: {
       true: {
@@ -816,10 +856,12 @@ const Overlay = styled("div", {
       },
     },
   },
-  margin: "4px 1px",
-  "@media print": {
-    margin: 0,
-  },
+});
+const ColumnNowrap = styled("div", {
+  display: "flex",
+  flexFlow: "column nowrap",
+  alignItems: "center",
+  justifyContent: "center",
 });
 const Image1 = styled("img", {
   position: "relative",
@@ -828,112 +870,55 @@ const Image1 = styled("img", {
   maxWidth: "100%",
 });
 
-var PageActionType;
-(function (PageActionType) {
-  PageActionType[PageActionType["SetState"] = 0] = "SetState";
-  PageActionType[PageActionType["SetSource"] = 1] = "SetSource";
-  PageActionType[PageActionType["Fallback"] = 2] = "Fallback";
-})(PageActionType || (PageActionType = {}));
-const reducer = (state, action) => {
-  switch (action.type) {
-    case PageActionType.SetState:
-      return {
-        ...state,
-        ...action.state,
-      };
-    default:
-      return state;
-  }
-};
-const getAsyncReducer = (dispatch) => {
-  const empty = async function* () {
-  }();
-  let iterator = empty;
-  const setState = (state) => {
-    dispatch({
-      type: PageActionType.SetState,
-      state,
-    });
-  };
-  const takeNext = async () => {
-    const snapshot = iterator;
-    try {
-      const item = await snapshot.next();
-      if (snapshot !== iterator) {
+const makeSourceController = (source) => {
+  let imageLoad;
+  let setState;
+  const load = async () => {
+    for await (const url of imageSourceToIterable(source)) {
+      imageLoad = defer();
+      setState({
+        src: url,
+        state: "loading",
+      });
+      const success = await imageLoad.promise;
+      if (success) {
+        setState({
+          src: url,
+          state: "complete",
+        });
         return;
       }
-      if (item.done) {
-        setState({
-          src: undefined,
-          status: "error",
-        });
-      } else {
-        setState({
-          src: item.value,
-          status: "loading",
-        });
-      }
-    } catch (error) {
-      console.error(error);
-      setState({
-        src: undefined,
-        status: "error",
-      });
     }
+    setState({
+      state: "error",
+    });
   };
-  const setSource = async (source) => {
-    iterator = imageSourceToIterable(source)[Symbol.asyncIterator]();
-    await takeNext();
+  const useInstance = () => {
+    let state;
+    [state, setState] = react$1.useState({
+      src: "",
+      state: "loading",
+    });
+    react$1.useEffect(() => {
+      load();
+    }, []);
+    return {
+      state,
+      onError: () => imageLoad.resolve(false),
+      onLoad: () => imageLoad.resolve(true),
+    };
   };
-  return (action) => {
-    switch (action.type) {
-      case PageActionType.SetSource:
-        return setSource(action.source);
-      case PageActionType.Fallback:
-        return takeNext();
-      default:
-        return dispatch(action);
-    }
-  };
+  return useInstance;
 };
-const usePageReducer = (source) => {
-  const [state, dispatch] = react$1.useReducer(reducer, {
-    status: "loading",
-  });
-  const [asyncDispatch] = react$1.useState(() => getAsyncReducer(dispatch));
-  const onError = react$1.useCallback(() => {
-    asyncDispatch({
-      type: PageActionType.Fallback,
-    });
-  }, []);
-  const onLoad = react$1.useCallback(() => {
-    asyncDispatch({
-      type: PageActionType.SetState,
-      state: {
-        status: "complete",
-      },
-    });
-  }, []);
-  react$1.useEffect(() => {
-    asyncDispatch({
-      type: PageActionType.SetSource,
-      source,
-    });
-  }, [
+const useSourceController = (source) => {
+  const useInstance = react$1.useMemo(() => makeSourceController(source), [
     source,
   ]);
-  return [
-    {
-      ...state,
-      onLoad,
-      onError,
-    },
-    asyncDispatch,
-  ];
+  return useInstance();
 };
 
 const Page = ({ source, observer, ...props }) => {
-  const [{ status, src, ...imageProps }] = usePageReducer(source);
+  const { state: { src, state }, ...imageProps } = useSourceController(source);
   const ref = react$1.useRef();
   react$1.useEffect(() => {
     const target = ref.current;
@@ -949,9 +934,26 @@ const Page = ({ source, observer, ...props }) => {
     Overlay,
     {
       ref: ref,
-      placeholder: status === "loading",
+      placeholder: state !== "complete",
     },
-    status === "loading" && /*#__PURE__*/ react$1.createElement(Spinner, null),
+    state === "loading" && /*#__PURE__*/ react$1.createElement(Spinner, null),
+    state === "error" && /*#__PURE__*/
+      react$1.createElement(
+        ColumnNowrap,
+        null,
+        /*#__PURE__*/ react$1.createElement(CircledX, null),
+        /*#__PURE__*/ react$1.createElement(
+          "p",
+          null,
+          "\uc774\ubbf8\uc9c0\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4",
+        ),
+        /*#__PURE__*/ react$1.createElement(
+          "p",
+          null,
+          "URL: ",
+          src ? src : JSON.stringify(src),
+        ),
+      ),
     /*#__PURE__*/ react$1.createElement(
       Image1,
       Object.assign(
