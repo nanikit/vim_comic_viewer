@@ -48,8 +48,13 @@ const makeViewerController = (
     }
   };
 
-  const loadImages = async (source: ComicSource) => {
+  const loadImages = async (source?: ComicSource) => {
     try {
+      if (!source) {
+        [status, images] = ["complete", []];
+        return;
+      }
+
       [status, images] = ["loading", []];
       rerender();
       images = await source();
@@ -88,9 +93,11 @@ const makeViewerController = (
     },
 
     setOptions: async (value: ViewerOptions) => {
-      options = value;
       const { source } = value;
-      if (source) {
+      const isSourceChanged = source !== options.source;
+      options = value;
+
+      if (isSourceChanged) {
         await loadImages(source);
       }
     },
