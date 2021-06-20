@@ -9,7 +9,8 @@ const Svg = styled("svg", {
   opacity: "50%",
   filter: "drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)",
   color: "black",
-  ":hover": {
+  cursor: "pointer",
+  "&:hover": {
     opacity: "100%",
     transform: "scale(1.1)",
   },

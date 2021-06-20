@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      4.0.0
+// @version      4.0.1
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -36,7 +36,7 @@ const Svg$1 = styled("svg", {
   bottom: "8px",
   left: "8px",
   cursor: "pointer",
-  ":hover": {
+  "&:hover": {
     filter: "hue-rotate(-145deg)",
   },
   variants: {
@@ -127,7 +127,8 @@ const Svg = styled("svg", {
   opacity: "50%",
   filter: "drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)",
   color: "black",
-  ":hover": {
+  cursor: "pointer",
+  "&:hover": {
     opacity: "100%",
     transform: "scale(1.1)",
   },
