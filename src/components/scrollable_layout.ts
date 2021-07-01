@@ -1,8 +1,17 @@
 import { styled } from "../vendors/stitches.ts";
 
+const defaultScrollbar = {
+  "scrollbarWidth": "initial",
+  "scrollbarColor": "initial",
+  "&::-webkit-scrollbar": { all: "initial" },
+  "&::-webkit-scrollbar-thumb": { all: "initial", background: "gray" },
+  "&::-webkit-scrollbar-track": { all: "initial" },
+};
+
 export const Container = styled("div", {
   position: "relative",
   height: "100%",
+  ...defaultScrollbar,
 });
 
 export const ScrollableLayout = styled("div", {
@@ -17,6 +26,7 @@ export const ScrollableLayout = styled("div", {
   alignItems: "center",
   flexFlow: "row-reverse wrap",
   overflowY: "auto",
+  ...defaultScrollbar,
   variants: {
     fullscreen: {
       true: {

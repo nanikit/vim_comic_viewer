@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      4.0.1
+// @version      4.1.0
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -211,9 +211,24 @@ const CircledX = (props) => {
   ));
 };
 
+const defaultScrollbar = {
+  "scrollbarWidth": "initial",
+  "scrollbarColor": "initial",
+  "&::-webkit-scrollbar": {
+    all: "initial",
+  },
+  "&::-webkit-scrollbar-thumb": {
+    all: "initial",
+    background: "gray",
+  },
+  "&::-webkit-scrollbar-track": {
+    all: "initial",
+  },
+};
 const Container = styled("div", {
   position: "relative",
   height: "100%",
+  ...defaultScrollbar,
 });
 const ScrollableLayout = styled("div", {
   // chrome user-agent style override
@@ -227,6 +242,7 @@ const ScrollableLayout = styled("div", {
   alignItems: "center",
   flexFlow: "row-reverse wrap",
   overflowY: "auto",
+  ...defaultScrollbar,
   variants: {
     fullscreen: {
       true: {
