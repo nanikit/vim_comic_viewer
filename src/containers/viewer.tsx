@@ -68,7 +68,7 @@ const Viewer_ = (
   }, []);
 
   const downloadWithProgress = () => {
-    downloadAndSave({ onProgress: reportProgress, onError: console.log });
+    downloadAndSave({ onProgress: reportProgress, onError: console.error });
   };
 
   const navigate = useCallback((event: MouseEvent) => {
@@ -97,7 +97,7 @@ const Viewer_ = (
     }
   }, [controller]);
 
-  useDefault({ enable: props.useDefault, controller });
+  useDefault({ enable: props.useDefault, controller, reportProgress });
 
   useImperativeHandle(refHandle, () => controller, [controller]);
 
