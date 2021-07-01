@@ -981,7 +981,7 @@ const Page = ({ source, observer, ...props }) => {
 
 const maybeNotHotkey = (event) =>
   event.ctrlKey || event.shiftKey || event.altKey || isTyping(event);
-const useDefault = ({ enable, controller }) => {
+const useDefault = ({ enable, controller, reportProgress }) => {
   const defaultKeyHandler = async (event) => {
     if (maybeNotHotkey(event)) {
       return;
@@ -994,7 +994,10 @@ const useDefault = ({ enable, controller }) => {
         controller.goPrevious();
         break;
       case ";": {
-        await controller.downloadAndSave();
+        await controller.downloadAndSave({
+          onProgress: reportProgress,
+          onError: console.error,
+        });
         break;
       }
     }
@@ -1075,7 +1078,7 @@ const Viewer_ = (props, refHandle) => {
   const downloadWithProgress = () => {
     downloadAndSave({
       onProgress: reportProgress,
-      onError: console.log,
+      onError: console.error,
     });
   };
   const navigate = react$1.useCallback((event) => {
@@ -1107,6 +1110,7 @@ const Viewer_ = (props, refHandle) => {
   useDefault({
     enable: props.useDefault,
     controller,
+    reportProgress,
   });
   react$1.useImperativeHandle(refHandle, () => controller, [
     controller,

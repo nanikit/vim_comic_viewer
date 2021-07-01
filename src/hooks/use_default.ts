@@ -1,12 +1,17 @@
 import { ViewerController } from "../types.ts";
 import { isTyping } from "../utils.ts";
 import { useEffect } from "react";
+import { DownloadProgress } from "../services/downloader.ts";
 
 const maybeNotHotkey = (event: KeyboardEvent) =>
   event.ctrlKey || event.shiftKey || event.altKey || isTyping(event);
 
 export const useDefault = (
-  { enable, controller }: { enable?: boolean; controller: ViewerController },
+  { enable, controller, reportProgress }: {
+    enable?: boolean;
+    controller: ViewerController;
+    reportProgress: (event: DownloadProgress) => void;
+  },
 ) => {
   const defaultKeyHandler = async (event: KeyboardEvent): Promise<void> => {
     if (maybeNotHotkey(event)) {
@@ -21,7 +26,10 @@ export const useDefault = (
         controller.goPrevious();
         break;
       case ";": {
-        await (controller as any).downloadAndSave();
+        await (controller as any).downloadAndSave({
+          onProgress: reportProgress,
+          onError: console.error,
+        });
         break;
       }
       default:
