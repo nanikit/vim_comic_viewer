@@ -18,6 +18,7 @@ const makeViewerController = (
   let images = [] as ImageSource[];
   let status = "loading" as ViewerStatus;
   let cancelDownload: (() => void) | undefined;
+  let compactWidthIndex = 1;
 
   const startDownload = async (options?: DownloadOptions) => {
     if (!images.length) {
@@ -90,6 +91,13 @@ const makeViewerController = (
     },
     get container() {
       return ref.current;
+    },
+    get compactWidthIndex() {
+      return compactWidthIndex;
+    },
+    set compactWidthIndex(value) {
+      compactWidthIndex = value;
+      rerender();
     },
 
     setOptions: async (value: ViewerOptions) => {

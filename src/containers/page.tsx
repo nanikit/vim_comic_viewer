@@ -13,10 +13,12 @@ import { CircledX } from "../components/icons.tsx";
 export const Page = ({
   source,
   observer,
+  fullWidth,
   ...props
 }: {
   source: ImageSource;
   observer?: IntersectionObserver;
+  fullWidth?: boolean;
 }) => {
   const { state: { src, state }, ...imageProps } = useSourceController(source);
   const ref = useRef<HTMLImageElement>();
@@ -30,7 +32,7 @@ export const Page = ({
   }, [observer, ref.current]);
 
   return (
-    <Overlay ref={ref} placeholder={state !== "complete"}>
+    <Overlay ref={ref} placeholder={state !== "complete"} fullWidth={fullWidth}>
       {state === "loading" && <Spinner />}
       {state === "error" && <ColumnNowrap>
         <CircledX />

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      4.1.0
+// @version      5.0.0
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -710,6 +710,7 @@ const makeViewerController = ({ ref, navigator, rerender }) => {
   let images = [];
   let status = "loading";
   let cancelDownload;
+  let compactWidthIndex = 1;
   const startDownload = async (options) => {
     if (!images.length) {
       return;
@@ -781,6 +782,13 @@ const makeViewerController = ({ ref, navigator, rerender }) => {
     },
     get container() {
       return ref.current;
+    },
+    get compactWidthIndex() {
+      return compactWidthIndex;
+    },
+    set compactWidthIndex(value) {
+      compactWidthIndex = value;
+      rerender();
     },
     setOptions: async (value) => {
       const { source } = value;
@@ -880,6 +888,11 @@ const Overlay = styled("div", {
         width: "45%",
       },
     },
+    fullWidth: {
+      true: {
+        width: "100%",
+      },
+    },
   },
 });
 const ColumnNowrap = styled("div", {
@@ -942,7 +955,7 @@ const useSourceController = (source) => {
   return useInstance();
 };
 
-const Page = ({ source, observer, ...props }) => {
+const Page = ({ source, observer, fullWidth, ...props }) => {
   const { state: { src, state }, ...imageProps } = useSourceController(source);
   const ref = react$1.useRef();
   react$1.useEffect(() => {
@@ -960,6 +973,7 @@ const Page = ({ source, observer, ...props }) => {
     {
       ref: ref,
       placeholder: state !== "complete",
+      fullWidth: fullWidth,
     },
     state === "loading" && /*#__PURE__*/ react$1.createElement(Spinner, null),
     state === "error" && /*#__PURE__*/
@@ -996,7 +1010,7 @@ const Page = ({ source, observer, ...props }) => {
 };
 
 const maybeNotHotkey = (event) =>
-  event.ctrlKey || event.shiftKey || event.altKey || isTyping(event);
+  event.ctrlKey || event.altKey || isTyping(event);
 const useDefault = ({ enable, controller, reportProgress }) => {
   const defaultKeyHandler = async (event) => {
     if (maybeNotHotkey(event)) {
@@ -1009,13 +1023,18 @@ const useDefault = ({ enable, controller, reportProgress }) => {
       case "k":
         controller.goPrevious();
         break;
-      case ";": {
+      case ";":
         await controller.downloadAndSave({
           onProgress: reportProgress,
           onError: console.error,
         });
         break;
-      }
+      case "/":
+        controller.compactWidthIndex++;
+        break;
+      case "?":
+        controller.compactWidthIndex--;
+        break;
     }
   };
   const defaultGlobalKeyHandler = (event) => {
@@ -1060,6 +1079,7 @@ const Viewer_ = (props, refHandle) => {
     downloadAndSave,
     cancelDownload,
     toggleFullscreen,
+    compactWidthIndex,
   } = controller;
   const [{ value, text, error }, setProgress] = react$1.useState({
     value: 0,
@@ -1182,6 +1202,7 @@ const Viewer_ = (props, refHandle) => {
               key: index,
               source: image,
               observer: navigator.observer,
+              fullWidth: index < compactWidthIndex,
             }, options?.imageProps),
           )
         ) || false

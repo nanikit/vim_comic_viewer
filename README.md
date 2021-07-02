@@ -7,9 +7,9 @@ Basic shortcut is
 
 - i: toggle fullscreen
 
-- j: next page
+- j, k: next, previous page
 
-- k: previous page
+- /, ?: adjust leading single pages
 
 - ;: download images
 

@@ -44,6 +44,7 @@ const Viewer_ = (
     downloadAndSave,
     cancelDownload,
     toggleFullscreen,
+    compactWidthIndex,
   } = controller;
 
   const [{ value, text, error }, setProgress] = useState({
@@ -140,6 +141,7 @@ const Viewer_ = (
                 key={index}
                 source={image}
                 observer={navigator.observer}
+                fullWidth={index < compactWidthIndex}
                 {...options?.imageProps}
               />
             )) || false
