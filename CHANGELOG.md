@@ -1,3 +1,8 @@
+## 5.0.0
+
+- Show first page as single by default.
+- Add new default key binding: /, ? for adjusting page start.
+
 ## 4.1.0
 
 - Set scrollbar style by default.

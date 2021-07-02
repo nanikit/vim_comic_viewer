@@ -12,6 +12,8 @@ export type ViewerController = {
   goPrevious: () => void;
   toggleFullscreen: () => void;
   download: () => Promise<JSZip | undefined>;
+  set compactWidthIndex(value: number);
+  get compactWidthIndex(): number;
   unmount: () => void;
 };
 

@@ -66,9 +66,10 @@ export const Overlay = styled("div", {
   },
   variants: {
     placeholder: {
-      true: {
-        width: "45%",
-      },
+      true: { width: "45%" },
+    },
+    fullWidth: {
+      true: { width: "100%" },
     },
   },
 });
