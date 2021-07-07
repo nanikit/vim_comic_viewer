@@ -5,6 +5,10 @@ export const fetchBlob = async (url: string, init?: RequestInit) => {
     const response = await fetch(url, init);
     return await response.blob();
   } catch (error) {
+    if (init?.signal?.aborted) {
+      throw error;
+    }
+
     const isOriginDifferent = new URL(url).origin !== location.origin;
     if (isOriginDifferent && gmFetch) {
       return await gmFetch(url, init).blob();

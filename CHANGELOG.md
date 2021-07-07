@@ -1,4 +1,23 @@
-## 5.0.0
+# 6.0.0
+
+Performance improvement: downloaded file zipping is now almost instant.
+
+- Change jszip dependency to fflate.
+
+Script user should replace
+
+`// @resource jszip https://cdn.jsdelivr.net/npm/jszip@3.6.0/dist/jszip.min.js`
+
+with
+
+`// @resource fflate https://cdn.jsdelivr.net/npm/fflate@0.7.1/lib/browser.cjs`
+
+- `ViewerController.download` is now
+  - returns `Uint8Array`.
+  - throws if cancelled.
+- Remove `saveZipAs` util function.
+
+# 5.0.0
 
 - Show first page as single by default.
 - Add new default key binding: /, ? for adjusting page start.

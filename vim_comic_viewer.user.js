@@ -7,7 +7,7 @@
 // @match        http://unused-field.space/
 // @author       nanikit
 // @license      MIT
-// @resource     jszip            https://cdn.jsdelivr.net/npm/jszip@3.6.0/dist/jszip.min.js
+// @resource     fflate           https://cdn.jsdelivr.net/npm/fflate@0.7.1/lib/browser.cjs
 // @resource     react            https://cdn.jsdelivr.net/npm/react@17.0.2/umd/react.production.min.js
 // @resource     react-dom        https://cdn.jsdelivr.net/npm/react-dom@17.0.2/umd/react-dom.production.min.js
 // @resource     @stitches/core   https://cdn.jsdelivr.net/npm/@stitches/core@0.2.0/dist/index.cjs
@@ -20,14 +20,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 
 var react$1 = require("react");
 var react = require("@stitches/react");
-var JSZip = require("jszip");
+var fflate = require("fflate");
 var reactDom = require("react-dom");
-
-function _interopDefaultLegacy(e) {
-  return e && typeof e === "object" && "default" in e ? e : { "default": e };
-}
-
-var JSZip__default = /*#__PURE__*/ _interopDefaultLegacy(JSZip);
 
 const { styled, css, keyframes } = react.createCss({});
 
@@ -268,70 +262,6 @@ const useFullscreenElement = () => {
   return element;
 };
 
-const timeout = (millisecond) =>
-  new Promise((resolve) => setTimeout(resolve, millisecond));
-const waitDomContent = (document) =>
-  document.readyState === "loading"
-    ? new Promise((r) =>
-      document.addEventListener("readystatechange", r, {
-        once: true,
-      })
-    )
-    : true;
-const insertCss = (css) => {
-  const style = document.createElement("style");
-  style.innerHTML = css;
-  document.head.append(style);
-};
-const isTyping = (event) =>
-  event.target?.tagName?.match?.(/INPUT|TEXTAREA/) ||
-  event.target?.isContentEditable;
-const saveAs = async (blob, name) => {
-  const a = document.createElement("a");
-  a.download = name;
-  a.rel = "noopener";
-  a.href = URL.createObjectURL(blob);
-  a.click();
-  await timeout(40000);
-  URL.revokeObjectURL(a.href);
-};
-const getSafeFileName = (str) => {
-  return str.replace(/[<>:"/\\|?*\x00-\x1f]+/gi, "").trim() || "download";
-};
-const saveZipAs = async (zip) => {
-  if (!zip) {
-    return;
-  }
-  const blob = await zip.generateAsync({
-    type: "blob",
-  });
-  return saveAs(blob, `${getSafeFileName(document.title)}.zip`);
-};
-const defer = () => {
-  let resolve, reject;
-  const promise = new Promise((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-  return {
-    promise,
-    resolve,
-    reject,
-  };
-};
-
-var utils = /*#__PURE__*/ Object.freeze({
-  __proto__: null,
-  timeout: timeout,
-  waitDomContent: waitDomContent,
-  insertCss: insertCss,
-  isTyping: isTyping,
-  saveAs: saveAs,
-  getSafeFileName: getSafeFileName,
-  saveZipAs: saveZipAs,
-  defer: defer,
-});
-
 const GM_xmlhttpRequest = module.config().GM_xmlhttpRequest;
 
 const fetchBlob = async (url, init) => {
@@ -339,6 +269,9 @@ const fetchBlob = async (url, init) => {
     const response = await fetch(url, init);
     return await response.blob();
   } catch (error) {
+    if (init?.signal?.aborted) {
+      throw error;
+    }
     const isOriginDifferent = new URL(url).origin !== location.origin;
     if (isOriginDifferent && gmFetch) {
       return await gmFetch(url, init).blob();
@@ -416,22 +349,98 @@ const transformToBlobUrl = (source) =>
     );
   };
 
+const timeout = (millisecond) =>
+  new Promise((resolve) => setTimeout(resolve, millisecond));
+const waitDomContent = (document) =>
+  document.readyState === "loading"
+    ? new Promise((r) =>
+      document.addEventListener("readystatechange", r, {
+        once: true,
+      })
+    )
+    : true;
+const insertCss = (css) => {
+  const style = document.createElement("style");
+  style.innerHTML = css;
+  document.head.append(style);
+};
+const isTyping = (event) =>
+  event.target?.tagName?.match?.(/INPUT|TEXTAREA/) ||
+  event.target?.isContentEditable;
+const saveAs = async (blob, name) => {
+  const a = document.createElement("a");
+  a.download = name;
+  a.rel = "noopener";
+  a.href = URL.createObjectURL(blob);
+  a.click();
+  await timeout(40000);
+  URL.revokeObjectURL(a.href);
+};
+const getSafeFileName = (str) => {
+  return str.replace(/[<>:"/\\|?*\x00-\x1f]+/gi, "").trim() || "download";
+};
+const save = async (blob) => {
+  return saveAs(blob, `${getSafeFileName(document.title)}.zip`);
+};
+const defer = () => {
+  let resolve, reject;
+  const promise = new Promise((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return {
+    promise,
+    resolve,
+    reject,
+  };
+};
+
+var utils = /*#__PURE__*/ Object.freeze({
+  __proto__: null,
+  timeout: timeout,
+  waitDomContent: waitDomContent,
+  insertCss: insertCss,
+  isTyping: isTyping,
+  saveAs: saveAs,
+  getSafeFileName: getSafeFileName,
+  save: save,
+  defer: defer,
+});
+
+async function* downloadImage({ source, signal }) {
+  for await (const url of imageSourceToIterable(source)) {
+    if (signal?.aborted) {
+      break;
+    }
+    try {
+      const blob = await fetchBlob(url, {
+        signal,
+      });
+      yield {
+        url,
+        blob,
+      };
+    } catch (error) {
+      yield {
+        error,
+      };
+    }
+  }
+}
+const getExtension = (url) => {
+  if (!url) {
+    return ".txt";
+  }
+  const extension = url.match(/\.[^/?#]{3,4}?(?=[?#]|$)/);
+  return extension || ".jpg";
+};
 const download = (images, options) => {
-  const { onError, onProgress } = options || {};
-  const aborter = new AbortController();
+  const { onError, onProgress, signal } = options || {};
   let startedCount = 0;
   let resolvedCount = 0;
   let rejectedCount = 0;
-  let zipPercent = 0;
   let isCancelled = false;
-  let hasCancelled = false;
-  const reportProgress = () => {
-    if (hasCancelled) {
-      return;
-    }
-    if (isCancelled) {
-      hasCancelled = true;
-    }
+  const reportProgress = (additionals = {}) => {
     const total = images.length;
     const settled = resolvedCount + rejectedCount;
     onProgress?.({
@@ -440,29 +449,32 @@ const download = (images, options) => {
       settled,
       rejected: rejectedCount,
       isCancelled,
-      zipPercent,
+      ...additionals,
     });
   };
-  const downloadImage = async (source) => {
+  const downloadWithReport = async (source) => {
     const errors = [];
     startedCount++;
     reportProgress();
-    for await (const url of imageSourceToIterable(source)) {
-      try {
-        const blob = await fetchBlob(url);
-        resolvedCount++;
-        reportProgress();
-        return {
-          url,
-          blob,
-        };
-      } catch (error) {
-        errors.push(error);
-        onError?.(error);
+    for await (
+      const event of downloadImage({
+        source,
+        signal,
+      })
+    ) {
+      if ("error" in event) {
+        errors.push(event.error);
+        onError?.(event.error);
+        continue;
       }
+      if (event.url) {
+        resolvedCount++;
+      } else {
+        rejectedCount++;
+      }
+      reportProgress();
+      return event;
     }
-    rejectedCount++;
-    reportProgress();
     return {
       url: "",
       blob: new Blob([
@@ -470,65 +482,45 @@ const download = (images, options) => {
       ]),
     };
   };
-  const deferred = defer();
-  const tasks = images.map(downloadImage);
-  reportProgress();
-  const archive = async () => {
-    const cancellation = async () => {
-      if (await deferred.promise === undefined) {
-        aborter.abort();
-      }
-      return Symbol();
-    };
-    const checkout = Promise.all(tasks);
-    const result = await Promise.race([
-      cancellation(),
-      checkout,
-    ]);
-    if (typeof result === "symbol") {
-      isCancelled = true;
-      reportProgress();
-      return;
+  const archiveWithReport = async (sources) => {
+    const result = await Promise.all(sources.map(downloadWithReport));
+    if (signal?.aborted) {
+      throw new Error("aborted");
     }
-    const cipher = Math.floor(Math.log10(tasks.length)) + 1;
-    const getExtension = (url) => {
-      if (!url) {
-        return ".txt";
-      }
-      const extension = url.match(/\.[^/?#]{3,4}?(?=[?#]|$)/);
-      return extension || ".jpg";
-    };
-    const getName = (url, index) => {
+    const cipher = Math.floor(Math.log10(result.length)) + 1;
+    const getName = ({ url }, index) => {
       const pad = `${index}`.padStart(cipher, "0");
       const name = `${pad}${getExtension(url)}`;
       return name;
     };
-    const zip = JSZip__default["default"]();
-    for (let i = 0; i < result.length; i++) {
-      const file = result[i];
-      zip.file(getName(file.url, i), file.blob);
-    }
-    const proxy = new Proxy(zip, {
-      get: (target, property, receiver) => {
-        const ret = Reflect.get(target, property, receiver);
-        if (property !== "generateAsync") {
-          return ret;
-        }
-        return (options, onUpdate) =>
-          ret.bind(target)(options, (metadata) => {
-            zipPercent = metadata.percent;
-            reportProgress();
-            onUpdate?.(metadata);
-          });
-      },
+    const names = result.map(getName);
+    const buffers = await Promise.all(result.map((x) => x.blob.arrayBuffer()));
+    const value = defer();
+    const indices = [
+      ...Array(result.length).keys(),
+    ];
+    const pairs = indices.map((index) => ({
+      [names[index]]: new Uint8Array(buffers[index]),
+    }));
+    const data = Object.assign({}, ...pairs);
+    const abort = fflate.zip(data, {
+      level: 0,
+    }, (error, array) => {
+      if (error) {
+        value.reject(error);
+      } else {
+        reportProgress({
+          isComplete: true,
+        });
+        value.resolve(array);
+      }
     });
-    deferred.resolve(proxy);
+    signal?.addEventListener("abort", abort, {
+      once: true,
+    });
+    return value.promise;
   };
-  archive();
-  return {
-    zip: deferred.promise,
-    cancel: () => deferred.resolve(undefined),
-  };
+  return archiveWithReport(images);
 };
 
 const useIntersectionObserver = (callback, options) => {
@@ -709,24 +701,29 @@ const makeViewerController = ({ ref, navigator, rerender }) => {
   let options = {};
   let images = [];
   let status = "loading";
-  let cancelDownload;
+  let aborter = new AbortController();
   let compactWidthIndex = 1;
   const startDownload = async (options) => {
     if (!images.length) {
       return;
     }
-    const { zip, cancel } = download(images, options);
-    cancelDownload = () => {
-      cancel();
-      cancelDownload = undefined;
-    };
+    aborter = new AbortController();
+    const zip = download(images, {
+      ...options,
+      signal: aborter.signal,
+    });
     const result = await zip;
-    cancelDownload = undefined;
     return result;
   };
   const downloadAndSave = async (options) => {
     const zip = await startDownload(options);
-    await saveZipAs(zip);
+    if (zip) {
+      await save(
+        new Blob([
+          zip,
+        ]),
+      );
+    }
   };
   const toggleFullscreen = () => {
     if (document.fullscreenElement) {
@@ -777,9 +774,6 @@ const makeViewerController = ({ ref, navigator, rerender }) => {
     get status() {
       return status;
     },
-    get cancelDownload() {
-      return cancelDownload;
-    },
     get container() {
       return ref.current;
     },
@@ -789,6 +783,9 @@ const makeViewerController = ({ ref, navigator, rerender }) => {
     set compactWidthIndex(value) {
       compactWidthIndex = value;
       rerender();
+    },
+    cancelDownload: () => {
+      aborter.abort();
     },
     setOptions: async (value) => {
       const { source } = value;
@@ -1090,13 +1087,12 @@ const Viewer_ = (props, refHandle) => {
     text: "",
   };
   const reportProgress = react$1.useCallback((event) => {
-    const { total, started, settled, rejected, isCancelled, zipPercent } =
+    const { total, started, settled, rejected, isCancelled, isComplete } =
       event;
-    const value = started / total * 0.1 + settled / total * 0.7 +
-      zipPercent * 0.002;
+    const value = started / total * 0.1 + settled / total * 0.89;
     const text = `${(value * 100).toFixed(1)}%`;
     const error = !!rejected;
-    if (value === 1 && !error || isCancelled) {
+    if (isComplete || isCancelled) {
       setProgress({
         value: 0,
         text: "",
