@@ -3,7 +3,7 @@ import { ComicSource, ImageSource, ViewerOptions } from "../types.ts";
 import { MutableRefObject, useMemo, useReducer } from "react";
 import { unmountComponentAtNode } from "react-dom";
 import { PageNavigator, usePageNavigator } from "./use_page_navigator.ts";
-import { saveZipAs } from "../utils.ts";
+import { save } from "../utils.ts";
 
 type ViewerStatus = "loading" | "complete" | "error";
 
@@ -17,7 +17,7 @@ const makeViewerController = (
   let options = {} as ViewerOptions;
   let images = [] as ImageSource[];
   let status = "loading" as ViewerStatus;
-  let cancelDownload: (() => void) | undefined;
+  let aborter = new AbortController();
   let compactWidthIndex = 1;
 
   const startDownload = async (options?: DownloadOptions) => {
@@ -25,20 +25,18 @@ const makeViewerController = (
       return;
     }
 
-    const { zip, cancel } = download(images, options);
-    cancelDownload = () => {
-      cancel();
-      cancelDownload = undefined;
-    };
+    aborter = new AbortController();
+    const zip = download(images, { ...options, signal: aborter.signal });
 
     const result = await zip;
-    cancelDownload = undefined;
     return result;
   };
 
   const downloadAndSave = async (options?: DownloadOptions) => {
     const zip = await startDownload(options);
-    await saveZipAs(zip);
+    if (zip) {
+      await save(new Blob([zip]));
+    }
   };
 
   const toggleFullscreen = () => {
@@ -86,9 +84,6 @@ const makeViewerController = (
     get status() {
       return status;
     },
-    get cancelDownload() {
-      return cancelDownload;
-    },
     get container() {
       return ref.current;
     },
@@ -100,6 +95,9 @@ const makeViewerController = (
       rerender();
     },
 
+    cancelDownload: () => {
+      aborter.abort();
+    },
     setOptions: async (value: ViewerOptions) => {
       const { source } = value;
       const isSourceChanged = source !== options.source;

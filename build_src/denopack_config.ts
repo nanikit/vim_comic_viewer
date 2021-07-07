@@ -12,7 +12,7 @@ const postprocessPlugin: Plugin = {
 // @match        http://unused-field.space/
 // @author       nanikit
 // @license      MIT
-// @resource     jszip            https://cdn.jsdelivr.net/npm/jszip@3.6.0/dist/jszip.min.js
+// @resource     fflate           https://cdn.jsdelivr.net/npm/fflate@0.7.1/lib/browser.cjs
 // @resource     react            https://cdn.jsdelivr.net/npm/react@17.0.2/umd/react.production.min.js
 // @resource     react-dom        https://cdn.jsdelivr.net/npm/react-dom@17.0.2/umd/react-dom.production.min.js
 // @resource     @stitches/core   https://cdn.jsdelivr.net/npm/@stitches/core@0.2.0/dist/index.cjs

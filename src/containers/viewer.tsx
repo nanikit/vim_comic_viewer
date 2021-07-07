@@ -54,13 +54,12 @@ const Viewer_ = (
   });
   const cache = { text: "" };
   const reportProgress = useCallback((event: DownloadProgress) => {
-    const { total, started, settled, rejected, isCancelled, zipPercent } =
+    const { total, started, settled, rejected, isCancelled, isComplete } =
       event;
-    const value = (started / total) * 0.1 + (settled / total) * 0.7 +
-      zipPercent * 0.002;
+    const value = (started / total) * 0.1 + (settled / total) * 0.89;
     const text = `${(value * 100).toFixed(1)}%`;
     const error = !!rejected;
-    if ((value === 1 && !error) || isCancelled) {
+    if (isComplete || isCancelled) {
       setProgress({ value: 0, text: "", error: false });
     } else if (text !== cache.text) {
       cache.text = text;

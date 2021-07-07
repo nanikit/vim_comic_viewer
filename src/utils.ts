@@ -1,5 +1,3 @@
-import type { JSZip } from "jszip";
-
 export const timeout = (millisecond: number) =>
   new Promise((resolve) => setTimeout(resolve, millisecond));
 
@@ -34,11 +32,7 @@ export const getSafeFileName = (str: string) => {
   return str.replace(/[<>:"/\\|?*\x00-\x1f]+/gi, "").trim() || "download";
 };
 
-export const saveZipAs = async (zip?: JSZip) => {
-  if (!zip /* isCancelled */) {
-    return;
-  }
-  const blob = await zip.generateAsync({ type: "blob" });
+export const save = async (blob: Blob) => {
   return saveAs(blob, `${getSafeFileName(document.title)}.zip`);
 };
 

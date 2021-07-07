@@ -1,5 +1,3 @@
-import type { JSZip } from "jszip";
-
 export type ViewerOptions = {
   source?: ComicSource;
   imageProps?: Record<string, string>;
@@ -11,7 +9,7 @@ export type ViewerController = {
   goNext: () => void;
   goPrevious: () => void;
   toggleFullscreen: () => void;
-  download: () => Promise<JSZip | undefined>;
+  download: () => Promise<Uint8Array | undefined>;
   set compactWidthIndex(value: number);
   get compactWidthIndex(): number;
   unmount: () => void;
