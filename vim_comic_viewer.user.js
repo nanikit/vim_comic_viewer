@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      5.0.0
+// @version      6.1.0
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -432,7 +432,22 @@ const getExtension = (url) => {
     return ".txt";
   }
   const extension = url.match(/\.[^/?#]{3,4}?(?=[?#]|$)/);
-  return extension || ".jpg";
+  return extension?.[0] || ".jpg";
+};
+const guessExtension = (array) => {
+  const { 0: a, 1: b, 2: c, 3: d } = array;
+  if (a === 255 && b === 216 && c === 255) {
+    return ".jpg";
+  }
+  if (a === 137 && b === 80 && c === 78 && d === 71) {
+    return ".png";
+  }
+  if (a === 82 && b === 73 && c === 70 && d === 70) {
+    return ".webp";
+  }
+  if (a === 71 && b === 73 && c === 70 && d === 56) {
+    return ".gif";
+  }
 };
 const download = (images, options) => {
   const { onError, onProgress, signal } = options || {};
@@ -482,27 +497,23 @@ const download = (images, options) => {
       ]),
     };
   };
+  const cipher = Math.floor(Math.log10(images.length)) + 1;
+  const toPair = async ({ url, blob }, index) => {
+    const array = new Uint8Array(await blob.arrayBuffer());
+    const pad = `${index}`.padStart(cipher, "0");
+    const name = `${pad}${guessExtension(array) ?? getExtension(url)}`;
+    return {
+      [name]: array,
+    };
+  };
   const archiveWithReport = async (sources) => {
     const result = await Promise.all(sources.map(downloadWithReport));
     if (signal?.aborted) {
       throw new Error("aborted");
     }
-    const cipher = Math.floor(Math.log10(result.length)) + 1;
-    const getName = ({ url }, index) => {
-      const pad = `${index}`.padStart(cipher, "0");
-      const name = `${pad}${getExtension(url)}`;
-      return name;
-    };
-    const names = result.map(getName);
-    const buffers = await Promise.all(result.map((x) => x.blob.arrayBuffer()));
-    const value = defer();
-    const indices = [
-      ...Array(result.length).keys(),
-    ];
-    const pairs = indices.map((index) => ({
-      [names[index]]: new Uint8Array(buffers[index]),
-    }));
+    const pairs = await Promise.all(result.map(toPair));
     const data = Object.assign({}, ...pairs);
+    const value = defer();
     const abort = fflate.zip(data, {
       level: 0,
     }, (error, array) => {
@@ -703,17 +714,15 @@ const makeViewerController = ({ ref, navigator, rerender }) => {
   let status = "loading";
   let aborter = new AbortController();
   let compactWidthIndex = 1;
-  const startDownload = async (options) => {
+  const startDownload = (options) => {
     if (!images.length) {
       return;
     }
     aborter = new AbortController();
-    const zip = download(images, {
+    return download(images, {
       ...options,
       signal: aborter.signal,
     });
-    const result = await zip;
-    return result;
   };
   const downloadAndSave = async (options) => {
     const zip = await startDownload(options);

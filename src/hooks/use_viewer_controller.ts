@@ -20,16 +20,13 @@ const makeViewerController = (
   let aborter = new AbortController();
   let compactWidthIndex = 1;
 
-  const startDownload = async (options?: DownloadOptions) => {
+  const startDownload = (options?: DownloadOptions) => {
     if (!images.length) {
       return;
     }
 
     aborter = new AbortController();
-    const zip = download(images, { ...options, signal: aborter.signal });
-
-    const result = await zip;
-    return result;
+    return download(images, { ...options, signal: aborter.signal });
   };
 
   const downloadAndSave = async (options?: DownloadOptions) => {

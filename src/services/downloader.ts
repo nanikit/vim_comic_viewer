@@ -40,12 +40,28 @@ async function* downloadImage(
   }
 }
 
-const getExtension = (url: string) => {
+const getExtension = (url: string): string => {
   if (!url) {
     return ".txt";
   }
   const extension = url.match(/\.[^/?#]{3,4}?(?=[?#]|$)/);
-  return extension || ".jpg";
+  return extension?.[0] || ".jpg";
+};
+
+const guessExtension = (array: Uint8Array): string | undefined => {
+  const { 0: a, 1: b, 2: c, 3: d } = array;
+  if (a === 0xff && b === 0xd8 && c === 0xff) {
+    return ".jpg";
+  }
+  if (a === 0x89 && b === 0x50 && c === 0x4e && d === 0x47) {
+    return ".png";
+  }
+  if (a === 0x52 && b === 0x49 && c === 0x46 && d === 0x46) {
+    return ".webp";
+  }
+  if (a === 0x47 && b === 0x49 && c === 0x46 && d === 0x38) {
+    return ".gif";
+  }
 };
 
 export const download = (
@@ -111,6 +127,20 @@ export const download = (
     };
   };
 
+  const cipher = Math.floor(Math.log10(images.length)) + 1;
+
+  const toPair = async (
+    { url, blob }: { url: string; blob: Blob },
+    index: number,
+  ) => {
+    const array = new Uint8Array(await blob.arrayBuffer());
+    const pad = `${index}`.padStart(cipher, "0");
+
+    const name = `${pad}${guessExtension(array) ?? getExtension(url)}`;
+
+    return { [name]: array };
+  };
+
   const archiveWithReport = async (
     sources: ImageSource[],
   ): Promise<Uint8Array> => {
@@ -120,22 +150,10 @@ export const download = (
       throw new Error("aborted");
     }
 
-    const cipher = Math.floor(Math.log10(result.length)) + 1;
-    const getName = ({ url }: { url: string }, index: number) => {
-      const pad = `${index}`.padStart(cipher, "0");
-      const name = `${pad}${getExtension(url)}`;
-      return name;
-    };
-    const names = result.map(getName);
-    const buffers = await Promise.all(result.map((x) => x.blob.arrayBuffer()));
-
-    const value = defer<Uint8Array>();
-    const indices = [...Array(result.length).keys()];
-    const pairs = indices.map((index) => ({
-      [names[index]]: new Uint8Array(buffers[index]),
-    }));
+    const pairs = await Promise.all(result.map(toPair));
     const data = Object.assign({}, ...pairs);
 
+    const value = defer<Uint8Array>();
     const abort = zip(data, { level: 0 }, (error, array) => {
       if (error) {
         value.reject(error);
