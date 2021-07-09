@@ -1,3 +1,7 @@
+## 6.1.0
+
+- Use file content to determine file extension.
+- Remove download progress animation
 
 # 6.0.0
 

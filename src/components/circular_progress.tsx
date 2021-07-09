@@ -20,7 +20,6 @@ const Svg = styled("svg", {
 });
 
 const Circle = styled("circle", {
-  transition: "stroke-dashoffset 0.35s",
   transform: "rotate(-90deg)",
   transformOrigin: "50% 50%",
   stroke: "url(#aEObn)",
