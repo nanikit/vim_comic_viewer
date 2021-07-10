@@ -18,8 +18,7 @@ export const fetchBlob = async (url: string, init?: RequestInit) => {
   }
 };
 
-const GMxhr = GM_xmlhttpRequest;
-export const gmFetch = GMxhr
+export const gmFetch = GM_xmlhttpRequest
   ? (
     resource: string,
     init?: Pick<RequestInit, "body" | "headers" | "signal">,
@@ -27,13 +26,13 @@ export const gmFetch = GMxhr
     const method = init?.body ? "POST" : "GET";
     const xhr = (type: "blob" | "json" | "text") => {
       return new Promise<any>((resolve, reject) => {
-        const request = GMxhr({
+        const request = GM_xmlhttpRequest({
           method,
           url: resource,
           headers: init?.headers,
           responseType: type === "text" ? undefined : type,
           data: init?.body as any,
-          onload: (response) => {
+          onload: (response: any) => {
             if (type === "text") {
               resolve(response.responseText);
             } else {
@@ -43,11 +42,9 @@ export const gmFetch = GMxhr
           onerror: reject,
           onabort: reject,
         }) as any;
-        if (init?.signal) {
-          init.signal.addEventListener("abort", () => {
-            request.abort();
-          });
-        }
+        init?.signal?.addEventListener("abort", () => {
+          request.abort();
+        }, { once: true });
       });
     };
     return {

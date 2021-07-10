@@ -9,7 +9,7 @@ export type ViewerController = {
   goNext: () => void;
   goPrevious: () => void;
   toggleFullscreen: () => void;
-  download: () => Promise<Uint8Array | undefined>;
+  download: () => Promise<Uint8Array>;
   set compactWidthIndex(value: number);
   get compactWidthIndex(): number;
   unmount: () => void;

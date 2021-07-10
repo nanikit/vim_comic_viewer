@@ -20,6 +20,10 @@ export type DownloadOptions = {
   signal?: AbortSignal;
 };
 
+export const isGmCancelled = (error: unknown) => {
+  return error instanceof Function;
+};
+
 async function* downloadImage(
   { source, signal }: {
     source: ImageSource;
@@ -35,7 +39,11 @@ async function* downloadImage(
       const blob = await fetchBlob(url, { signal });
       yield { url, blob };
     } catch (error) {
-      yield { error };
+      if (isGmCancelled(error)) {
+        yield { error: new Error("download aborted") };
+      } else {
+        yield { error };
+      }
     }
   }
 }
@@ -123,7 +131,7 @@ export const download = (
 
     return {
       url: "",
-      blob: new Blob([errors.map((x) => x.toString()).join("\n\n")]),
+      blob: new Blob([errors.map((x) => `${x}`).join("\n\n")]),
     };
   };
 
