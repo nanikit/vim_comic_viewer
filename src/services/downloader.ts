@@ -20,7 +20,7 @@ export type DownloadOptions = {
   signal?: AbortSignal;
 };
 
-export const isGmCancelled = (error: unknown) => {
+const isGmCancelled = (error: unknown) => {
   return error instanceof Function;
 };
 
@@ -155,6 +155,7 @@ export const download = (
     const result = await Promise.all(sources.map(downloadWithReport));
 
     if (signal?.aborted) {
+      reportProgress({ isCancelled: true });
       throw new Error("aborted");
     }
 

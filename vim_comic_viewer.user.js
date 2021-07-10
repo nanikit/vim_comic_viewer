@@ -20,100 +20,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 
 var react$1 = require("react");
 var react = require("@stitches/react");
-var fflate = require("fflate");
 var reactDom = require("react-dom");
+var fflate = require("fflate");
 
 const { styled, css, keyframes } = react.createCss({});
 
 const Svg$1 = styled("svg", {
-  position: "absolute",
-  bottom: "8px",
-  left: "8px",
-  cursor: "pointer",
-  "&:hover": {
-    filter: "hue-rotate(-145deg)",
-  },
-  variants: {
-    error: {
-      true: {
-        filter: "hue-rotate(140deg)",
-      },
-    },
-  },
-});
-const Circle = styled("circle", {
-  transform: "rotate(-90deg)",
-  transformOrigin: "50% 50%",
-  stroke: "url(#aEObn)",
-  fill: "#fff8",
-});
-const GradientDef = /*#__PURE__*/ react$1.createElement(
-  "defs",
-  null,
-  /*#__PURE__*/ react$1.createElement(
-    "linearGradient",
-    {
-      id: "aEObn",
-      x1: "100%",
-      y1: "0%",
-      x2: "0%",
-      y2: "100%",
-    },
-    /*#__PURE__*/ react$1.createElement("stop", {
-      offset: "0%",
-      style: {
-        stopColor: "#53baff",
-        stopOpacity: 1,
-      },
-    }),
-    /*#__PURE__*/ react$1.createElement("stop", {
-      offset: "100%",
-      style: {
-        stopColor: "#0067bb",
-        stopOpacity: 1,
-      },
-    }),
-  ),
-);
-const CenterText = styled("text", {
-  dominantBaseline: "middle",
-  textAnchor: "middle",
-  fontSize: "30px",
-  fontWeight: "bold",
-  fill: "#004b9e",
-});
-const CircularProgress = (props) => {
-  const { radius, strokeWidth, value, text, ...otherProps } = props;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - value * circumference;
-  const center = radius + strokeWidth / 2;
-  const side = center * 2;
-  return (/*#__PURE__*/ react$1.createElement(
-    Svg$1,
-    Object.assign({
-      height: side,
-      width: side,
-    }, otherProps),
-    GradientDef,
-    /*#__PURE__*/ react$1.createElement(
-      Circle,
-      Object.assign({}, {
-        strokeWidth,
-        strokeDasharray: `${circumference} ${circumference}`,
-        strokeDashoffset,
-        r: radius,
-        cx: center,
-        cy: center,
-      }),
-    ),
-    /*#__PURE__*/ react$1.createElement(CenterText, {
-      x: "50%",
-      y: "50%",
-    }, text || ""),
-  ));
-};
-
-const Svg = styled("svg", {
   position: "absolute",
   width: "40px",
   bottom: "8px",
@@ -134,7 +46,7 @@ const fullscreenCss = {
 };
 const DownloadIcon = (props) =>
   /*#__PURE__*/ react$1.createElement(
-    Svg,
+    Svg$1,
     Object.assign({
       version: "1.1",
       xmlns: "http://www.w3.org/2000/svg",
@@ -153,7 +65,7 @@ const DownloadIcon = (props) =>
   );
 const FullscreenIcon = (props) =>
   /*#__PURE__*/ react$1.createElement(
-    Svg,
+    Svg$1,
     Object.assign({
       version: "1.1",
       xmlns: "http://www.w3.org/2000/svg",
@@ -259,278 +171,6 @@ const useFullscreenElement = () => {
     return () => document.removeEventListener("fullscreenchange", notify);
   }, []);
   return element;
-};
-
-const GM_xmlhttpRequest = module.config().GM_xmlhttpRequest;
-
-const fetchBlob = async (url, init) => {
-  try {
-    const response = await fetch(url, init);
-    return await response.blob();
-  } catch (error) {
-    if (init?.signal?.aborted) {
-      throw error;
-    }
-    const isOriginDifferent = new URL(url).origin !== location.origin;
-    if (isOriginDifferent && gmFetch) {
-      return await gmFetch(url, init).blob();
-    } else {
-      throw error;
-    }
-  }
-};
-const GMxhr = GM_xmlhttpRequest;
-const gmFetch = GMxhr
-  ? (resource, init) => {
-    const method = init?.body ? "POST" : "GET";
-    const xhr = (type) => {
-      return new Promise((resolve, reject) => {
-        const request = GMxhr({
-          method,
-          url: resource,
-          headers: init?.headers,
-          responseType: type === "text" ? undefined : type,
-          data: init?.body,
-          onload: (response) => {
-            if (type === "text") {
-              resolve(response.responseText);
-            } else {
-              resolve(response.response);
-            }
-          },
-          onerror: reject,
-          onabort: reject,
-        });
-        if (init?.signal) {
-          init.signal.addEventListener("abort", () => {
-            request.abort();
-          });
-        }
-      });
-    };
-    return {
-      blob: () => xhr("blob"),
-      json: () => xhr("json"),
-      text: () => xhr("text"),
-    };
-  }
-  : undefined;
-
-const imageSourceToIterable = (source) => {
-  if (typeof source === "string") {
-    return (async function* () {
-      yield source;
-    })();
-  } else if (Array.isArray(source)) {
-    return (async function* () {
-      for (const url of source) {
-        yield url;
-      }
-    })();
-  } else {
-    return source();
-  }
-};
-const transformToBlobUrl = (source) =>
-  async () => {
-    const imageSources = await source();
-    return imageSources.map((imageSource) =>
-      async function* () {
-        for await (const url of imageSourceToIterable(imageSource)) {
-          try {
-            const blob = await fetchBlob(url);
-            yield URL.createObjectURL(blob);
-          } catch (error) {
-            console.log(error);
-          }
-        }
-      }
-    );
-  };
-
-const timeout = (millisecond) =>
-  new Promise((resolve) => setTimeout(resolve, millisecond));
-const waitDomContent = (document) =>
-  document.readyState === "loading"
-    ? new Promise((r) =>
-      document.addEventListener("readystatechange", r, {
-        once: true,
-      })
-    )
-    : true;
-const insertCss = (css) => {
-  const style = document.createElement("style");
-  style.innerHTML = css;
-  document.head.append(style);
-};
-const isTyping = (event) =>
-  event.target?.tagName?.match?.(/INPUT|TEXTAREA/) ||
-  event.target?.isContentEditable;
-const saveAs = async (blob, name) => {
-  const a = document.createElement("a");
-  a.download = name;
-  a.rel = "noopener";
-  a.href = URL.createObjectURL(blob);
-  a.click();
-  await timeout(40000);
-  URL.revokeObjectURL(a.href);
-};
-const getSafeFileName = (str) => {
-  return str.replace(/[<>:"/\\|?*\x00-\x1f]+/gi, "").trim() || "download";
-};
-const save = async (blob) => {
-  return saveAs(blob, `${getSafeFileName(document.title)}.zip`);
-};
-const defer = () => {
-  let resolve, reject;
-  const promise = new Promise((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-  return {
-    promise,
-    resolve,
-    reject,
-  };
-};
-
-var utils = /*#__PURE__*/ Object.freeze({
-  __proto__: null,
-  timeout: timeout,
-  waitDomContent: waitDomContent,
-  insertCss: insertCss,
-  isTyping: isTyping,
-  saveAs: saveAs,
-  getSafeFileName: getSafeFileName,
-  save: save,
-  defer: defer,
-});
-
-async function* downloadImage({ source, signal }) {
-  for await (const url of imageSourceToIterable(source)) {
-    if (signal?.aborted) {
-      break;
-    }
-    try {
-      const blob = await fetchBlob(url, {
-        signal,
-      });
-      yield {
-        url,
-        blob,
-      };
-    } catch (error) {
-      yield {
-        error,
-      };
-    }
-  }
-}
-const getExtension = (url) => {
-  if (!url) {
-    return ".txt";
-  }
-  const extension = url.match(/\.[^/?#]{3,4}?(?=[?#]|$)/);
-  return extension?.[0] || ".jpg";
-};
-const guessExtension = (array) => {
-  const { 0: a, 1: b, 2: c, 3: d } = array;
-  if (a === 255 && b === 216 && c === 255) {
-    return ".jpg";
-  }
-  if (a === 137 && b === 80 && c === 78 && d === 71) {
-    return ".png";
-  }
-  if (a === 82 && b === 73 && c === 70 && d === 70) {
-    return ".webp";
-  }
-  if (a === 71 && b === 73 && c === 70 && d === 56) {
-    return ".gif";
-  }
-};
-const download = (images, options) => {
-  const { onError, onProgress, signal } = options || {};
-  let startedCount = 0;
-  let resolvedCount = 0;
-  let rejectedCount = 0;
-  let isCancelled = false;
-  const reportProgress = (additionals = {}) => {
-    const total = images.length;
-    const settled = resolvedCount + rejectedCount;
-    onProgress?.({
-      total,
-      started: startedCount,
-      settled,
-      rejected: rejectedCount,
-      isCancelled,
-      ...additionals,
-    });
-  };
-  const downloadWithReport = async (source) => {
-    const errors = [];
-    startedCount++;
-    reportProgress();
-    for await (
-      const event of downloadImage({
-        source,
-        signal,
-      })
-    ) {
-      if ("error" in event) {
-        errors.push(event.error);
-        onError?.(event.error);
-        continue;
-      }
-      if (event.url) {
-        resolvedCount++;
-      } else {
-        rejectedCount++;
-      }
-      reportProgress();
-      return event;
-    }
-    return {
-      url: "",
-      blob: new Blob([
-        errors.map((x) => x.toString()).join("\n\n"),
-      ]),
-    };
-  };
-  const cipher = Math.floor(Math.log10(images.length)) + 1;
-  const toPair = async ({ url, blob }, index) => {
-    const array = new Uint8Array(await blob.arrayBuffer());
-    const pad = `${index}`.padStart(cipher, "0");
-    const name = `${pad}${guessExtension(array) ?? getExtension(url)}`;
-    return {
-      [name]: array,
-    };
-  };
-  const archiveWithReport = async (sources) => {
-    const result = await Promise.all(sources.map(downloadWithReport));
-    if (signal?.aborted) {
-      throw new Error("aborted");
-    }
-    const pairs = await Promise.all(result.map(toPair));
-    const data = Object.assign({}, ...pairs);
-    const value = defer();
-    const abort = fflate.zip(data, {
-      level: 0,
-    }, (error, array) => {
-      if (error) {
-        value.reject(error);
-      } else {
-        reportProgress({
-          isComplete: true,
-        });
-        value.resolve(array);
-      }
-    });
-    signal?.addEventListener("abort", abort, {
-      once: true,
-    });
-    return value.promise;
-  };
-  return archiveWithReport(images);
 };
 
 const useIntersectionObserver = (callback, options) => {
@@ -707,16 +347,309 @@ const usePageNavigator = (ref) => {
   return navigator;
 };
 
-const makeViewerController = ({ ref, navigator, rerender }) => {
-  let options = {};
-  let images = [];
-  let status = "loading";
-  let aborter = new AbortController();
-  let compactWidthIndex = 1;
-  const startDownload = (options) => {
-    if (!images.length) {
-      return;
+const useRerender = () => {
+  const [, rerender] = react$1.useReducer(() => ({}), {});
+  return rerender;
+};
+
+const GM_xmlhttpRequest = module.config().GM_xmlhttpRequest;
+
+const fetchBlob = async (url, init) => {
+  try {
+    const response = await fetch(url, init);
+    return await response.blob();
+  } catch (error) {
+    if (init?.signal?.aborted) {
+      throw error;
     }
+    const isOriginDifferent = new URL(url).origin !== location.origin;
+    if (isOriginDifferent && gmFetch) {
+      return await gmFetch(url, init).blob();
+    } else {
+      throw error;
+    }
+  }
+};
+const gmFetch = GM_xmlhttpRequest
+  ? (resource, init) => {
+    const method = init?.body ? "POST" : "GET";
+    const xhr = (type) => {
+      return new Promise((resolve, reject) => {
+        const request = GM_xmlhttpRequest({
+          method,
+          url: resource,
+          headers: init?.headers,
+          responseType: type === "text" ? undefined : type,
+          data: init?.body,
+          onload: (response) => {
+            if (type === "text") {
+              resolve(response.responseText);
+            } else {
+              resolve(response.response);
+            }
+          },
+          onerror: reject,
+          onabort: reject,
+        });
+        init?.signal?.addEventListener("abort", () => {
+          request.abort();
+        }, {
+          once: true,
+        });
+      });
+    };
+    return {
+      blob: () => xhr("blob"),
+      json: () => xhr("json"),
+      text: () => xhr("text"),
+    };
+  }
+  : undefined;
+
+const imageSourceToIterable = (source) => {
+  if (typeof source === "string") {
+    return (async function* () {
+      yield source;
+    })();
+  } else if (Array.isArray(source)) {
+    return (async function* () {
+      for (const url of source) {
+        yield url;
+      }
+    })();
+  } else {
+    return source();
+  }
+};
+const transformToBlobUrl = (source) =>
+  async () => {
+    const imageSources = await source();
+    return imageSources.map((imageSource) =>
+      async function* () {
+        for await (const url of imageSourceToIterable(imageSource)) {
+          try {
+            const blob = await fetchBlob(url);
+            yield URL.createObjectURL(blob);
+          } catch (error) {
+            console.log(error);
+          }
+        }
+      }
+    );
+  };
+
+const timeout = (millisecond) =>
+  new Promise((resolve) => setTimeout(resolve, millisecond));
+const waitDomContent = (document) =>
+  document.readyState === "loading"
+    ? new Promise((r) =>
+      document.addEventListener("readystatechange", r, {
+        once: true,
+      })
+    )
+    : true;
+const insertCss = (css) => {
+  const style = document.createElement("style");
+  style.innerHTML = css;
+  document.head.append(style);
+};
+const isTyping = (event) =>
+  event.target?.tagName?.match?.(/INPUT|TEXTAREA/) ||
+  event.target?.isContentEditable;
+const saveAs = async (blob, name) => {
+  const a = document.createElement("a");
+  a.download = name;
+  a.rel = "noopener";
+  a.href = URL.createObjectURL(blob);
+  a.click();
+  await timeout(40000);
+  URL.revokeObjectURL(a.href);
+};
+const getSafeFileName = (str) => {
+  return str.replace(/[<>:"/\\|?*\x00-\x1f]+/gi, "").trim() || "download";
+};
+const save = async (blob) => {
+  return saveAs(blob, `${getSafeFileName(document.title)}.zip`);
+};
+const defer = () => {
+  let resolve, reject;
+  const promise = new Promise((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return {
+    promise,
+    resolve,
+    reject,
+  };
+};
+
+var utils = /*#__PURE__*/ Object.freeze({
+  __proto__: null,
+  timeout: timeout,
+  waitDomContent: waitDomContent,
+  insertCss: insertCss,
+  isTyping: isTyping,
+  saveAs: saveAs,
+  getSafeFileName: getSafeFileName,
+  save: save,
+  defer: defer,
+});
+
+const isGmCancelled = (error) => {
+  return error instanceof Function;
+};
+async function* downloadImage({ source, signal }) {
+  for await (const url of imageSourceToIterable(source)) {
+    if (signal?.aborted) {
+      break;
+    }
+    try {
+      const blob = await fetchBlob(url, {
+        signal,
+      });
+      yield {
+        url,
+        blob,
+      };
+    } catch (error) {
+      if (isGmCancelled(error)) {
+        yield {
+          error: new Error("download aborted"),
+        };
+      } else {
+        yield {
+          error,
+        };
+      }
+    }
+  }
+}
+const getExtension = (url) => {
+  if (!url) {
+    return ".txt";
+  }
+  const extension = url.match(/\.[^/?#]{3,4}?(?=[?#]|$)/);
+  return extension?.[0] || ".jpg";
+};
+const guessExtension = (array) => {
+  const { 0: a, 1: b, 2: c, 3: d } = array;
+  if (a === 255 && b === 216 && c === 255) {
+    return ".jpg";
+  }
+  if (a === 137 && b === 80 && c === 78 && d === 71) {
+    return ".png";
+  }
+  if (a === 82 && b === 73 && c === 70 && d === 70) {
+    return ".webp";
+  }
+  if (a === 71 && b === 73 && c === 70 && d === 56) {
+    return ".gif";
+  }
+};
+const download = (images, options) => {
+  const { onError, onProgress, signal } = options || {};
+  let startedCount = 0;
+  let resolvedCount = 0;
+  let rejectedCount = 0;
+  let isCancelled = false;
+  const reportProgress = (additionals = {}) => {
+    const total = images.length;
+    const settled = resolvedCount + rejectedCount;
+    onProgress?.({
+      total,
+      started: startedCount,
+      settled,
+      rejected: rejectedCount,
+      isCancelled,
+      ...additionals,
+    });
+  };
+  const downloadWithReport = async (source) => {
+    const errors = [];
+    startedCount++;
+    reportProgress();
+    for await (
+      const event of downloadImage({
+        source,
+        signal,
+      })
+    ) {
+      if ("error" in event) {
+        errors.push(event.error);
+        onError?.(event.error);
+        continue;
+      }
+      if (event.url) {
+        resolvedCount++;
+      } else {
+        rejectedCount++;
+      }
+      reportProgress();
+      return event;
+    }
+    return {
+      url: "",
+      blob: new Blob([
+        errors.map((x) => `${x}`).join("\n\n"),
+      ]),
+    };
+  };
+  const cipher = Math.floor(Math.log10(images.length)) + 1;
+  const toPair = async ({ url, blob }, index) => {
+    const array = new Uint8Array(await blob.arrayBuffer());
+    const pad = `${index}`.padStart(cipher, "0");
+    const name = `${pad}${guessExtension(array) ?? getExtension(url)}`;
+    return {
+      [name]: array,
+    };
+  };
+  const archiveWithReport = async (sources) => {
+    const result = await Promise.all(sources.map(downloadWithReport));
+    if (signal?.aborted) {
+      reportProgress({
+        isCancelled: true,
+      });
+      throw new Error("aborted");
+    }
+    const pairs = await Promise.all(result.map(toPair));
+    const data = Object.assign({}, ...pairs);
+    const value = defer();
+    const abort = fflate.zip(data, {
+      level: 0,
+    }, (error, array) => {
+      if (error) {
+        value.reject(error);
+      } else {
+        reportProgress({
+          isComplete: true,
+        });
+        value.resolve(array);
+      }
+    });
+    signal?.addEventListener("abort", abort, {
+      once: true,
+    });
+    return value.promise;
+  };
+  return archiveWithReport(images);
+};
+
+const isNotAbort = (error) => !/aborted/i.test(`${error}`);
+const logIfNotAborted = (error) => {
+  if (isNotAbort(error)) {
+    console.error(error);
+  }
+};
+const makeDownloader = (images) => {
+  let aborter = new AbortController();
+  let rerender;
+  let progress = {
+    value: 0,
+    text: "",
+    error: false,
+  };
+  const startDownload = async (options) => {
     aborter = new AbortController();
     return download(images, {
       ...options,
@@ -733,6 +666,60 @@ const makeViewerController = ({ ref, navigator, rerender }) => {
       );
     }
   };
+  const reportProgress = (event) => {
+    const { total, started, settled, rejected, isCancelled, isComplete } =
+      event;
+    const value = started / total * 0.1 + settled / total * 0.89;
+    const text = `${(value * 100).toFixed(1)}%`;
+    const error = !!rejected;
+    if (isComplete || isCancelled) {
+      progress = {
+        value: 0,
+        text: "",
+        error: false,
+      };
+      rerender?.();
+    } else if (text !== progress.text) {
+      progress = {
+        value,
+        text,
+        error,
+      };
+      rerender?.();
+    }
+  };
+  const downloadWithProgress = async () => {
+    try {
+      await downloadAndSave({
+        onProgress: reportProgress,
+        onError: logIfNotAborted,
+      });
+    } catch (error) {
+      if (isNotAbort(error)) {
+        throw error;
+      }
+    }
+  };
+  return {
+    get progress() {
+      return progress;
+    },
+    download: startDownload,
+    downloadAndSave,
+    downloadWithProgress,
+    cancelDownload: () => aborter.abort(),
+    useInstance: () => {
+      rerender = useRerender();
+    },
+  };
+};
+
+const makeViewerController = ({ ref, navigator, rerender }) => {
+  let options = {};
+  let images = [];
+  let status = "loading";
+  let compactWidthIndex = 1;
+  let downloader;
   const toggleFullscreen = () => {
     if (document.fullscreenElement) {
       document.exitFullscreen();
@@ -743,9 +730,10 @@ const makeViewerController = ({ ref, navigator, rerender }) => {
   const loadImages = async (source) => {
     try {
       if (!source) {
-        [status, images] = [
+        [status, images, downloader] = [
           "complete",
           [],
+          undefined,
         ];
         return;
       }
@@ -760,9 +748,10 @@ const makeViewerController = ({ ref, navigator, rerender }) => {
         status = "error";
         return;
       }
-      [status, images] = [
+      [status, images, downloader] = [
         "complete",
         images,
+        makeDownloader(images),
       ];
     } catch (error) {
       status = "error";
@@ -788,12 +777,15 @@ const makeViewerController = ({ ref, navigator, rerender }) => {
     get compactWidthIndex() {
       return compactWidthIndex;
     },
+    get downloader() {
+      return downloader;
+    },
+    get download() {
+      return downloader?.download ?? (() => Promise.resolve(new Uint8Array()));
+    },
     set compactWidthIndex(value) {
       compactWidthIndex = value;
       rerender();
-    },
-    cancelDownload: () => {
-      aborter.abort();
     },
     setOptions: async (value) => {
       const { source } = value;
@@ -807,13 +799,11 @@ const makeViewerController = ({ ref, navigator, rerender }) => {
     goPrevious: navigator.goPrevious,
     goNext: navigator.goNext,
     toggleFullscreen,
-    download: startDownload,
-    downloadAndSave,
     unmount: () => reactDom.unmountComponentAtNode(ref.current),
   };
 };
 const useViewerController = ({ ref, scrollRef }) => {
-  const [, rerender] = react$1.useReducer(() => ({}), {});
+  const rerender = useRerender();
   const navigator = usePageNavigator(scrollRef);
   const controller = react$1.useMemo(() =>
     makeViewerController({
@@ -1016,7 +1006,7 @@ const Page = ({ source, observer, fullWidth, ...props }) => {
 
 const maybeNotHotkey = (event) =>
   event.ctrlKey || event.altKey || isTyping(event);
-const useDefault = ({ enable, controller, reportProgress }) => {
+const useDefault = ({ enable, controller }) => {
   const defaultKeyHandler = async (event) => {
     if (maybeNotHotkey(event)) {
       return;
@@ -1029,10 +1019,7 @@ const useDefault = ({ enable, controller, reportProgress }) => {
         controller.goPrevious();
         break;
       case ";":
-        await controller.downloadAndSave({
-          onProgress: reportProgress,
-          onError: console.error,
-        });
+        await controller.downloader?.downloadWithProgress();
         break;
       case "/":
         controller.compactWidthIndex++;
@@ -1066,6 +1053,115 @@ const useDefault = ({ enable, controller, reportProgress }) => {
   ]);
 };
 
+const Svg = styled("svg", {
+  position: "absolute",
+  bottom: "8px",
+  left: "8px",
+  cursor: "pointer",
+  "&:hover": {
+    filter: "hue-rotate(-145deg)",
+  },
+  variants: {
+    error: {
+      true: {
+        filter: "hue-rotate(140deg)",
+      },
+    },
+  },
+});
+const Circle = styled("circle", {
+  transform: "rotate(-90deg)",
+  transformOrigin: "50% 50%",
+  stroke: "url(#aEObn)",
+  fill: "#fff8",
+});
+const GradientDef = /*#__PURE__*/ react$1.createElement(
+  "defs",
+  null,
+  /*#__PURE__*/ react$1.createElement(
+    "linearGradient",
+    {
+      id: "aEObn",
+      x1: "100%",
+      y1: "0%",
+      x2: "0%",
+      y2: "100%",
+    },
+    /*#__PURE__*/ react$1.createElement("stop", {
+      offset: "0%",
+      style: {
+        stopColor: "#53baff",
+        stopOpacity: 1,
+      },
+    }),
+    /*#__PURE__*/ react$1.createElement("stop", {
+      offset: "100%",
+      style: {
+        stopColor: "#0067bb",
+        stopOpacity: 1,
+      },
+    }),
+  ),
+);
+const CenterText = styled("text", {
+  dominantBaseline: "middle",
+  textAnchor: "middle",
+  fontSize: "30px",
+  fontWeight: "bold",
+  fill: "#004b9e",
+});
+const CircularProgress = (props) => {
+  const { radius, strokeWidth, value, text, ...otherProps } = props;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - value * circumference;
+  const center = radius + strokeWidth / 2;
+  const side = center * 2;
+  return (/*#__PURE__*/ react$1.createElement(
+    Svg,
+    Object.assign({
+      height: side,
+      width: side,
+    }, otherProps),
+    GradientDef,
+    /*#__PURE__*/ react$1.createElement(
+      Circle,
+      Object.assign({}, {
+        strokeWidth,
+        strokeDasharray: `${circumference} ${circumference}`,
+        strokeDashoffset,
+        r: radius,
+        cx: center,
+        cy: center,
+      }),
+    ),
+    /*#__PURE__*/ react$1.createElement(CenterText, {
+      x: "50%",
+      y: "50%",
+    }, text || ""),
+  ));
+};
+
+const DownloadIndicator = ({ downloader }) => {
+  const { value, text, error } = downloader.progress ?? {};
+  downloader.useInstance();
+  return (/*#__PURE__*/ react$1.createElement(
+    react$1.Fragment,
+    null,
+    text
+      ? /*#__PURE__*/ react$1.createElement(CircularProgress, {
+        radius: 50,
+        strokeWidth: 10,
+        value: value ?? 0,
+        text: text,
+        error: error,
+        onClick: downloader.cancelDownload,
+      })
+      : /*#__PURE__*/ react$1.createElement(DownloadIcon, {
+        onClick: downloader.downloadWithProgress,
+      }),
+  ));
+};
+
 const Viewer_ = (props, refHandle) => {
   const { useDefault: enableDefault, options: viewerOptions, ...otherProps } =
     props;
@@ -1081,8 +1177,7 @@ const Viewer_ = (props, refHandle) => {
     images,
     navigator,
     status,
-    downloadAndSave,
-    cancelDownload,
+    downloader,
     toggleFullscreen,
     compactWidthIndex,
   } = controller;
@@ -1115,12 +1210,6 @@ const Viewer_ = (props, refHandle) => {
       });
     }
   }, []);
-  const downloadWithProgress = () => {
-    downloadAndSave({
-      onProgress: reportProgress,
-      onError: console.error,
-    });
-  };
   const navigate = react$1.useCallback((event) => {
     const height = ref.current?.clientHeight;
     if (!height || event.button !== 0) {
@@ -1219,18 +1308,11 @@ const Viewer_ = (props, refHandle) => {
     /*#__PURE__*/ react$1.createElement(FullscreenIcon, {
       onClick: toggleFullscreen,
     }),
-    text
-      ? /*#__PURE__*/ react$1.createElement(CircularProgress, {
-        radius: 50,
-        strokeWidth: 10,
-        value: value,
-        text: text,
-        error: error,
-        onClick: cancelDownload,
+    downloader
+      ? /*#__PURE__*/ react$1.createElement(DownloadIndicator, {
+        downloader: downloader,
       })
-      : /*#__PURE__*/ react$1.createElement(DownloadIcon, {
-        onClick: downloadWithProgress,
-      }),
+      : false,
   ));
 };
 const Viewer = /*#__PURE__*/ react$1.forwardRef(Viewer_);

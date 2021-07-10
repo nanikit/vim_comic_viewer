@@ -1,9 +1,9 @@
-import { download, DownloadOptions } from "../services/downloader.ts";
 import { ComicSource, ImageSource, ViewerOptions } from "../types.ts";
-import { MutableRefObject, useMemo, useReducer } from "react";
+import { MutableRefObject, useMemo } from "react";
 import { unmountComponentAtNode } from "react-dom";
 import { PageNavigator, usePageNavigator } from "./use_page_navigator.ts";
-import { save } from "../utils.ts";
+import { useRerender } from "./use_rerender.ts";
+import { makeDownloader } from "./make_downloader.ts";
 
 type ViewerStatus = "loading" | "complete" | "error";
 
@@ -17,20 +17,8 @@ const makeViewerController = (
   let options = {} as ViewerOptions;
   let images = [] as ImageSource[];
   let status = "loading" as ViewerStatus;
-  let aborter = new AbortController();
   let compactWidthIndex = 1;
-
-  const startDownload = (options?: DownloadOptions) => {
-    aborter = new AbortController();
-    return download(images, { ...options, signal: aborter.signal });
-  };
-
-  const downloadAndSave = async (options?: DownloadOptions) => {
-    const zip = await startDownload(options);
-    if (zip) {
-      await save(new Blob([zip]));
-    }
-  };
+  let downloader: ReturnType<typeof makeDownloader> | undefined;
 
   const toggleFullscreen = () => {
     if (document.fullscreenElement) {
@@ -43,7 +31,7 @@ const makeViewerController = (
   const loadImages = async (source?: ComicSource) => {
     try {
       if (!source) {
-        [status, images] = ["complete", []];
+        [status, images, downloader] = ["complete", [], undefined];
         return;
       }
 
@@ -57,7 +45,11 @@ const makeViewerController = (
         return;
       }
 
-      [status, images] = ["complete", images];
+      [status, images, downloader] = [
+        "complete",
+        images,
+        makeDownloader(images),
+      ];
     } catch (error) {
       status = "error";
       console.log(error);
@@ -83,14 +75,17 @@ const makeViewerController = (
     get compactWidthIndex() {
       return compactWidthIndex;
     },
+    get downloader() {
+      return downloader;
+    },
+    get download() {
+      return downloader?.download ?? (() => Promise.resolve(new Uint8Array()));
+    },
     set compactWidthIndex(value) {
       compactWidthIndex = value;
       rerender();
     },
 
-    cancelDownload: () => {
-      aborter.abort();
-    },
     setOptions: async (value: ViewerOptions) => {
       const { source } = value;
       const isSourceChanged = source !== options.source;
@@ -105,8 +100,6 @@ const makeViewerController = (
     goPrevious: navigator.goPrevious,
     goNext: navigator.goNext,
     toggleFullscreen,
-    download: startDownload,
-    downloadAndSave,
     unmount: () => unmountComponentAtNode(ref.current!),
   };
 };
@@ -115,7 +108,7 @@ export const useViewerController = ({ ref, scrollRef }: {
   ref: MutableRefObject<HTMLDivElement | undefined>;
   scrollRef: MutableRefObject<HTMLDivElement | undefined>;
 }) => {
-  const [, rerender] = useReducer(() => ({}), {});
+  const rerender = useRerender();
   const navigator = usePageNavigator(scrollRef);
   const controller = useMemo(
     () => makeViewerController({ ref, navigator, rerender }),
