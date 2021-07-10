@@ -1,6 +1,5 @@
 /** @jsx createElement */
-import { CircularProgress } from "../components/circular_progress.tsx";
-import { DownloadIcon, FullscreenIcon } from "../components/icons.tsx";
+import { FullscreenIcon } from "../components/icons.tsx";
 import {
   Container,
   ScrollableLayout,
@@ -22,6 +21,7 @@ import {
 } from "react";
 import { Page } from "./page.tsx";
 import { useDefault } from "../hooks/use_default.ts";
+import { DownloadIndicator } from "./download_indicator.tsx";
 
 const Viewer_ = (
   props: HTMLProps<HTMLDivElement> & {
@@ -41,8 +41,7 @@ const Viewer_ = (
     images,
     navigator,
     status,
-    downloadAndSave,
-    cancelDownload,
+    downloader,
     toggleFullscreen,
     compactWidthIndex,
   } = controller;
@@ -66,10 +65,6 @@ const Viewer_ = (
       setProgress({ value, text, error });
     }
   }, []);
-
-  const downloadWithProgress = () => {
-    downloadAndSave({ onProgress: reportProgress, onError: console.error });
-  };
 
   const navigate = useCallback((event: MouseEvent) => {
     const height = ref.current?.clientHeight;
@@ -150,20 +145,7 @@ const Viewer_ = (
           )}
       </ScrollableLayout>
       <FullscreenIcon onClick={toggleFullscreen} />
-      {text
-        ? (
-          <CircularProgress
-            radius={50}
-            strokeWidth={10}
-            value={value}
-            text={text}
-            error={error}
-            onClick={cancelDownload}
-          />
-        )
-        : (
-          <DownloadIcon onClick={downloadWithProgress} />
-        )}
+      {downloader ? <DownloadIndicator downloader={downloader} /> : false}
     </Container>
   );
 };

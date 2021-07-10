@@ -1,16 +1,14 @@
-import { ViewerController } from "../types.ts";
 import { isTyping } from "../utils.ts";
 import { useEffect } from "react";
-import { DownloadProgress } from "../services/downloader.ts";
+import { useViewerController } from "./use_viewer_controller.ts";
 
 const maybeNotHotkey = (event: KeyboardEvent) =>
   event.ctrlKey || event.altKey || isTyping(event);
 
 export const useDefault = (
-  { enable, controller, reportProgress }: {
+  { enable, controller }: {
     enable?: boolean;
-    controller: ViewerController;
-    reportProgress: (event: DownloadProgress) => void;
+    controller: ReturnType<typeof useViewerController>;
   },
 ) => {
   const defaultKeyHandler = async (event: KeyboardEvent): Promise<void> => {
@@ -26,10 +24,7 @@ export const useDefault = (
         controller.goPrevious();
         break;
       case ";":
-        await (controller as any).downloadAndSave({
-          onProgress: reportProgress,
-          onError: console.error,
-        });
+        await controller.downloader?.downloadWithProgress();
         break;
       case "/":
         controller.compactWidthIndex++;
