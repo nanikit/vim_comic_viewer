@@ -21,10 +21,6 @@ const makeViewerController = (
   let compactWidthIndex = 1;
 
   const startDownload = (options?: DownloadOptions) => {
-    if (!images.length) {
-      return;
-    }
-
     aborter = new AbortController();
     return download(images, { ...options, signal: aborter.signal });
   };
