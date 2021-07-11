@@ -1062,9 +1062,11 @@ const useDefault = ({ enable, controller }) => {
     }
     switch (event.key) {
       case "j":
+      case "ArrowDown":
         controller.goNext();
         break;
       case "k":
+      case "ArrowUp":
         controller.goPrevious();
         break;
       case ";":
