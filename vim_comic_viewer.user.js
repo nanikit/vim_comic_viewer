@@ -700,6 +700,24 @@ const makeDownloader = (images) => {
       }
     }
   };
+  // https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload#Example
+  const guard = (event) => {
+    event.preventDefault();
+    event.returnValue = "";
+  };
+  const useInstance = () => {
+    const { error, text } = progress;
+    rerender = useRerender();
+    react$1.useEffect(() => {
+      if (error || !text) {
+        return;
+      }
+      window.addEventListener("beforeunload", guard);
+      return () => window.removeEventListener("beforeunload", guard);
+    }, [
+      error || !text,
+    ]);
+  };
   return {
     get progress() {
       return progress;
@@ -708,9 +726,7 @@ const makeDownloader = (images) => {
     downloadAndSave,
     downloadWithProgress,
     cancelDownload: () => aborter.abort(),
-    useInstance: () => {
-      rerender = useRerender();
-    },
+    useInstance,
   };
 };
 
@@ -1191,35 +1207,6 @@ const Viewer_ = (props, refHandle) => {
     toggleFullscreen,
     compactWidthIndex,
   } = controller;
-  const [{ value, text, error }, setProgress] = react$1.useState({
-    value: 0,
-    text: "",
-    error: false,
-  });
-  const cache = {
-    text: "",
-  };
-  const reportProgress = react$1.useCallback((event) => {
-    const { total, started, settled, rejected, isCancelled, isComplete } =
-      event;
-    const value = started / total * 0.1 + settled / total * 0.89;
-    const text = `${(value * 100).toFixed(1)}%`;
-    const error = !!rejected;
-    if (isComplete || isCancelled) {
-      setProgress({
-        value: 0,
-        text: "",
-        error: false,
-      });
-    } else if (text !== cache.text) {
-      cache.text = text;
-      setProgress({
-        value,
-        text,
-        error,
-      });
-    }
-  }, []);
   const navigate = react$1.useCallback((event) => {
     const height = ref.current?.clientHeight;
     if (!height || event.button !== 0) {
@@ -1249,7 +1236,6 @@ const Viewer_ = (props, refHandle) => {
   useDefault({
     enable: props.useDefault,
     controller,
-    reportProgress,
   });
   react$1.useImperativeHandle(refHandle, () => controller, [
     controller,
@@ -1267,20 +1253,6 @@ const Viewer_ = (props, refHandle) => {
   }, [
     ref.current,
     fullscreenElement,
-  ]);
-  react$1.useEffect(() => {
-    if (error || !text) {
-      return;
-    }
-    // https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload#Example
-    const guard = (event) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", guard);
-    return () => window.removeEventListener("beforeunload", guard);
-  }, [
-    error || !text,
   ]);
   return (/*#__PURE__*/ react$1.createElement(
     Container,

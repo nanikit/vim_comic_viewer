@@ -107,7 +107,7 @@ const makeViewerController = (
 export const useViewerController = ({ ref, scrollRef }: {
   ref: MutableRefObject<HTMLDivElement | undefined>;
   scrollRef: MutableRefObject<HTMLDivElement | undefined>;
-}) => {
+}): ReturnType<typeof makeViewerController> => {
   const rerender = useRerender();
   const navigator = usePageNavigator(scrollRef);
   const controller = useMemo(

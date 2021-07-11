@@ -6,7 +6,6 @@ import {
 } from "../components/scrollable_layout.ts";
 import { useFullscreenElement } from "../hooks/use_fullscreen_element.ts";
 import { useViewerController } from "../hooks/use_viewer_controller.ts";
-import type { DownloadProgress } from "../services/downloader.ts";
 import { ViewerController, ViewerOptions } from "../types.ts";
 import {
   createElement,
@@ -17,7 +16,6 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
-  useState,
 } from "react";
 import { Page } from "./page.tsx";
 import { useDefault } from "../hooks/use_default.ts";
@@ -46,26 +44,6 @@ const Viewer_ = (
     compactWidthIndex,
   } = controller;
 
-  const [{ value, text, error }, setProgress] = useState({
-    value: 0,
-    text: "",
-    error: false,
-  });
-  const cache = { text: "" };
-  const reportProgress = useCallback((event: DownloadProgress) => {
-    const { total, started, settled, rejected, isCancelled, isComplete } =
-      event;
-    const value = (started / total) * 0.1 + (settled / total) * 0.89;
-    const text = `${(value * 100).toFixed(1)}%`;
-    const error = !!rejected;
-    if (isComplete || isCancelled) {
-      setProgress({ value: 0, text: "", error: false });
-    } else if (text !== cache.text) {
-      cache.text = text;
-      setProgress({ value, text, error });
-    }
-  }, []);
-
   const navigate = useCallback((event: MouseEvent) => {
     const height = ref.current?.clientHeight;
     if (!height || event.button !== 0) {
@@ -92,7 +70,7 @@ const Viewer_ = (
     }
   }, [controller]);
 
-  useDefault({ enable: props.useDefault, controller, reportProgress });
+  useDefault({ enable: props.useDefault, controller });
 
   useImperativeHandle(refHandle, () => controller, [controller]);
 
@@ -105,19 +83,6 @@ const Viewer_ = (
       ref.current?.focus?.();
     }
   }, [ref.current, fullscreenElement]);
-
-  useEffect(() => {
-    if (error || !text) {
-      return;
-    }
-    // https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload#Example
-    const guard = (event: Event) => {
-      event.preventDefault();
-      event.returnValue = "" as any;
-    };
-    window.addEventListener("beforeunload", guard);
-    return () => window.removeEventListener("beforeunload", guard);
-  }, [error || !text]);
 
   return (
     <Container ref={ref} tabIndex={-1} className="vim_comic_viewer">
