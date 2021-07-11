@@ -1,6 +1,7 @@
 ## 6.2.0
 
 - Add reload errored image feature (default key: <kbd>'</kbd>)
+- Reduce page horizontal gap to 1px.
 - Fix not showing image url when fetch fails.
 - Don't print exception when download is aborted.
 
