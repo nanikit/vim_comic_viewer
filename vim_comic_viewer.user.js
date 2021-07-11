@@ -903,11 +903,13 @@ const Image1 = styled("img", {
   maxWidth: "100%",
 });
 
-const makeSourceController = (source) => {
+const makeSourceController = ({ source, ref, observer }) => {
   let imageLoad;
   let setState;
   const load = async () => {
+    const urls = [];
     for await (const url of imageSourceToIterable(source)) {
+      urls.push(url);
       imageLoad = defer();
       setState({
         src: url,
@@ -923,6 +925,7 @@ const makeSourceController = (source) => {
       }
     }
     setState({
+      urls,
       state: "error",
     });
   };
@@ -935,6 +938,16 @@ const makeSourceController = (source) => {
     react$1.useEffect(() => {
       load();
     }, []);
+    react$1.useEffect(() => {
+      const target = ref?.current;
+      if (target && observer) {
+        observer.observe(target);
+        return () => observer.unobserve(target);
+      }
+    }, [
+      observer,
+      ref.current,
+    ]);
     return {
       state,
       onError: () => imageLoad.resolve(false),
@@ -943,26 +956,24 @@ const makeSourceController = (source) => {
   };
   return useInstance;
 };
-const useSourceController = (source) => {
-  const useInstance = react$1.useMemo(() => makeSourceController(source), [
+const useSourceController = (params) => {
+  const { source, ref, observer } = params;
+  const useInstance = react$1.useMemo(() => makeSourceController(params), [
     source,
+    ref,
+    observer,
   ]);
   return useInstance();
 };
 
 const Page = ({ source, observer, fullWidth, ...props }) => {
-  const { state: { src, state }, ...imageProps } = useSourceController(source);
   const ref = react$1.useRef();
-  react$1.useEffect(() => {
-    const target = ref.current;
-    if (target && observer) {
-      observer.observe(target);
-      return () => observer.unobserve(target);
-    }
-  }, [
+  const controller = useSourceController({
+    source,
+    ref,
     observer,
-    ref.current,
-  ]);
+  });
+  const { state: { src, state, urls }, ...imageProps } = controller;
   return (/*#__PURE__*/ react$1.createElement(
     Overlay,
     {
@@ -984,8 +995,7 @@ const Page = ({ source, observer, fullWidth, ...props }) => {
         /*#__PURE__*/ react$1.createElement(
           "p",
           null,
-          "URL: ",
-          src ? src : JSON.stringify(src),
+          src ? src : urls?.join("\n"),
         ),
       ),
     /*#__PURE__*/ react$1.createElement(

@@ -7,7 +7,7 @@ import {
 } from "../components/spinner.tsx";
 import { useSourceController } from "../hooks/use_source_controller.ts";
 import type { ImageSource } from "../types.ts";
-import { createElement, useEffect, useRef } from "react";
+import { createElement, useRef } from "react";
 import { CircledX } from "../components/icons.tsx";
 
 export const Page = ({
@@ -20,16 +20,9 @@ export const Page = ({
   observer?: IntersectionObserver;
   fullWidth?: boolean;
 }) => {
-  const { state: { src, state }, ...imageProps } = useSourceController(source);
   const ref = useRef<HTMLImageElement>();
-
-  useEffect(() => {
-    const target = ref.current;
-    if (target && observer) {
-      observer.observe(target);
-      return () => observer.unobserve(target);
-    }
-  }, [observer, ref.current]);
+  const controller = useSourceController({ source, ref, observer });
+  const { state: { src, state, urls }, ...imageProps } = controller;
 
   return (
     <Overlay ref={ref} placeholder={state !== "complete"} fullWidth={fullWidth}>
@@ -37,7 +30,7 @@ export const Page = ({
       {state === "error" && <ColumnNowrap>
         <CircledX />
         <p>이미지를 불러오지 못했습니다</p>
-        <p>URL: {src ? src : JSON.stringify(src)}</p>
+        <p>{src ? src : urls?.join("\n")}</p>
       </ColumnNowrap>}
       <Image {...(src ? { src } : {})} {...imageProps} {...props} />
     </Overlay>
