@@ -9,9 +9,9 @@ Basic shortcut is
 
 - j, k: next, previous page
 
-- /, ?: adjust leading single pages
-
 - ;: download images
+
+- /, ?: adjust leading single pages
 
 ## For developer
 
@@ -19,3 +19,7 @@ Up to date example is [here](https://github.com/nanikit/comic_sources).
 
 Although its version is over 1.0 but it does not mean it is stable. I will
 change its major version whenever breaking change happens.
+
+## Roadmap
+
+- Manual retry

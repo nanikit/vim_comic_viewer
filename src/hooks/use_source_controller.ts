@@ -1,16 +1,28 @@
 import { imageSourceToIterable } from "../services/user_utils.ts";
 import { ImageSource } from "../types.ts";
 import { defer, Deferred } from "../utils.ts";
-import { useEffect, useMemo, useState } from "react";
+import { RefObject, useEffect, useMemo, useState } from "react";
 
-type PageState = { src?: string; state: "loading" | "complete" | "error" };
+type PageState = {
+  src?: string;
+  urls?: string[];
+  state: "loading" | "complete" | "error";
+};
 
-const makeSourceController = (source: ImageSource) => {
+type PageProps = {
+  source: ImageSource;
+  ref: RefObject<HTMLImageElement | undefined>;
+  observer?: IntersectionObserver;
+};
+
+const makeSourceController = ({ source, ref, observer }: PageProps) => {
   let imageLoad: Deferred<boolean>;
   let setState: (state: PageState) => void;
 
   const load = async () => {
+    const urls = [];
     for await (const url of imageSourceToIterable(source)) {
+      urls.push(url);
       imageLoad = defer();
       setState({ src: url, state: "loading" });
       const success = await imageLoad.promise;
@@ -19,7 +31,7 @@ const makeSourceController = (source: ImageSource) => {
         return;
       }
     }
-    setState({ state: "error" });
+    setState({ urls, state: "error" });
   };
 
   const useInstance = () => {
@@ -29,6 +41,14 @@ const makeSourceController = (source: ImageSource) => {
     useEffect(() => {
       load();
     }, []);
+
+    useEffect(() => {
+      const target = ref?.current;
+      if (target && observer) {
+        observer.observe(target);
+        return () => observer.unobserve(target);
+      }
+    }, [observer, ref.current]);
 
     return {
       state,
@@ -40,7 +60,12 @@ const makeSourceController = (source: ImageSource) => {
   return useInstance;
 };
 
-export const useSourceController = (source: ImageSource) => {
-  const useInstance = useMemo(() => makeSourceController(source), [source]);
+export const useSourceController = (params: PageProps) => {
+  const { source, ref, observer } = params;
+  const useInstance = useMemo(() => makeSourceController(params), [
+    source,
+    ref,
+    observer,
+  ]);
   return useInstance();
 };
