@@ -1,7 +1,7 @@
 import { imageSourceToIterable } from "../services/user_utils.ts";
 import { ImageSource } from "../types.ts";
 import { defer, Deferred } from "../utils.ts";
-import { RefObject, useEffect, useMemo, useState } from "react";
+import { RefObject, useEffect, useState } from "react";
 
 type PageState = {
   src?: string;
@@ -11,31 +11,39 @@ type PageState = {
 
 type PageProps = {
   source: ImageSource;
-  ref: RefObject<HTMLImageElement | undefined>;
   observer?: IntersectionObserver;
 };
 
-const makeSourceController = ({ source, ref, observer }: PageProps) => {
+export const makePageController = ({ source, observer }: PageProps) => {
   let imageLoad: Deferred<boolean>;
-  let setState: (state: PageState) => void;
+  let state: PageState;
+  let setState: (state: PageState) => void | undefined;
+  let key = "";
+  let isReloaded = false;
 
   const load = async () => {
     const urls = [];
+    key = `${Math.random()}`;
     for await (const url of imageSourceToIterable(source)) {
       urls.push(url);
       imageLoad = defer();
-      setState({ src: url, state: "loading" });
+      setState?.({ src: url, state: "loading" });
       const success = await imageLoad.promise;
       if (success) {
-        setState({ src: url, state: "complete" });
+        setState?.({ src: url, state: "complete" });
+        return;
+      }
+      if (isReloaded) {
+        isReloaded = false;
         return;
       }
     }
-    setState({ urls, state: "error" });
+    setState?.({ urls, state: "error" });
   };
 
-  const useInstance = () => {
-    let state: PageState;
+  const useInstance = (
+    { ref }: { ref: RefObject<HTMLImageElement | undefined> },
+  ) => {
     [state, setState] = useState<PageState>({ src: "", state: "loading" });
 
     useEffect(() => {
@@ -51,21 +59,23 @@ const makeSourceController = ({ source, ref, observer }: PageProps) => {
     }, [observer, ref.current]);
 
     return {
-      state,
+      key,
+      ...(state.src ? { src: state.src } : {}),
       onError: () => imageLoad.resolve(false),
       onLoad: () => imageLoad.resolve(true),
     };
   };
 
-  return useInstance;
-};
+  return {
+    get state() {
+      return state;
+    },
 
-export const useSourceController = (params: PageProps) => {
-  const { source, ref, observer } = params;
-  const useInstance = useMemo(() => makeSourceController(params), [
-    source,
-    ref,
-    observer,
-  ]);
-  return useInstance();
+    reload: async () => {
+      isReloaded = true;
+      imageLoad.resolve(false);
+      await load();
+    },
+    useInstance,
+  };
 };

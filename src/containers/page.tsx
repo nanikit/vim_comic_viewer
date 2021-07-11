@@ -1,38 +1,35 @@
 /** @jsx createElement */
-import {
-  ColumnNowrap,
-  Image,
-  Overlay,
-  Spinner,
-} from "../components/spinner.tsx";
-import { useSourceController } from "../hooks/use_source_controller.ts";
-import type { ImageSource } from "../types.ts";
-import { createElement, useRef } from "react";
+import { Image, LinkColumn, Overlay, Spinner } from "../components/spinner.tsx";
+import { createElement, useCallback, useRef } from "react";
 import { CircledX } from "../components/icons.tsx";
+import { makePageController } from "../hooks/make_page_controller.ts";
 
 export const Page = ({
-  source,
-  observer,
   fullWidth,
+  controller,
   ...props
 }: {
-  source: ImageSource;
-  observer?: IntersectionObserver;
+  controller: ReturnType<typeof makePageController>;
   fullWidth?: boolean;
 }) => {
   const ref = useRef<HTMLImageElement>();
-  const controller = useSourceController({ source, ref, observer });
-  const { state: { src, state, urls }, ...imageProps } = controller;
+  const imageProps = controller.useInstance({ ref });
+  const { state, src, urls } = controller.state;
+
+  const reloadErrored = useCallback(async (event: MouseEvent) => {
+    event.stopPropagation();
+    await controller.reload();
+  }, []);
 
   return (
     <Overlay ref={ref} placeholder={state !== "complete"} fullWidth={fullWidth}>
       {state === "loading" && <Spinner />}
-      {state === "error" && <ColumnNowrap>
+      {state === "error" && <LinkColumn onClick={reloadErrored}>
         <CircledX />
         <p>이미지를 불러오지 못했습니다</p>
         <p>{src ? src : urls?.join("\n")}</p>
-      </ColumnNowrap>}
-      <Image {...(src ? { src } : {})} {...imageProps} {...props} />
+      </LinkColumn>}
+      <Image {...imageProps} {...props} />
     </Overlay>
   );
 };

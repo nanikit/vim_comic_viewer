@@ -1,3 +1,9 @@
+## 6.2.0
+
+- Add reload errored image feature (default key: <kbd>'</kbd>)
+- Fix not showing image url when fetch fails.
+- Don't print exception when download is aborted.
+
 ## 6.1.0
 
 - Use file content to determine file extension.

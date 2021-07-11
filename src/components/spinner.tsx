@@ -74,11 +74,21 @@ export const Overlay = styled("div", {
   },
 });
 
-export const ColumnNowrap = styled("div", {
+export const LinkColumn = styled("div", {
   display: "flex",
   flexFlow: "column nowrap",
   alignItems: "center",
   justifyContent: "center",
+  cursor: "pointer",
+  boxShadow: "1px 1px 3px",
+  padding: "1rem 1.5rem",
+  transition: "box-shadow 1s easeOutExpo",
+  "&:hover": {
+    boxShadow: "2px 2px 5px",
+  },
+  "&:active": {
+    boxShadow: "0 0 2px",
+  },
 });
 
 export const Image = styled("img", {
