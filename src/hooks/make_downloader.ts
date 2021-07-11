@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   download,
   DownloadOptions,
@@ -64,6 +65,25 @@ export const makeDownloader = (images: ImageSource[]) => {
     }
   };
 
+  // https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload#Example
+  const guard = (event: Event) => {
+    event.preventDefault();
+    event.returnValue = "" as any;
+  };
+
+  const useInstance = () => {
+    const { error, text } = progress;
+    rerender = useRerender();
+
+    useEffect(() => {
+      if (error || !text) {
+        return;
+      }
+      window.addEventListener("beforeunload", guard);
+      return () => window.removeEventListener("beforeunload", guard);
+    }, [error || !text]);
+  };
+
   return {
     get progress() {
       return progress;
@@ -73,8 +93,6 @@ export const makeDownloader = (images: ImageSource[]) => {
     downloadAndSave,
     downloadWithProgress,
     cancelDownload: () => aborter.abort(),
-    useInstance: () => {
-      rerender = useRerender();
-    },
+    useInstance,
   };
 };
