@@ -4,6 +4,7 @@ import { unmountComponentAtNode } from "react-dom";
 import { PageNavigator, usePageNavigator } from "./use_page_navigator.ts";
 import { useRerender } from "./use_rerender.ts";
 import { makeDownloader } from "./make_downloader.ts";
+import { makePageController } from "./make_page_controller.ts";
 
 type ViewerStatus = "loading" | "complete" | "error";
 
@@ -19,6 +20,7 @@ const makeViewerController = (
   let status = "loading" as ViewerStatus;
   let compactWidthIndex = 1;
   let downloader: ReturnType<typeof makeDownloader> | undefined;
+  let pages = [] as ReturnType<typeof makePageController>[];
 
   const toggleFullscreen = () => {
     if (document.fullscreenElement) {
@@ -30,26 +32,25 @@ const makeViewerController = (
 
   const loadImages = async (source?: ComicSource) => {
     try {
+      [images, downloader] = [[], undefined];
       if (!source) {
-        [status, images, downloader] = ["complete", [], undefined];
+        status = "complete";
         return;
       }
 
-      [status, images] = ["loading", []];
+      [status, pages] = ["loading", []];
       rerender();
       images = await source();
 
       if (!Array.isArray(images)) {
-        console.log(`Invalid comic source type: ${typeof images}`);
-        status = "error";
-        return;
+        throw new Error(`Invalid comic source type: ${typeof images}`);
       }
 
-      [status, images, downloader] = [
-        "complete",
-        images,
-        makeDownloader(images),
-      ];
+      status = "complete";
+      downloader = makeDownloader(images);
+      pages = images.map((x) =>
+        makePageController({ source: x, observer: navigator.observer })
+      );
     } catch (error) {
       status = "error";
       console.log(error);
@@ -59,12 +60,19 @@ const makeViewerController = (
     }
   };
 
+  const reloadErrored = async () => {
+    window.stop();
+
+    for (const controller of pages) {
+      if (controller.state.state !== "complete") {
+        controller.reload();
+      }
+    }
+  };
+
   return {
     get options() {
       return options;
-    },
-    get images() {
-      return images;
     },
     get status() {
       return status;
@@ -81,6 +89,9 @@ const makeViewerController = (
     get download() {
       return downloader?.download ?? (() => Promise.resolve(new Uint8Array()));
     },
+    get pages() {
+      return pages;
+    },
     set compactWidthIndex(value) {
       compactWidthIndex = value;
       rerender();
@@ -96,10 +107,10 @@ const makeViewerController = (
       }
     },
 
-    navigator,
     goPrevious: navigator.goPrevious,
     goNext: navigator.goNext,
     toggleFullscreen,
+    reloadErrored,
     unmount: () => unmountComponentAtNode(ref.current!),
   };
 };

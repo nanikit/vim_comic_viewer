@@ -32,6 +32,9 @@ export const useDefault = (
       case "?":
         controller.compactWidthIndex--;
         break;
+      case "'":
+        controller.reloadErrored();
+        break;
       default:
         break;
     }

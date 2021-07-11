@@ -36,8 +36,7 @@ const Viewer_ = (
   const controller = useViewerController({ ref, scrollRef });
   const {
     options,
-    images,
-    navigator,
+    pages,
     status,
     downloader,
     toggleFullscreen,
@@ -95,11 +94,10 @@ const Viewer_ = (
       >
         {status === "complete"
           ? (
-            images?.map?.((image, index) => (
+            pages?.map?.((controller, index) => (
               <Page
                 key={index}
-                source={image}
-                observer={navigator.observer}
+                controller={controller}
                 fullWidth={index < compactWidthIndex}
                 {...options?.imageProps}
               />

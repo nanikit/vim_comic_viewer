@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         vim comic viewer
 // @description  Universal comic reader
-// @version      6.1.0
+// @version      6.2.0
 // @namespace    https://greasyfork.org/en/users/713014-nanikit
 // @exclude      *
 // @match        http://unused-field.space/
@@ -730,12 +730,89 @@ const makeDownloader = (images) => {
   };
 };
 
+const makePageController = ({ source, observer }) => {
+  let imageLoad;
+  let state;
+  let setState;
+  let key = "";
+  let isReloaded = false;
+  const load = async () => {
+    const urls = [];
+    key = `${Math.random()}`;
+    for await (const url of imageSourceToIterable(source)) {
+      urls.push(url);
+      imageLoad = defer();
+      setState?.({
+        src: url,
+        state: "loading",
+      });
+      const success = await imageLoad.promise;
+      if (success) {
+        setState?.({
+          src: url,
+          state: "complete",
+        });
+        return;
+      }
+      if (isReloaded) {
+        isReloaded = false;
+        return;
+      }
+    }
+    setState?.({
+      urls,
+      state: "error",
+    });
+  };
+  const useInstance = ({ ref }) => {
+    [state, setState] = react$1.useState({
+      src: "",
+      state: "loading",
+    });
+    react$1.useEffect(() => {
+      load();
+    }, []);
+    react$1.useEffect(() => {
+      const target = ref?.current;
+      if (target && observer) {
+        observer.observe(target);
+        return () => observer.unobserve(target);
+      }
+    }, [
+      observer,
+      ref.current,
+    ]);
+    return {
+      key,
+      ...state.src
+        ? {
+          src: state.src,
+        }
+        : {},
+      onError: () => imageLoad.resolve(false),
+      onLoad: () => imageLoad.resolve(true),
+    };
+  };
+  return {
+    get state() {
+      return state;
+    },
+    reload: async () => {
+      isReloaded = true;
+      imageLoad.resolve(false);
+      await load();
+    },
+    useInstance,
+  };
+};
+
 const makeViewerController = ({ ref, navigator, rerender }) => {
   let options = {};
   let images = [];
   let status = "loading";
   let compactWidthIndex = 1;
   let downloader;
+  let pages = [];
   const toggleFullscreen = () => {
     if (document.fullscreenElement) {
       document.exitFullscreen();
@@ -745,30 +822,31 @@ const makeViewerController = ({ ref, navigator, rerender }) => {
   };
   const loadImages = async (source) => {
     try {
+      [images, downloader] = [
+        [],
+        undefined,
+      ];
       if (!source) {
-        [status, images, downloader] = [
-          "complete",
-          [],
-          undefined,
-        ];
+        status = "complete";
         return;
       }
-      [status, images] = [
+      [status, pages] = [
         "loading",
         [],
       ];
       rerender();
       images = await source();
       if (!Array.isArray(images)) {
-        console.log(`Invalid comic source type: ${typeof images}`);
-        status = "error";
-        return;
+        throw new Error(`Invalid comic source type: ${typeof images}`);
       }
-      [status, images, downloader] = [
-        "complete",
-        images,
-        makeDownloader(images),
-      ];
+      status = "complete";
+      downloader = makeDownloader(images);
+      pages = images.map((x) =>
+        makePageController({
+          source: x,
+          observer: navigator.observer,
+        })
+      );
     } catch (error) {
       status = "error";
       console.log(error);
@@ -777,12 +855,17 @@ const makeViewerController = ({ ref, navigator, rerender }) => {
       rerender();
     }
   };
+  const reloadErrored = async () => {
+    window.stop();
+    for (const controller of pages) {
+      if (controller.state.state !== "complete") {
+        controller.reload();
+      }
+    }
+  };
   return {
     get options() {
       return options;
-    },
-    get images() {
-      return images;
     },
     get status() {
       return status;
@@ -799,6 +882,9 @@ const makeViewerController = ({ ref, navigator, rerender }) => {
     get download() {
       return downloader?.download ?? (() => Promise.resolve(new Uint8Array()));
     },
+    get pages() {
+      return pages;
+    },
     set compactWidthIndex(value) {
       compactWidthIndex = value;
       rerender();
@@ -811,10 +897,10 @@ const makeViewerController = ({ ref, navigator, rerender }) => {
         await loadImages(source);
       }
     },
-    navigator,
     goPrevious: navigator.goPrevious,
     goNext: navigator.goNext,
     toggleFullscreen,
+    reloadErrored,
     unmount: () => reactDom.unmountComponentAtNode(ref.current),
   };
 };
@@ -906,11 +992,21 @@ const Overlay = styled("div", {
     },
   },
 });
-const ColumnNowrap = styled("div", {
+const LinkColumn = styled("div", {
   display: "flex",
   flexFlow: "column nowrap",
   alignItems: "center",
   justifyContent: "center",
+  cursor: "pointer",
+  boxShadow: "1px 1px 3px",
+  padding: "1rem 1.5rem",
+  transition: "box-shadow 1s easeOutExpo",
+  "&:hover": {
+    boxShadow: "2px 2px 5px",
+  },
+  "&:active": {
+    boxShadow: "0 0 2px",
+  },
 });
 const Image1 = styled("img", {
   position: "relative",
@@ -919,77 +1015,16 @@ const Image1 = styled("img", {
   maxWidth: "100%",
 });
 
-const makeSourceController = ({ source, ref, observer }) => {
-  let imageLoad;
-  let setState;
-  const load = async () => {
-    const urls = [];
-    for await (const url of imageSourceToIterable(source)) {
-      urls.push(url);
-      imageLoad = defer();
-      setState({
-        src: url,
-        state: "loading",
-      });
-      const success = await imageLoad.promise;
-      if (success) {
-        setState({
-          src: url,
-          state: "complete",
-        });
-        return;
-      }
-    }
-    setState({
-      urls,
-      state: "error",
-    });
-  };
-  const useInstance = () => {
-    let state;
-    [state, setState] = react$1.useState({
-      src: "",
-      state: "loading",
-    });
-    react$1.useEffect(() => {
-      load();
-    }, []);
-    react$1.useEffect(() => {
-      const target = ref?.current;
-      if (target && observer) {
-        observer.observe(target);
-        return () => observer.unobserve(target);
-      }
-    }, [
-      observer,
-      ref.current,
-    ]);
-    return {
-      state,
-      onError: () => imageLoad.resolve(false),
-      onLoad: () => imageLoad.resolve(true),
-    };
-  };
-  return useInstance;
-};
-const useSourceController = (params) => {
-  const { source, ref, observer } = params;
-  const useInstance = react$1.useMemo(() => makeSourceController(params), [
-    source,
-    ref,
-    observer,
-  ]);
-  return useInstance();
-};
-
-const Page = ({ source, observer, fullWidth, ...props }) => {
+const Page = ({ fullWidth, controller, ...props }) => {
   const ref = react$1.useRef();
-  const controller = useSourceController({
-    source,
+  const imageProps = controller.useInstance({
     ref,
-    observer,
   });
-  const { state: { src, state, urls }, ...imageProps } = controller;
+  const { state, src, urls } = controller.state;
+  const reloadErrored = react$1.useCallback(async (event) => {
+    event.stopPropagation();
+    await controller.reload();
+  }, []);
   return (/*#__PURE__*/ react$1.createElement(
     Overlay,
     {
@@ -998,34 +1033,22 @@ const Page = ({ source, observer, fullWidth, ...props }) => {
       fullWidth: fullWidth,
     },
     state === "loading" && /*#__PURE__*/ react$1.createElement(Spinner, null),
-    state === "error" && /*#__PURE__*/
-      react$1.createElement(
-        ColumnNowrap,
+    state === "error" && /*#__PURE__*/ react$1.createElement(
+      LinkColumn,
+      {
+        onClick: reloadErrored,
+      },
+      /*#__PURE__*/ react$1.createElement(CircledX, null),
+      /*#__PURE__*/ react$1.createElement("p", null, "이미지를 불러오지 못했습니다"),
+      /*#__PURE__*/ react$1.createElement(
+        "p",
         null,
-        /*#__PURE__*/ react$1.createElement(CircledX, null),
-        /*#__PURE__*/ react$1.createElement(
-          "p",
-          null,
-          "\uc774\ubbf8\uc9c0\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4",
-        ),
-        /*#__PURE__*/ react$1.createElement(
-          "p",
-          null,
-          src ? src : urls?.join("\n"),
-        ),
+        src ? src : urls?.join("\n"),
       ),
+    ),
     /*#__PURE__*/ react$1.createElement(
       Image1,
-      Object.assign(
-        {},
-        src
-          ? {
-            src,
-          }
-          : {},
-        imageProps,
-        props,
-      ),
+      Object.assign({}, imageProps, props),
     ),
   ));
 };
@@ -1052,6 +1075,9 @@ const useDefault = ({ enable, controller }) => {
         break;
       case "?":
         controller.compactWidthIndex--;
+        break;
+      case "'":
+        controller.reloadErrored();
         break;
     }
   };
@@ -1200,8 +1226,7 @@ const Viewer_ = (props, refHandle) => {
   });
   const {
     options,
-    images,
-    navigator,
+    pages,
     status,
     downloader,
     toggleFullscreen,
@@ -1270,13 +1295,12 @@ const Viewer_ = (props, refHandle) => {
         onMouseDown: blockSelection,
       }, otherProps),
       status === "complete"
-        ? images?.map?.((image, index) =>
+        ? pages?.map?.((controller, index) =>
           /*#__PURE__*/ react$1.createElement(
             Page,
             Object.assign({
               key: index,
-              source: image,
-              observer: navigator.observer,
+              controller: controller,
               fullWidth: index < compactWidthIndex,
             }, options?.imageProps),
           )
