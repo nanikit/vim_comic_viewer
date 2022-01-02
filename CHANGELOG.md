@@ -1,3 +1,7 @@
+## 6.2.1
+
+- Fix not found `module` variable in tampermonkey.
+
 ## 6.2.0
 
 - Add reload errored image feature (default key: <kbd>'</kbd>)

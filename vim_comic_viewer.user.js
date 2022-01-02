@@ -3,7 +3,7 @@
 // @description    Universal comic reader
 // @name:ko        vim comic viewer
 // @description:ko 만화 뷰어 라이브러리
-// @version        6.2.0
+// @version        6.2.1
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -354,7 +354,7 @@ const useRerender = () => {
   return rerender;
 };
 
-const GM_xmlhttpRequest = window.module.config().GM_xmlhttpRequest;
+const GM_xmlhttpRequest = module.config().GM_xmlhttpRequest;
 
 const gmFetch = GM_xmlhttpRequest
   ? (resource, init) => {
