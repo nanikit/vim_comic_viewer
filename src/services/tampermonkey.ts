@@ -1,3 +1,15 @@
+export const GM_xmlhttpRequest: (request: {
+  method?: "GET" | "POST";
+  url: string;
+  headers?: Record<string, unknown>;
+  responseType?: XMLHttpRequest["responseType"];
+  data?: BodyInit | null;
+  onprogress?: (event: { loaded: number; total?: number }) => void;
+  onload?: (response: GmXhr) => void;
+  onerror?: (response: GmXhr) => void;
+  onabort?: (response: GmXhr) => void;
+}) => XMLHttpRequest = module.config().GM_xmlhttpRequest;
+
 type GmXhr =
   & {
     responseHeaders: Record<string, string>;
@@ -12,16 +24,8 @@ type GmXhr =
     | "responseText"
   >;
 
-export const GM_xmlhttpRequest: (request: {
-  method?: "GET" | "POST";
-  url: string;
-  headers?: Record<string, unknown>;
-  responseType?: XMLHttpRequest["responseType"];
-  data?: BodyInit | null;
-  onprogress?: (event: { loaded: number; total?: number }) => void;
-  onload?: (response: GmXhr) => void;
-  onerror?: (response: GmXhr) => void;
-  onabort?: (response: GmXhr) => void;
-}) => XMLHttpRequest = (window as unknown as {
-  module: { config: () => { GM_xmlhttpRequest: () => XMLHttpRequest } };
-}).module.config().GM_xmlhttpRequest;
+declare const module: {
+  config: (() => {
+    GM_xmlhttpRequest: (() => XMLHttpRequest);
+  });
+};
