@@ -60,7 +60,7 @@ const makeViewerController = (
     }
   };
 
-  const reloadErrored = async () => {
+  const reloadErrored = () => {
     window.stop();
 
     for (const controller of pages) {

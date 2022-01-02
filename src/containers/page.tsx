@@ -24,11 +24,17 @@ export const Page = ({
   return (
     <Overlay ref={ref} placeholder={state !== "complete"} fullWidth={fullWidth}>
       {state === "loading" && <Spinner />}
-      {state === "error" && <LinkColumn onClick={reloadErrored}>
-        <CircledX />
-        <p>이미지를 불러오지 못했습니다</p>
-        <p>{src ? src : urls?.join("\n")}</p>
-      </LinkColumn>}
+      {state === "error" && (
+        <LinkColumn onClick={reloadErrored}>
+          <CircledX />
+          <p>이미지를 불러오지 못했습니다</p>
+          <p>
+            {src
+              ? src
+              : urls?.join("\n")}
+          </p>
+        </LinkColumn>
+      )}
       <Image {...imageProps} {...props} />
     </Overlay>
   );

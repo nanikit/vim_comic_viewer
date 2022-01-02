@@ -20,10 +20,10 @@ const getDefaultRoot = () => {
   return div;
 };
 
-export const initialize = async (
+export const initialize = (
   options: ViewerOptions,
 ): Promise<ViewerController> => {
   const ref = createRef<ViewerController>();
   render(<Viewer ref={ref} options={options} useDefault />, getDefaultRoot());
-  return ref.current!;
+  return Promise.resolve(ref.current!);
 };
