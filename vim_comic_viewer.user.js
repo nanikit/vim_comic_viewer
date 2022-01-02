@@ -354,24 +354,8 @@ const useRerender = () => {
   return rerender;
 };
 
-const GM_xmlhttpRequest = module.config().GM_xmlhttpRequest;
+const GM_xmlhttpRequest = window.module.config().GM_xmlhttpRequest;
 
-const fetchBlob = async (url, init) => {
-  try {
-    const response = await fetch(url, init);
-    return await response.blob();
-  } catch (error) {
-    if (init?.signal?.aborted) {
-      throw error;
-    }
-    const isOriginDifferent = new URL(url).origin !== location.origin;
-    if (isOriginDifferent && gmFetch) {
-      return await gmFetch(url, init).blob();
-    } else {
-      throw error;
-    }
-  }
-};
 const gmFetch = GM_xmlhttpRequest
   ? (resource, init) => {
     const method = init?.body ? "POST" : "GET";
@@ -407,6 +391,22 @@ const gmFetch = GM_xmlhttpRequest
     };
   }
   : undefined;
+const fetchBlob = async (url, init) => {
+  try {
+    const response = await fetch(url, init);
+    return await response.blob();
+  } catch (error) {
+    if (init?.signal?.aborted) {
+      throw error;
+    }
+    const isOriginDifferent = new URL(url).origin !== location.origin;
+    if (isOriginDifferent && gmFetch) {
+      return await gmFetch(url, init).blob();
+    } else {
+      throw error;
+    }
+  }
+};
 
 const imageSourceToIterable = (source) => {
   if (typeof source === "string") {
@@ -468,9 +468,10 @@ const saveAs = async (blob, name) => {
   URL.revokeObjectURL(a.href);
 };
 const getSafeFileName = (str) => {
+  // deno-lint-ignore no-control-regex
   return str.replace(/[<>:"/\\|?*\x00-\x1f]+/gi, "").trim() || "download";
 };
-const save = async (blob) => {
+const save = (blob) => {
   return saveAs(blob, `${getSafeFileName(document.title)}.zip`);
 };
 const defer = () => {
@@ -554,8 +555,14 @@ const download = (images, options) => {
   let startedCount = 0;
   let resolvedCount = 0;
   let rejectedCount = 0;
-  let isCancelled = false;
-  const reportProgress = (additionals = {}) => {
+  let hasCancelled = false;
+  const reportProgress = ({ isCancelled } = {}) => {
+    if (hasCancelled) {
+      return;
+    }
+    if (isCancelled) {
+      hasCancelled = true;
+    }
     const total = images.length;
     const settled = resolvedCount + rejectedCount;
     onProgress?.({
@@ -563,8 +570,7 @@ const download = (images, options) => {
       started: startedCount,
       settled,
       rejected: rejectedCount,
-      isCancelled,
-      ...additionals,
+      isCancelled: hasCancelled,
     });
   };
   const downloadWithReport = async (source) => {
@@ -623,9 +629,7 @@ const download = (images, options) => {
       if (error) {
         value.reject(error);
       } else {
-        reportProgress({
-          isComplete: true,
-        });
+        reportProgress();
         value.resolve(array);
       }
     });
@@ -651,7 +655,7 @@ const makeDownloader = (images) => {
     text: "",
     error: false,
   };
-  const startDownload = async (options) => {
+  const startDownload = (options) => {
     aborter = new AbortController();
     return download(images, {
       ...options,
@@ -705,7 +709,7 @@ const makeDownloader = (images) => {
   // https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload#Example
   const guard = (event) => {
     event.preventDefault();
-    event.returnValue = "";
+    event.returnValue = true;
   };
   const useInstance = () => {
     const { error, text } = progress;
@@ -714,8 +718,8 @@ const makeDownloader = (images) => {
       if (error || !text) {
         return;
       }
-      window.addEventListener("beforeunload", guard);
-      return () => window.removeEventListener("beforeunload", guard);
+      addEventListener("beforeunload", guard);
+      return () => removeEventListener("beforeunload", guard);
     }, [
       error || !text,
     ]);
@@ -857,7 +861,7 @@ const makeViewerController = ({ ref, navigator, rerender }) => {
       rerender();
     }
   };
-  const reloadErrored = async () => {
+  const reloadErrored = () => {
     window.stop();
     for (const controller of pages) {
       if (controller.state.state !== "complete") {
@@ -1010,7 +1014,7 @@ const LinkColumn = styled("div", {
     boxShadow: "0 0 2px",
   },
 });
-const Image1 = styled("img", {
+const Image = styled("img", {
   position: "relative",
   height: "100%",
   objectFit: "contain",
@@ -1049,7 +1053,7 @@ const Page = ({ fullWidth, controller, ...props }) => {
       ),
     ),
     /*#__PURE__*/ react$1.createElement(
-      Image1,
+      Image,
       Object.assign({}, imageProps, props),
     ),
   ));
@@ -1098,10 +1102,10 @@ const useDefault = ({ enable, controller }) => {
       return;
     }
     controller.container.addEventListener("keydown", defaultKeyHandler);
-    window.addEventListener("keydown", defaultGlobalKeyHandler);
+    addEventListener("keydown", defaultGlobalKeyHandler);
     return () => {
       controller.container.removeEventListener("keydown", defaultKeyHandler);
-      window.removeEventListener("keydown", defaultGlobalKeyHandler);
+      removeEventListener("keydown", defaultGlobalKeyHandler);
     };
   }, [
     controller,
@@ -1224,7 +1228,7 @@ const Viewer_ = (props, refHandle) => {
   const ref = react$1.useRef();
   const scrollRef = react$1.useRef();
   const fullscreenElement = useFullscreenElement();
-  const controller = useViewerController({
+  const controller1 = useViewerController({
     ref,
     scrollRef,
   });
@@ -1235,7 +1239,7 @@ const Viewer_ = (props, refHandle) => {
     downloader,
     toggleFullscreen,
     compactWidthIndex,
-  } = controller;
+  } = controller1;
   const navigate = react$1.useCallback((event) => {
     const height = ref.current?.clientHeight;
     if (!height || event.button !== 0) {
@@ -1244,35 +1248,35 @@ const Viewer_ = (props, refHandle) => {
     event.preventDefault();
     const isTop = event.clientY < height / 2;
     if (isTop) {
-      controller.goPrevious();
+      controller1.goPrevious();
     } else {
-      controller.goNext();
+      controller1.goNext();
     }
   }, [
-    controller,
+    controller1,
   ]);
   const blockSelection = react$1.useCallback((event) => {
     if (event.detail >= 2) {
       event.preventDefault();
     }
     if (event.buttons === 3) {
-      controller.toggleFullscreen();
+      controller1.toggleFullscreen();
       event.preventDefault();
     }
   }, [
-    controller,
+    controller1,
   ]);
   useDefault({
     enable: props.useDefault,
-    controller,
+    controller: controller1,
   });
-  react$1.useImperativeHandle(refHandle, () => controller, [
-    controller,
+  react$1.useImperativeHandle(refHandle, () => controller1, [
+    controller1,
   ]);
   react$1.useEffect(() => {
-    controller.setOptions(viewerOptions);
+    controller1.setOptions(viewerOptions);
   }, [
-    controller,
+    controller1,
     viewerOptions,
   ]);
   react$1.useEffect(() => {
@@ -1339,7 +1343,7 @@ const getDefaultRoot = () => {
   document.body.append(div);
   return div;
 };
-const initialize = async (options) => {
+const initialize = (options) => {
   const ref = /*#__PURE__*/ react$1.createRef();
   reactDom.render(
     /*#__PURE__*/ react$1.createElement(Viewer, {
@@ -1349,7 +1353,7 @@ const initialize = async (options) => {
     }),
     getDefaultRoot(),
   );
-  return ref.current;
+  return Promise.resolve(ref.current);
 };
 
 exports.Viewer = Viewer;

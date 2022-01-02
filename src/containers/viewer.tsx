@@ -103,9 +103,7 @@ const Viewer_ = (
               />
             )) || false
           )
-          : (
-            <p>{status === "error" ? "에러가 발생했습니다" : "로딩 중..."}</p>
-          )}
+          : <p>{status === "error" ? "에러가 발생했습니다" : "로딩 중..."}</p>}
       </ScrollableLayout>
       <FullscreenIcon onClick={toggleFullscreen} />
       {downloader ? <DownloadIndicator downloader={downloader} /> : false}

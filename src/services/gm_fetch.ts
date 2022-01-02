@@ -7,11 +7,11 @@ export const gmFetch = GM_xmlhttpRequest
   ): Pick<Body, "blob" | "json" | "text"> => {
     const method = init?.body ? "POST" : "GET";
     const xhr = (type: "blob" | "json" | "text") => {
-      return new Promise<any>((resolve, reject) => {
+      return new Promise<unknown>((resolve, reject) => {
         const request = GM_xmlhttpRequest({
           method,
           url: resource,
-          headers: init?.headers,
+          headers: init?.headers as Record<string, unknown>,
           responseType: type === "text" ? undefined : type,
           data: init?.body,
           onload: (response) => {
@@ -30,9 +30,9 @@ export const gmFetch = GM_xmlhttpRequest
       });
     };
     return {
-      blob: () => xhr("blob"),
+      blob: () => xhr("blob") as Promise<Blob>,
       json: () => xhr("json"),
-      text: () => xhr("text"),
+      text: () => xhr("text") as Promise<string>,
     };
   }
   : undefined;

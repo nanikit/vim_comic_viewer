@@ -1,7 +1,7 @@
 export const timeout = (millisecond: number) =>
   new Promise((resolve) => setTimeout(resolve, millisecond));
 
-export const waitDomContent = (document: HTMLDocument) =>
+export const waitDomContent = (document: Document) =>
   document.readyState === "loading"
     ? new Promise((r) =>
       document.addEventListener("readystatechange", r, { once: true })
@@ -29,10 +29,11 @@ export const saveAs = async (blob: Blob, name: string) => {
 };
 
 export const getSafeFileName = (str: string) => {
+  // deno-lint-ignore no-control-regex
   return str.replace(/[<>:"/\\|?*\x00-\x1f]+/gi, "").trim() || "download";
 };
 
-export const save = async (blob: Blob) => {
+export const save = (blob: Blob) => {
   return saveAs(blob, `${getSafeFileName(document.title)}.zip`);
 };
 
@@ -48,5 +49,5 @@ export const defer = <T>(): Deferred<T> => {
     resolve = res;
     reject = rej;
   });
-  return { promise, resolve, reject } as any;
+  return { promise, resolve, reject } as unknown as Deferred<T>;
 };

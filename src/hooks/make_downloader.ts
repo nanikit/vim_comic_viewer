@@ -25,7 +25,7 @@ export const makeDownloader = (images: ImageSource[]) => {
     error: false,
   };
 
-  const startDownload = async (options?: DownloadOptions) => {
+  const startDownload = (options?: DownloadOptions) => {
     aborter = new AbortController();
     return download(images, { ...options, signal: aborter.signal });
   };
@@ -68,7 +68,7 @@ export const makeDownloader = (images: ImageSource[]) => {
   // https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload#Example
   const guard = (event: Event) => {
     event.preventDefault();
-    event.returnValue = "" as any;
+    event.returnValue = true;
   };
 
   const useInstance = () => {
@@ -79,8 +79,8 @@ export const makeDownloader = (images: ImageSource[]) => {
       if (error || !text) {
         return;
       }
-      window.addEventListener("beforeunload", guard);
-      return () => window.removeEventListener("beforeunload", guard);
+      addEventListener("beforeunload", guard);
+      return () => removeEventListener("beforeunload", guard);
     }, [error || !text]);
   };
 

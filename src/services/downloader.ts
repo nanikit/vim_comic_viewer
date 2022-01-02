@@ -29,7 +29,7 @@ async function* downloadImage(
     source: ImageSource;
     signal?: AbortSignal;
   },
-): AsyncGenerator<{ error: object } | { url: string; blob: Blob }> {
+): AsyncGenerator<{ error: unknown } | { url: string; blob: Blob }> {
   for await (const url of imageSourceToIterable(source)) {
     if (signal?.aborted) {
       break;
@@ -80,10 +80,9 @@ export const download = (
   let startedCount = 0;
   let resolvedCount = 0;
   let rejectedCount = 0;
-  let isCancelled = false;
   let hasCancelled = false;
 
-  const reportProgress = (additionals: {} = {}) => {
+  const reportProgress = ({ isCancelled }: { isCancelled?: true } = {}) => {
     if (hasCancelled) {
       return;
     }
@@ -98,8 +97,7 @@ export const download = (
       started: startedCount,
       settled,
       rejected: rejectedCount,
-      isCancelled,
-      ...additionals,
+      isCancelled: hasCancelled,
     });
   };
 
@@ -167,7 +165,7 @@ export const download = (
       if (error) {
         value.reject(error);
       } else {
-        reportProgress({ isComplete: true });
+        reportProgress();
         value.resolve(array);
       }
     });

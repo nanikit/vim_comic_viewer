@@ -58,10 +58,10 @@ export const useDefault = (
     }
 
     controller.container!.addEventListener("keydown", defaultKeyHandler);
-    window.addEventListener("keydown", defaultGlobalKeyHandler);
+    addEventListener("keydown", defaultGlobalKeyHandler);
     return () => {
       controller.container!.removeEventListener("keydown", defaultKeyHandler);
-      window.removeEventListener("keydown", defaultGlobalKeyHandler);
+      removeEventListener("keydown", defaultGlobalKeyHandler);
     };
   }, [controller, enable]);
 };
