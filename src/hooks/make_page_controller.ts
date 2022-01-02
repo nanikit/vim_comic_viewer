@@ -42,7 +42,7 @@ export const makePageController = ({ source, observer }: PageProps) => {
   };
 
   const useInstance = (
-    { ref }: { ref: RefObject<HTMLImageElement | undefined> },
+    { ref }: { ref: RefObject<HTMLElement | undefined> },
   ) => {
     [state, setState] = useState<PageState>({ src: "", state: "loading" });
 

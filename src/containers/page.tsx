@@ -1,6 +1,6 @@
 /** @jsx createElement */
 import { Image, LinkColumn, Overlay, Spinner } from "../components/spinner.tsx";
-import { createElement, useCallback, useRef } from "react";
+import { createElement, MouseEventHandler, useCallback, useRef } from "react";
 import { CircledX } from "../components/icons.tsx";
 import { makePageController } from "../hooks/make_page_controller.ts";
 
@@ -12,11 +12,11 @@ export const Page = ({
   controller: ReturnType<typeof makePageController>;
   fullWidth?: boolean;
 }) => {
-  const ref = useRef<HTMLImageElement>();
+  const ref = useRef<HTMLDivElement>(null);
   const imageProps = controller.useInstance({ ref });
   const { state, src, urls } = controller.state;
 
-  const reloadErrored = useCallback(async (event: MouseEvent) => {
+  const reloadErrored: MouseEventHandler = useCallback(async (event) => {
     event.stopPropagation();
     await controller.reload();
   }, []);

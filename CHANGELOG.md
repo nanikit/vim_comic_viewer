@@ -1,3 +1,15 @@
+# 7.0.0
+
+- Update stitches to 1.2.6. Dependent script's resource pragma should be changed
+  like the following.
+
+```
+// @resource       fflate           https://cdn.jsdelivr.net/npm/fflate@0.7.2/lib/browser.cjs
+// @resource       react            https://cdn.jsdelivr.net/npm/react@17.0.2/umd/react.production.min.js
+// @resource       react-dom        https://cdn.jsdelivr.net/npm/react-dom@17.0.2/umd/react-dom.production.min.js
+// @resource       @stitches/react  https://cdn.jsdelivr.net/npm/@stitches/react@1.2.6/dist/index.cjs
+```
+
 ## 6.2.1
 
 - Fix not found `module` variable in tampermonkey.

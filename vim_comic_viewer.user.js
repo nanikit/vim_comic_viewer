@@ -3,7 +3,7 @@
 // @description    Universal comic reader
 // @name:ko        vim comic viewer
 // @description:ko 만화 뷰어 라이브러리
-// @version        6.2.1
+// @version        7.0.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -12,8 +12,7 @@
 // @resource       fflate           https://cdn.jsdelivr.net/npm/fflate@0.7.1/lib/browser.cjs
 // @resource       react            https://cdn.jsdelivr.net/npm/react@17.0.2/umd/react.production.min.js
 // @resource       react-dom        https://cdn.jsdelivr.net/npm/react-dom@17.0.2/umd/react-dom.production.min.js
-// @resource       @stitches/core   https://cdn.jsdelivr.net/npm/@stitches/core@0.2.0/dist/index.cjs
-// @resource       @stitches/react  https://cdn.jsdelivr.net/npm/@stitches/react@0.2.0/dist/index.cjs
+// @resource       @stitches/react  https://cdn.jsdelivr.net/npm/@stitches/react@1.2.6/dist/index.cjs
 // ==/UserScript==
 
 "use strict";
@@ -25,7 +24,7 @@ var react = require("@stitches/react");
 var reactDom = require("react-dom");
 var fflate = require("fflate");
 
-const { styled, css, keyframes } = react.createCss({});
+const { styled, css, keyframes } = react.createStitches({});
 
 const Svg$1 = styled("svg", {
   position: "absolute",
@@ -1022,7 +1021,7 @@ const Image = styled("img", {
 });
 
 const Page = ({ fullWidth, controller, ...props }) => {
-  const ref = react$1.useRef();
+  const ref = react$1.useRef(null);
   const imageProps = controller.useInstance({
     ref,
   });

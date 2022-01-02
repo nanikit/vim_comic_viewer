@@ -11,6 +11,7 @@ import {
   createElement,
   forwardRef,
   HTMLProps,
+  MouseEventHandler,
   Ref,
   useCallback,
   useEffect,
@@ -58,7 +59,7 @@ const Viewer_ = (
     }
   }, [controller]);
 
-  const blockSelection = useCallback((event: MouseEvent) => {
+  const blockSelection: MouseEventHandler<HTMLDivElement> = useCallback((event) => {
     if (event.detail >= 2) {
       event.preventDefault();
     }
