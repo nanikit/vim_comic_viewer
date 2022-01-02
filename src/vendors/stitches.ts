@@ -1,3 +1,3 @@
-import { createCss } from "@stitches/react";
+import { createStitches } from "@stitches/react";
 
-export const { styled, css, keyframes } = createCss({});
+export const { styled, css, keyframes } = createStitches({});
