@@ -1,14 +1,14 @@
 import {
   Plugin,
   useCache,
-} from "https://raw.githubusercontent.com/jeiea/denopack/patch/mod.ts";
-import { iter } from "https://deno.land/std@0.97.0/io/util.ts";
-import type { RollupOptions } from "https://raw.githubusercontent.com/jeiea/denopack/patch/mod.ts";
+} from "https://raw.githubusercontent.com/jeiea/denopack/deno-1.16.4/mod.ts";
+import { iterateReader } from "https://deno.land/std@0.117.0/streams/conversion.ts";
+import type { RollupOptions } from "https://raw.githubusercontent.com/jeiea/denopack/deno-1.16.4/mod.ts";
 
 export type {
   Plugin,
   RollupOptions,
-} from "https://raw.githubusercontent.com/jeiea/denopack/patch/mod.ts";
+} from "https://raw.githubusercontent.com/jeiea/denopack/deno-1.16.4/mod.ts";
 
 export const denoFmt = async (code: string) => {
   const process = Deno.run({
@@ -23,7 +23,7 @@ export const denoFmt = async (code: string) => {
   const formatteds = [];
   const accumulates = [0];
   let sum = 0;
-  for await (const chunk of iter(process.stdout)) {
+  for await (const chunk of iterateReader(process.stdout)) {
     formatteds.push(new Uint8Array(chunk));
     sum += chunk.length;
     accumulates.push(sum);
@@ -50,12 +50,16 @@ export const createConfig = async (
   },
 ): Promise<RollupOptions> => {
   const [{ compilerOptions }, { imports }] = await Promise.all([
-    tsconfig ? readJson(tsconfig) : {},
-    importMap ? readJson(importMap) : {},
+    (tsconfig ? readJson(tsconfig) : {}) as {
+      compilerOptions?: Deno.CompilerOptions;
+    },
+    (importMap ? readJson(importMap) : {}) as {
+      imports?: Record<string, string>;
+    },
   ]);
 
   return {
-    external: [...Object.keys(imports)],
+    external: imports ? [...Object.keys(imports)] : [],
     plugins: [...useCache({ compilerOptions }), ...(plugins ?? [])],
     output: {
       format: "cjs",
