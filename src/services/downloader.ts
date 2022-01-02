@@ -82,7 +82,9 @@ export const download = (
   let rejectedCount = 0;
   let hasCancelled = false;
 
-  const reportProgress = ({ isCancelled }: { isCancelled?: true } = {}) => {
+  const reportProgress = (
+    { isCancelled, isComplete }: { isCancelled?: true; isComplete?: true } = {},
+  ) => {
     if (hasCancelled) {
       return;
     }
@@ -98,6 +100,7 @@ export const download = (
       settled,
       rejected: rejectedCount,
       isCancelled: hasCancelled,
+      isComplete,
     });
   };
 
@@ -165,7 +168,7 @@ export const download = (
       if (error) {
         value.reject(error);
       } else {
-        reportProgress();
+        reportProgress({ isComplete: true });
         value.resolve(array);
       }
     });
