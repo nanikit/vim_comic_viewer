@@ -1,3 +1,7 @@
+### 7.0.1
+
+- Fix disappearing download progress
+
 # 7.0.0
 
 - Update stitches to 1.2.6. Dependent script's resource pragma should be changed
