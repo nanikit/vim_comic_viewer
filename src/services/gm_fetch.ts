@@ -1,5 +1,42 @@
 import { GM_xmlhttpRequest } from "./tampermonkey.ts";
 
+export const gmFetch = GM_xmlhttpRequest
+  ? (
+    resource: string,
+    init?: RequestInit,
+  ): Pick<Body, "blob" | "json" | "text"> => {
+    const method = init?.body ? "POST" : "GET";
+    const xhr = (type: "blob" | "json" | "text") => {
+      return new Promise<any>((resolve, reject) => {
+        const request = GM_xmlhttpRequest({
+          method,
+          url: resource,
+          headers: init?.headers,
+          responseType: type === "text" ? undefined : type,
+          data: init?.body,
+          onload: (response) => {
+            if (type === "text") {
+              resolve(response.responseText);
+            } else {
+              resolve(response.response);
+            }
+          },
+          onerror: reject,
+          onabort: reject,
+        });
+        init?.signal?.addEventListener("abort", () => {
+          request.abort();
+        }, { once: true });
+      });
+    };
+    return {
+      blob: () => xhr("blob"),
+      json: () => xhr("json"),
+      text: () => xhr("text"),
+    };
+  }
+  : undefined;
+
 export const fetchBlob = async (url: string, init?: RequestInit) => {
   try {
     const response = await fetch(url, init);
@@ -17,40 +54,3 @@ export const fetchBlob = async (url: string, init?: RequestInit) => {
     }
   }
 };
-
-export const gmFetch = GM_xmlhttpRequest
-  ? (
-    resource: string,
-    init?: Pick<RequestInit, "body" | "headers" | "signal">,
-  ): Pick<Body, "blob" | "json" | "text"> => {
-    const method = init?.body ? "POST" : "GET";
-    const xhr = (type: "blob" | "json" | "text") => {
-      return new Promise<any>((resolve, reject) => {
-        const request = GM_xmlhttpRequest({
-          method,
-          url: resource,
-          headers: init?.headers,
-          responseType: type === "text" ? undefined : type,
-          data: init?.body as any,
-          onload: (response: any) => {
-            if (type === "text") {
-              resolve(response.responseText);
-            } else {
-              resolve(response.response);
-            }
-          },
-          onerror: reject,
-          onabort: reject,
-        }) as any;
-        init?.signal?.addEventListener("abort", () => {
-          request.abort();
-        }, { once: true });
-      });
-    };
-    return {
-      blob: () => xhr("blob"),
-      json: () => xhr("json"),
-      text: () => xhr("text"),
-    };
-  }
-  : undefined;
