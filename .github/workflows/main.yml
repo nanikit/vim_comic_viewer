@@ -28,7 +28,7 @@ jobs:
       run: deno fmt --check
 
     - name: Run linter
-      run: deno lint
+      run: deno lint --unstable --ignore=vim_comic_viewer.user.js
 
       # - name: Cache dependencies
       #   run: deno cache --no-check --import-map build_src/import_map.json src/mod.tsx
