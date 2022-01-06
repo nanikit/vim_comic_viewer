@@ -59,16 +59,19 @@ const Viewer_ = (
     }
   }, [controller]);
 
-  const blockSelection: MouseEventHandler<HTMLDivElement> = useCallback((event) => {
-    if (event.detail >= 2) {
-      event.preventDefault();
-    }
+  const blockSelection: MouseEventHandler<HTMLDivElement> = useCallback(
+    (event) => {
+      if (event.detail >= 2) {
+        event.preventDefault();
+      }
 
-    if (event.buttons === 3) {
-      controller.toggleFullscreen();
-      event.preventDefault();
-    }
-  }, [controller]);
+      if (event.buttons === 3) {
+        controller.toggleFullscreen();
+        event.preventDefault();
+      }
+    },
+    [controller],
+  );
 
   useDefault({ enable: props.useDefault, controller });
 
