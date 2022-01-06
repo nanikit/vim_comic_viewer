@@ -2,7 +2,7 @@ import {
   Plugin,
   useCache,
 } from "https://raw.githubusercontent.com/jeiea/denopack/deno-1.16.4/mod.ts";
-import { iterateReader } from "https://deno.land/std@0.117.0/streams/conversion.ts";
+import { iterateReader } from "https://deno.land/std@0.120.0/streams/conversion.ts";
 import type { RollupOptions } from "https://raw.githubusercontent.com/jeiea/denopack/deno-1.16.4/mod.ts";
 
 export type {
