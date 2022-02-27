@@ -1,14 +1,12 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
     "lib": [
       "ES2020",
       "dom",
       "deno.ns",
       "deno.unstable"
     ],
-    "jsx": "react",
-    "baseUrl": "./src"
+    "jsx": "react"
   },
   "include": [
     "src"

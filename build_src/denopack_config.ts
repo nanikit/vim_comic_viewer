@@ -1,4 +1,6 @@
 import { createConfig, denoFmt, Plugin } from "./utils.ts";
+import importMap from "../build_src/import_map.json" assert { type: "json" };
+import tsconfig from "./deno.json" assert { type: "json" };
 
 const postprocessPlugin: Plugin = {
   name: "postprocess-plugin",
@@ -33,7 +35,10 @@ const postprocessPlugin: Plugin = {
 };
 
 export default createConfig({
-  importMap: new URL("import_map.json", import.meta.url),
-  tsconfig: new URL("deno.tsconfig.json", import.meta.url),
+  importMap,
+  tsconfig: {
+    compilerOptions: tsconfig
+      .compilerOptions as unknown as Deno.CompilerOptions,
+  },
   plugins: [postprocessPlugin],
 });
