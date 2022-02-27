@@ -2,7 +2,7 @@ import {
   Plugin,
   useCache,
 } from "https://raw.githubusercontent.com/jeiea/denopack/deno-1.16.4/mod.ts";
-import { iterateReader } from "https://deno.land/std@0.120.0/streams/conversion.ts";
+import { iterateReader } from "https://deno.land/std@0.127.0/streams/conversion.ts";
 import type { RollupOptions } from "https://raw.githubusercontent.com/jeiea/denopack/deno-1.16.4/mod.ts";
 
 export type {
@@ -37,26 +37,15 @@ export const denoFmt = async (code: string) => {
   return decoded;
 };
 
-const readJson = async (path: string | URL) => {
-  const json = await Deno.readTextFile(path);
-  return JSON.parse(json);
-};
-
-export const createConfig = async (
+export const createConfig = (
   { tsconfig, importMap, plugins }: {
-    tsconfig?: string | URL;
-    importMap?: string | URL;
+    tsconfig?: { compilerOptions: Deno.CompilerOptions };
+    importMap?: { imports: Record<string, string> };
     plugins?: Plugin[];
   },
-): Promise<RollupOptions> => {
-  const [{ compilerOptions }, { imports }] = await Promise.all([
-    (tsconfig ? readJson(tsconfig) : {}) as {
-      compilerOptions?: Deno.CompilerOptions;
-    },
-    (importMap ? readJson(importMap) : {}) as {
-      imports?: Record<string, string>;
-    },
-  ]);
+): RollupOptions => {
+  const { imports } = importMap ?? {};
+  const { compilerOptions } = tsconfig ?? {};
 
   return {
     external: imports ? [...Object.keys(imports)] : [],
