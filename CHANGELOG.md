@@ -1,3 +1,7 @@
+### 7.0.2
+
+- Upgrade dependencies
+
 ### 7.0.1
 
 - Fix disappearing download progress
