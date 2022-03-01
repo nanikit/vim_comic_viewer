@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        7.0.1
+// @version        7.0.2
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -1224,7 +1224,7 @@ const DownloadIndicator = ({ downloader }) => {
   ));
 };
 
-const Viewer_ = (props, refHandle) => {
+const Viewer = /*#__PURE__*/ react$1.forwardRef((props, refHandle) => {
   const { useDefault: enableDefault, options: viewerOptions, ...otherProps } =
     props;
   const ref = react$1.useRef();
@@ -1299,27 +1299,28 @@ const Viewer_ = (props, refHandle) => {
     /*#__PURE__*/ react$1.createElement(
       ScrollableLayout,
       Object.assign({
+        // deno-lint-ignore no-explicit-any
         ref: scrollRef,
         fullscreen: fullscreenElement === ref.current,
         onClick: navigate,
         onMouseDown: blockSelection,
-      }, otherProps),
-      status === "complete"
-        ? pages?.map?.((controller, index) =>
-          /*#__PURE__*/ react$1.createElement(
-            Page,
-            Object.assign({
-              key: index,
-              controller: controller,
-              fullWidth: index < compactWidthIndex,
-            }, options?.imageProps),
+        children: status === "complete"
+          ? pages.map((controller, index) =>
+            /*#__PURE__*/ react$1.createElement(
+              Page,
+              Object.assign({
+                key: index,
+                controller: controller,
+                fullWidth: index < compactWidthIndex,
+              }, options?.imageProps),
+            )
           )
-        ) || false
-        : /*#__PURE__*/ react$1.createElement(
-          "p",
-          null,
-          status === "error" ? "에러가 발생했습니다" : "로딩 중...",
-        ),
+          : /*#__PURE__*/ react$1.createElement(
+            "p",
+            null,
+            status === "error" ? "에러가 발생했습니다" : "로딩 중...",
+          ),
+      }, otherProps),
     ),
     /*#__PURE__*/ react$1.createElement(FullscreenIcon, {
       onClick: toggleFullscreen,
@@ -1330,15 +1331,12 @@ const Viewer_ = (props, refHandle) => {
       })
       : false,
   ));
-};
-const Viewer = /*#__PURE__*/ react$1.forwardRef(Viewer_);
+});
 
 var types = /*#__PURE__*/ Object.freeze({
   __proto__: null,
 });
 
-/** @jsx createElement */
-/// <reference lib="dom" />
 const getDefaultRoot = () => {
   const div = document.createElement("div");
   div.setAttribute("style", "width: 0; height: 0; position: fixed;");
