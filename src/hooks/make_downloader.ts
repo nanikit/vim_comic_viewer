@@ -68,7 +68,6 @@ export const makeDownloader = (images: ImageSource[]) => {
   // https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload#Example
   const guard = (event: Event) => {
     event.preventDefault();
-    event.returnValue = true;
   };
 
   const useInstance = () => {

@@ -711,7 +711,6 @@ const makeDownloader = (images) => {
   // https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload#Example
   const guard = (event) => {
     event.preventDefault();
-    event.returnValue = true;
   };
   const useInstance = () => {
     const { error, text } = progress;
