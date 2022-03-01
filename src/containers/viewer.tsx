@@ -13,6 +13,7 @@ import {
   HTMLProps,
   MouseEventHandler,
   Ref,
+  RefObject,
   useCallback,
   useEffect,
   useImperativeHandle,
@@ -22,7 +23,7 @@ import { Page } from "./page.tsx";
 import { useDefault } from "../hooks/use_default.ts";
 import { DownloadIndicator } from "./download_indicator.tsx";
 
-const Viewer_ = (
+export const Viewer = forwardRef((
   props: HTMLProps<HTMLDivElement> & {
     useDefault?: boolean;
     options: ViewerOptions;
@@ -44,7 +45,7 @@ const Viewer_ = (
     compactWidthIndex,
   } = controller;
 
-  const navigate = useCallback((event: MouseEvent) => {
+  const navigate: MouseEventHandler<Element> = useCallback((event) => {
     const height = ref.current?.clientHeight;
     if (!height || event.button !== 0) {
       return;
@@ -59,7 +60,7 @@ const Viewer_ = (
     }
   }, [controller]);
 
-  const blockSelection: MouseEventHandler<HTMLDivElement> = useCallback(
+  const blockSelection: MouseEventHandler<Element> = useCallback(
     (event) => {
       if (event.detail >= 2) {
         event.preventDefault();
@@ -88,31 +89,31 @@ const Viewer_ = (
   }, [ref.current, fullscreenElement]);
 
   return (
-    <Container ref={ref} tabIndex={-1} className="vim_comic_viewer">
+    <Container
+      ref={ref as RefObject<HTMLDivElement>}
+      tabIndex={-1}
+      className="vim_comic_viewer"
+    >
       <ScrollableLayout
-        ref={scrollRef}
+        // deno-lint-ignore no-explicit-any
+        ref={scrollRef as any}
         fullscreen={fullscreenElement === ref.current}
         onClick={navigate}
         onMouseDown={blockSelection}
-        {...otherProps}
-      >
-        {status === "complete"
-          ? (
-            pages?.map?.((controller, index) => (
-              <Page
-                key={index}
-                controller={controller}
-                fullWidth={index < compactWidthIndex}
-                {...options?.imageProps}
-              />
-            )) || false
-          )
+        children={status === "complete"
+          ? pages.map((controller, index) => (
+            <Page
+              key={index}
+              controller={controller}
+              fullWidth={index < compactWidthIndex}
+              {...options?.imageProps}
+            />
+          ))
           : <p>{status === "error" ? "에러가 발생했습니다" : "로딩 중..."}</p>}
-      </ScrollableLayout>
+        {...otherProps}
+      />
       <FullscreenIcon onClick={toggleFullscreen} />
       {downloader ? <DownloadIndicator downloader={downloader} /> : false}
     </Container>
   );
-};
-
-export const Viewer = forwardRef(Viewer_);
+});
