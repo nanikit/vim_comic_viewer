@@ -1,5 +1,4 @@
 /** @jsx createElement */
-/// <reference lib="dom" />
 import { Viewer } from "./containers/viewer.tsx";
 import { ViewerController, ViewerOptions } from "./types.ts";
 import { createElement, createRef } from "react";
