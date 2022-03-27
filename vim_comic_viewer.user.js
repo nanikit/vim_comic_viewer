@@ -90,7 +90,7 @@ const ErrorIcon = styled("svg", {
   margin: "2rem",
 });
 const CircledX = (props) => {
-  return (/*#__PURE__*/ react$1.createElement(
+  return /*#__PURE__*/ react$1.createElement(
     ErrorIcon,
     Object.assign(
       {
@@ -114,7 +114,7 @@ const CircledX = (props) => {
         d: "M61.44,0c16.966,0,32.326,6.877,43.445,17.996c11.119,11.118,17.996,26.479,17.996,43.444 c0,16.967-6.877,32.326-17.996,43.444C93.766,116.003,78.406,122.88,61.44,122.88c-16.966,0-32.326-6.877-43.444-17.996 C6.877,93.766,0,78.406,0,61.439c0-16.965,6.877-32.326,17.996-43.444C29.114,6.877,44.474,0,61.44,0L61.44,0z M80.16,37.369 c1.301-1.302,3.412-1.302,4.713,0c1.301,1.301,1.301,3.411,0,4.713L65.512,61.444l19.361,19.362c1.301,1.301,1.301,3.411,0,4.713 c-1.301,1.301-3.412,1.301-4.713,0L60.798,66.157L41.436,85.52c-1.301,1.301-3.412,1.301-4.713,0c-1.301-1.302-1.301-3.412,0-4.713 l19.363-19.362L36.723,42.082c-1.301-1.302-1.301-3.412,0-4.713c1.301-1.302,3.412-1.302,4.713,0l19.363,19.362L80.16,37.369 L80.16,37.369z M100.172,22.708C90.26,12.796,76.566,6.666,61.44,6.666c-15.126,0-28.819,6.13-38.731,16.042 C12.797,32.62,6.666,46.314,6.666,61.439c0,15.126,6.131,28.82,16.042,38.732c9.912,9.911,23.605,16.042,38.731,16.042 c15.126,0,28.82-6.131,38.732-16.042c9.912-9.912,16.043-23.606,16.043-38.732C116.215,46.314,110.084,32.62,100.172,22.708 L100.172,22.708z",
       }),
     ),
-  ));
+  );
 };
 
 const defaultScrollbar = {
@@ -402,22 +402,24 @@ const fetchBlob = async (url, init) => {
     if (isOriginDifferent && gmFetch) {
       return await gmFetch(url, init).blob();
     } else {
-      throw error;
+      throw new Error("CORS blocked and cannot use GM_xmlhttpRequest", {
+        cause: error,
+      });
     }
   }
 };
 
 const imageSourceToIterable = (source) => {
   if (typeof source === "string") {
-    return (async function* () {
+    return async function* () {
       yield source;
-    })();
+    }();
   } else if (Array.isArray(source)) {
-    return (async function* () {
+    return async function* () {
       for (const url of source) {
         yield url;
       }
-    })();
+    }();
   } else {
     return source();
   }
@@ -1032,7 +1034,7 @@ const Page = ({ fullWidth, controller, ...props }) => {
     event.stopPropagation();
     await controller.reload();
   }, []);
-  return (/*#__PURE__*/ react$1.createElement(
+  return /*#__PURE__*/ react$1.createElement(
     Overlay,
     {
       ref: ref,
@@ -1046,7 +1048,11 @@ const Page = ({ fullWidth, controller, ...props }) => {
         onClick: reloadErrored,
       },
       /*#__PURE__*/ react$1.createElement(CircledX, null),
-      /*#__PURE__*/ react$1.createElement("p", null, "이미지를 불러오지 못했습니다"),
+      /*#__PURE__*/ react$1.createElement(
+        "p",
+        null,
+        "\uC774\uBBF8\uC9C0\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4",
+      ),
       /*#__PURE__*/ react$1.createElement(
         "p",
         null,
@@ -1057,7 +1063,7 @@ const Page = ({ fullWidth, controller, ...props }) => {
       Image,
       Object.assign({}, imageProps, props),
     ),
-  ));
+  );
 };
 
 const maybeNotHotkey = (event) =>
@@ -1177,7 +1183,7 @@ const CircularProgress = (props) => {
   const strokeDashoffset = circumference - value * circumference;
   const center = radius + strokeWidth / 2;
   const side = center * 2;
-  return (/*#__PURE__*/ react$1.createElement(
+  return /*#__PURE__*/ react$1.createElement(
     Svg,
     Object.assign({
       height: side,
@@ -1199,13 +1205,13 @@ const CircularProgress = (props) => {
       x: "50%",
       y: "50%",
     }, text || ""),
-  ));
+  );
 };
 
 const DownloadIndicator = ({ downloader }) => {
   const { value, text, error } = downloader.progress ?? {};
   downloader.useInstance();
-  return (/*#__PURE__*/ react$1.createElement(
+  return /*#__PURE__*/ react$1.createElement(
     react$1.Fragment,
     null,
     text
@@ -1220,7 +1226,7 @@ const DownloadIndicator = ({ downloader }) => {
       : /*#__PURE__*/ react$1.createElement(DownloadIcon, {
         onClick: downloader.downloadWithProgress,
       }),
-  ));
+  );
 };
 
 const Viewer = /*#__PURE__*/ react$1.forwardRef((props, refHandle) => {
@@ -1288,7 +1294,7 @@ const Viewer = /*#__PURE__*/ react$1.forwardRef((props, refHandle) => {
     ref.current,
     fullscreenElement,
   ]);
-  return (/*#__PURE__*/ react$1.createElement(
+  return /*#__PURE__*/ react$1.createElement(
     Container,
     {
       ref: ref,
@@ -1329,7 +1335,7 @@ const Viewer = /*#__PURE__*/ react$1.forwardRef((props, refHandle) => {
         downloader: downloader,
       })
       : false,
-  ));
+  );
 });
 
 var types = /*#__PURE__*/ Object.freeze({

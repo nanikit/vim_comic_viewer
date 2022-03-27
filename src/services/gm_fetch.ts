@@ -50,7 +50,9 @@ export const fetchBlob = async (url: string, init?: RequestInit) => {
     if (isOriginDifferent && gmFetch) {
       return await gmFetch(url, init).blob();
     } else {
-      throw error;
+      throw new Error("CORS blocked and cannot use GM_xmlhttpRequest", {
+        cause: error,
+      });
     }
   }
 };
