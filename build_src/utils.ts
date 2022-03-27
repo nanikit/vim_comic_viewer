@@ -1,14 +1,14 @@
-import {
+import { iterateReader } from "https://deno.land/std@0.132.0/streams/conversion.ts";
+import { useCache } from "https://raw.githubusercontent.com/jeiea/denopack/deno-1.20.3/mod.ts";
+import type {
   Plugin,
-  useCache,
-} from "https://raw.githubusercontent.com/jeiea/denopack/deno-1.19.0/mod.ts";
-import { iterateReader } from "https://deno.land/std@0.127.0/streams/conversion.ts";
-import type { RollupOptions } from "https://raw.githubusercontent.com/jeiea/denopack/deno-1.19.0/mod.ts";
+  RollupOptions,
+} from "https://raw.githubusercontent.com/jeiea/denopack/deno-1.20.3/mod.ts";
 
 export type {
   Plugin,
   RollupOptions,
-} from "https://raw.githubusercontent.com/jeiea/denopack/deno-1.19.0/mod.ts";
+} from "https://raw.githubusercontent.com/jeiea/denopack/deno-1.20.3/mod.ts";
 
 export const denoFmt = async (code: string) => {
   const process = Deno.run({
