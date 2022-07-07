@@ -1,5 +1,3 @@
-/** @jsx createElement */
-import { createElement } from "react";
 import { keyframes, styled } from "../vendors/stitches.ts";
 
 const stretch = keyframes({

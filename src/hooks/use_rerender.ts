@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useReducer } from "../deps.ts";
 
 export const useRerender = () => {
   const [, rerender] = useReducer(() => ({}), {});

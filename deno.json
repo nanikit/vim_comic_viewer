@@ -6,9 +6,10 @@
       "deno.ns",
       "deno.unstable"
     ],
-    "jsx": "react"
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
   },
   "include": [
-    "src"
+    "./src"
   ]
 }

@@ -1,8 +1,5 @@
-/** @jsx createElement */
-/** @jsxFrag Fragment */
 import { CircularProgress } from "../components/circular_progress.tsx";
 import { DownloadIcon } from "../components/icons.tsx";
-import { createElement, Fragment } from "react";
 import { makeDownloader } from "../hooks/make_downloader.ts";
 
 export const DownloadIndicator = (

@@ -1,7 +1,6 @@
-/** @jsx createElement */
-import { Image, LinkColumn, Overlay, Spinner } from "../components/spinner.tsx";
-import { createElement, MouseEventHandler, useCallback, useRef } from "react";
 import { CircledX } from "../components/icons.tsx";
+import { Image, LinkColumn, Overlay, Spinner } from "../components/spinner.tsx";
+import { MouseEventHandler, useCallback, useRef } from "../deps.ts";
 import { makePageController } from "../hooks/make_page_controller.ts";
 
 export const Page = ({
@@ -29,9 +28,7 @@ export const Page = ({
           <CircledX />
           <p>이미지를 불러오지 못했습니다</p>
           <p>
-            {src
-              ? src
-              : urls?.join("\n")}
+            {src ? src : urls?.join("\n")}
           </p>
         </LinkColumn>
       )}

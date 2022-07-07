@@ -2,21 +2,34 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "denopack",
-      "type": "shell",
-      "command": "deno run --unstable --allow-all --import-map build_src/import_map.build.json https://raw.githubusercontent.com/jeiea/denopack/deno-1.20.3/cli.ts --config build_src/denopack_config.ts -o vim_comic_viewer.user.js --input ${workspaceFolder}/src/mod.tsx",
-      "group": "build",
-      "problemMatcher": []
+      "label": "build",
+      "type": "deno",
+      "command": "run",
+      "args": [
+        "--allow-all",
+        "--import-map",
+        "import_map.json",
+        "bin/build.ts"
+      ],
+      "group": "none",
+      "problemMatcher": "$deno"
     },
     {
-      "label": "denopack watch",
-      "type": "shell",
-      "command": "deno run --unstable --allow-all --import-map build_src/import_map.build.json https://raw.githubusercontent.com/jeiea/denopack/deno-1.20.3/cli.ts --config build_src/denopack_config.ts -o vim_comic_viewer.user.js --input ${workspaceFolder}/src/mod.tsx --watch src",
+      "label": "watch",
+      "type": "deno",
+      "command": "run",
+      "args": [
+        "--allow-all",
+        "--watch=src/mod.tsx",
+        "--import-map",
+        "import_map.json",
+        "bin/build.ts"
+      ],
       "group": {
         "kind": "build",
         "isDefault": true
       },
-      "problemMatcher": []
+      "problemMatcher": "$deno"
     }
   ]
 }

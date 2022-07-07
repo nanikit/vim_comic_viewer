@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect } from "../deps.ts";
 import {
   download,
   DownloadOptions,

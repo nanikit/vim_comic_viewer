@@ -1,10 +1,9 @@
+import { MutableRefObject, unmountComponentAtNode, useMemo } from "../deps.ts";
 import { ComicSource, ImageSource, ViewerOptions } from "../types.ts";
-import { MutableRefObject, useMemo } from "react";
-import { unmountComponentAtNode } from "react-dom";
-import { PageNavigator, usePageNavigator } from "./use_page_navigator.ts";
-import { useRerender } from "./use_rerender.ts";
 import { makeDownloader } from "./make_downloader.ts";
 import { makePageController } from "./make_page_controller.ts";
+import { PageNavigator, usePageNavigator } from "./use_page_navigator.ts";
+import { useRerender } from "./use_rerender.ts";
 
 type ViewerStatus = "loading" | "complete" | "error";
 

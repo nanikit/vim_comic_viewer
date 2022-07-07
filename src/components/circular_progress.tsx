@@ -1,5 +1,3 @@
-/** @jsx createElement */
-import { createElement } from "react";
 import { styled } from "../vendors/stitches.ts";
 
 const Svg = styled("svg", {

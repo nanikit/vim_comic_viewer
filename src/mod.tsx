@@ -1,10 +1,9 @@
-/** @jsx createElement */
 import { Viewer } from "./containers/viewer.tsx";
+import { createRef, render } from "./deps.ts";
 import { ViewerController, ViewerOptions } from "./types.ts";
-import { createElement, createRef } from "react";
-import { render } from "react-dom";
 export { Viewer } from "./containers/viewer.tsx";
 export { download } from "./services/downloader.ts";
+export { setGmXhr } from "./services/tampermonkey.ts";
 export { transformToBlobUrl } from "./services/user_utils.ts";
 export * as types from "./types.ts";
 export * as utils from "./utils.ts";

@@ -1,14 +1,9 @@
-/** @jsx createElement */
 import { FullscreenIcon } from "../components/icons.tsx";
 import {
   Container,
   ScrollableLayout,
 } from "../components/scrollable_layout.ts";
-import { useFullscreenElement } from "../hooks/use_fullscreen_element.ts";
-import { useViewerController } from "../hooks/use_viewer_controller.ts";
-import { ViewerController, ViewerOptions } from "../types.ts";
 import {
-  createElement,
   forwardRef,
   HTMLProps,
   MouseEventHandler,
@@ -18,10 +13,13 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
-} from "react";
-import { Page } from "./page.tsx";
+} from "../deps.ts";
 import { useDefault } from "../hooks/use_default.ts";
+import { useFullscreenElement } from "../hooks/use_fullscreen_element.ts";
+import { useViewerController } from "../hooks/use_viewer_controller.ts";
+import { ViewerController, ViewerOptions } from "../types.ts";
 import { DownloadIndicator } from "./download_indicator.tsx";
+import { Page } from "./page.tsx";
 
 export const Viewer = forwardRef((
   props: HTMLProps<HTMLDivElement> & {

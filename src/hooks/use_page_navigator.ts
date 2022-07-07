@@ -1,4 +1,10 @@
-import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
+import {
+  MutableRefObject,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "../deps.ts";
 import { useIntersection } from "./use_intersection.ts";
 
 const useResize = <T, E extends Element>(

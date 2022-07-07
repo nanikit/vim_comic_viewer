@@ -1,9 +1,8 @@
-/** @jsx createElement */
-import { zip } from "fflate";
+import { zip } from "../deps.ts";
 import { ImageSource } from "../types.ts";
+import { defer } from "../utils.ts";
 import { fetchBlob } from "./gm_fetch.ts";
 import { imageSourceToIterable } from "./user_utils.ts";
-import { defer } from "../utils.ts";
 
 export type DownloadProgress = {
   total: number;
