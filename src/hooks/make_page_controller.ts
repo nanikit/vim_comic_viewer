@@ -1,7 +1,7 @@
+import { RefObject, useEffect, useState } from "../deps.ts";
 import { imageSourceToIterable } from "../services/user_utils.ts";
 import { ImageSource } from "../types.ts";
 import { defer, Deferred } from "../utils.ts";
-import { RefObject, useEffect, useState } from "react";
 
 type PageState = {
   src?: string;

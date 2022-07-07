@@ -1,5 +1,5 @@
+import { useEffect } from "../deps.ts";
 import { isTyping } from "../utils.ts";
-import { useEffect } from "react";
 import { useViewerController } from "./use_viewer_controller.ts";
 
 const maybeNotHotkey = (event: KeyboardEvent) =>

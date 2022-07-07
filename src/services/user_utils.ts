@@ -19,8 +19,8 @@ export const imageSourceToIterable = (
   }
 };
 
-export const transformToBlobUrl = (source: ComicSource): ComicSource =>
-  async () => {
+export const transformToBlobUrl =
+  (source: ComicSource): ComicSource => async () => {
     const imageSources = await source();
 
     return imageSources.map(
