@@ -11,6 +11,9 @@
 // @resource       scheduler        https://cdn.jsdelivr.net/npm/scheduler@0.23.0/cjs/scheduler.production.min.js
 ```
 
+- add `setGmXhr` which set `gm_xmlhttpRequest` for downloading CORS blocked
+  content.
+
 ### 7.0.2
 
 - Upgrade dependencies
