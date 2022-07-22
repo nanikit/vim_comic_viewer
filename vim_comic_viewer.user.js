@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        8.0.0
+// @version        8.0.1
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -75,7 +75,6 @@ __reExport(deps_exports, require("@stitches/react"));
 __reExport(deps_exports, require("fflate"));
 var import_react = require("react");
 __reExport(deps_exports, require("react-dom"));
-__reExport(deps_exports, require("react/jsx-runtime"));
 
 // src/vendors/stitches.ts
 var { styled, css, keyframes } = (0, deps_exports.createStitches)({});

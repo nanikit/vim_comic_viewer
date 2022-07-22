@@ -21,4 +21,3 @@ export type {
   SVGProps,
 } from "react";
 export * from "react-dom";
-export * from "react/jsx-runtime";
