@@ -1,3 +1,7 @@
+### 8.0.2
+
+- Fix not working `setGmXhr`.
+
 ### 8.0.1
 
 - Fix import error

@@ -301,7 +301,7 @@ var gmFetch = (resource, init) => {
   const xhr = (type) => {
     return new Promise((resolve, reject) => {
       var _a;
-      const request = GM_xmlhttpRequest({
+      const request = gmXhr({
         method,
         url: resource,
         headers: init == null ? void 0 : init.headers,
