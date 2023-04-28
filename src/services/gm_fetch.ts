@@ -23,9 +23,13 @@ export const gmFetch = (
         onerror: reject,
         onabort: reject,
       });
-      init?.signal?.addEventListener("abort", () => {
-        request.abort();
-      }, { once: true });
+      init?.signal?.addEventListener(
+        "abort",
+        () => {
+          request.abort();
+        },
+        { once: true },
+      );
     });
   };
   return {

@@ -3,14 +3,15 @@ import { isTyping } from "../utils.ts";
 import { useViewerController } from "./use_viewer_controller.ts";
 
 const maybeNotHotkey = (event: KeyboardEvent) =>
-  event.ctrlKey || event.altKey || isTyping(event);
+  event.ctrlKey || event.altKey || event.metaKey || isTyping(event);
 
-export const useDefault = (
-  { enable, controller }: {
-    enable?: boolean;
-    controller: ReturnType<typeof useViewerController>;
-  },
-) => {
+export const useDefault = ({
+  enable,
+  controller,
+}: {
+  enable?: boolean;
+  controller: ReturnType<typeof useViewerController>;
+}) => {
   const defaultKeyHandler = async (event: KeyboardEvent): Promise<void> => {
     if (maybeNotHotkey(event)) {
       return;
@@ -47,7 +48,7 @@ export const useDefault = (
       return;
     }
 
-    if (event.key === "i") {
+    if (["KeyI", "Numpad0", "Enter"].includes(event.code)) {
       controller.toggleFullscreen();
     }
   };
