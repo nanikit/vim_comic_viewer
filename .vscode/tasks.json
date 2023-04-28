@@ -4,27 +4,16 @@
     {
       "label": "build",
       "type": "deno",
-      "command": "run",
-      "args": [
-        "--allow-all",
-        "--import-map",
-        "import_map.json",
-        "bin/build.ts"
-      ],
+      "command": "task",
+      "args": ["build"],
       "group": "none",
       "problemMatcher": "$deno"
     },
     {
       "label": "watch",
       "type": "deno",
-      "command": "run",
-      "args": [
-        "--allow-all",
-        "--watch=src/mod.tsx",
-        "--import-map",
-        "import_map.json",
-        "bin/build.ts"
-      ],
+      "command": "task",
+      "args": ["watch"],
       "group": {
         "kind": "build",
         "isDefault": true

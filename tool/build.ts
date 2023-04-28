@@ -1,5 +1,5 @@
-import * as esbuild from "https://deno.land/x/esbuild@v0.14.49/mod.js";
 import importMap from "../import_map.json" assert { type: "json" };
+import { commentRemovalPlugin, watchOrBuild } from "./build/components.ts";
 
 const banner = `// ==UserScript==
 // @name           vim comic viewer
@@ -23,22 +23,17 @@ const banner = `// ==UserScript==
 // deno-lint-ignore-file
 `;
 
-const main = async () => {
-  const result = await esbuild.build({
-    allowOverwrite: true,
+if (import.meta.main) {
+  main().catch(console.error);
+}
+
+async function main() {
+  await watchOrBuild({
     banner: { js: banner },
-    bundle: true,
-    charset: "utf8",
-    target: ["es2020", "chrome80", "firefox70"],
     entryPoints: ["./src/mod.tsx"],
     external: Object.keys(importMap.imports),
-    format: "cjs",
     outfile: "vim_comic_viewer.user.js",
-    treeShaking: true,
     inject: ["./src/react_shim.ts"],
+    plugins: [commentRemovalPlugin],
   });
-  console.log("result:", result);
-  esbuild.stop();
-};
-
-main().catch(console.error);
+}
