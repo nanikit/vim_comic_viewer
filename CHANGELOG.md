@@ -1,3 +1,7 @@
+## 8.1.0
+
+- Support switching viewers with the <kbd>Enter</kbd>, <kbd>NumPad0</kbd>.
+
 ### 8.0.2
 
 - Fix not working `setGmXhr`.
