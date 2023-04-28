@@ -3,14 +3,14 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        8.0.1
+// @version        8.1.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
 // @author         nanikit
 // @license        MIT
 // @resource       @stitches/react  https://cdn.jsdelivr.net/npm/@stitches/react@1.2.8/dist/index.cjs
-// @resource       fflate           https://cdn.jsdelivr.net/npm/fflate@0.7.3/lib/browser.cjs
+// @resource       fflate           https://cdn.jsdelivr.net/npm/fflate@0.7.4/lib/browser.cjs
 // @resource       object-assign    https://cdn.jsdelivr.net/npm/object-assign@4.1.1/index.js
 // @resource       react            https://cdn.jsdelivr.net/npm/react@18.2.0/cjs/react.production.min.js
 // @resource       react-dom        https://cdn.jsdelivr.net/npm/react-dom@18.2.0/cjs/react-dom.production.min.js
@@ -18,6 +18,7 @@
 // ==/UserScript==
 // deno-fmt-ignore-file
 // deno-lint-ignore-file
+
 
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -38,10 +39,11 @@ var __copyProps = (to, from, except, desc) => {
   return to;
 };
 var __reExport = (target, mod, secondTarget) => (__copyProps(target, mod, "default"), secondTarget && __copyProps(secondTarget, mod, "default"));
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target, mod));
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
-// src/mod.tsx
 var mod_exports = {};
 __export(mod_exports, {
   Viewer: () => Viewer,
@@ -53,11 +55,7 @@ __export(mod_exports, {
   utils: () => utils_exports
 });
 module.exports = __toCommonJS(mod_exports);
-
-// src/react_shim.ts
 var React = __toESM(require("react"));
-
-// src/deps.ts
 var deps_exports = {};
 __export(deps_exports, {
   Fragment: () => import_react.Fragment,
@@ -75,11 +73,7 @@ __reExport(deps_exports, require("@stitches/react"));
 __reExport(deps_exports, require("fflate"));
 var import_react = require("react");
 __reExport(deps_exports, require("react-dom"));
-
-// src/vendors/stitches.ts
 var { styled, css, keyframes } = (0, deps_exports.createStitches)({});
-
-// src/components/icons.tsx
 var Svg = styled("svg", {
   position: "absolute",
   width: "40px",
@@ -95,28 +89,32 @@ var Svg = styled("svg", {
 });
 var downloadCss = { left: "8px" };
 var fullscreenCss = { right: "24px" };
-var DownloadIcon = (props) => /* @__PURE__ */ React.createElement(Svg, {
-  version: "1.1",
-  xmlns: "http://www.w3.org/2000/svg",
-  x: "0px",
-  y: "0px",
-  viewBox: "0 -34.51 122.88 122.87",
-  css: downloadCss,
-  ...props
-}, /* @__PURE__ */ React.createElement("g", null, /* @__PURE__ */ React.createElement("path", {
-  d: "M58.29,42.08V3.12C58.29,1.4,59.7,0,61.44,0s3.15,1.4,3.15,3.12v38.96L79.1,29.4c1.3-1.14,3.28-1.02,4.43,0.27 s1.03,3.25-0.27,4.39L63.52,51.3c-1.21,1.06-3.01,1.03-4.18-0.02L39.62,34.06c-1.3-1.14-1.42-3.1-0.27-4.39 c1.15-1.28,3.13-1.4,4.43-0.27L58.29,42.08L58.29,42.08L58.29,42.08z M0.09,47.43c-0.43-1.77,0.66-3.55,2.43-3.98 c1.77-0.43,3.55,0.66,3.98,2.43c1.03,4.26,1.76,7.93,2.43,11.3c3.17,15.99,4.87,24.57,27.15,24.57h52.55 c20.82,0,22.51-9.07,25.32-24.09c0.67-3.6,1.4-7.5,2.44-11.78c0.43-1.77,2.21-2.86,3.98-2.43c1.77,0.43,2.85,2.21,2.43,3.98 c-0.98,4.02-1.7,7.88-2.36,11.45c-3.44,18.38-5.51,29.48-31.8,29.48H36.07C8.37,88.36,6.3,77.92,2.44,58.45 C1.71,54.77,0.98,51.08,0.09,47.43L0.09,47.43z"
-})));
-var FullscreenIcon = (props) => /* @__PURE__ */ React.createElement(Svg, {
-  version: "1.1",
-  xmlns: "http://www.w3.org/2000/svg",
-  x: "0px",
-  y: "0px",
-  viewBox: "0 0 122.88 122.87",
-  css: fullscreenCss,
-  ...props
-}, /* @__PURE__ */ React.createElement("g", null, /* @__PURE__ */ React.createElement("path", {
-  d: "M122.88,77.63v41.12c0,2.28-1.85,4.12-4.12,4.12H77.33v-9.62h35.95c0-12.34,0-23.27,0-35.62H122.88L122.88,77.63z M77.39,9.53V0h41.37c2.28,0,4.12,1.85,4.12,4.12v41.18h-9.63V9.53H77.39L77.39,9.53z M9.63,45.24H0V4.12C0,1.85,1.85,0,4.12,0h41 v9.64H9.63V45.24L9.63,45.24z M45.07,113.27v9.6H4.12c-2.28,0-4.12-1.85-4.12-4.13V77.57h9.63v35.71H45.07L45.07,113.27z"
-})));
+var DownloadIcon = (props) =>  React.createElement(
+  Svg,
+  {
+    version: "1.1",
+    xmlns: "http://www.w3.org/2000/svg",
+    x: "0px",
+    y: "0px",
+    viewBox: "0 -34.51 122.88 122.87",
+    css: downloadCss,
+    ...props
+  },
+   React.createElement("g", null,  React.createElement("path", { d: "M58.29,42.08V3.12C58.29,1.4,59.7,0,61.44,0s3.15,1.4,3.15,3.12v38.96L79.1,29.4c1.3-1.14,3.28-1.02,4.43,0.27 s1.03,3.25-0.27,4.39L63.52,51.3c-1.21,1.06-3.01,1.03-4.18-0.02L39.62,34.06c-1.3-1.14-1.42-3.1-0.27-4.39 c1.15-1.28,3.13-1.4,4.43-0.27L58.29,42.08L58.29,42.08L58.29,42.08z M0.09,47.43c-0.43-1.77,0.66-3.55,2.43-3.98 c1.77-0.43,3.55,0.66,3.98,2.43c1.03,4.26,1.76,7.93,2.43,11.3c3.17,15.99,4.87,24.57,27.15,24.57h52.55 c20.82,0,22.51-9.07,25.32-24.09c0.67-3.6,1.4-7.5,2.44-11.78c0.43-1.77,2.21-2.86,3.98-2.43c1.77,0.43,2.85,2.21,2.43,3.98 c-0.98,4.02-1.7,7.88-2.36,11.45c-3.44,18.38-5.51,29.48-31.8,29.48H36.07C8.37,88.36,6.3,77.92,2.44,58.45 C1.71,54.77,0.98,51.08,0.09,47.43L0.09,47.43z" }))
+);
+var FullscreenIcon = (props) =>  React.createElement(
+  Svg,
+  {
+    version: "1.1",
+    xmlns: "http://www.w3.org/2000/svg",
+    x: "0px",
+    y: "0px",
+    viewBox: "0 0 122.88 122.87",
+    css: fullscreenCss,
+    ...props
+  },
+   React.createElement("g", null,  React.createElement("path", { d: "M122.88,77.63v41.12c0,2.28-1.85,4.12-4.12,4.12H77.33v-9.62h35.95c0-12.34,0-23.27,0-35.62H122.88L122.88,77.63z M77.39,9.53V0h41.37c2.28,0,4.12,1.85,4.12,4.12v41.18h-9.63V9.53H77.39L77.39,9.53z M9.63,45.24H0V4.12C0,1.85,1.85,0,4.12,0h41 v9.64H9.63V45.24L9.63,45.24z M45.07,113.27v9.6H4.12c-2.28,0-4.12-1.85-4.12-4.13V77.57h9.63v35.71H45.07L45.07,113.27z" }))
+);
 var ErrorIcon = styled("svg", {
   width: "10vmin",
   height: "10vmin",
@@ -124,22 +122,22 @@ var ErrorIcon = styled("svg", {
   margin: "2rem"
 });
 var CircledX = (props) => {
-  return /* @__PURE__ */ React.createElement(ErrorIcon, {
-    version: "1.1",
-    id: "Layer_1",
-    xmlns: "http://www.w3.org/2000/svg",
-    x: "0px",
-    y: "0px",
-    viewBox: "0 0 122.881 122.88",
-    "enable-background": "new 0 0 122.881 122.88",
-    ...props,
-    crossOrigin: ""
-  }, /* @__PURE__ */ React.createElement("g", null, /* @__PURE__ */ React.createElement("path", {
-    d: "M61.44,0c16.966,0,32.326,6.877,43.445,17.996c11.119,11.118,17.996,26.479,17.996,43.444 c0,16.967-6.877,32.326-17.996,43.444C93.766,116.003,78.406,122.88,61.44,122.88c-16.966,0-32.326-6.877-43.444-17.996 C6.877,93.766,0,78.406,0,61.439c0-16.965,6.877-32.326,17.996-43.444C29.114,6.877,44.474,0,61.44,0L61.44,0z M80.16,37.369 c1.301-1.302,3.412-1.302,4.713,0c1.301,1.301,1.301,3.411,0,4.713L65.512,61.444l19.361,19.362c1.301,1.301,1.301,3.411,0,4.713 c-1.301,1.301-3.412,1.301-4.713,0L60.798,66.157L41.436,85.52c-1.301,1.301-3.412,1.301-4.713,0c-1.301-1.302-1.301-3.412,0-4.713 l19.363-19.362L36.723,42.082c-1.301-1.302-1.301-3.412,0-4.713c1.301-1.302,3.412-1.302,4.713,0l19.363,19.362L80.16,37.369 L80.16,37.369z M100.172,22.708C90.26,12.796,76.566,6.666,61.44,6.666c-15.126,0-28.819,6.13-38.731,16.042 C12.797,32.62,6.666,46.314,6.666,61.439c0,15.126,6.131,28.82,16.042,38.732c9.912,9.911,23.605,16.042,38.731,16.042 c15.126,0,28.82-6.131,38.732-16.042c9.912-9.912,16.043-23.606,16.043-38.732C116.215,46.314,110.084,32.62,100.172,22.708 L100.172,22.708z"
-  })));
+  return  React.createElement(
+    ErrorIcon,
+    {
+      version: "1.1",
+      id: "Layer_1",
+      xmlns: "http://www.w3.org/2000/svg",
+      x: "0px",
+      y: "0px",
+      viewBox: "0 0 122.881 122.88",
+      "enable-background": "new 0 0 122.881 122.88",
+      ...props,
+      crossOrigin: ""
+    },
+     React.createElement("g", null,  React.createElement("path", { d: "M61.44,0c16.966,0,32.326,6.877,43.445,17.996c11.119,11.118,17.996,26.479,17.996,43.444 c0,16.967-6.877,32.326-17.996,43.444C93.766,116.003,78.406,122.88,61.44,122.88c-16.966,0-32.326-6.877-43.444-17.996 C6.877,93.766,0,78.406,0,61.439c0-16.965,6.877-32.326,17.996-43.444C29.114,6.877,44.474,0,61.44,0L61.44,0z M80.16,37.369 c1.301-1.302,3.412-1.302,4.713,0c1.301,1.301,1.301,3.411,0,4.713L65.512,61.444l19.361,19.362c1.301,1.301,1.301,3.411,0,4.713 c-1.301,1.301-3.412,1.301-4.713,0L60.798,66.157L41.436,85.52c-1.301,1.301-3.412,1.301-4.713,0c-1.301-1.302-1.301-3.412,0-4.713 l19.363-19.362L36.723,42.082c-1.301-1.302-1.301-3.412,0-4.713c1.301-1.302,3.412-1.302,4.713,0l19.363,19.362L80.16,37.369 L80.16,37.369z M100.172,22.708C90.26,12.796,76.566,6.666,61.44,6.666c-15.126,0-28.819,6.13-38.731,16.042 C12.797,32.62,6.666,46.314,6.666,61.439c0,15.126,6.131,28.82,16.042,38.732c9.912,9.911,23.605,16.042,38.731,16.042 c15.126,0,28.82-6.131,38.732-16.042c9.912-9.912,16.043-23.606,16.043-38.732C116.215,46.314,110.084,32.62,100.172,22.708 L100.172,22.708z" }))
+  );
 };
-
-// src/components/scrollable_layout.ts
 var defaultScrollbar = {
   "scrollbarWidth": "initial",
   "scrollbarColor": "initial",
@@ -176,8 +174,6 @@ var ScrollableLayout = styled("div", {
     }
   }
 });
-
-// src/utils.ts
 var utils_exports = {};
 __export(utils_exports, {
   defer: () => defer,
@@ -190,7 +186,9 @@ __export(utils_exports, {
   waitDomContent: () => waitDomContent
 });
 var timeout = (millisecond) => new Promise((resolve) => setTimeout(resolve, millisecond));
-var waitDomContent = (document2) => document2.readyState === "loading" ? new Promise((r) => document2.addEventListener("readystatechange", r, { once: true })) : true;
+var waitDomContent = (document2) => document2.readyState === "loading" ? new Promise(
+  (r) => document2.addEventListener("readystatechange", r, { once: true })
+) : true;
 var insertCss = (css2) => {
   const style = document.createElement("style");
   style.innerHTML = css2;
@@ -223,10 +221,11 @@ var defer = () => {
   });
   return { promise, resolve, reject };
 };
-
-// src/hooks/use_default.ts
-var maybeNotHotkey = (event) => event.ctrlKey || event.altKey || isTyping(event);
-var useDefault = ({ enable, controller }) => {
+var maybeNotHotkey = (event) => event.ctrlKey || event.altKey || event.metaKey || isTyping(event);
+var useDefault = ({
+  enable,
+  controller
+}) => {
   const defaultKeyHandler = async (event) => {
     var _a;
     if (maybeNotHotkey(event)) {
@@ -261,7 +260,7 @@ var useDefault = ({ enable, controller }) => {
     if (maybeNotHotkey(event)) {
       return;
     }
-    if (event.key === "i") {
+    if (["KeyI", "Numpad0", "Enter"].includes(event.code)) {
       controller.toggleFullscreen();
     }
   };
@@ -277,10 +276,10 @@ var useDefault = ({ enable, controller }) => {
     };
   }, [controller, enable]);
 };
-
-// src/hooks/use_fullscreen_element.ts
 var useFullscreenElement = () => {
-  const [element, setElement] = (0, import_react.useState)(document.fullscreenElement || void 0);
+  const [element, setElement] = (0, import_react.useState)(
+    document.fullscreenElement || void 0
+  );
   (0, import_react.useEffect)(() => {
     const notify = () => setElement(document.fullscreenElement || void 0);
     document.addEventListener("fullscreenchange", notify);
@@ -288,14 +287,10 @@ var useFullscreenElement = () => {
   }, []);
   return element;
 };
-
-// src/services/tampermonkey.ts
 var setGmXhr = (xmlhttpRequest) => {
   gmXhr = xmlhttpRequest;
 };
 var gmXhr;
-
-// src/services/gm_fetch.ts
 var gmFetch = (resource, init) => {
   const method = (init == null ? void 0 : init.body) ? "POST" : "GET";
   const xhr = (type) => {
@@ -317,9 +312,13 @@ var gmFetch = (resource, init) => {
         onerror: reject,
         onabort: reject
       });
-      (_a = init == null ? void 0 : init.signal) == null ? void 0 : _a.addEventListener("abort", () => {
-        request.abort();
-      }, { once: true });
+      (_a = init == null ? void 0 : init.signal) == null ? void 0 : _a.addEventListener(
+        "abort",
+        () => {
+          request.abort();
+        },
+        { once: true }
+      );
     });
   };
   return {
@@ -347,8 +346,6 @@ var fetchBlob = async (url, init) => {
     }
   }
 };
-
-// src/services/user_utils.ts
 var imageSourceToIterable = (source) => {
   if (typeof source === "string") {
     return async function* () {
@@ -366,19 +363,19 @@ var imageSourceToIterable = (source) => {
 };
 var transformToBlobUrl = (source) => async () => {
   const imageSources = await source();
-  return imageSources.map((imageSource) => async function* () {
-    for await (const url of imageSourceToIterable(imageSource)) {
-      try {
-        const blob = await fetchBlob(url);
-        yield URL.createObjectURL(blob);
-      } catch (error) {
-        console.log(error);
+  return imageSources.map(
+    (imageSource) => async function* () {
+      for await (const url of imageSourceToIterable(imageSource)) {
+        try {
+          const blob = await fetchBlob(url);
+          yield URL.createObjectURL(blob);
+        } catch (error) {
+          console.log(error);
+        }
       }
     }
-  });
+  );
 };
-
-// src/services/downloader.ts
 var isGmCancelled = (error) => {
   return error instanceof Function;
 };
@@ -498,14 +495,10 @@ var download = (images, options) => {
   };
   return archiveWithReport(images);
 };
-
-// src/hooks/use_rerender.ts
 var useRerender = () => {
   const [, rerender] = (0, import_react.useReducer)(() => ({}), {});
   return rerender;
 };
-
-// src/hooks/make_downloader.ts
 var isNotAbort = (error) => !/aborted/i.test(`${error}`);
 var logIfNotAborted = (error) => {
   if (isNotAbort(error)) {
@@ -580,8 +573,6 @@ var makeDownloader = (images) => {
     useInstance
   };
 };
-
-// src/hooks/make_page_controller.ts
 var makePageController = ({ source, observer }) => {
   let imageLoad;
   let state;
@@ -638,8 +629,6 @@ var makePageController = ({ source, observer }) => {
     useInstance
   };
 };
-
-// src/hooks/use_intersection.ts
 var useIntersectionObserver = (callback, options) => {
   const [observer, setObserver] = (0, import_react.useState)();
   (0, import_react.useEffect)(() => {
@@ -650,22 +639,23 @@ var useIntersectionObserver = (callback, options) => {
   return observer;
 };
 var useIntersection = (callback, options) => {
-  const memo = (0, import_react.useRef)(/* @__PURE__ */ new Map());
-  const filterIntersections = (0, import_react.useCallback)((newEntries) => {
-    const memoized = memo.current;
-    for (const entry of newEntries) {
-      if (entry.isIntersecting) {
-        memoized.set(entry.target, entry);
-      } else {
-        memoized.delete(entry.target);
+  const memo = (0, import_react.useRef)( new Map());
+  const filterIntersections = (0, import_react.useCallback)(
+    (newEntries) => {
+      const memoized = memo.current;
+      for (const entry of newEntries) {
+        if (entry.isIntersecting) {
+          memoized.set(entry.target, entry);
+        } else {
+          memoized.delete(entry.target);
+        }
       }
-    }
-    callback([...memoized.values()]);
-  }, [callback]);
+      callback([...memoized.values()]);
+    },
+    [callback]
+  );
   return useIntersectionObserver(filterIntersections, options);
 };
-
-// src/hooks/use_page_navigator.ts
 var useResize = (target, transformer) => {
   const [value, setValue] = (0, import_react.useState)(() => transformer(void 0));
   const callbackRef = (0, import_react.useRef)(transformer);
@@ -787,8 +777,6 @@ var usePageNavigator = (ref) => {
   navigator.useInstance();
   return navigator;
 };
-
-// src/hooks/use_viewer_controller.ts
 var makeViewerController = ({ ref, navigator, rerender }) => {
   let options = {};
   let images = [];
@@ -819,7 +807,9 @@ var makeViewerController = ({ ref, navigator, rerender }) => {
       }
       status = "complete";
       downloader = makeDownloader(images);
-      pages = images.map((x) => makePageController({ source: x, observer: navigator.observer }));
+      pages = images.map(
+        (x) => makePageController({ source: x, observer: navigator.observer })
+      );
     } catch (error) {
       status = "error";
       console.log(error);
@@ -881,11 +871,12 @@ var makeViewerController = ({ ref, navigator, rerender }) => {
 var useViewerController = ({ ref, scrollRef }) => {
   const rerender = useRerender();
   const navigator = usePageNavigator(scrollRef);
-  const controller = (0, import_react.useMemo)(() => makeViewerController({ ref, navigator, rerender }), [ref, navigator]);
+  const controller = (0, import_react.useMemo)(
+    () => makeViewerController({ ref, navigator, rerender }),
+    [ref, navigator]
+  );
   return controller;
 };
-
-// src/components/circular_progress.tsx
 var Svg2 = styled("svg", {
   position: "absolute",
   bottom: "8px",
@@ -908,19 +899,7 @@ var Circle = styled("circle", {
   stroke: "url(#aEObn)",
   fill: "#fff8"
 });
-var GradientDef = /* @__PURE__ */ React.createElement("defs", null, /* @__PURE__ */ React.createElement("linearGradient", {
-  id: "aEObn",
-  x1: "100%",
-  y1: "0%",
-  x2: "0%",
-  y2: "100%"
-}, /* @__PURE__ */ React.createElement("stop", {
-  offset: "0%",
-  style: { stopColor: "#53baff", stopOpacity: 1 }
-}), /* @__PURE__ */ React.createElement("stop", {
-  offset: "100%",
-  style: { stopColor: "#0067bb", stopOpacity: 1 }
-})));
+var GradientDef =  React.createElement("defs", null,  React.createElement("linearGradient", { id: "aEObn", x1: "100%", y1: "0%", x2: "0%", y2: "100%" },  React.createElement("stop", { offset: "0%", style: { stopColor: "#53baff", stopOpacity: 1 } }),  React.createElement("stop", { offset: "100%", style: { stopColor: "#0067bb", stopOpacity: 1 } })));
 var CenterText = styled("text", {
   dominantBaseline: "middle",
   textAnchor: "middle",
@@ -934,43 +913,36 @@ var CircularProgress = (props) => {
   const strokeDashoffset = circumference - value * circumference;
   const center = radius + strokeWidth / 2;
   const side = center * 2;
-  return /* @__PURE__ */ React.createElement(Svg2, {
-    height: side,
-    width: side,
-    ...otherProps
-  }, GradientDef, /* @__PURE__ */ React.createElement(Circle, {
-    ...{
-      strokeWidth,
-      strokeDasharray: `${circumference} ${circumference}`,
-      strokeDashoffset,
-      r: radius,
-      cx: center,
-      cy: center
+  return  React.createElement(Svg2, { height: side, width: side, ...otherProps }, GradientDef,  React.createElement(
+    Circle,
+    {
+      ...{
+        strokeWidth,
+        strokeDasharray: `${circumference} ${circumference}`,
+        strokeDashoffset,
+        r: radius,
+        cx: center,
+        cy: center
+      }
     }
-  }), /* @__PURE__ */ React.createElement(CenterText, {
-    x: "50%",
-    y: "50%"
-  }, text || ""));
+  ),  React.createElement(CenterText, { x: "50%", y: "50%" }, text || ""));
 };
-
-// src/containers/download_indicator.tsx
 var DownloadIndicator = ({ downloader }) => {
   var _a;
   const { value, text, error } = (_a = downloader.progress) != null ? _a : {};
   downloader.useInstance();
-  return /* @__PURE__ */ React.createElement(React.Fragment, null, text ? /* @__PURE__ */ React.createElement(CircularProgress, {
-    radius: 50,
-    strokeWidth: 10,
-    value: value != null ? value : 0,
-    text,
-    error,
-    onClick: downloader.cancelDownload
-  }) : /* @__PURE__ */ React.createElement(DownloadIcon, {
-    onClick: downloader.downloadWithProgress
-  }));
+  return  React.createElement(React.Fragment, null, text ?  React.createElement(
+    CircularProgress,
+    {
+      radius: 50,
+      strokeWidth: 10,
+      value: value != null ? value : 0,
+      text,
+      error,
+      onClick: downloader.cancelDownload
+    }
+  ) :  React.createElement(DownloadIcon, { onClick: downloader.downloadWithProgress }));
 };
-
-// src/components/spinner.tsx
 var stretch = keyframes({
   "0%": {
     top: "8px",
@@ -1012,7 +984,7 @@ var SpinnerContainer = styled("div", {
     "animation-delay": "0"
   }
 });
-var Spinner = () => /* @__PURE__ */ React.createElement(SpinnerContainer, null, /* @__PURE__ */ React.createElement("div", null), /* @__PURE__ */ React.createElement("div", null), /* @__PURE__ */ React.createElement("div", null));
+var Spinner = () =>  React.createElement(SpinnerContainer, null,  React.createElement("div", null),  React.createElement("div", null),  React.createElement("div", null));
 var Overlay = styled("div", {
   position: "relative",
   margin: "4px 0.5px",
@@ -1055,8 +1027,6 @@ var Image = styled("img", {
   objectFit: "contain",
   maxWidth: "100%"
 });
-
-// src/containers/page.tsx
 var Page = ({
   fullWidth,
   controller,
@@ -1069,19 +1039,8 @@ var Page = ({
     event.stopPropagation();
     await controller.reload();
   }, []);
-  return /* @__PURE__ */ React.createElement(Overlay, {
-    ref,
-    placeholder: state !== "complete",
-    fullWidth
-  }, state === "loading" && /* @__PURE__ */ React.createElement(Spinner, null), state === "error" && /* @__PURE__ */ React.createElement(LinkColumn, {
-    onClick: reloadErrored
-  }, /* @__PURE__ */ React.createElement(CircledX, null), /* @__PURE__ */ React.createElement("p", null, "이미지를 불러오지 못했습니다"), /* @__PURE__ */ React.createElement("p", null, src ? src : urls == null ? void 0 : urls.join("\n"))), /* @__PURE__ */ React.createElement(Image, {
-    ...imageProps,
-    ...props
-  }));
+  return  React.createElement(Overlay, { ref, placeholder: state !== "complete", fullWidth }, state === "loading" &&  React.createElement(Spinner, null), state === "error" &&  React.createElement(LinkColumn, { onClick: reloadErrored },  React.createElement(CircledX, null),  React.createElement("p", null, "이미지를 불러오지 못했습니다"),  React.createElement("p", null, src ? src : urls == null ? void 0 : urls.join("\n"))),  React.createElement(Image, { ...imageProps, ...props }));
 };
-
-// src/containers/viewer.tsx
 var Viewer = (0, import_react.forwardRef)((props, refHandle) => {
   const { useDefault: enableDefault, options: viewerOptions, ...otherProps } = props;
   const ref = (0, import_react.useRef)();
@@ -1110,15 +1069,18 @@ var Viewer = (0, import_react.forwardRef)((props, refHandle) => {
       controller.goNext();
     }
   }, [controller]);
-  const blockSelection = (0, import_react.useCallback)((event) => {
-    if (event.detail >= 2) {
-      event.preventDefault();
-    }
-    if (event.buttons === 3) {
-      controller.toggleFullscreen();
-      event.preventDefault();
-    }
-  }, [controller]);
+  const blockSelection = (0, import_react.useCallback)(
+    (event) => {
+      if (event.detail >= 2) {
+        event.preventDefault();
+      }
+      if (event.buttons === 3) {
+        controller.toggleFullscreen();
+        event.preventDefault();
+      }
+    },
+    [controller]
+  );
   useDefault({ enable: props.useDefault, controller });
   (0, import_react.useImperativeHandle)(refHandle, () => controller, [controller]);
   (0, import_react.useEffect)(() => {
@@ -1130,45 +1092,48 @@ var Viewer = (0, import_react.forwardRef)((props, refHandle) => {
       (_b = (_a = ref.current) == null ? void 0 : _a.focus) == null ? void 0 : _b.call(_a);
     }
   }, [ref.current, fullscreenElement]);
-  return /* @__PURE__ */ React.createElement(Container, {
-    ref,
-    tabIndex: -1,
-    className: "vim_comic_viewer"
-  }, /* @__PURE__ */ React.createElement(ScrollableLayout, {
-    ref: scrollRef,
-    fullscreen: fullscreenElement === ref.current,
-    onClick: navigate,
-    onMouseDown: blockSelection,
-    children: status === "complete" ? pages.map((controller2, index) => /* @__PURE__ */ React.createElement(Page, {
-      key: index,
-      controller: controller2,
-      fullWidth: index < compactWidthIndex,
-      ...options == null ? void 0 : options.imageProps
-    })) : /* @__PURE__ */ React.createElement("p", null, status === "error" ? "에러가 발생했습니다" : "로딩 중..."),
-    ...otherProps
-  }), /* @__PURE__ */ React.createElement(FullscreenIcon, {
-    onClick: toggleFullscreen
-  }), downloader ? /* @__PURE__ */ React.createElement(DownloadIndicator, {
-    downloader
-  }) : false);
+  return  React.createElement(
+    Container,
+    {
+      ref,
+      tabIndex: -1,
+      className: "vim_comic_viewer"
+    },
+     React.createElement(
+      ScrollableLayout,
+      {
+        ref: scrollRef,
+        fullscreen: fullscreenElement === ref.current,
+        onClick: navigate,
+        onMouseDown: blockSelection,
+        children: status === "complete" ? pages.map((controller2, index) =>  React.createElement(
+          Page,
+          {
+            key: index,
+            controller: controller2,
+            fullWidth: index < compactWidthIndex,
+            ...options == null ? void 0 : options.imageProps
+          }
+        )) :  React.createElement("p", null, status === "error" ? "에러가 발생했습니다" : "로딩 중..."),
+        ...otherProps
+      }
+    ),
+     React.createElement(FullscreenIcon, { onClick: toggleFullscreen }),
+    downloader ?  React.createElement(DownloadIndicator, { downloader }) : false
+  );
 });
-
-// src/types.ts
 var types_exports = {};
-
-// src/mod.tsx
 var getDefaultRoot = () => {
   const div = document.createElement("div");
-  div.setAttribute("style", "width: 0; height: 0; position: fixed;");
+  div.setAttribute(
+    "style",
+    "width: 0; height: 0; position: fixed;"
+  );
   document.body.append(div);
   return div;
 };
 var initialize = (options) => {
   const ref = (0, import_react.createRef)();
-  (0, deps_exports.render)(/* @__PURE__ */ React.createElement(Viewer, {
-    ref,
-    options,
-    useDefault: true
-  }), getDefaultRoot());
+  (0, deps_exports.render)( React.createElement(Viewer, { ref, options, useDefault: true }), getDefaultRoot());
   return Promise.resolve(ref.current);
 };

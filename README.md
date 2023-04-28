@@ -5,7 +5,7 @@ is originated from vim's one.
 
 Basic shortcut is
 
-- <kbd>i</kbd>: toggle fullscreen
+- <kbd>i</kbd>, <kbd>Enter</kbd>, <kbd>NumPad0</kbd>: toggle fullscreen
 
 - <kbd>j</kbd>, <kbd>↓</kbd>: next page
 
