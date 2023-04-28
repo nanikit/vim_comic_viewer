@@ -11,7 +11,8 @@ export const commentRemovalPlugin: esbuild.Plugin = {
       }
 
       const original = await Deno.readTextFile(path);
-      const header = original.match(/^(\/\*[\s\S]*?\*\/|\/\/.*|\s+)*/)?.[0] ?? "";
+      const header = original.match(/^(\/\*[\s\S]*?\*\/|\/\/.*|\s+)*/)?.[0] ??
+        "";
       // https://regex101.com/r/Vq4U9X/1
       const stripped = original.replace(
         /(`[\s\S]*?`|"(?<!\\")(?:[^"\n\\]|\\.)*?")|\/\*[\s\S]*?\*\/|^\s*?\/\/.*\n|\/(?<!\\\/)\/.*/gm,
