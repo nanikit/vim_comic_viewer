@@ -1,3 +1,7 @@
+### 8.1.1
+
+- Fix not requesting image immediately when reload.
+
 ## 8.1.0
 
 - Support switching viewers with the <kbd>Enter</kbd>, <kbd>NumPad0</kbd>.

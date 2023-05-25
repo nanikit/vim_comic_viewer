@@ -15,11 +15,10 @@ type PageProps = {
 };
 
 export const makePageController = ({ source, observer }: PageProps) => {
-  let imageLoad: Deferred<boolean>;
+  let imageLoad: Deferred<boolean | null>;
   let state: PageState;
   let setState: (state: PageState) => void | undefined;
   let key = "";
-  let isReloaded = false;
 
   const load = async () => {
     const urls = [];
@@ -28,14 +27,13 @@ export const makePageController = ({ source, observer }: PageProps) => {
       urls.push(url);
       imageLoad = defer();
       setState?.({ src: url, state: "loading" });
-      const success = await imageLoad.promise;
-      if (success) {
-        setState?.({ src: url, state: "complete" });
-        return;
-      }
-      if (isReloaded) {
-        isReloaded = false;
-        return;
+      const result = await imageLoad.promise;
+      switch (result) {
+        case true:
+          setState?.({ src: url, state: "complete" });
+          return;
+        case null:
+          return;
       }
     }
     setState?.({ urls, state: "error" });
@@ -72,8 +70,8 @@ export const makePageController = ({ source, observer }: PageProps) => {
     },
 
     reload: async () => {
-      isReloaded = true;
-      imageLoad.resolve(false);
+      setState?.({ state: "complete" });
+      imageLoad.resolve(null);
       await load();
     },
     useInstance,
