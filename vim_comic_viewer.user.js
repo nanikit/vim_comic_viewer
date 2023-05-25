@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        8.1.0
+// @version        8.1.1
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -578,7 +578,6 @@ var makePageController = ({ source, observer }) => {
   let state;
   let setState;
   let key = "";
-  let isReloaded = false;
   const load = async () => {
     const urls = [];
     key = `${Math.random()}`;
@@ -586,14 +585,13 @@ var makePageController = ({ source, observer }) => {
       urls.push(url);
       imageLoad = defer();
       setState == null ? void 0 : setState({ src: url, state: "loading" });
-      const success = await imageLoad.promise;
-      if (success) {
-        setState == null ? void 0 : setState({ src: url, state: "complete" });
-        return;
-      }
-      if (isReloaded) {
-        isReloaded = false;
-        return;
+      const result = await imageLoad.promise;
+      switch (result) {
+        case true:
+          setState == null ? void 0 : setState({ src: url, state: "complete" });
+          return;
+        case null:
+          return;
       }
     }
     setState == null ? void 0 : setState({ urls, state: "error" });
@@ -622,8 +620,8 @@ var makePageController = ({ source, observer }) => {
       return state;
     },
     reload: async () => {
-      isReloaded = true;
-      imageLoad.resolve(false);
+      setState == null ? void 0 : setState({ state: "complete" });
+      imageLoad.resolve(null);
       await load();
     },
     useInstance
