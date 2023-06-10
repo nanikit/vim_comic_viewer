@@ -1,6 +1,7 @@
 # 9.0.0
 
 - Remove `setGmXhr`, use `setTampermonkeyApi` instead.
+- Add background color configuration.
 - Remember preceding single page count.
 
 ### 8.1.1

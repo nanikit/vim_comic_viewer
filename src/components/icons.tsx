@@ -2,9 +2,6 @@ import { SVGProps } from "../deps.ts";
 import { styled } from "../vendors/stitches.ts";
 
 const Svg = styled("svg", {
-  position: "absolute",
-  width: "40px",
-  bottom: "8px",
   opacity: "50%",
   filter: "drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)",
   color: "black",
@@ -15,8 +12,13 @@ const Svg = styled("svg", {
   },
 });
 
-const downloadCss = { left: "8px" };
-const fullscreenCss = { right: "24px" };
+const downloadCss = { width: "40px", marginLeft: "20px" };
+const fullscreenCss = {
+  right: "24px",
+  position: "absolute",
+  width: "40px",
+  bottom: "8px",
+};
 
 export const DownloadIcon = (props: SVGProps<SVGElement>) => (
   <Svg
@@ -68,7 +70,6 @@ export const CircledX = (props: SVGProps<SVGSVGElement>) => {
       viewBox="0 0 122.881 122.88"
       enable-background="new 0 0 122.881 122.88"
       {...props as Record<string, string>}
-      crossOrigin=""
     >
       <g>
         <path d="M61.44,0c16.966,0,32.326,6.877,43.445,17.996c11.119,11.118,17.996,26.479,17.996,43.444 c0,16.967-6.877,32.326-17.996,43.444C93.766,116.003,78.406,122.88,61.44,122.88c-16.966,0-32.326-6.877-43.444-17.996 C6.877,93.766,0,78.406,0,61.439c0-16.965,6.877-32.326,17.996-43.444C29.114,6.877,44.474,0,61.44,0L61.44,0z M80.16,37.369 c1.301-1.302,3.412-1.302,4.713,0c1.301,1.301,1.301,3.411,0,4.713L65.512,61.444l19.361,19.362c1.301,1.301,1.301,3.411,0,4.713 c-1.301,1.301-3.412,1.301-4.713,0L60.798,66.157L41.436,85.52c-1.301,1.301-3.412,1.301-4.713,0c-1.301-1.302-1.301-3.412,0-4.713 l19.363-19.362L36.723,42.082c-1.301-1.302-1.301-3.412,0-4.713c1.301-1.302,3.412-1.302,4.713,0l19.363,19.362L80.16,37.369 L80.16,37.369z M100.172,22.708C90.26,12.796,76.566,6.666,61.44,6.666c-15.126,0-28.819,6.13-38.731,16.042 C12.797,32.62,6.666,46.314,6.666,61.439c0,15.126,6.131,28.82,16.042,38.732c9.912,9.911,23.605,16.042,38.731,16.042 c15.126,0,28.82-6.131,38.732-16.042c9.912-9.912,16.043-23.606,16.043-38.732C116.215,46.314,110.084,32.62,100.172,22.708 L100.172,22.708z" />
@@ -76,3 +77,15 @@ export const CircledX = (props: SVGProps<SVGSVGElement>) => {
     </ErrorIcon>
   );
 };
+
+export const MenuIcon = (props: SVGProps<SVGElement>) => (
+  <Svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width="40px"
+    height="40px"
+    {...props as Record<string, string>}
+  >
+    <path d="M 3 5 A 1.0001 1.0001 0 1 0 3 7 L 21 7 A 1.0001 1.0001 0 1 0 21 5 L 3 5 z M 3 11 A 1.0001 1.0001 0 1 0 3 13 L 21 13 A 1.0001 1.0001 0 1 0 21 11 L 3 11 z M 3 17 A 1.0001 1.0001 0 1 0 3 19 L 21 19 A 1.0001 1.0001 0 1 0 21 17 L 3 17 z" />
+  </Svg>
+);
