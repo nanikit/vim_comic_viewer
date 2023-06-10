@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        8.1.1
+// @version        9.0.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -49,7 +49,7 @@ __export(mod_exports, {
   Viewer: () => Viewer,
   download: () => download,
   initialize: () => initialize,
-  setGmXhr: () => setGmXhr,
+  setTampermonkeyApi: () => setTampermonkeyApi,
   transformToBlobUrl: () => transformToBlobUrl,
   types: () => types_exports,
   utils: () => utils_exports
@@ -75,9 +75,6 @@ var import_react = require("react");
 __reExport(deps_exports, require("react-dom"));
 var { styled, css, keyframes } = (0, deps_exports.createStitches)({});
 var Svg = styled("svg", {
-  position: "absolute",
-  width: "40px",
-  bottom: "8px",
   opacity: "50%",
   filter: "drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)",
   color: "black",
@@ -87,8 +84,13 @@ var Svg = styled("svg", {
     transform: "scale(1.1)"
   }
 });
-var downloadCss = { left: "8px" };
-var fullscreenCss = { right: "24px" };
+var downloadCss = { width: "40px", marginLeft: "20px" };
+var fullscreenCss = {
+  right: "24px",
+  position: "absolute",
+  width: "40px",
+  bottom: "8px"
+};
 var DownloadIcon = (props) =>  React.createElement(
   Svg,
   {
@@ -132,12 +134,22 @@ var CircledX = (props) => {
       y: "0px",
       viewBox: "0 0 122.881 122.88",
       "enable-background": "new 0 0 122.881 122.88",
-      ...props,
-      crossOrigin: ""
+      ...props
     },
      React.createElement("g", null,  React.createElement("path", { d: "M61.44,0c16.966,0,32.326,6.877,43.445,17.996c11.119,11.118,17.996,26.479,17.996,43.444 c0,16.967-6.877,32.326-17.996,43.444C93.766,116.003,78.406,122.88,61.44,122.88c-16.966,0-32.326-6.877-43.444-17.996 C6.877,93.766,0,78.406,0,61.439c0-16.965,6.877-32.326,17.996-43.444C29.114,6.877,44.474,0,61.44,0L61.44,0z M80.16,37.369 c1.301-1.302,3.412-1.302,4.713,0c1.301,1.301,1.301,3.411,0,4.713L65.512,61.444l19.361,19.362c1.301,1.301,1.301,3.411,0,4.713 c-1.301,1.301-3.412,1.301-4.713,0L60.798,66.157L41.436,85.52c-1.301,1.301-3.412,1.301-4.713,0c-1.301-1.302-1.301-3.412,0-4.713 l19.363-19.362L36.723,42.082c-1.301-1.302-1.301-3.412,0-4.713c1.301-1.302,3.412-1.302,4.713,0l19.363,19.362L80.16,37.369 L80.16,37.369z M100.172,22.708C90.26,12.796,76.566,6.666,61.44,6.666c-15.126,0-28.819,6.13-38.731,16.042 C12.797,32.62,6.666,46.314,6.666,61.439c0,15.126,6.131,28.82,16.042,38.732c9.912,9.911,23.605,16.042,38.731,16.042 c15.126,0,28.82-6.131,38.732-16.042c9.912-9.912,16.043-23.606,16.043-38.732C116.215,46.314,110.084,32.62,100.172,22.708 L100.172,22.708z" }))
   );
 };
+var MenuIcon = (props) =>  React.createElement(
+  Svg,
+  {
+    xmlns: "http://www.w3.org/2000/svg",
+    viewBox: "0 0 24 24",
+    width: "40px",
+    height: "40px",
+    ...props
+  },
+   React.createElement("path", { d: "M 3 5 A 1.0001 1.0001 0 1 0 3 7 L 21 7 A 1.0001 1.0001 0 1 0 21 5 L 3 5 z M 3 11 A 1.0001 1.0001 0 1 0 3 13 L 21 13 A 1.0001 1.0001 0 1 0 21 11 L 3 11 z M 3 17 A 1.0001 1.0001 0 1 0 3 19 L 21 19 A 1.0001 1.0001 0 1 0 21 17 L 3 17 z" })
+);
 var defaultScrollbar = {
   "scrollbarWidth": "initial",
   "scrollbarColor": "initial",
@@ -148,12 +160,12 @@ var defaultScrollbar = {
 var Container = styled("div", {
   position: "relative",
   height: "100%",
+  userSelect: "none",
   ...defaultScrollbar
 });
 var ScrollableLayout = styled("div", {
   outline: 0,
   position: "relative",
-  backgroundColor: "#eee",
   width: "100%",
   height: "100%",
   display: "flex",
@@ -287,16 +299,16 @@ var useFullscreenElement = () => {
   }, []);
   return element;
 };
-var setGmXhr = (xmlhttpRequest) => {
-  gmXhr = xmlhttpRequest;
-};
-var gmXhr;
+var tampermonkeyApi = {};
+function setTampermonkeyApi(api) {
+  tampermonkeyApi = api != null ? api : {};
+}
 var gmFetch = (resource, init) => {
   const method = (init == null ? void 0 : init.body) ? "POST" : "GET";
   const xhr = (type) => {
     return new Promise((resolve, reject) => {
       var _a;
-      const request = gmXhr({
+      const request = tampermonkeyApi.GM_xmlhttpRequest({
         method,
         url: resource,
         headers: init == null ? void 0 : init.headers,
@@ -337,7 +349,7 @@ var fetchBlob = async (url, init) => {
       throw error;
     }
     const isOriginDifferent = new URL(url).origin !== location.origin;
-    if (isOriginDifferent && gmXhr) {
+    if (isOriginDifferent && tampermonkeyApi.GM_xmlhttpRequest) {
       return await gmFetch(url, init).blob();
     } else {
       throw new Error("CORS blocked and cannot use GM_xmlhttpRequest", {
@@ -776,18 +788,20 @@ var usePageNavigator = (ref) => {
   return navigator;
 };
 var makeViewerController = ({ ref, navigator, rerender }) => {
+  var _a, _b, _c;
+  const compactPageKey = "vim_comic_viewer.single_page_count";
   let options = {};
   let images = [];
   let status = "loading";
-  let compactWidthIndex = 1;
+  let compactWidthIndex = (_c = (_b = (_a = tampermonkeyApi).GM_getValue) == null ? void 0 : _b.call(_a, compactPageKey, 1)) != null ? _c : 1;
   let downloader;
   let pages = [];
   const toggleFullscreen = () => {
-    var _a;
+    var _a2;
     if (document.fullscreenElement) {
       document.exitFullscreen();
     } else {
-      (_a = ref.current) == null ? void 0 : _a.requestFullscreen();
+      (_a2 = ref.current) == null ? void 0 : _a2.requestFullscreen();
     }
   };
   const loadImages = async (source) => {
@@ -841,14 +855,16 @@ var makeViewerController = ({ ref, navigator, rerender }) => {
       return downloader;
     },
     get download() {
-      var _a;
-      return (_a = downloader == null ? void 0 : downloader.download) != null ? _a : () => Promise.resolve(new Uint8Array());
+      var _a2;
+      return (_a2 = downloader == null ? void 0 : downloader.download) != null ? _a2 : () => Promise.resolve(new Uint8Array());
     },
     get pages() {
       return pages;
     },
     set compactWidthIndex(value) {
-      compactWidthIndex = value;
+      var _a2, _b2;
+      compactWidthIndex = Math.max(0, value);
+      (_b2 = (_a2 = tampermonkeyApi).GM_setValue) == null ? void 0 : _b2.call(_a2, compactPageKey, compactWidthIndex);
       rerender();
     },
     setOptions: async (value) => {
@@ -874,72 +890,6 @@ var useViewerController = ({ ref, scrollRef }) => {
     [ref, navigator]
   );
   return controller;
-};
-var Svg2 = styled("svg", {
-  position: "absolute",
-  bottom: "8px",
-  left: "8px",
-  cursor: "pointer",
-  "&:hover": {
-    filter: "hue-rotate(-145deg)"
-  },
-  variants: {
-    error: {
-      true: {
-        filter: "hue-rotate(140deg)"
-      }
-    }
-  }
-});
-var Circle = styled("circle", {
-  transform: "rotate(-90deg)",
-  transformOrigin: "50% 50%",
-  stroke: "url(#aEObn)",
-  fill: "#fff8"
-});
-var GradientDef =  React.createElement("defs", null,  React.createElement("linearGradient", { id: "aEObn", x1: "100%", y1: "0%", x2: "0%", y2: "100%" },  React.createElement("stop", { offset: "0%", style: { stopColor: "#53baff", stopOpacity: 1 } }),  React.createElement("stop", { offset: "100%", style: { stopColor: "#0067bb", stopOpacity: 1 } })));
-var CenterText = styled("text", {
-  dominantBaseline: "middle",
-  textAnchor: "middle",
-  fontSize: "30px",
-  fontWeight: "bold",
-  fill: "#004b9e"
-});
-var CircularProgress = (props) => {
-  const { radius, strokeWidth, value, text, ...otherProps } = props;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - value * circumference;
-  const center = radius + strokeWidth / 2;
-  const side = center * 2;
-  return  React.createElement(Svg2, { height: side, width: side, ...otherProps }, GradientDef,  React.createElement(
-    Circle,
-    {
-      ...{
-        strokeWidth,
-        strokeDasharray: `${circumference} ${circumference}`,
-        strokeDashoffset,
-        r: radius,
-        cx: center,
-        cy: center
-      }
-    }
-  ),  React.createElement(CenterText, { x: "50%", y: "50%" }, text || ""));
-};
-var DownloadIndicator = ({ downloader }) => {
-  var _a;
-  const { value, text, error } = (_a = downloader.progress) != null ? _a : {};
-  downloader.useInstance();
-  return  React.createElement(React.Fragment, null, text ?  React.createElement(
-    CircularProgress,
-    {
-      radius: 50,
-      strokeWidth: 10,
-      value: value != null ? value : 0,
-      text,
-      error,
-      onClick: downloader.cancelDownload
-    }
-  ) :  React.createElement(DownloadIcon, { onClick: downloader.downloadWithProgress }));
 };
 var stretch = keyframes({
   "0%": {
@@ -1039,6 +989,103 @@ var Page = ({
   }, []);
   return  React.createElement(Overlay, { ref, placeholder: state !== "complete", fullWidth }, state === "loading" &&  React.createElement(Spinner, null), state === "error" &&  React.createElement(LinkColumn, { onClick: reloadErrored },  React.createElement(CircledX, null),  React.createElement("p", null, "이미지를 불러오지 못했습니다"),  React.createElement("p", null, src ? src : urls == null ? void 0 : urls.join("\n"))),  React.createElement(Image, { ...imageProps, ...props }));
 };
+var Svg2 = styled("svg", {
+  position: "absolute",
+  bottom: "8px",
+  left: "8px",
+  cursor: "pointer",
+  "&:hover": {
+    filter: "hue-rotate(-145deg)"
+  },
+  variants: {
+    error: {
+      true: {
+        filter: "hue-rotate(140deg)"
+      }
+    }
+  }
+});
+var Circle = styled("circle", {
+  transform: "rotate(-90deg)",
+  transformOrigin: "50% 50%",
+  stroke: "url(#aEObn)",
+  fill: "#fff8"
+});
+var GradientDef =  React.createElement("defs", null,  React.createElement("linearGradient", { id: "aEObn", x1: "100%", y1: "0%", x2: "0%", y2: "100%" },  React.createElement("stop", { offset: "0%", style: { stopColor: "#53baff", stopOpacity: 1 } }),  React.createElement("stop", { offset: "100%", style: { stopColor: "#0067bb", stopOpacity: 1 } })));
+var CenterText = styled("text", {
+  dominantBaseline: "middle",
+  textAnchor: "middle",
+  fontSize: "30px",
+  fontWeight: "bold",
+  fill: "#004b9e"
+});
+var CircularProgress = (props) => {
+  const { radius, strokeWidth, value, text, ...otherProps } = props;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - value * circumference;
+  const center = radius + strokeWidth / 2;
+  const side = center * 2;
+  return  React.createElement(Svg2, { height: side, width: side, ...otherProps }, GradientDef,  React.createElement(
+    Circle,
+    {
+      ...{
+        strokeWidth,
+        strokeDasharray: `${circumference} ${circumference}`,
+        strokeDashoffset,
+        r: radius,
+        cx: center,
+        cy: center
+      }
+    }
+  ),  React.createElement(CenterText, { x: "50%", y: "50%" }, text || ""));
+};
+var LeftBottomFloat = (0, deps_exports.styled)("div", {
+  position: "absolute",
+  bottom: "0.5%",
+  left: "0.5%",
+  display: "flex",
+  flexFlow: "column"
+});
+var MenuActions = (0, deps_exports.styled)("div", {
+  display: "flex",
+  alignItems: "center"
+});
+var ColorInput = (0, deps_exports.styled)("input", {
+  marginLeft: "20px"
+});
+var SupplementaryActionMenu = ({ downloader, color, onColorChange }) => {
+  var _a;
+  const { value, text, error } = (_a = downloader.progress) != null ? _a : {};
+  downloader.useInstance();
+  const [isOpen, setIsOpen] = (0, import_react.useState)(false);
+  return  React.createElement(LeftBottomFloat, null, !!text &&  React.createElement(
+    CircularProgress,
+    {
+      radius: 50,
+      strokeWidth: 10,
+      value: value != null ? value : 0,
+      text,
+      error,
+      onClick: downloader.cancelDownload
+    }
+  ),  React.createElement(MenuActions, null,  React.createElement(
+    MenuIcon,
+    {
+      onClick: () => {
+        setIsOpen((value2) => !value2);
+      }
+    }
+  ), !!isOpen &&  React.createElement(React.Fragment, null,  React.createElement(DownloadIcon, { onClick: downloader.downloadWithProgress }),  React.createElement(
+    ColorInput,
+    {
+      type: "color",
+      value: color,
+      onChange: (event) => {
+        onColorChange == null ? void 0 : onColorChange(event.currentTarget.value);
+      }
+    }
+  ))));
+};
 var Viewer = (0, import_react.forwardRef)((props, refHandle) => {
   const { useDefault: enableDefault, options: viewerOptions, ...otherProps } = props;
   const ref = (0, import_react.useRef)();
@@ -1080,6 +1127,11 @@ var Viewer = (0, import_react.forwardRef)((props, refHandle) => {
     [controller]
   );
   useDefault({ enable: props.useDefault, controller });
+  const backgroundColorKey = "vim_comic_viewer.background_color";
+  const [backgroundColor, setBackgroundColor] = (0, import_react.useState)(() => {
+    var _a, _b, _c;
+    return (_c = (_b = (_a = tampermonkeyApi).GM_getValue) == null ? void 0 : _b.call(_a, backgroundColorKey, "#888")) != null ? _c : "#888";
+  });
   (0, import_react.useImperativeHandle)(refHandle, () => controller, [controller]);
   (0, import_react.useEffect)(() => {
     controller.setOptions(viewerOptions);
@@ -1095,7 +1147,8 @@ var Viewer = (0, import_react.forwardRef)((props, refHandle) => {
     {
       ref,
       tabIndex: -1,
-      className: "vim_comic_viewer"
+      className: "vim_comic_viewer",
+      css: { backgroundColor }
     },
      React.createElement(
       ScrollableLayout,
@@ -1117,7 +1170,18 @@ var Viewer = (0, import_react.forwardRef)((props, refHandle) => {
       }
     ),
      React.createElement(FullscreenIcon, { onClick: toggleFullscreen }),
-    downloader ?  React.createElement(DownloadIndicator, { downloader }) : false
+    downloader ?  React.createElement(
+      SupplementaryActionMenu,
+      {
+        downloader,
+        color: backgroundColor,
+        onColorChange: (newColor) => {
+          var _a, _b;
+          (_b = (_a = tampermonkeyApi).GM_setValue) == null ? void 0 : _b.call(_a, backgroundColorKey, newColor);
+          setBackgroundColor(newColor);
+        }
+      }
+    ) : false
   );
 });
 var types_exports = {};
