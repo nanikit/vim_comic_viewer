@@ -13,13 +13,15 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
+  useState,
 } from "../deps.ts";
 import { useDefault } from "../hooks/use_default.ts";
 import { useFullscreenElement } from "../hooks/use_fullscreen_element.ts";
 import { useViewerController } from "../hooks/use_viewer_controller.ts";
+import { tampermonkeyApi } from "../services/tampermonkey.ts";
 import { ViewerController, ViewerOptions } from "../types.ts";
-import { DownloadIndicator } from "./download_indicator.tsx";
 import { Page } from "./page.tsx";
+import { SupplementaryActionMenu } from "./supplementary_action_menu.tsx";
 
 export const Viewer = forwardRef((
   props: HTMLProps<HTMLDivElement> & {
@@ -74,6 +76,12 @@ export const Viewer = forwardRef((
 
   useDefault({ enable: props.useDefault, controller });
 
+  const backgroundColorKey = "vim_comic_viewer.background_color";
+  const [backgroundColor, setBackgroundColor] = useState(() => {
+    return tampermonkeyApi.GM_getValue?.(backgroundColorKey, "#888888") ??
+      "#888888";
+  });
+
   useImperativeHandle(refHandle, () => controller, [controller]);
 
   useEffect(() => {
@@ -91,10 +99,12 @@ export const Viewer = forwardRef((
       ref={ref as RefObject<HTMLDivElement>}
       tabIndex={-1}
       className="vim_comic_viewer"
+      css={{ backgroundColor }}
     >
       <ScrollableLayout
         // deno-lint-ignore no-explicit-any
         ref={scrollRef as any}
+        dark={isDarkColor(backgroundColor)}
         fullscreen={fullscreenElement === ref.current}
         onClick={navigate}
         onMouseDown={blockSelection}
@@ -111,7 +121,30 @@ export const Viewer = forwardRef((
         {...otherProps}
       />
       <FullscreenIcon onClick={toggleFullscreen} />
-      {downloader ? <DownloadIndicator downloader={downloader} /> : false}
+      {downloader
+        ? (
+          <SupplementaryActionMenu
+            downloader={downloader}
+            color={backgroundColor}
+            onColorChange={(newColor) => {
+              tampermonkeyApi.GM_setValue?.(backgroundColorKey, newColor);
+              setBackgroundColor(newColor);
+            }}
+          />
+        )
+        : false}
     </Container>
   );
 });
+
+// #878787 -> true, #888888 -> false,
+function isDarkColor(rgbColor: string) {
+  const match = rgbColor.match(/#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/);
+  if (!match) {
+    return false;
+  }
+
+  const [_, r, g, b] = match.map((x) => parseInt(x, 16));
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance < 0.5;
+}
