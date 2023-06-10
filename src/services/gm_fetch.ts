@@ -1,4 +1,4 @@
-import { gmXhr } from "./tampermonkey.ts";
+import { tampermonkeyApi } from "./tampermonkey.ts";
 
 export const gmFetch = (
   resource: string,
@@ -7,7 +7,7 @@ export const gmFetch = (
   const method = init?.body ? "POST" : "GET";
   const xhr = (type: "blob" | "json" | "text") => {
     return new Promise<unknown>((resolve, reject) => {
-      const request = gmXhr!({
+      const request = tampermonkeyApi.GM_xmlhttpRequest!({
         method,
         url: resource,
         headers: init?.headers as Record<string, string>,
@@ -49,7 +49,7 @@ export const fetchBlob = async (url: string, init?: RequestInit) => {
     }
 
     const isOriginDifferent = new URL(url).origin !== location.origin;
-    if (isOriginDifferent && gmXhr) {
+    if (isOriginDifferent && tampermonkeyApi.GM_xmlhttpRequest) {
       return await gmFetch(url, init).blob();
     } else {
       throw new Error("CORS blocked and cannot use GM_xmlhttpRequest", {
