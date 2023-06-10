@@ -1,4 +1,5 @@
 import { MutableRefObject, unmountComponentAtNode, useMemo } from "../deps.ts";
+import { tampermonkeyApi } from "../services/tampermonkey.ts";
 import { ComicSource, ImageSource, ViewerOptions } from "../types.ts";
 import { makeDownloader } from "./make_downloader.ts";
 import { makePageController } from "./make_page_controller.ts";
@@ -14,10 +15,11 @@ const makeViewerController = (
     rerender: () => void;
   },
 ) => {
+  const compactPageKey = "vim_comic_viewer.single_page_count";
   let options = {} as ViewerOptions;
   let images = [] as ImageSource[];
   let status = "loading" as ViewerStatus;
-  let compactWidthIndex = 1;
+  let compactWidthIndex = tampermonkeyApi.GM_getValue?.(compactPageKey, 1) ?? 1;
   let downloader: ReturnType<typeof makeDownloader> | undefined;
   let pages = [] as ReturnType<typeof makePageController>[];
 
@@ -92,7 +94,8 @@ const makeViewerController = (
       return pages;
     },
     set compactWidthIndex(value) {
-      compactWidthIndex = value;
+      compactWidthIndex = Math.max(0, value);
+      tampermonkeyApi.GM_setValue?.(compactPageKey, compactWidthIndex);
       rerender();
     },
 

@@ -1,3 +1,8 @@
+# 9.0.0
+
+- Remove `setGmXhr`, use `setTampermonkeyApi` instead.
+- Remember preceding single page count.
+
 ### 8.1.1
 
 - Fix not requesting image immediately when reload.
