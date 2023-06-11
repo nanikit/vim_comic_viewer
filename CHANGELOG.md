@@ -6,8 +6,11 @@
 # 9.0.0
 
 - Add the following for configuration memory.
+
+  ```
   // @grant GM_setValue
   // @grant GM_getValue
+  ```
 - Remove `setGmXhr`, use `setTampermonkeyApi` instead.
 - Add background color configuration.
 - Remember preceding single page count.
