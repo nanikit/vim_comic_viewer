@@ -78,8 +78,8 @@ export const Viewer = forwardRef((
 
   const backgroundColorKey = "vim_comic_viewer.background_color";
   const [backgroundColor, setBackgroundColor] = useState(() => {
-    return tampermonkeyApi.GM_getValue?.(backgroundColorKey, "#888888") ??
-      "#888888";
+    return tampermonkeyApi.GM_getValue?.(backgroundColorKey, "#eeeeee") ??
+      "#eeeeee";
   });
 
   useImperativeHandle(refHandle, () => controller, [controller]);

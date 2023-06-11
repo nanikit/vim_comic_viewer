@@ -154,14 +154,16 @@ var defaultScrollbar = {
   "scrollbarWidth": "initial",
   "scrollbarColor": "initial",
   "&::-webkit-scrollbar": { all: "initial" },
-  "&::-webkit-scrollbar-thumb": { all: "initial", background: "gray" },
+  "&::-webkit-scrollbar-thumb": {
+    all: "initial",
+    background: "#00000088"
+  },
   "&::-webkit-scrollbar-track": { all: "initial" }
 };
 var Container = styled("div", {
   position: "relative",
   height: "100%",
-  userSelect: "none",
-  ...defaultScrollbar
+  userSelect: "none"
 });
 var ScrollableLayout = styled("div", {
   outline: 0,
@@ -182,6 +184,14 @@ var ScrollableLayout = styled("div", {
         top: 0,
         bottom: 0,
         overflow: "auto"
+      }
+    },
+    dark: {
+      true: {
+        "&::-webkit-scrollbar-thumb": {
+          all: "initial",
+          background: "#ffffff88"
+        }
       }
     }
   }
@@ -1130,7 +1140,7 @@ var Viewer = (0, import_react.forwardRef)((props, refHandle) => {
   const backgroundColorKey = "vim_comic_viewer.background_color";
   const [backgroundColor, setBackgroundColor] = (0, import_react.useState)(() => {
     var _a, _b, _c;
-    return (_c = (_b = (_a = tampermonkeyApi).GM_getValue) == null ? void 0 : _b.call(_a, backgroundColorKey, "#888")) != null ? _c : "#888";
+    return (_c = (_b = (_a = tampermonkeyApi).GM_getValue) == null ? void 0 : _b.call(_a, backgroundColorKey, "#eeeeee")) != null ? _c : "#eeeeee";
   });
   (0, import_react.useImperativeHandle)(refHandle, () => controller, [controller]);
   (0, import_react.useEffect)(() => {
@@ -1154,6 +1164,7 @@ var Viewer = (0, import_react.forwardRef)((props, refHandle) => {
       ScrollableLayout,
       {
         ref: scrollRef,
+        dark: isDarkColor(backgroundColor),
         fullscreen: fullscreenElement === ref.current,
         onClick: navigate,
         onMouseDown: blockSelection,
@@ -1184,6 +1195,15 @@ var Viewer = (0, import_react.forwardRef)((props, refHandle) => {
     ) : false
   );
 });
+function isDarkColor(rgbColor) {
+  const match = rgbColor.match(/#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/);
+  if (!match) {
+    return false;
+  }
+  const [_, r, g, b] = match.map((x) => parseInt(x, 16));
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance < 0.5;
+}
 var types_exports = {};
 var getDefaultRoot = () => {
   const div = document.createElement("div");
