@@ -2,7 +2,6 @@
   "deno.enable": true,
   "deno.unstable": true,
   "deno.lint": true,
-  "deno.importMap": "./import_map.json",
   "typescript.validate.enable": false,
   "javascript.validate.enable": false,
   "editor.codeActionsOnSave": {
