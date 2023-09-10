@@ -1,3 +1,6 @@
+import { useAtomValue, useSetAtom } from "jotai";
+import { toggleFullscreenAtom } from "../atoms/fullscreen_element_atom.ts";
+import { viewerElementAtom } from "../atoms/viewer_atoms.ts";
 import { MutableRefObject, unmountComponentAtNode, useMemo } from "../deps.ts";
 import { tampermonkeyApi } from "../services/tampermonkey.ts";
 import { ComicSource, ImageSource, ViewerOptions } from "../types.ts";
@@ -9,10 +12,11 @@ import { useRerender } from "./use_rerender.ts";
 type ViewerStatus = "loading" | "complete" | "error";
 
 const makeViewerController = (
-  { ref, navigator, rerender }: {
-    ref: MutableRefObject<HTMLDivElement | undefined>;
+  { viewer, navigator, rerender, toggleFullscreen }: {
+    viewer: HTMLDivElement | null;
     navigator: PageNavigator;
     rerender: () => void;
+    toggleFullscreen: () => Promise<void>;
   },
 ) => {
   const compactPageKey = "vim_comic_viewer.single_page_count";
@@ -22,14 +26,6 @@ const makeViewerController = (
   let compactWidthIndex = tampermonkeyApi.GM_getValue?.(compactPageKey, 1) ?? 1;
   let downloader: ReturnType<typeof makeDownloader> | undefined;
   let pages = [] as ReturnType<typeof makePageController>[];
-
-  const toggleFullscreen = () => {
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    } else {
-      ref.current?.requestFullscreen();
-    }
-  };
 
   const loadImages = async (source?: ComicSource) => {
     try {
@@ -79,7 +75,7 @@ const makeViewerController = (
       return status;
     },
     get container() {
-      return ref.current;
+      return viewer;
     },
     get compactWidthIndex() {
       return compactWidthIndex;
@@ -113,19 +109,21 @@ const makeViewerController = (
     goNext: navigator.goNext,
     toggleFullscreen,
     reloadErrored,
-    unmount: () => unmountComponentAtNode(ref.current!),
+    unmount: () => unmountComponentAtNode(viewer!),
   };
 };
 
-export const useViewerController = ({ ref, scrollRef }: {
-  ref: MutableRefObject<HTMLDivElement | undefined>;
+export const useViewerController = ({ scrollRef }: {
   scrollRef: MutableRefObject<HTMLDivElement | undefined>;
 }): ReturnType<typeof makeViewerController> => {
   const rerender = useRerender();
   const navigator = usePageNavigator(scrollRef);
+  const toggleFullscreen = useSetAtom(toggleFullscreenAtom);
+  const viewer = useAtomValue(viewerElementAtom);
   const controller = useMemo(
-    () => makeViewerController({ ref, navigator, rerender }),
-    [ref, navigator],
+    () =>
+      makeViewerController({ viewer, toggleFullscreen, navigator, rerender }),
+    [viewer, navigator],
   );
   return controller;
 };

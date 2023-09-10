@@ -1,5 +1,6 @@
-import { createStore, Provider, useAtomValue } from "jotai";
+import { createStore, Provider, useAtom, useAtomValue } from "jotai";
 import { fullScreenElementAtom } from "../atoms/fullscreen_element_atom.ts";
+import { viewerElementAtom } from "../atoms/viewer_atoms.ts";
 import { FullscreenIcon } from "../components/icons.tsx";
 import {
   Container,
@@ -10,7 +11,6 @@ import {
   HTMLProps,
   MouseEventHandler,
   Ref,
-  RefObject,
   useCallback,
   useEffect,
   useImperativeHandle,
@@ -34,10 +34,10 @@ const InnerViewer = forwardRef((
 ) => {
   const { useDefault: enableDefault, options: viewerOptions, ...otherProps } =
     props;
-  const ref = useRef<HTMLDivElement>();
+  const [viewerElement, setViewerElement] = useAtom(viewerElementAtom);
   const scrollRef = useRef<HTMLDivElement>();
   const fullscreenElement = useAtomValue(fullScreenElementAtom);
-  const controller = useViewerController({ ref, scrollRef });
+  const controller = useViewerController({ scrollRef });
   const {
     options,
     pages,
@@ -48,7 +48,7 @@ const InnerViewer = forwardRef((
   } = controller;
 
   const navigate: MouseEventHandler<Element> = useCallback((event) => {
-    const height = ref.current?.clientHeight;
+    const height = viewerElement?.clientHeight;
     if (!height || event.button !== 0) {
       return;
     }
@@ -90,15 +90,9 @@ const InnerViewer = forwardRef((
     controller.setOptions(viewerOptions);
   }, [controller, viewerOptions]);
 
-  useEffect(() => {
-    if (ref.current && fullscreenElement === ref.current) {
-      ref.current?.focus?.();
-    }
-  }, [ref.current, fullscreenElement]);
-
   return (
     <Container
-      ref={ref as RefObject<HTMLDivElement>}
+      ref={setViewerElement}
       tabIndex={-1}
       className="vim_comic_viewer"
       css={{ backgroundColor }}
@@ -107,7 +101,7 @@ const InnerViewer = forwardRef((
         // deno-lint-ignore no-explicit-any
         ref={scrollRef as any}
         dark={isDarkColor(backgroundColor)}
-        fullscreen={fullscreenElement === ref.current}
+        fullscreen={fullscreenElement === viewerElement}
         onClick={navigate}
         onMouseDown={blockSelection}
         children={status === "complete"
