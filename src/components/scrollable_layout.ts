@@ -32,7 +32,6 @@ export const ScrollableLayout = styled("div", {
   variants: {
     fullscreen: {
       true: {
-        display: "flex",
         position: "fixed",
         top: 0,
         bottom: 0,
