@@ -1,4 +1,5 @@
-import { createStore, Provider } from "jotai";
+import { createStore, Provider, useAtomValue } from "jotai";
+import { fullScreenElementAtom } from "../atoms/fullscreen_element_atom.ts";
 import { FullscreenIcon } from "../components/icons.tsx";
 import {
   Container,
@@ -18,7 +19,6 @@ import {
   useState,
 } from "../deps.ts";
 import { useDefault } from "../hooks/use_default.ts";
-import { useFullscreenElement } from "../hooks/use_fullscreen_element.ts";
 import { useViewerController } from "../hooks/use_viewer_controller.ts";
 import { tampermonkeyApi } from "../services/tampermonkey.ts";
 import { ViewerController, ViewerOptions } from "../types.ts";
@@ -36,7 +36,7 @@ const InnerViewer = forwardRef((
     props;
   const ref = useRef<HTMLDivElement>();
   const scrollRef = useRef<HTMLDivElement>();
-  const fullscreenElement = useFullscreenElement();
+  const fullscreenElement = useAtomValue(fullScreenElementAtom);
   const controller = useViewerController({ ref, scrollRef });
   const {
     options,
