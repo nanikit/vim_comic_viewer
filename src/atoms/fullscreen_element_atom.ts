@@ -1,4 +1,5 @@
 import { atom } from "jotai";
+import { viewerElementAtom } from "./viewer_atoms.ts";
 
 const fullscreenElementStateAtom = atom<Element | null>(
   document.fullscreenElement ?? null,
@@ -10,12 +11,26 @@ fullscreenElementStateAtom.onMount = (set) => {
 };
 export const fullScreenElementAtom = atom(
   (get) => get(fullscreenElementStateAtom),
-  (_get, set, element: Element | null) => {
+  async (get, set, element: Element | null) => {
+    const fullscreenElement = get(fullscreenElementStateAtom);
+    if (element === fullscreenElement) {
+      return;
+    }
+
     if (element) {
-      element.requestFullscreen?.();
+      await element.requestFullscreen?.();
+      const viewer = get(viewerElementAtom);
+      if (viewer === element) {
+        viewer.focus();
+      }
     } else {
-      document.exitFullscreen?.();
+      await document.exitFullscreen?.();
     }
     set(fullscreenElementStateAtom, element);
   },
 );
+
+export const toggleFullscreenAtom = atom(null, async (get, set) => {
+  const fullscreen = get(fullScreenElementAtom);
+  await set(fullScreenElementAtom, fullscreen ? null : get(viewerElementAtom));
+});

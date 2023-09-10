@@ -4,7 +4,7 @@ export type ViewerOptions = {
 };
 
 export type ViewerController = {
-  readonly container: HTMLDivElement | undefined;
+  readonly container: HTMLDivElement | null;
   setOptions: (options: ViewerOptions) => void;
   goNext: () => void;
   goPrevious: () => void;
