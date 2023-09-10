@@ -1,6 +1,12 @@
-import { createStore, Provider, useAtom, useAtomValue } from "jotai";
+import {
+  createStore,
+  Provider,
+  useAtom,
+  useAtomValue,
+  useSetAtom,
+} from "jotai";
 import { fullScreenElementAtom } from "../atoms/fullscreen_element_atom.ts";
-import { viewerElementAtom } from "../atoms/viewer_atoms.ts";
+import { scrollElementAtom, viewerElementAtom } from "../atoms/viewer_atoms.ts";
 import { FullscreenIcon } from "../components/icons.tsx";
 import {
   Container,
@@ -15,7 +21,6 @@ import {
   useEffect,
   useImperativeHandle,
   useMemo,
-  useRef,
   useState,
 } from "../deps.ts";
 import { useDefault } from "../hooks/use_default.ts";
@@ -35,9 +40,9 @@ const InnerViewer = forwardRef((
   const { useDefault: enableDefault, options: viewerOptions, ...otherProps } =
     props;
   const [viewerElement, setViewerElement] = useAtom(viewerElementAtom);
-  const scrollRef = useRef<HTMLDivElement>();
+  const setScrollElement = useSetAtom(scrollElementAtom);
   const fullscreenElement = useAtomValue(fullScreenElementAtom);
-  const controller = useViewerController({ scrollRef });
+  const controller = useViewerController();
   const {
     options,
     pages,
@@ -99,7 +104,7 @@ const InnerViewer = forwardRef((
     >
       <ScrollableLayout
         // deno-lint-ignore no-explicit-any
-        ref={scrollRef as any}
+        ref={setScrollElement as any}
         dark={isDarkColor(backgroundColor)}
         fullscreen={fullscreenElement === viewerElement}
         onClick={navigate}
