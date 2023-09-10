@@ -1,7 +1,7 @@
 import { useAtomValue, useSetAtom } from "jotai";
 import { toggleFullscreenAtom } from "../atoms/fullscreen_element_atom.ts";
 import { viewerElementAtom } from "../atoms/viewer_atoms.ts";
-import { MutableRefObject, unmountComponentAtNode, useMemo } from "../deps.ts";
+import { unmountComponentAtNode, useMemo } from "../deps.ts";
 import { tampermonkeyApi } from "../services/tampermonkey.ts";
 import { ComicSource, ImageSource, ViewerOptions } from "../types.ts";
 import { makeDownloader } from "./make_downloader.ts";
@@ -113,11 +113,11 @@ const makeViewerController = (
   };
 };
 
-export const useViewerController = ({ scrollRef }: {
-  scrollRef: MutableRefObject<HTMLDivElement | undefined>;
-}): ReturnType<typeof makeViewerController> => {
+export const useViewerController = (): ReturnType<
+  typeof makeViewerController
+> => {
   const rerender = useRerender();
-  const navigator = usePageNavigator(scrollRef);
+  const navigator = usePageNavigator();
   const toggleFullscreen = useSetAtom(toggleFullscreenAtom);
   const viewer = useAtomValue(viewerElementAtom);
   const controller = useMemo(

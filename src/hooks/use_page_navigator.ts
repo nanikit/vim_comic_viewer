@@ -1,14 +1,10 @@
-import {
-  MutableRefObject,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "../deps.ts";
+import { useAtomValue } from "jotai";
+import { scrollElementAtom } from "../atoms/viewer_atoms.ts";
+import { useEffect, useMemo, useRef, useState } from "../deps.ts";
 import { useIntersection } from "./use_intersection.ts";
 
 const useResize = <T, E extends Element>(
-  target: E | undefined,
+  target: E | null,
   transformer: (target?: ResizeObserverEntry) => T,
 ): T => {
   const [value, setValue] = useState(() => transformer(undefined));
@@ -66,16 +62,13 @@ export type PageNavigator = {
   observer?: IntersectionObserver;
 };
 
-const makePageNavigator = (
-  ref: MutableRefObject<HTMLDivElement | undefined>,
-) => {
+const makePageNavigator = (scrollElement: HTMLDivElement | null) => {
   let currentPage: HTMLElement | undefined;
   let ratio: number | undefined;
   let ignoreIntersection = false;
 
   const resetAnchor = (entries: IntersectionObserverEntry[]) => {
-    const container = ref.current;
-    if (!container?.clientHeight || entries.length === 0) {
+    if (!scrollElement?.clientHeight || entries.length === 0) {
       return;
     }
     if (ignoreIntersection) {
@@ -83,8 +76,8 @@ const makePageNavigator = (
       return;
     }
 
-    const page = getCurrentPage(container, entries) as HTMLElement;
-    const y = container.scrollTop + container.clientHeight / 2;
+    const page = getCurrentPage(scrollElement, entries) as HTMLElement;
+    const y = scrollElement.scrollTop + scrollElement.clientHeight / 2;
     currentPage = page;
     ratio = (y - page.offsetTop) / page.clientHeight;
   };
@@ -128,14 +121,13 @@ const makePageNavigator = (
   };
 
   const restoreScroll = () => {
-    const container = ref.current;
-    if (!container || ratio === undefined || currentPage === undefined) {
+    if (!scrollElement || ratio === undefined || currentPage === undefined) {
       return;
     }
 
     const restoredY = currentPage.offsetTop +
       currentPage.clientHeight * (ratio - 0.5);
-    container.scroll({ top: restoredY });
+    scrollElement.scroll({ top: restoredY });
     ignoreIntersection = true;
   };
 
@@ -144,7 +136,7 @@ const makePageNavigator = (
 
   const useInstance = () => {
     observer = useIntersection(resetAnchor, intersectionOption);
-    useResize(ref.current, restoreScroll);
+    useResize(scrollElement, restoreScroll);
   };
 
   return {
@@ -157,10 +149,11 @@ const makePageNavigator = (
   };
 };
 
-export const usePageNavigator = (
-  ref: MutableRefObject<HTMLDivElement | undefined>,
-): PageNavigator => {
-  const navigator = useMemo(() => makePageNavigator(ref), [ref]);
+export const usePageNavigator = (): PageNavigator => {
+  const scrollElement = useAtomValue(scrollElementAtom);
+  const navigator = useMemo(() => makePageNavigator(scrollElement), [
+    scrollElement,
+  ]);
   navigator.useInstance();
   return navigator;
 };
