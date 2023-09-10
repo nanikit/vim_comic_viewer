@@ -14,6 +14,9 @@
 // @grant          GM_xmlhttpRequest
 // @resource       @stitches/react  https://cdn.jsdelivr.net/npm/@stitches/react@1.2.8/dist/index.cjs
 // @resource       fflate           https://cdn.jsdelivr.net/npm/fflate@0.8.0/lib/browser.cjs
+// @resource       jotai            https://cdn.jsdelivr.net/npm/jotai@2.2.0/index.js
+// @resource       jotai/react      https://cdn.jsdelivr.net/npm/jotai@2.2.0/react.js
+// @resource       jotai/vanilla    https://cdn.jsdelivr.net/npm/jotai@2.2.0/vanilla.js
 // @resource       react            https://cdn.jsdelivr.net/npm/react@18.2.0/cjs/react.production.min.js
 // @resource       react-dom        https://cdn.jsdelivr.net/npm/react-dom@18.2.0/cjs/react-dom.production.min.js
 // @resource       scheduler        https://cdn.jsdelivr.net/npm/scheduler@0.23.0/cjs/scheduler.production.min.js
@@ -42,6 +45,6 @@ export const initialize = (
   options: ViewerOptions,
 ): Promise<ViewerController> => {
   const ref = createRef<ViewerController>();
-  render(<Viewer ref={ref} options={options} useDefault />, getDefaultRoot());
+  render(<Viewer ref={ref} options={options} />, getDefaultRoot());
   return Promise.resolve(ref.current!);
 };

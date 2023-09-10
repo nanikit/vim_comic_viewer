@@ -1,3 +1,4 @@
+import { createStore, Provider } from "jotai";
 import { FullscreenIcon } from "../components/icons.tsx";
 import {
   Container,
@@ -12,6 +13,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from "../deps.ts";
@@ -23,7 +25,7 @@ import { ViewerController, ViewerOptions } from "../types.ts";
 import { Page } from "./page.tsx";
 import { SupplementaryActionMenu } from "./supplementary_action_menu.tsx";
 
-export const Viewer = forwardRef((
+const InnerViewer = forwardRef((
   props: HTMLProps<HTMLDivElement> & {
     useDefault?: boolean;
     options: ViewerOptions;
@@ -134,6 +136,17 @@ export const Viewer = forwardRef((
         )
         : false}
     </Container>
+  );
+});
+
+export const Viewer = forwardRef(({ options }: {
+  options: ViewerOptions;
+}, ref: Ref<ViewerController>) => {
+  const store = useMemo(createStore, []);
+  return (
+    <Provider store={store}>
+      <InnerViewer options={options} ref={ref} useDefault />
+    </Provider>
   );
 });
 
