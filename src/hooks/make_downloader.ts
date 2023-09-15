@@ -1,9 +1,5 @@
 import { useEffect } from "../deps.ts";
-import {
-  download,
-  DownloadOptions,
-  DownloadProgress,
-} from "../services/downloader.ts";
+import { download, DownloadOptions, DownloadProgress } from "../services/downloader.ts";
 import { ImageSource } from "../types.ts";
 import { save } from "../utils.ts";
 import { useRerender } from "./use_rerender.ts";
@@ -38,8 +34,7 @@ export const makeDownloader = (images: ImageSource[]) => {
   };
 
   const reportProgress = (event: DownloadProgress) => {
-    const { total, started, settled, rejected, isCancelled, isComplete } =
-      event;
+    const { total, started, settled, rejected, isCancelled, isComplete } = event;
     const value = (started / total) * 0.1 + (settled / total) * 0.89;
     const text = `${(value * 100).toFixed(1)}%`;
     const error = !!rejected;

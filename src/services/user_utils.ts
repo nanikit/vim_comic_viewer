@@ -19,21 +19,20 @@ export const imageSourceToIterable = (
   }
 };
 
-export const transformToBlobUrl =
-  (source: ComicSource): ComicSource => async () => {
-    const imageSources = await source();
+export const transformToBlobUrl = (source: ComicSource): ComicSource => async () => {
+  const imageSources = await source();
 
-    return imageSources.map(
-      (imageSource) =>
-        async function* () {
-          for await (const url of imageSourceToIterable(imageSource)) {
-            try {
-              const blob = await fetchBlob(url);
-              yield URL.createObjectURL(blob);
-            } catch (error) {
-              console.log(error);
-            }
+  return imageSources.map(
+    (imageSource) =>
+      async function* () {
+        for await (const url of imageSourceToIterable(imageSource)) {
+          try {
+            const blob = await fetchBlob(url);
+            yield URL.createObjectURL(blob);
+          } catch (error) {
+            console.log(error);
           }
-        },
-    );
-  };
+        }
+      },
+  );
+};

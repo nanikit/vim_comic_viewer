@@ -45,9 +45,7 @@ const makeViewerController = (
 
       status = "complete";
       downloader = makeDownloader(images);
-      pages = images.map((x) =>
-        makePageController({ source: x, observer: navigator.observer })
-      );
+      pages = images.map((x) => makePageController({ source: x, observer: navigator.observer }));
     } catch (error) {
       status = "error";
       console.log(error);
@@ -121,8 +119,7 @@ export const useViewerController = (): ReturnType<
   const toggleFullscreen = useSetAtom(toggleFullscreenAtom);
   const viewer = useAtomValue(viewerElementAtom);
   const controller = useMemo(
-    () =>
-      makeViewerController({ viewer, toggleFullscreen, navigator, rerender }),
+    () => makeViewerController({ viewer, toggleFullscreen, navigator, rerender }),
     [viewer, navigator],
   );
   return controller;

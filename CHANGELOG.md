@@ -44,8 +44,7 @@
 // @resource       scheduler        https://cdn.jsdelivr.net/npm/scheduler@0.23.0/cjs/scheduler.production.min.js
 ```
 
-- add `setGmXhr` which set `gm_xmlhttpRequest` for downloading CORS blocked
-  content.
+- add `setGmXhr` which set `gm_xmlhttpRequest` for downloading CORS blocked content.
 
 ### 7.0.2
 
@@ -57,8 +56,7 @@
 
 # 7.0.0
 
-- Update stitches to 1.2.6. Dependent script's resource pragma should be changed
-  like the following.
+- Update stitches to 1.2.6. Dependent script's resource pragma should be changed like the following.
 
 ```
 // @resource       fflate           https://cdn.jsdelivr.net/npm/fflate@0.7.2/lib/browser.cjs
