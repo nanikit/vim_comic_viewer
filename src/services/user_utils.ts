@@ -30,7 +30,7 @@ export const transformToBlobUrl = (source: ComicSource): ComicSource => async ()
             const blob = await fetchBlob(url);
             yield URL.createObjectURL(blob);
           } catch (error) {
-            console.log(error);
+            console.error(error);
           }
         }
       },
