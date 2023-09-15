@@ -3,9 +3,7 @@ export const timeout = (millisecond: number) =>
 
 export const waitDomContent = (document: Document) =>
   document.readyState === "loading"
-    ? new Promise((r) =>
-      document.addEventListener("readystatechange", r, { once: true })
-    )
+    ? new Promise((r) => document.addEventListener("readystatechange", r, { once: true }))
     : true;
 
 export const insertCss = (css: string) => {

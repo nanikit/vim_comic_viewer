@@ -1,17 +1,8 @@
-import {
-  createStore,
-  Provider,
-  useAtom,
-  useAtomValue,
-  useSetAtom,
-} from "jotai";
+import { createStore, Provider, useAtom, useAtomValue, useSetAtom } from "jotai";
 import { fullScreenElementAtom } from "../atoms/fullscreen_element_atom.ts";
 import { scrollElementAtom, viewerElementAtom } from "../atoms/viewer_atoms.ts";
 import { FullscreenIcon } from "../components/icons.tsx";
-import {
-  Container,
-  ScrollableLayout,
-} from "../components/scrollable_layout.ts";
+import { Container, ScrollableLayout } from "../components/scrollable_layout.ts";
 import {
   forwardRef,
   HTMLProps,
@@ -37,8 +28,7 @@ const InnerViewer = forwardRef((
   },
   refHandle: Ref<ViewerController>,
 ) => {
-  const { useDefault: enableDefault, options: viewerOptions, ...otherProps } =
-    props;
+  const { useDefault: enableDefault, options: viewerOptions, ...otherProps } = props;
   const [viewerElement, setViewerElement] = useAtom(viewerElementAtom);
   const setScrollElement = useSetAtom(scrollElementAtom);
   const fullscreenElement = useAtomValue(fullScreenElementAtom);
