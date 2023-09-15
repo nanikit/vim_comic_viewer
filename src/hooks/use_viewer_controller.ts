@@ -48,7 +48,7 @@ const makeViewerController = (
       pages = images.map((x) => makePageController({ source: x, observer: navigator.observer }));
     } catch (error) {
       status = "error";
-      console.log(error);
+      console.error(error);
       throw error;
     } finally {
       rerender();
