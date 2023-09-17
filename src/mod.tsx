@@ -12,14 +12,17 @@
 // @grant          GM_getValue
 // @grant          GM_setValue
 // @grant          GM_xmlhttpRequest
-// @resource       @stitches/react  https://cdn.jsdelivr.net/npm/@stitches/react@1.2.8/dist/index.cjs
-// @resource       fflate           https://cdn.jsdelivr.net/npm/fflate@0.8.0/lib/browser.cjs
-// @resource       jotai            https://cdn.jsdelivr.net/npm/jotai@2.2.0/index.js
-// @resource       jotai/react      https://cdn.jsdelivr.net/npm/jotai@2.2.0/react.js
-// @resource       jotai/vanilla    https://cdn.jsdelivr.net/npm/jotai@2.2.0/vanilla.js
-// @resource       react            https://cdn.jsdelivr.net/npm/react@18.2.0/cjs/react.production.min.js
-// @resource       react-dom        https://cdn.jsdelivr.net/npm/react-dom@18.2.0/cjs/react-dom.production.min.js
-// @resource       scheduler        https://cdn.jsdelivr.net/npm/scheduler@0.23.0/cjs/scheduler.production.min.js
+// @resource       @stitches/react     https://cdn.jsdelivr.net/npm/@stitches/react@1.2.8/dist/index.cjs
+// @resource       fflate              https://cdn.jsdelivr.net/npm/fflate@0.8.0/lib/browser.cjs
+// @resource       jotai               https://cdn.jsdelivr.net/npm/jotai@2.4.2/index.js
+// @resource       jotai/react         https://cdn.jsdelivr.net/npm/jotai@2.4.2/react.js
+// @resource       jotai/react/utils   https://cdn.jsdelivr.net/npm/jotai@2.4.2/react/utils.js
+// @resource       jotai/utils         https://cdn.jsdelivr.net/npm/jotai@2.4.2/utils.js
+// @resource       jotai/vanilla       https://cdn.jsdelivr.net/npm/jotai@2.4.2/vanilla.js
+// @resource       jotai/vanilla/utils https://cdn.jsdelivr.net/npm/jotai@2.4.2/vanilla/utils.js
+// @resource       react               https://cdn.jsdelivr.net/npm/react@18.2.0/cjs/react.production.min.js
+// @resource       react-dom           https://cdn.jsdelivr.net/npm/react-dom@18.2.0/cjs/react-dom.production.min.js
+// @resource       scheduler           https://cdn.jsdelivr.net/npm/scheduler@0.23.0/cjs/scheduler.production.min.js
 // ==/UserScript==
 import { Viewer } from "./containers/viewer.tsx";
 import { createRef, render } from "./deps.ts";
