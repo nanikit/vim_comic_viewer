@@ -1,4 +1,4 @@
-import { tampermonkeyApi } from "./tampermonkey.ts";
+import type {} from "tampermonkey";
 
 export const gmFetch = (
   resource: string,
@@ -49,7 +49,7 @@ export const fetchBlob = async (url: string, init?: RequestInit) => {
     }
 
     const isOriginDifferent = new URL(url).origin !== location.origin;
-    if (isOriginDifferent && tampermonkeyApi.GM_xmlhttpRequest) {
+    if (isOriginDifferent) {
       return await gmFetch(url, init).blob();
     } else {
       throw new Error("CORS blocked and cannot use GM_xmlhttpRequest", {

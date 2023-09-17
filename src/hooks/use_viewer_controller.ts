@@ -2,7 +2,6 @@ import { useAtomValue, useSetAtom } from "jotai";
 import { toggleFullscreenAtom } from "../atoms/fullscreen_element_atom.ts";
 import { viewerElementAtom } from "../atoms/viewer_atoms.ts";
 import { unmountComponentAtNode, useMemo } from "../deps.ts";
-import { tampermonkeyApi } from "../services/tampermonkey.ts";
 import { ComicSource, ImageSource, ViewerOptions } from "../types.ts";
 import { makeDownloader } from "./make_downloader.ts";
 import { makePageController } from "./make_page_controller.ts";
@@ -23,7 +22,7 @@ const makeViewerController = (
   let options = {} as ViewerOptions;
   let images = [] as ImageSource[];
   let status = "loading" as ViewerStatus;
-  let compactWidthIndex = tampermonkeyApi.GM_getValue?.(compactPageKey, 1) ?? 1;
+  let compactWidthIndex = GM_getValue?.(compactPageKey, 1) ?? 1;
   let downloader: ReturnType<typeof makeDownloader> | undefined;
   let pages = [] as ReturnType<typeof makePageController>[];
 
@@ -89,7 +88,7 @@ const makeViewerController = (
     },
     set compactWidthIndex(value) {
       compactWidthIndex = Math.max(0, value);
-      tampermonkeyApi.GM_setValue?.(compactPageKey, compactWidthIndex);
+      GM_setValue?.(compactPageKey, compactWidthIndex);
       rerender();
     },
 
