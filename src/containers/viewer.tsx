@@ -1,6 +1,10 @@
 import { createStore, Provider, useAtom, useAtomValue, useSetAtom } from "jotai";
 import { fullScreenElementAtom } from "../atoms/fullscreen_element_atom.ts";
-import { scrollElementAtom, viewerElementAtom } from "../atoms/viewer_atoms.ts";
+import {
+  backgroundColorAtom,
+  scrollElementAtom,
+  viewerElementAtom,
+} from "../atoms/viewer_atoms.ts";
 import { FullscreenIcon } from "../components/icons.tsx";
 import { Container, ScrollableLayout } from "../components/scrollable_layout.ts";
 import {
@@ -12,11 +16,9 @@ import {
   useEffect,
   useImperativeHandle,
   useMemo,
-  useState,
 } from "../deps.ts";
 import { useDefault } from "../hooks/use_default.ts";
 import { useViewerController } from "../hooks/use_viewer_controller.ts";
-import { tampermonkeyApi } from "../services/tampermonkey.ts";
 import { ViewerController, ViewerOptions } from "../types.ts";
 import { Page } from "./page.tsx";
 import { SupplementaryActionMenu } from "./supplementary_action_menu.tsx";
@@ -32,6 +34,8 @@ const InnerViewer = forwardRef((
   const [viewerElement, setViewerElement] = useAtom(viewerElementAtom);
   const setScrollElement = useSetAtom(scrollElementAtom);
   const fullscreenElement = useAtomValue(fullScreenElementAtom);
+  const [backgroundColor, setBackgroundColor] = useAtom(backgroundColorAtom);
+
   const controller = useViewerController();
   const {
     options,
@@ -73,12 +77,6 @@ const InnerViewer = forwardRef((
 
   useDefault({ enable: props.useDefault, controller });
 
-  const backgroundColorKey = "vim_comic_viewer.background_color";
-  const [backgroundColor, setBackgroundColor] = useState(() => {
-    return tampermonkeyApi.GM_getValue?.(backgroundColorKey, "#eeeeee") ??
-      "#eeeeee";
-  });
-
   useImperativeHandle(refHandle, () => controller, [controller]);
 
   useEffect(() => {
@@ -118,7 +116,6 @@ const InnerViewer = forwardRef((
             downloader={downloader}
             color={backgroundColor}
             onColorChange={(newColor) => {
-              tampermonkeyApi.GM_setValue?.(backgroundColorKey, newColor);
               setBackgroundColor(newColor);
             }}
           />

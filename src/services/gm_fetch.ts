@@ -7,7 +7,7 @@ export const gmFetch = (
   const method = init?.body ? "POST" : "GET";
   const xhr = (type: "blob" | "json" | "text") => {
     return new Promise<unknown>((resolve, reject) => {
-      const request = tampermonkeyApi.GM_xmlhttpRequest!({
+      const request = GM_xmlhttpRequest({
         method,
         url: resource,
         headers: init?.headers as Record<string, string>,
