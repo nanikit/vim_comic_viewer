@@ -12,8 +12,8 @@
 // @grant          GM_getValue
 // @grant          GM_setValue
 // @grant          GM_xmlhttpRequest
-// @resource       @stitches/react     https://cdn.jsdelivr.net/npm/@stitches/react@1.2.8/dist/index.cjs
-// @resource       fflate              https://cdn.jsdelivr.net/npm/fflate@0.8.0/lib/browser.cjs
+// @resource       @stitches/react     https://cdn.jsdelivr.net/npm/@stitches/react@1.3.1-1/dist/index.cjs
+// @resource       fflate              https://cdn.jsdelivr.net/npm/fflate@0.8.1/lib/browser.cjs
 // @resource       jotai               https://cdn.jsdelivr.net/npm/jotai@2.4.2/index.js
 // @resource       jotai/react         https://cdn.jsdelivr.net/npm/jotai@2.4.2/react.js
 // @resource       jotai/react/utils   https://cdn.jsdelivr.net/npm/jotai@2.4.2/react/utils.js

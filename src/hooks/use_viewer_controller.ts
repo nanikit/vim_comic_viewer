@@ -89,7 +89,7 @@ const makeViewerController = (
     get pages() {
       return (store.get(viewerStateAtom) as MaybePages).pages;
     },
-    set compactWidthIndex(value) {
+    set compactWidthIndex(value: number) {
       store.set(compactWidthIndexAtom, Math.max(0, value));
     },
 
