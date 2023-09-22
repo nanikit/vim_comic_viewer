@@ -22,31 +22,31 @@ const makeViewerController = (
     toggleFullscreen: () => Promise<void>;
   },
 ) => {
-  let options = {} as ViewerOptions;
-
   const loadImages = async (source?: ComicSource) => {
     try {
       if (!source) {
-        store.set(viewerStateAtom, {
+        store.set(viewerStateAtom, (state) => ({
+          ...state,
           status: "complete",
           pages: [],
           downloader: makeDownloader([]),
-        });
+        }));
         return;
       }
 
-      store.set(viewerStateAtom, { status: "loading" });
+      store.set(viewerStateAtom, (state) => ({ ...state, status: "loading" }));
       const images = await source();
 
       if (!Array.isArray(images)) {
         throw new Error(`Invalid comic source type: ${typeof images}`);
       }
 
-      store.set(viewerStateAtom, {
+      store.set(viewerStateAtom, (state) => ({
+        ...state,
         status: "complete",
         pages: images.map((x) => makePageController({ source: x, observer: navigator.observer })),
         downloader: makeDownloader(images),
-      });
+      }));
     } catch (error) {
       store.set(viewerStateAtom, (state) => ({ ...state, status: "error" }));
       console.error(error);
@@ -67,7 +67,7 @@ const makeViewerController = (
 
   return {
     get options() {
-      return options;
+      return store.get(viewerStateAtom).options;
     },
     get status() {
       return store.get(viewerStateAtom).status;
@@ -94,9 +94,7 @@ const makeViewerController = (
 
     setOptions: async (value: ViewerOptions) => {
       const { source } = value;
-      const isSourceChanged = source !== options.source;
-      options = value;
-
+      const isSourceChanged = source !== store.get(viewerStateAtom).options.source;
       if (isSourceChanged) {
         await loadImages(source);
       }
