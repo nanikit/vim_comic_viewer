@@ -63,7 +63,7 @@ const makeViewerController = (
     },
 
     setOptions: (value: ViewerOptions) => {
-      return store.set(setViewerOptionsAtom, value, navigator);
+      return store.set(setViewerOptionsAtom, value);
     },
 
     goPrevious: navigator.goPrevious,
