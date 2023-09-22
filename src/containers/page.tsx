@@ -1,17 +1,19 @@
+import { useAtomValue } from "jotai";
 import { CircledX } from "../components/icons.tsx";
 import { Image, LinkColumn, Overlay, Spinner } from "../components/spinner.tsx";
 import { MouseEventHandler, useCallback, useRef } from "../deps.ts";
-import { makePageController } from "../hooks/make_page_controller.ts";
+import { createPageAtom } from "../hooks/create_page_atom.ts";
 
 export const Page = ({
   fullWidth,
-  controller,
+  atom,
   ...props
 }: {
-  controller: ReturnType<typeof makePageController>;
+  atom: ReturnType<typeof createPageAtom>;
   fullWidth?: boolean;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const controller = useAtomValue(atom);
   const imageProps = controller.useInstance({ ref });
   const { state, src, urls } = controller.state;
 

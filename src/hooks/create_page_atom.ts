@@ -1,3 +1,4 @@
+import { atom } from "jotai";
 import { RefObject, useEffect, useState } from "../deps.ts";
 import { imageSourceToIterable } from "../services/user_utils.ts";
 import { ImageSource } from "../types.ts";
@@ -14,7 +15,7 @@ type PageProps = {
   observer?: IntersectionObserver;
 };
 
-export const makePageController = ({ source, observer }: PageProps) => {
+export const createPageAtom = ({ source, observer }: PageProps) => {
   let imageLoad: Deferred<boolean | null>;
   let state: PageState;
   let setState: (state: PageState) => void | undefined;
@@ -66,7 +67,7 @@ export const makePageController = ({ source, observer }: PageProps) => {
     };
   };
 
-  return {
+  return atom({
     get state() {
       return state;
     },
@@ -77,5 +78,5 @@ export const makePageController = ({ source, observer }: PageProps) => {
       await load();
     },
     useInstance,
-  };
+  });
 };

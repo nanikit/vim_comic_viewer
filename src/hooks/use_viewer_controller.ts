@@ -7,12 +7,12 @@ import {
 } from "../atoms/viewer_atoms.ts";
 import { unmountComponentAtNode, useMemo } from "../deps.ts";
 import { ComicSource, ViewerOptions } from "../types.ts";
+import { createPageAtom } from "./create_page_atom.ts";
 import { makeDownloader } from "./make_downloader.ts";
-import { makePageController } from "./make_page_controller.ts";
 import { PageNavigator, usePageNavigator } from "./use_page_navigator.ts";
 
 type MaybeDownloader = { downloader?: ReturnType<typeof makeDownloader> };
-type MaybePages = { pages?: ReturnType<typeof makePageController>[] };
+type MaybePages = { pages?: ReturnType<typeof createPageAtom>[] };
 
 const makeViewerController = (
   { viewer, navigator, store, toggleFullscreen }: {
@@ -44,7 +44,7 @@ const makeViewerController = (
       store.set(viewerStateAtom, (state) => ({
         ...state,
         status: "complete",
-        pages: images.map((x) => makePageController({ source: x, observer: navigator.observer })),
+        pages: images.map((x) => createPageAtom({ source: x, observer: navigator.observer })),
         downloader: makeDownloader(images),
       }));
     } catch (error) {
@@ -58,7 +58,8 @@ const makeViewerController = (
     window.stop();
 
     const viewer = store.get(viewerStateAtom) as MaybePages;
-    for (const page of viewer?.pages ?? []) {
+    for (const atom of viewer?.pages ?? []) {
+      const page = store.get(atom);
       if (page.state.state !== "complete") {
         page.reload();
       }
