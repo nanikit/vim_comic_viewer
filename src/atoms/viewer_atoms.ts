@@ -184,14 +184,14 @@ export const scrollElementAtom = atom(
 scrollElementAtom.onMount = (set) => () => set(null);
 
 export type MaybePages = { pages?: ReturnType<typeof createPageAtom>[] };
-export const reloadErroredAtom = atom(null, (get, _set) => {
+export const reloadErroredAtom = atom(null, (get, set) => {
   window.stop();
 
   const viewer = get(viewerStateAtom) as MaybePages;
   for (const atom of viewer?.pages ?? []) {
     const page = get(atom);
     if (page.state.state !== "complete") {
-      page.reload();
+      set(page.reloadAtom);
     }
   }
 });
