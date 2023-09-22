@@ -1,7 +1,8 @@
-import { useAtomValue } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
+import { useEffect } from "react";
 import { CircledX } from "../components/icons.tsx";
 import { Image, LinkColumn, Overlay, Spinner } from "../components/spinner.tsx";
-import { MouseEventHandler, useCallback, useRef } from "../deps.ts";
+import { MouseEventHandler } from "../deps.ts";
 import { createPageAtom } from "../hooks/create_page_atom.ts";
 
 export const Page = ({
@@ -12,18 +13,24 @@ export const Page = ({
   atom: ReturnType<typeof createPageAtom>;
   fullWidth?: boolean;
 }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const controller = useAtomValue(atom);
-  const imageProps = controller.useInstance({ ref });
-  const { state, src, urls } = controller.state;
+  const { elementAtom, imageProps, loadAtom, reloadAtom, state: pageState } = useAtomValue(atom);
+  const setElement = useSetAtom(elementAtom);
+  const load = useSetAtom(loadAtom);
+  const reload = useSetAtom(reloadAtom);
 
-  const reloadErrored: MouseEventHandler = useCallback(async (event) => {
+  const { state, src, urls } = pageState;
+
+  const reloadErrored: MouseEventHandler = async (event) => {
     event.stopPropagation();
-    await controller.reload();
+    await reload();
+  };
+
+  useEffect(() => {
+    load();
   }, []);
 
   return (
-    <Overlay ref={ref} placeholder={state !== "complete"} fullWidth={fullWidth}>
+    <Overlay ref={setElement} placeholder={state !== "complete"} fullWidth={fullWidth}>
       {state === "loading" && <Spinner />}
       {state === "error" && (
         <LinkColumn onClick={reloadErrored}>
