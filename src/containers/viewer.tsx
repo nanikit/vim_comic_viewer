@@ -38,11 +38,11 @@ export const InnerViewer = forwardRef((
   const [backgroundColor, setBackgroundColor] = useAtom(backgroundColorAtom);
   const compactWidthIndex = useAtomValue(compactWidthIndexAtom);
   const viewer = useAtomValue(viewerStateAtom);
+  const { status } = viewer;
 
   const controller = useViewerController();
   const {
     options,
-    downloader,
     toggleFullscreen,
   } = controller;
 
@@ -97,7 +97,7 @@ export const InnerViewer = forwardRef((
         fullscreen={fullscreenElement === viewerElement}
         onClick={navigate}
         onMouseDown={blockSelection}
-        children={viewer.status === "complete"
+        children={status === "complete"
           ? viewer.pages.map((controller, index) => (
             <Page
               key={index}
@@ -106,14 +106,14 @@ export const InnerViewer = forwardRef((
               {...options?.imageProps}
             />
           ))
-          : <p>{viewer.status === "error" ? "에러가 발생했습니다" : "로딩 중..."}</p>}
+          : <p>{status === "error" ? "에러가 발생했습니다" : "로딩 중..."}</p>}
         {...otherProps}
       />
       <FullscreenIcon onClick={toggleFullscreen} />
-      {downloader
+      {status === "complete"
         ? (
           <SupplementaryActionMenu
-            downloader={downloader}
+            downloader={viewer.downloader}
             color={backgroundColor}
             onColorChange={(newColor) => {
               setBackgroundColor(newColor);
