@@ -1,7 +1,9 @@
-import { useAtomValue, useSetAtom, useStore } from "jotai";
+import { useStore } from "jotai";
 import { toggleFullscreenAtom } from "../atoms/fullscreen_element_atom.ts";
 import {
   compactWidthIndexAtom,
+  goNextAtom,
+  goPreviousAtom,
   setViewerOptionsAtom,
   viewerElementAtom,
   viewerStateAtom,
@@ -10,19 +12,16 @@ import { unmountComponentAtNode, useMemo } from "../deps.ts";
 import { ViewerOptions } from "../types.ts";
 import { createPageAtom } from "./create_page_atom.ts";
 import { makeDownloader } from "./make_downloader.ts";
-import { PageNavigator, usePageNavigator } from "./use_page_navigator.ts";
+
+export function useViewerController(): ReturnType<typeof createViewerController> {
+  const store = useStore();
+  return useMemo(() => createViewerController(store), [store]);
+}
 
 type MaybeDownloader = { downloader?: ReturnType<typeof makeDownloader> };
 type MaybePages = { pages?: ReturnType<typeof createPageAtom>[] };
 
-const makeViewerController = (
-  { viewer, navigator, store, toggleFullscreen }: {
-    viewer: HTMLDivElement | null;
-    navigator: PageNavigator;
-    store: ReturnType<typeof useStore>;
-    toggleFullscreen: () => Promise<void>;
-  },
-) => {
+function createViewerController(store: ReturnType<typeof useStore>) {
   const reloadErrored = () => {
     window.stop();
 
@@ -43,7 +42,7 @@ const makeViewerController = (
       return store.get(viewerStateAtom).status;
     },
     get container() {
-      return viewer;
+      return store.get(viewerElementAtom);
     },
     get compactWidthIndex() {
       return store.get(compactWidthIndexAtom);
@@ -62,28 +61,11 @@ const makeViewerController = (
       store.set(compactWidthIndexAtom, Math.max(0, value));
     },
 
-    setOptions: (value: ViewerOptions) => {
-      return store.set(setViewerOptionsAtom, value);
-    },
-
-    goPrevious: navigator.goPrevious,
-    goNext: navigator.goNext,
-    toggleFullscreen,
+    setOptions: (value: ViewerOptions) => store.set(setViewerOptionsAtom, value),
+    goPrevious: () => store.set(goPreviousAtom),
+    goNext: () => store.set(goNextAtom),
+    toggleFullscreen: () => store.set(toggleFullscreenAtom),
     reloadErrored,
-    unmount: () => unmountComponentAtNode(viewer!),
+    unmount: () => unmountComponentAtNode(store.get(viewerElementAtom)!),
   };
-};
-
-export const useViewerController = (): ReturnType<
-  typeof makeViewerController
-> => {
-  const store = useStore();
-  const navigator = usePageNavigator();
-  const toggleFullscreen = useSetAtom(toggleFullscreenAtom);
-  const viewer = useAtomValue(viewerElementAtom);
-  const controller = useMemo(
-    () => makeViewerController({ viewer, toggleFullscreen, navigator, store }),
-    [viewer, navigator],
-  );
-  return controller;
-};
+}
