@@ -98,10 +98,10 @@ export const InnerViewer = forwardRef((
         onClick={navigate}
         onMouseDown={blockSelection}
         children={status === "complete"
-          ? viewer.pages.map((controller, index) => (
+          ? viewer.pages.map((atom, index) => (
             <Page
-              key={index}
-              controller={controller}
+              key={`${atom}`}
+              atom={atom}
               fullWidth={index < compactWidthIndex}
               {...options?.imageProps}
             />

@@ -1,6 +1,6 @@
 import { atom } from "jotai";
+import { createPageAtom } from "../hooks/create_page_atom.ts";
 import { makeDownloader } from "../hooks/make_downloader.ts";
-import { makePageController } from "../hooks/make_page_controller.ts";
 import { ViewerOptions } from "../types.ts";
 import { gmValueAtom } from "./helper/gm_value_atom.ts";
 
@@ -16,7 +16,7 @@ type ViewerState =
     status: "loading" | "error";
   } | {
     status: "complete";
-    pages: ReturnType<typeof makePageController>[];
+    pages: ReturnType<typeof createPageAtom>[];
     downloader: ReturnType<typeof makeDownloader>;
   });
 export const viewerStateAtom = atom<ViewerState>({ options: {}, status: "loading" });
