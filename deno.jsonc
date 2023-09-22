@@ -21,13 +21,13 @@
     "./src"
   ],
   "imports": {
-    "@stitches/react": "npm:@stitches/react",
-    "fflate": "npm:fflate",
-    "jotai": "npm:jotai",
-    "jotai/utils": "npm:jotai/utils",
+    "@stitches/react": "npm:@stitches/react@1.3.1-1",
+    "fflate": "npm:fflate@0.8.1",
+    "jotai": "npm:jotai@2.4.2",
+    "jotai/utils": "npm:jotai@2.4.2/utils",
     "react-dom": "npm:@types/react-dom",
     "react": "npm:@types/react",
-    "react/jsx-runtime": "npm:react/jsx-runtime",
+    "react/jsx-runtime": "npm:@types/react/jsx-runtime",
     "tampermonkey": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/60ab8a805a1c5c4225027068e604ef4687cdf379/types/tampermonkey/index.d.ts"
   }
 }
