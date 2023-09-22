@@ -183,18 +183,31 @@ export const scrollElementAtom = atom(
 );
 scrollElementAtom.onMount = (set) => () => set(null);
 
+export type MaybePages = { pages?: ReturnType<typeof createPageAtom>[] };
+export const reloadErroredAtom = atom(null, (get, _set) => {
+  window.stop();
+
+  const viewer = get(viewerStateAtom) as MaybePages;
+  for (const atom of viewer?.pages ?? []) {
+    const page = get(atom);
+    if (page.state.state !== "complete") {
+      page.reload();
+    }
+  }
+});
+
 function getCurrentPage(container: HTMLElement, entries: IntersectionObserverEntry[]) {
   if (!entries.length) {
     return container.firstElementChild || undefined;
   }
 
   const children = [...((container.children as unknown) as Iterable<Element>)];
-  const fullyVisibles = entries.filter((x) => x.intersectionRatio === 1);
-  if (fullyVisibles.length) {
-    fullyVisibles.sort((a, b) => {
+  const fullyVisiblePages = entries.filter((x) => x.intersectionRatio === 1);
+  if (fullyVisiblePages.length) {
+    fullyVisiblePages.sort((a, b) => {
       return children.indexOf(a.target) - children.indexOf(b.target);
     });
-    return fullyVisibles[Math.floor(fullyVisibles.length / 2)].target;
+    return fullyVisiblePages[Math.floor(fullyVisiblePages.length / 2)].target;
   }
 
   return entries.sort((a, b) => {

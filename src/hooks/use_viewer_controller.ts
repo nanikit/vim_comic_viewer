@@ -4,13 +4,14 @@ import {
   compactWidthIndexAtom,
   goNextAtom,
   goPreviousAtom,
+  MaybePages,
+  reloadErroredAtom,
   setViewerOptionsAtom,
   viewerElementAtom,
   viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
 import { unmountComponentAtNode, useMemo } from "../deps.ts";
 import { ViewerOptions } from "../types.ts";
-import { createPageAtom } from "./create_page_atom.ts";
 import { makeDownloader } from "./make_downloader.ts";
 
 export function useViewerController(): ReturnType<typeof createViewerController> {
@@ -19,21 +20,8 @@ export function useViewerController(): ReturnType<typeof createViewerController>
 }
 
 type MaybeDownloader = { downloader?: ReturnType<typeof makeDownloader> };
-type MaybePages = { pages?: ReturnType<typeof createPageAtom>[] };
 
 function createViewerController(store: ReturnType<typeof useStore>) {
-  const reloadErrored = () => {
-    window.stop();
-
-    const viewer = store.get(viewerStateAtom) as MaybePages;
-    for (const atom of viewer?.pages ?? []) {
-      const page = store.get(atom);
-      if (page.state.state !== "complete") {
-        page.reload();
-      }
-    }
-  };
-
   return {
     get options() {
       return store.get(viewerStateAtom).options;
@@ -65,7 +53,7 @@ function createViewerController(store: ReturnType<typeof useStore>) {
     goPrevious: () => store.set(goPreviousAtom),
     goNext: () => store.set(goNextAtom),
     toggleFullscreen: () => store.set(toggleFullscreenAtom),
-    reloadErrored,
+    reloadErrored: () => store.set(reloadErroredAtom),
     unmount: () => unmountComponentAtNode(store.get(viewerElementAtom)!),
   };
 }
