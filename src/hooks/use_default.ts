@@ -27,7 +27,7 @@ export const useDefault = ({
         controller.goPrevious();
         break;
       case ";":
-        await controller.downloader?.downloadWithProgress();
+        await controller.downloader?.downloadAndSave();
         break;
       case "/":
         controller.compactWidthIndex++;

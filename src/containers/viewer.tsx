@@ -4,6 +4,7 @@ import {
   backgroundColorAtom,
   compactWidthIndexAtom,
   scrollElementAtom,
+  setViewerOptionsAtom,
   viewerElementAtom,
   viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
@@ -38,13 +39,11 @@ export const InnerViewer = forwardRef((
   const [backgroundColor, setBackgroundColor] = useAtom(backgroundColorAtom);
   const compactWidthIndex = useAtomValue(compactWidthIndexAtom);
   const viewer = useAtomValue(viewerStateAtom);
+  const setViewerOptions = useSetAtom(setViewerOptionsAtom);
   const { status } = viewer;
 
   const controller = useViewerController();
-  const {
-    options,
-    toggleFullscreen,
-  } = controller;
+  const { options, toggleFullscreen } = controller;
 
   const navigate: MouseEventHandler<Element> = useCallback((event) => {
     const height = viewerElement?.clientHeight;
@@ -80,8 +79,8 @@ export const InnerViewer = forwardRef((
   useImperativeHandle(refHandle, () => controller, [controller]);
 
   useEffect(() => {
-    controller.setOptions(viewerOptions);
-  }, [controller, viewerOptions]);
+    setViewerOptions(viewerOptions);
+  }, [viewerOptions]);
 
   return (
     <Container
@@ -113,7 +112,6 @@ export const InnerViewer = forwardRef((
       {status === "complete"
         ? (
           <SupplementaryActionMenu
-            downloader={viewer.downloader}
             color={backgroundColor}
             onColorChange={(newColor) => {
               setBackgroundColor(newColor);

@@ -1,3 +1,6 @@
+import { ExtractAtomValue } from "jotai";
+import { downloadProgressAtom } from "./atoms/downloader_atoms.ts";
+
 export type ViewerOptions = {
   source?: ComicSource;
   imageProps?: Record<string, string>;
@@ -9,7 +12,12 @@ export type ViewerController = {
   goNext: () => void;
   goPrevious: () => void;
   toggleFullscreen: () => void;
-  download: () => Promise<Uint8Array>;
+  downloader: {
+    readonly progress: ExtractAtomValue<typeof downloadProgressAtom>;
+    download: () => Promise<Uint8Array | undefined>;
+    downloadAndSave: () => Promise<void>;
+    cancel: () => void;
+  };
   set compactWidthIndex(value: number);
   get compactWidthIndex(): number;
   unmount: () => void;
