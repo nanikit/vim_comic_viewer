@@ -1,4 +1,11 @@
 import { useStore } from "jotai";
+import {
+  cancelDownloadAtom,
+  downloadAndSaveAtom,
+  downloadProgressAtom,
+  startDownloadAtom,
+  UserDownloadOptions,
+} from "../atoms/downloader_atoms.ts";
 import { toggleFullscreenAtom } from "../atoms/fullscreen_element_atom.ts";
 import {
   compactWidthIndexAtom,
@@ -12,16 +19,22 @@ import {
 } from "../atoms/viewer_atoms.ts";
 import { unmountComponentAtNode, useMemo } from "../deps.ts";
 import { ViewerOptions } from "../types.ts";
-import { makeDownloader } from "./make_downloader.ts";
 
-export function useViewerController(): ReturnType<typeof createViewerController> {
+export function useViewerController() {
   const store = useStore();
   return useMemo(() => createViewerController(store), [store]);
 }
 
-type MaybeDownloader = { downloader?: ReturnType<typeof makeDownloader> };
-
 function createViewerController(store: ReturnType<typeof useStore>) {
+  const downloader = {
+    get progress() {
+      return store.get(downloadProgressAtom);
+    },
+    download: (options?: UserDownloadOptions) => store.set(startDownloadAtom, options),
+    downloadAndSave: (options?: UserDownloadOptions) => store.set(downloadAndSaveAtom, options),
+    cancel: () => store.set(cancelDownloadAtom),
+  };
+
   return {
     get options() {
       return store.get(viewerStateAtom).options;
@@ -35,13 +48,7 @@ function createViewerController(store: ReturnType<typeof useStore>) {
     get compactWidthIndex() {
       return store.get(compactWidthIndexAtom);
     },
-    get downloader() {
-      return (store.get(viewerStateAtom) as MaybeDownloader).downloader;
-    },
-    get download() {
-      const { downloader } = store.get(viewerStateAtom) as MaybeDownloader;
-      return downloader?.download ?? (() => Promise.resolve(new Uint8Array()));
-    },
+    downloader,
     get pages() {
       return (store.get(viewerStateAtom) as MaybePages).pages;
     },

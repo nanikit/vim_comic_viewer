@@ -1,7 +1,8 @@
+import { useAtomValue, useSetAtom } from "jotai";
+import { downloadAndSaveAtom, downloadProgressAtom } from "../atoms/downloader_atoms.ts";
 import { CircularProgress } from "../components/circular_progress.tsx";
 import { DownloadIcon, MenuIcon } from "../components/icons.tsx";
 import { styled, useState } from "../deps.ts";
-import { makeDownloader } from "../hooks/make_downloader.ts";
 
 const LeftBottomFloat = styled("div", {
   position: "absolute",
@@ -21,15 +22,14 @@ const ColorInput = styled("input", {
 });
 
 export const SupplementaryActionMenu = (
-  { downloader, color, onColorChange }: {
-    downloader: ReturnType<typeof makeDownloader>;
+  { color, onColorChange }: {
     color: string;
     onColorChange: (color: string) => void;
   },
 ) => {
-  const { value, text, error } = downloader.progress ?? {};
-  downloader.useInstance();
-
+  const { value, text, error } = useAtomValue(downloadProgressAtom);
+  const cancelDownload = useSetAtom(downloadProgressAtom);
+  const downloadAndSave = useSetAtom(downloadAndSaveAtom);
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -42,7 +42,7 @@ export const SupplementaryActionMenu = (
             value={value ?? 0}
             text={text}
             error={error}
-            onClick={downloader.cancelDownload}
+            onClick={cancelDownload}
           />
         )}
       <MenuActions>
@@ -53,7 +53,7 @@ export const SupplementaryActionMenu = (
         />
         {!!isOpen && (
           <>
-            <DownloadIcon onClick={downloader.downloadWithProgress} />
+            <DownloadIcon onClick={() => downloadAndSave()} />
             <ColorInput
               type="color"
               value={color}

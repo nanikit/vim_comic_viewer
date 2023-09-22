@@ -1,9 +1,26 @@
 import type {} from "tampermonkey";
 
-export const gmFetch = (
-  resource: string,
-  init?: RequestInit,
-): Pick<Body, "blob" | "json" | "text"> => {
+export async function fetchBlob(url: string, init?: RequestInit) {
+  try {
+    const response = await fetch(url, init);
+    return await response.blob();
+  } catch (error) {
+    if (init?.signal?.aborted) {
+      throw error;
+    }
+
+    const isOriginDifferent = new URL(url).origin !== location.origin;
+    if (isOriginDifferent) {
+      return await gmFetch(url, init).blob();
+    } else {
+      throw new Error("CORS blocked and cannot use GM_xmlhttpRequest", {
+        cause: error,
+      });
+    }
+  }
+}
+
+function gmFetch(resource: string, init?: RequestInit) {
   const method = init?.body ? "POST" : "GET";
   const xhr = (type: "blob" | "json" | "text") => {
     return new Promise<unknown>((resolve, reject) => {
@@ -34,27 +51,7 @@ export const gmFetch = (
   };
   return {
     blob: () => xhr("blob") as Promise<Blob>,
-    json: () => xhr("json"),
+    json: <T>() => xhr("json") as Promise<T>,
     text: () => xhr("text") as Promise<string>,
   };
-};
-
-export const fetchBlob = async (url: string, init?: RequestInit) => {
-  try {
-    const response = await fetch(url, init);
-    return await response.blob();
-  } catch (error) {
-    if (init?.signal?.aborted) {
-      throw error;
-    }
-
-    const isOriginDifferent = new URL(url).origin !== location.origin;
-    if (isOriginDifferent) {
-      return await gmFetch(url, init).blob();
-    } else {
-      throw new Error("CORS blocked and cannot use GM_xmlhttpRequest", {
-        cause: error,
-      });
-    }
-  }
-};
+}

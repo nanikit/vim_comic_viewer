@@ -111,9 +111,7 @@ export const download = (
     startedCount++;
     reportProgress();
 
-    for await (
-      const event of downloadImage({ source, signal })
-    ) {
+    for await (const event of downloadImage({ source, signal })) {
       if ("error" in event) {
         errors.push(event.error);
         onError?.(event.error);

@@ -1,8 +1,7 @@
 import { atom } from "jotai";
 import { selectAtom } from "jotai/utils";
 import { createPageAtom } from "../hooks/create_page_atom.ts";
-import { makeDownloader } from "../hooks/make_downloader.ts";
-import { ViewerOptions } from "../types.ts";
+import { ImageSource, ViewerOptions } from "../types.ts";
 import { gmValueAtom } from "./helper/gm_value_atom.ts";
 
 export const viewerElementAtom = atom<HTMLDivElement | null>(null);
@@ -23,8 +22,8 @@ type ViewerState =
     status: "loading" | "error";
   } | {
     status: "complete";
+    images: ImageSource[];
     pages: ReturnType<typeof createPageAtom>[];
-    downloader: ReturnType<typeof makeDownloader>;
   });
 export const viewerStateAtom = atom<ViewerState>({ options: {}, status: "loading" });
 export const setViewerOptionsAtom = atom(
@@ -40,8 +39,8 @@ export const setViewerOptionsAtom = atom(
         set(viewerStateAtom, (state) => ({
           ...state,
           status: "complete",
+          images: [],
           pages: [],
-          downloader: makeDownloader([]),
         }));
         return;
       }
@@ -56,8 +55,8 @@ export const setViewerOptionsAtom = atom(
       set(viewerStateAtom, (state) => ({
         ...state,
         status: "complete",
+        images,
         pages: images.map((source) => createPageAtom({ source })),
-        downloader: makeDownloader(images),
       }));
     } catch (error) {
       set(viewerStateAtom, (state) => ({ ...state, status: "error" }));
