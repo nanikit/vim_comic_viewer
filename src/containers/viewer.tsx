@@ -1,4 +1,4 @@
-import { createStore, Provider, useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { fullScreenElementAtom } from "../atoms/fullscreen_element_atom.ts";
 import {
   backgroundColorAtom,
@@ -15,7 +15,6 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
-  useMemo,
 } from "../deps.ts";
 import { useDefault } from "../hooks/use_default.ts";
 import { useViewerController } from "../hooks/use_viewer_controller.ts";
@@ -23,7 +22,7 @@ import { ViewerController, ViewerOptions } from "../types.ts";
 import { Page } from "./page.tsx";
 import { SupplementaryActionMenu } from "./supplementary_action_menu.tsx";
 
-const InnerViewer = forwardRef((
+export const InnerViewer = forwardRef((
   props: HTMLProps<HTMLDivElement> & {
     useDefault?: boolean;
     options: ViewerOptions;
@@ -122,17 +121,6 @@ const InnerViewer = forwardRef((
         )
         : false}
     </Container>
-  );
-});
-
-export const Viewer = forwardRef(({ options }: {
-  options: ViewerOptions;
-}, ref: Ref<ViewerController>) => {
-  const store = useMemo(createStore, []);
-  return (
-    <Provider store={store}>
-      <InnerViewer options={options} ref={ref} useDefault />
-    </Provider>
   );
 });
 
