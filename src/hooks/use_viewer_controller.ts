@@ -1,65 +1,63 @@
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtomValue, useSetAtom, useStore } from "jotai";
 import { toggleFullscreenAtom } from "../atoms/fullscreen_element_atom.ts";
-import { viewerElementAtom } from "../atoms/viewer_atoms.ts";
+import {
+  compactWidthIndexAtom,
+  viewerElementAtom,
+  viewerStateAtom,
+} from "../atoms/viewer_atoms.ts";
 import { unmountComponentAtNode, useMemo } from "../deps.ts";
-import { ComicSource, ImageSource, ViewerOptions } from "../types.ts";
+import { ComicSource, ViewerOptions } from "../types.ts";
 import { makeDownloader } from "./make_downloader.ts";
 import { makePageController } from "./make_page_controller.ts";
 import { PageNavigator, usePageNavigator } from "./use_page_navigator.ts";
-import { useRerender } from "./use_rerender.ts";
-
-type ViewerStatus = "loading" | "complete" | "error";
 
 const makeViewerController = (
-  { viewer, navigator, rerender, toggleFullscreen }: {
+  { viewer, navigator, store, toggleFullscreen }: {
     viewer: HTMLDivElement | null;
     navigator: PageNavigator;
-    rerender: () => void;
+    store: ReturnType<typeof useStore>;
     toggleFullscreen: () => Promise<void>;
   },
 ) => {
-  const compactPageKey = "vim_comic_viewer.single_page_count";
   let options = {} as ViewerOptions;
-  let images = [] as ImageSource[];
-  let status = "loading" as ViewerStatus;
-  let compactWidthIndex = GM_getValue?.(compactPageKey, 1) ?? 1;
   let downloader: ReturnType<typeof makeDownloader> | undefined;
-  let pages = [] as ReturnType<typeof makePageController>[];
 
   const loadImages = async (source?: ComicSource) => {
     try {
-      [images, downloader] = [[], undefined];
+      downloader = undefined;
       if (!source) {
-        status = "complete";
+        store.set(viewerStateAtom, { status: "complete", pages: [] });
         return;
       }
 
-      [status, pages] = ["loading", []];
-      rerender();
-      images = await source();
+      store.set(viewerStateAtom, { status: "loading" });
+      const images = await source();
 
       if (!Array.isArray(images)) {
         throw new Error(`Invalid comic source type: ${typeof images}`);
       }
 
-      status = "complete";
       downloader = makeDownloader(images);
-      pages = images.map((x) => makePageController({ source: x, observer: navigator.observer }));
+      const pages = images.map((x) =>
+        makePageController({ source: x, observer: navigator.observer })
+      );
+      store.set(viewerStateAtom, { status: "complete", pages });
     } catch (error) {
-      status = "error";
+      store.set(viewerStateAtom, (state) => ({ ...state, status: "error" }));
       console.error(error);
       throw error;
-    } finally {
-      rerender();
     }
   };
 
   const reloadErrored = () => {
     window.stop();
 
-    for (const controller of pages) {
-      if (controller.state.state !== "complete") {
-        controller.reload();
+    const viewer = store.get(viewerStateAtom) as {
+      pages?: ReturnType<typeof makePageController>[];
+    };
+    for (const page of viewer?.pages ?? []) {
+      if (page.state.state !== "complete") {
+        page.reload();
       }
     }
   };
@@ -69,13 +67,13 @@ const makeViewerController = (
       return options;
     },
     get status() {
-      return status;
+      return store.get(viewerStateAtom).status;
     },
     get container() {
       return viewer;
     },
     get compactWidthIndex() {
-      return compactWidthIndex;
+      return store.get(compactWidthIndexAtom);
     },
     get downloader() {
       return downloader;
@@ -84,12 +82,12 @@ const makeViewerController = (
       return downloader?.download ?? (() => Promise.resolve(new Uint8Array()));
     },
     get pages() {
-      return pages;
+      return (store.get(viewerStateAtom) as {
+        pages?: ReturnType<typeof makePageController>[];
+      }).pages;
     },
     set compactWidthIndex(value) {
-      compactWidthIndex = Math.max(0, value);
-      GM_setValue?.(compactPageKey, compactWidthIndex);
-      rerender();
+      store.set(compactWidthIndexAtom, Math.max(0, value));
     },
 
     setOptions: async (value: ViewerOptions) => {
@@ -113,12 +111,12 @@ const makeViewerController = (
 export const useViewerController = (): ReturnType<
   typeof makeViewerController
 > => {
-  const rerender = useRerender();
+  const store = useStore();
   const navigator = usePageNavigator();
   const toggleFullscreen = useSetAtom(toggleFullscreenAtom);
   const viewer = useAtomValue(viewerElementAtom);
   const controller = useMemo(
-    () => makeViewerController({ viewer, toggleFullscreen, navigator, rerender }),
+    () => makeViewerController({ viewer, toggleFullscreen, navigator, store }),
     [viewer, navigator],
   );
   return controller;
