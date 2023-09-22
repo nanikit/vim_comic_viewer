@@ -46,10 +46,8 @@ export const createPageAtom = ({ source, observer }: PageProps) => {
     [state, setState] = useState<PageState>({ src: "", state: "loading" });
 
     useEffect(() => {
-      if (observer) {
-        load();
-      }
-    }, [!!observer]);
+      load();
+    }, []);
 
     useEffect(() => {
       const target = ref?.current;
