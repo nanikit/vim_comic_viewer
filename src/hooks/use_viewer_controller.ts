@@ -11,6 +11,9 @@ import { makeDownloader } from "./make_downloader.ts";
 import { makePageController } from "./make_page_controller.ts";
 import { PageNavigator, usePageNavigator } from "./use_page_navigator.ts";
 
+type MaybeDownloader = { downloader?: ReturnType<typeof makeDownloader> };
+type MaybePages = { pages?: ReturnType<typeof makePageController>[] };
+
 const makeViewerController = (
   { viewer, navigator, store, toggleFullscreen }: {
     viewer: HTMLDivElement | null;
@@ -20,13 +23,15 @@ const makeViewerController = (
   },
 ) => {
   let options = {} as ViewerOptions;
-  let downloader: ReturnType<typeof makeDownloader> | undefined;
 
   const loadImages = async (source?: ComicSource) => {
     try {
-      downloader = undefined;
       if (!source) {
-        store.set(viewerStateAtom, { status: "complete", pages: [] });
+        store.set(viewerStateAtom, {
+          status: "complete",
+          pages: [],
+          downloader: makeDownloader([]),
+        });
         return;
       }
 
@@ -37,11 +42,11 @@ const makeViewerController = (
         throw new Error(`Invalid comic source type: ${typeof images}`);
       }
 
-      downloader = makeDownloader(images);
-      const pages = images.map((x) =>
-        makePageController({ source: x, observer: navigator.observer })
-      );
-      store.set(viewerStateAtom, { status: "complete", pages });
+      store.set(viewerStateAtom, {
+        status: "complete",
+        pages: images.map((x) => makePageController({ source: x, observer: navigator.observer })),
+        downloader: makeDownloader(images),
+      });
     } catch (error) {
       store.set(viewerStateAtom, (state) => ({ ...state, status: "error" }));
       console.error(error);
@@ -52,9 +57,7 @@ const makeViewerController = (
   const reloadErrored = () => {
     window.stop();
 
-    const viewer = store.get(viewerStateAtom) as {
-      pages?: ReturnType<typeof makePageController>[];
-    };
+    const viewer = store.get(viewerStateAtom) as MaybePages;
     for (const page of viewer?.pages ?? []) {
       if (page.state.state !== "complete") {
         page.reload();
@@ -76,15 +79,14 @@ const makeViewerController = (
       return store.get(compactWidthIndexAtom);
     },
     get downloader() {
-      return downloader;
+      return (store.get(viewerStateAtom) as MaybeDownloader).downloader;
     },
     get download() {
+      const { downloader } = store.get(viewerStateAtom) as MaybeDownloader;
       return downloader?.download ?? (() => Promise.resolve(new Uint8Array()));
     },
     get pages() {
-      return (store.get(viewerStateAtom) as {
-        pages?: ReturnType<typeof makePageController>[];
-      }).pages;
+      return (store.get(viewerStateAtom) as MaybePages).pages;
     },
     set compactWidthIndex(value) {
       store.set(compactWidthIndexAtom, Math.max(0, value));
