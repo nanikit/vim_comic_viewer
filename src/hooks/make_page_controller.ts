@@ -45,8 +45,10 @@ export const makePageController = ({ source, observer }: PageProps) => {
     [state, setState] = useState<PageState>({ src: "", state: "loading" });
 
     useEffect(() => {
-      load();
-    }, []);
+      if (observer) {
+        load();
+      }
+    }, [!!observer]);
 
     useEffect(() => {
       const target = ref?.current;

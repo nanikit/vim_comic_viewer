@@ -2,8 +2,10 @@ import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { fullScreenElementAtom } from "../atoms/fullscreen_element_atom.ts";
 import {
   backgroundColorAtom,
+  compactWidthIndexAtom,
   scrollElementAtom,
   viewerElementAtom,
+  viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
 import { FullscreenIcon } from "../components/icons.tsx";
 import { Container, ScrollableLayout } from "../components/scrollable_layout.ts";
@@ -34,15 +36,14 @@ export const InnerViewer = forwardRef((
   const setScrollElement = useSetAtom(scrollElementAtom);
   const fullscreenElement = useAtomValue(fullScreenElementAtom);
   const [backgroundColor, setBackgroundColor] = useAtom(backgroundColorAtom);
+  const compactWidthIndex = useAtomValue(compactWidthIndexAtom);
+  const viewer = useAtomValue(viewerStateAtom);
 
   const controller = useViewerController();
   const {
     options,
-    pages,
-    status,
     downloader,
     toggleFullscreen,
-    compactWidthIndex,
   } = controller;
 
   const navigate: MouseEventHandler<Element> = useCallback((event) => {
@@ -96,8 +97,8 @@ export const InnerViewer = forwardRef((
         fullscreen={fullscreenElement === viewerElement}
         onClick={navigate}
         onMouseDown={blockSelection}
-        children={status === "complete"
-          ? pages.map((controller, index) => (
+        children={viewer.status === "complete"
+          ? viewer.pages.map((controller, index) => (
             <Page
               key={index}
               controller={controller}
@@ -105,7 +106,7 @@ export const InnerViewer = forwardRef((
               {...options?.imageProps}
             />
           ))
-          : <p>{status === "error" ? "에러가 발생했습니다" : "로딩 중..."}</p>}
+          : <p>{viewer.status === "error" ? "에러가 발생했습니다" : "로딩 중..."}</p>}
         {...otherProps}
       />
       <FullscreenIcon onClick={toggleFullscreen} />
