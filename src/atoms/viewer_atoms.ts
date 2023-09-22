@@ -9,7 +9,8 @@ export const viewerElementAtom = atom<HTMLDivElement | null>(null);
 const scrollElementStateAtom = atom<
   {
     div: HTMLDivElement;
-    observer: IntersectionObserver;
+    intersectionObserver: IntersectionObserver;
+    resizeObserver: ResizeObserver;
   } | null
 >(null);
 
@@ -136,7 +137,7 @@ export const goPreviousAtom = atom(null, (get, set) => {
   }
 });
 
-export const restoreScrollAtom = atom(null, (get, set) => {
+const restoreScrollAtom = atom(null, (get, set) => {
   const state = get(pageScrollStateAtom);
   const element = get(scrollElementAtom);
   if (!element || state.ratio === undefined || state.currentPage === undefined) {
@@ -149,7 +150,10 @@ export const restoreScrollAtom = atom(null, (get, set) => {
   set(pageScrollStateAtom, (prev) => ({ ...prev, ignoreIntersection: true }));
 });
 
-export const scrollObserverAtom = selectAtom(scrollElementStateAtom, (state) => state?.observer);
+export const scrollObserverAtom = selectAtom(
+  scrollElementStateAtom,
+  (state) => state?.intersectionObserver,
+);
 export const scrollElementAtom = atom(
   (get) => get(scrollElementStateAtom)?.div ?? null,
   (_get, set, div: HTMLDivElement | null) => {
@@ -158,15 +162,21 @@ export const scrollElementAtom = atom(
         return state;
       }
 
-      state?.observer.disconnect();
+      state?.intersectionObserver.disconnect();
+      state?.resizeObserver.disconnect();
       if (div === null) {
         return null;
       }
+      const resizeObserver = new ResizeObserver(() => {
+        set(restoreScrollAtom);
+      });
+      resizeObserver.observe(div);
       return {
         div,
-        observer: new IntersectionObserver((entries) => set(resetAnchorAtom, entries), {
+        intersectionObserver: new IntersectionObserver((entries) => set(resetAnchorAtom, entries), {
           threshold: [0.01, 0.5, 1],
         }),
+        resizeObserver,
       };
     });
   },
