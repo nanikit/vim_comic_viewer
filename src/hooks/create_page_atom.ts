@@ -1,4 +1,5 @@
-import { atom } from "jotai";
+import { atom, useAtomValue } from "jotai";
+import { scrollObserverAtom } from "../atoms/viewer_atoms.ts";
 import { RefObject, useEffect, useState } from "../deps.ts";
 import { imageSourceToIterable } from "../services/user_utils.ts";
 import { ImageSource } from "../types.ts";
@@ -12,10 +13,9 @@ type PageState = {
 
 type PageProps = {
   source: ImageSource;
-  observer?: IntersectionObserver;
 };
 
-export const createPageAtom = ({ source, observer }: PageProps) => {
+export const createPageAtom = ({ source }: PageProps) => {
   let imageLoad: Deferred<boolean | null>;
   let state: PageState;
   let setState: (state: PageState) => void | undefined;
@@ -43,6 +43,7 @@ export const createPageAtom = ({ source, observer }: PageProps) => {
   const useInstance = (
     { ref }: { ref: RefObject<HTMLElement | undefined> },
   ) => {
+    const observer = useAtomValue(scrollObserverAtom);
     [state, setState] = useState<PageState>({ src: "", state: "loading" });
 
     useEffect(() => {
