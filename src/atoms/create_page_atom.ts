@@ -1,5 +1,5 @@
 import { atom } from "jotai";
-import { imageSourceToIterable } from "../services/user_utils.ts";
+import { imageSourceToIterable } from "../services/image_source_to_iterable.ts";
 import { ImageSource } from "../types.ts";
 import { defer } from "../utils.ts";
 import { scrollObserverAtom } from "./viewer_atoms.ts";
