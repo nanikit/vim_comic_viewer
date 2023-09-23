@@ -1,8 +1,8 @@
 import { atom } from "jotai";
-import { scrollObserverAtom } from "../atoms/viewer_atoms.ts";
 import { imageSourceToIterable } from "../services/user_utils.ts";
 import { ImageSource } from "../types.ts";
 import { defer } from "../utils.ts";
+import { scrollObserverAtom } from "./viewer_atoms.ts";
 
 type PageState = {
   src?: string;
