@@ -2,7 +2,7 @@ import { zip } from "../deps.ts";
 import { ImageSource } from "../types.ts";
 import { defer } from "../utils.ts";
 import { fetchBlob } from "./gm_fetch.ts";
-import { imageSourceToIterable } from "./user_utils.ts";
+import { imageSourceToIterable } from "./image_source_to_iterable.ts";
 
 export type DownloadProgress = {
   total: number;

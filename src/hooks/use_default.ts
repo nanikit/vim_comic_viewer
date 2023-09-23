@@ -2,16 +2,10 @@ import { useEffect } from "../deps.ts";
 import { isTyping } from "../utils.ts";
 import { useViewerController } from "./use_viewer_controller.ts";
 
-const maybeNotHotkey = (event: KeyboardEvent) =>
-  event.ctrlKey || event.altKey || event.metaKey || isTyping(event);
-
-export const useDefault = ({
-  enable,
-  controller,
-}: {
+export function useDefault({ enable, controller }: {
   enable?: boolean;
   controller: ReturnType<typeof useViewerController>;
-}) => {
+}) {
   const defaultKeyHandler = async (event: KeyboardEvent): Promise<void> => {
     if (maybeNotHotkey(event)) {
       return;
@@ -65,4 +59,9 @@ export const useDefault = ({
       removeEventListener("keydown", defaultGlobalKeyHandler);
     };
   }, [controller, enable]);
-};
+}
+
+function maybeNotHotkey(event: KeyboardEvent) {
+  const { ctrlKey, altKey, metaKey } = event;
+  return ctrlKey || altKey || metaKey || isTyping(event);
+}
