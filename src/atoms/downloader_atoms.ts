@@ -74,7 +74,8 @@ function logIfNotAborted(error: unknown) {
 function isNotAbort(error: unknown) {
   return !/aborted/i.test(`${error}`);
 }
-// https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload#Example
-function confirmDownloadAbort(event: Event) {
+// https://stackoverflow.com/a/25763325
+function confirmDownloadAbort(event: BeforeUnloadEvent) {
   event.preventDefault();
+  event.returnValue = "";
 }
