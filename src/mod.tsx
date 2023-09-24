@@ -27,7 +27,8 @@
 import { createStore, Provider } from "jotai";
 import { InnerViewer } from "./containers/viewer.tsx";
 import { createRef, forwardRef, Ref, render, useMemo } from "./deps.ts";
-import { ViewerController, ViewerOptions } from "./types.ts";
+import { ViewerController } from "./hooks/use_viewer_controller.ts";
+import { ViewerOptions } from "./types.ts";
 export { download } from "./services/downloader.ts";
 export * as types from "./types.ts";
 export * as utils from "./utils.ts";

@@ -20,6 +20,8 @@ import {
 import { unmountComponentAtNode, useMemo } from "../deps.ts";
 import { ViewerOptions } from "../types.ts";
 
+export type ViewerController = ReturnType<typeof createViewerController>;
+
 export function useViewerController() {
   const store = useStore();
   return useMemo(() => createViewerController(store), [store]);
