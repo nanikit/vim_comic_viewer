@@ -14,12 +14,10 @@
     "jsxImportSource": "react"
   },
   "tasks": {
-    "build": "deno run --allow-all https://raw.githubusercontent.com/nanikit/deno_userscript_linker/943cf221f775c596f55709bf8129780d492ce11b/mod.ts --inject src/react_shim.ts -o vim_comic_viewer.user.js src/mod.tsx",
-    "watch": "deno run --allow-all https://raw.githubusercontent.com/nanikit/deno_userscript_linker/943cf221f775c596f55709bf8129780d492ce11b/mod.ts --inject src/react_shim.ts -o vim_comic_viewer.user.js src/mod.tsx --watch"
+    "build": "deno run --allow-all https://raw.githubusercontent.com/nanikit/deno_userscript_linker/f37a6ca77d99ef88b4d167e87daf4423a1b6eb63/mod.ts --inject src/react_shim.ts -o vim_comic_viewer.user.js src/mod.tsx",
+    "watch": "deno run --allow-all https://raw.githubusercontent.com/nanikit/deno_userscript_linker/f37a6ca77d99ef88b4d167e87daf4423a1b6eb63/mod.ts --inject src/react_shim.ts -o vim_comic_viewer.user.js src/mod.tsx --watch"
   },
-  "include": [
-    "./src"
-  ],
+  "exclude": ["vim_comic_viewer.user.js"],
   "imports": {
     "@stitches/react": "npm:@stitches/react@1.3.1-1",
     "fflate": "npm:fflate@0.8.1",
@@ -28,6 +26,7 @@
     "react-dom": "npm:@types/react-dom",
     "react": "npm:@types/react",
     "react/jsx-runtime": "npm:@types/react/jsx-runtime",
-    "tampermonkey": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/60ab8a805a1c5c4225027068e604ef4687cdf379/types/tampermonkey/index.d.ts"
+    "tampermonkey": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/60ab8a805a1c5c4225027068e604ef4687cdf379/types/tampermonkey/index.d.ts",
+    "vcv-inject-node-env": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/60ab8a805a1c5c4225027068e604ef4687cdf379/types/tampermonkey/index.d.ts"
   }
 }

@@ -12,6 +12,7 @@
 // @grant          GM_getValue
 // @grant          GM_setValue
 // @grant          GM_xmlhttpRequest
+// @grant          unsafeWindow
 // @resource       @stitches/react     https://cdn.jsdelivr.net/npm/@stitches/react@1.3.1-1/dist/index.cjs
 // @resource       fflate              https://cdn.jsdelivr.net/npm/fflate@0.8.1/lib/browser.cjs
 // @resource       jotai               https://cdn.jsdelivr.net/npm/jotai@2.4.2/index.js
@@ -23,6 +24,7 @@
 // @resource       react               https://cdn.jsdelivr.net/npm/react@18.2.0/cjs/react.production.min.js
 // @resource       react-dom           https://cdn.jsdelivr.net/npm/react-dom@18.2.0/cjs/react-dom.production.min.js
 // @resource       scheduler           https://cdn.jsdelivr.net/npm/scheduler@0.23.0/cjs/scheduler.production.min.js
+// @resource       vcv-inject-node-env data:,unsafeWindow.process=%7Benv:%7BNODE_ENV:%22production%22%7D%7D
 // ==/UserScript==
 import { createStore, Provider } from "jotai";
 import { InnerViewer } from "./containers/viewer.tsx";
