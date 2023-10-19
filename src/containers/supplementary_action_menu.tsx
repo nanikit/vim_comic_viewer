@@ -2,7 +2,9 @@ import { useAtomValue, useSetAtom } from "jotai";
 import { downloadAndSaveAtom, downloadProgressAtom } from "../atoms/downloader_atoms.ts";
 import { CircularProgress } from "../components/circular_progress.tsx";
 import { DownloadIcon, MenuIcon } from "../components/icons.tsx";
-import { styled, useState } from "../deps.ts";
+import { useState } from "../deps.ts";
+import { styled } from "../vendors/stitches.ts";
+import { SettingsDialog } from "./settings_dialog.tsx";
 
 const LeftBottomFloat = styled("div", {
   position: "absolute",
@@ -17,16 +19,7 @@ const MenuActions = styled("div", {
   alignItems: "center",
 });
 
-const ColorInput = styled("input", {
-  marginLeft: "20px",
-});
-
-export const SupplementaryActionMenu = (
-  { color, onColorChange }: {
-    color: string;
-    onColorChange: (color: string) => void;
-  },
-) => {
+export function SupplementaryActionMenu() {
   const { value, text, error } = useAtomValue(downloadProgressAtom);
   const cancelDownload = useSetAtom(downloadProgressAtom);
   const downloadAndSave = useSetAtom(downloadAndSaveAtom);
@@ -46,24 +39,14 @@ export const SupplementaryActionMenu = (
           />
         )}
       <MenuActions>
+        <DownloadIcon onClick={() => downloadAndSave()} />
         <MenuIcon
           onClick={() => {
             setIsOpen((value) => !value);
           }}
         />
-        {!!isOpen && (
-          <>
-            <DownloadIcon onClick={() => downloadAndSave()} />
-            <ColorInput
-              type="color"
-              value={color}
-              onChange={(event) => {
-                onColorChange?.(event.currentTarget.value);
-              }}
-            />
-          </>
-        )}
       </MenuActions>
+      <SettingsDialog isOpen={isOpen} onClose={() => setIsOpen(false)} />
     </LeftBottomFloat>
   );
-};
+}

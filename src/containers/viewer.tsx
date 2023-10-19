@@ -36,7 +36,7 @@ export const InnerViewer = forwardRef((
   const [viewerElement, setViewerElement] = useAtom(viewerElementAtom);
   const setScrollElement = useSetAtom(scrollElementAtom);
   const fullscreenElement = useAtomValue(fullScreenElementAtom);
-  const [backgroundColor, setBackgroundColor] = useAtom(backgroundColorAtom);
+  const backgroundColor = useAtomValue(backgroundColorAtom);
   const compactWidthIndex = useAtomValue(compactWidthIndexAtom);
   const viewer = useAtomValue(viewerStateAtom);
   const setViewerOptions = useSetAtom(setViewerOptionsAtom);
@@ -109,16 +109,7 @@ export const InnerViewer = forwardRef((
         {...otherProps}
       />
       <FullscreenIcon onClick={toggleFullscreen} />
-      {status === "complete"
-        ? (
-          <SupplementaryActionMenu
-            color={backgroundColor}
-            onColorChange={(newColor) => {
-              setBackgroundColor(newColor);
-            }}
-          />
-        )
-        : false}
+      {status === "complete" ? <SupplementaryActionMenu /> : false}
     </Container>
   );
 });
