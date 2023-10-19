@@ -1,4 +1,4 @@
-export * from "@stitches/react";
+export { createStitches } from "@stitches/react";
 export * from "fflate";
 export {
   createRef,
