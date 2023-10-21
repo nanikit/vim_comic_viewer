@@ -1,20 +1,27 @@
 import { atom, deferred } from "../deps.ts";
 import { imageSourceToIterable } from "../services/image_source_to_iterable.ts";
 import { ImageSource } from "../types.ts";
-import { scrollObserverAtom } from "./viewer_atoms.ts";
+import {
+  maxMagnificationRatioAtom,
+  minMagnificationRatioAtom,
+  scrollObserverAtom,
+  viewerSizeAtom,
+} from "./viewer_atoms.ts";
 
 type PageState = {
+  state: "loading";
   src?: string;
-  urls?: string[];
-  state: "loading" | "complete" | "error";
+} | {
+  state: "error";
+  urls: string[];
+} | {
+  state: "complete";
+  src: string;
+  naturalHeight: number;
 };
 
-type PageProps = {
-  source: ImageSource;
-};
-
-export function createPageAtom({ source }: PageProps) {
-  let imageLoad = deferred<boolean | null>();
+export function createPageAtom({ source }: { source: ImageSource }) {
+  let imageLoad = deferred<HTMLImageElement | false | null>();
 
   const stateAtom = atom<PageState>({ state: "loading" });
   const elementStateAtom = atom<HTMLImageElement | null>(null);
@@ -40,13 +47,18 @@ export function createPageAtom({ source }: PageProps) {
       urls.push(url);
       imageLoad = deferred();
       set(stateAtom, { src: url, state: "loading" });
+
       const result = await imageLoad;
       switch (result) {
-        case true:
-          set(stateAtom, { src: url, state: "complete" });
-          return;
+        case false:
+          continue;
         case null:
           return;
+        default: {
+          const img = result;
+          set(stateAtom, { src: url, naturalHeight: img.naturalHeight, state: "complete" });
+          return;
+        }
       }
     }
     set(stateAtom, { urls, state: "error" });
@@ -56,24 +68,44 @@ export function createPageAtom({ source }: PageProps) {
   };
 
   const reloadAtom = atom(null, async (_get, set) => {
-    set(stateAtom, { state: "complete" });
     imageLoad.resolve(null);
     await set(loadAtom);
+  });
+
+  const viewAsOriginalSizeAtom = atom((get) => {
+    const viewerSize = get(viewerSizeAtom);
+    if (!viewerSize) {
+      return false;
+    }
+
+    const state = get(stateAtom);
+    if (state.state !== "complete") {
+      return false;
+    }
+
+    const minRatio = get(minMagnificationRatioAtom);
+    const maxRatio = get(maxMagnificationRatioAtom);
+    const ratio = viewerSize.height / state.naturalHeight;
+    const isFit = minRatio <= ratio && ratio <= maxRatio;
+    return !isFit;
   });
 
   const aggregateAtom = atom((get) => {
     get(loadAtom);
 
-    const src = get(stateAtom).src;
+    const state = get(stateAtom);
+
     return {
-      state: get(stateAtom),
+      state,
       elementAtom,
       reloadAtom,
       imageProps: {
-        key: `${elementAtom}`,
-        ...(src ? { src } : {}),
+        originalSize: get(viewAsOriginalSizeAtom),
+        ...("src" in state ? { src: state.src } : {}),
         onError: () => imageLoad.resolve(false),
-        onLoad: () => imageLoad.resolve(true),
+        onLoad: ((event) => imageLoad.resolve(event.currentTarget)) as React.ReactEventHandler<
+          HTMLImageElement
+        >,
       },
     };
   });

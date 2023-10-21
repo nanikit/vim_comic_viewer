@@ -22,7 +22,12 @@ export const Page = ({
   };
 
   return (
-    <Overlay ref={setElement} placeholder={state !== "complete"} fullWidth={fullWidth}>
+    <Overlay
+      ref={setElement}
+      placeholder={state !== "complete"}
+      originalSize={imageProps.originalSize}
+      fullWidth={fullWidth}
+    >
       {state === "loading" && <Spinner />}
       {state === "error" && (
         <LinkColumn onClick={reloadErrored}>
