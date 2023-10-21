@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useRef } from "react";
+import { RefObject, useEffect, useRef } from "../deps.ts";
 
 export const useClickAway = <E extends Event = Event>(
   ref: RefObject<HTMLElement | null>,

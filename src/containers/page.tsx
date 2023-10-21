@@ -1,9 +1,8 @@
 import { useAtomValue, useSetAtom } from "jotai";
-import { useEffect } from "react";
 import { createPageAtom } from "../atoms/create_page_atom.ts";
 import { CircledX } from "../components/icons.tsx";
 import { Image, LinkColumn, Overlay, Spinner } from "../components/spinner.tsx";
-import { MouseEventHandler } from "../deps.ts";
+import { MouseEventHandler, useEffect } from "../deps.ts";
 
 export const Page = ({
   fullWidth,
