@@ -3,7 +3,7 @@ import {
   maxMagnificationRatioAtom,
   minMagnificationRatioAtom,
   pageDirectionAtom,
-} from "../atoms/viewer_atoms.ts";
+} from "../atoms/setting_atoms.ts";
 import { useAtom, useId, useRef } from "../deps.ts";
 import { useClickAway } from "../hooks/use_click_away.ts";
 import { styled } from "../vendors/stitches.ts";
