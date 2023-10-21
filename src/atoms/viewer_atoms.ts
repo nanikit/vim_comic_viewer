@@ -1,6 +1,7 @@
 import { atom, selectAtom } from "../deps.ts";
 import { ImageSource, ViewerOptions } from "../types.ts";
 import { createPageAtom } from "./create_page_atom.ts";
+import { toggleFullscreenAtom } from "./fullscreen_element_atom.ts";
 import { gmValueAtom } from "./helper/gm_value_atom.ts";
 
 export const viewerElementAtom = atom<HTMLDivElement | null>(null);
@@ -231,3 +232,29 @@ function getCurrentPage(container: HTMLElement, entries: IntersectionObserverEnt
     return (ratio.b - ratio.a) * 10000 + (index.a - index.b);
   })[0].target;
 }
+
+export const navigateAtom = atom(null, (get, set, event: React.MouseEvent) => {
+  const height = get(viewerElementAtom)?.clientHeight;
+  if (!height || event.button !== 0) {
+    return;
+  }
+  event.preventDefault();
+
+  const isTop = event.clientY < height / 2;
+  if (isTop) {
+    set(goPreviousAtom);
+  } else {
+    set(goNextAtom);
+  }
+});
+
+export const blockSelectionAtom = atom(null, (_get, set, event: React.MouseEvent) => {
+  if (event.detail >= 2) {
+    event.preventDefault();
+  }
+
+  if (event.buttons === 3) {
+    set(toggleFullscreenAtom);
+    event.preventDefault();
+  }
+});
