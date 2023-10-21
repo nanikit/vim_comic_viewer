@@ -1,7 +1,9 @@
 import { fullScreenElementAtom } from "../atoms/fullscreen_element_atom.ts";
 import {
   backgroundColorAtom,
+  blockSelectionAtom,
   compactWidthIndexAtom,
+  navigateAtom,
   pageDirectionAtom,
   scrollElementAtom,
   setViewerOptionsAtom,
@@ -13,11 +15,9 @@ import { Container, ScrollableLayout } from "../components/scrollable_layout.ts"
 import {
   forwardRef,
   HTMLProps,
-  MouseEventHandler,
   Ref,
   useAtom,
   useAtomValue,
-  useCallback,
   useEffect,
   useImperativeHandle,
   useSetAtom,
@@ -43,40 +43,13 @@ export const InnerViewer = forwardRef((
   const compactWidthIndex = useAtomValue(compactWidthIndexAtom);
   const viewer = useAtomValue(viewerStateAtom);
   const setViewerOptions = useSetAtom(setViewerOptionsAtom);
+  const navigate = useSetAtom(navigateAtom);
+  const blockSelection = useSetAtom(blockSelectionAtom);
   const pageDirection = useAtomValue(pageDirectionAtom);
   const { status } = viewer;
 
   const controller = useViewerController();
   const { options, toggleFullscreen } = controller;
-
-  const navigate: MouseEventHandler<Element> = useCallback((event) => {
-    const height = viewerElement?.clientHeight;
-    if (!height || event.button !== 0) {
-      return;
-    }
-    event.preventDefault();
-
-    const isTop = event.clientY < height / 2;
-    if (isTop) {
-      controller.goPrevious();
-    } else {
-      controller.goNext();
-    }
-  }, [controller]);
-
-  const blockSelection: MouseEventHandler<Element> = useCallback(
-    (event) => {
-      if (event.detail >= 2) {
-        event.preventDefault();
-      }
-
-      if (event.buttons === 3) {
-        controller.toggleFullscreen();
-        event.preventDefault();
-      }
-    },
-    [controller],
-  );
 
   useDefault({ enable: props.useDefault, controller });
 
