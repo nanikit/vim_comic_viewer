@@ -53,21 +53,31 @@ export const Spinner = () => (
 
 export const Overlay = styled("div", {
   position: "relative",
-  margin: "4px 0.5px",
+
+  margin: "0.5px 0.5px",
   maxWidth: "100%",
   height: "100%",
+
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
+
   "@media print": {
     margin: 0,
   },
+
   variants: {
     placeholder: {
-      true: { width: "45%" },
+      true: { width: "45%", height: "100%" },
     },
     fullWidth: {
       true: { width: "100%" },
+    },
+    originalSize: {
+      true: {
+        minHeight: "100%",
+        height: "auto",
+      },
     },
   },
 });
@@ -77,10 +87,12 @@ export const LinkColumn = styled("div", {
   flexFlow: "column nowrap",
   alignItems: "center",
   justifyContent: "center",
+
   cursor: "pointer",
   boxShadow: "1px 1px 3px",
   padding: "1rem 1.5rem",
   transition: "box-shadow 1s easeOutExpo",
+
   "&:hover": {
     boxShadow: "2px 2px 5px",
   },
@@ -91,7 +103,15 @@ export const LinkColumn = styled("div", {
 
 export const Image = styled("img", {
   position: "relative",
+
   height: "100%",
-  objectFit: "contain",
   maxWidth: "100%",
+
+  objectFit: "contain",
+
+  variants: {
+    originalSize: {
+      true: { height: "auto" },
+    },
+  },
 });
