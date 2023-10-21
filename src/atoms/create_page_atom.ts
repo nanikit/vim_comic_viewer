@@ -51,6 +51,9 @@ export function createPageAtom({ source }: PageProps) {
     }
     set(stateAtom, { urls, state: "error" });
   });
+  loadAtom.onMount = (set) => {
+    set();
+  };
 
   const reloadAtom = atom(null, async (_get, set) => {
     set(stateAtom, { state: "complete" });
@@ -59,11 +62,12 @@ export function createPageAtom({ source }: PageProps) {
   });
 
   const aggregateAtom = atom((get) => {
+    get(loadAtom);
+
     const src = get(stateAtom).src;
     return {
       state: get(stateAtom),
       elementAtom,
-      loadAtom,
       reloadAtom,
       imageProps: {
         key: `${elementAtom}`,
