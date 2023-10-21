@@ -1,11 +1,11 @@
 import { useAtom } from "jotai";
-import { useId, useRef } from "react";
 import {
   backgroundColorAtom,
   maxMagnificationRatioAtom,
   minMagnificationRatioAtom,
   pageDirectionAtom,
 } from "../atoms/viewer_atoms.ts";
+import { useId, useRef } from "../deps.ts";
 import { useClickAway } from "../hooks/use_click_away.ts";
 import { styled } from "../vendors/stitches.ts";
 
