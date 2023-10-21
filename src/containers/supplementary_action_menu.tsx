@@ -26,27 +26,29 @@ export function SupplementaryActionMenu() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <LeftBottomFloat>
-      {!!text &&
-        (
-          <CircularProgress
-            radius={50}
-            strokeWidth={10}
-            value={value ?? 0}
-            text={text}
-            error={error}
-            onClick={cancelDownload}
+    <>
+      <LeftBottomFloat>
+        {!!text &&
+          (
+            <CircularProgress
+              radius={50}
+              strokeWidth={10}
+              value={value ?? 0}
+              text={text}
+              error={error}
+              onClick={cancelDownload}
+            />
+          )}
+        <MenuActions>
+          <DownloadIcon onClick={() => downloadAndSave()} />
+          <MenuIcon
+            onClick={() => {
+              setIsOpen((value) => !value);
+            }}
           />
-        )}
-      <MenuActions>
-        <DownloadIcon onClick={() => downloadAndSave()} />
-        <MenuIcon
-          onClick={() => {
-            setIsOpen((value) => !value);
-          }}
-        />
-      </MenuActions>
+        </MenuActions>
+      </LeftBottomFloat>
       <SettingsDialog isOpen={isOpen} onClose={() => setIsOpen(false)} />
-    </LeftBottomFloat>
+    </>
   );
 }
