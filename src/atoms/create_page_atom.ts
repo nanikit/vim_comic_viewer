@@ -1,7 +1,7 @@
 import { atom } from "jotai";
+import { deferred } from "../deps.ts";
 import { imageSourceToIterable } from "../services/image_source_to_iterable.ts";
 import { ImageSource } from "../types.ts";
-import { defer } from "../utils.ts";
 import { scrollObserverAtom } from "./viewer_atoms.ts";
 
 type PageState = {
@@ -14,8 +14,8 @@ type PageProps = {
   source: ImageSource;
 };
 
-export const createPageAtom = ({ source }: PageProps) => {
-  let imageLoad = defer<boolean | null>();
+export function createPageAtom({ source }: PageProps) {
+  let imageLoad = deferred<boolean | null>();
 
   const stateAtom = atom<PageState>({ state: "loading" });
   const elementStateAtom = atom<HTMLImageElement | null>(null);
@@ -39,9 +39,9 @@ export const createPageAtom = ({ source }: PageProps) => {
     const urls = [];
     for await (const url of imageSourceToIterable(source)) {
       urls.push(url);
-      imageLoad = defer();
+      imageLoad = deferred();
       set(stateAtom, { src: url, state: "loading" });
-      const result = await imageLoad.promise;
+      const result = await imageLoad;
       switch (result) {
         case true:
           set(stateAtom, { src: url, state: "complete" });
@@ -76,4 +76,4 @@ export const createPageAtom = ({ source }: PageProps) => {
   });
 
   return aggregateAtom;
-};
+}
