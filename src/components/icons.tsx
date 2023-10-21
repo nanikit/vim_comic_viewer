@@ -12,12 +12,12 @@ const Svg = styled("svg", {
   },
 });
 
-const downloadCss = { width: "40px", marginLeft: "20px" };
+const downloadCss = { width: "40px" };
 const fullscreenCss = {
-  right: "24px",
   position: "absolute",
+  right: "1%",
+  bottom: "1%",
   width: "40px",
-  bottom: "8px",
 };
 
 export const DownloadIcon = (props: SVGProps<SVGElement>) => (

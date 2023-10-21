@@ -7,18 +7,20 @@ import { SettingsDialog } from "./settings_dialog.tsx";
 
 const LeftBottomFloat = styled("div", {
   position: "absolute",
-  bottom: "0.5%",
-  left: "0.5%",
+  bottom: "1%",
+  left: "1%",
   display: "flex",
   flexFlow: "column",
 });
 
 const MenuActions = styled("div", {
   display: "flex",
+  flexFlow: "column nowrap",
   alignItems: "center",
+  gap: "16px",
 });
 
-export function SupplementaryActionMenu() {
+export function LeftBottomControl() {
   const { value, text, error } = useAtomValue(downloadProgressAtom);
   const cancelDownload = useSetAtom(downloadProgressAtom);
   const downloadAndSave = useSetAtom(downloadAndSaveAtom);
@@ -39,12 +41,12 @@ export function SupplementaryActionMenu() {
             />
           )}
         <MenuActions>
-          <DownloadIcon onClick={() => downloadAndSave()} />
           <MenuIcon
             onClick={() => {
               setIsOpen((value) => !value);
             }}
           />
+          <DownloadIcon onClick={() => downloadAndSave()} />
         </MenuActions>
       </LeftBottomFloat>
       <SettingsDialog isOpen={isOpen} onClose={() => setIsOpen(false)} />
