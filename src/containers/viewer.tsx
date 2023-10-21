@@ -3,6 +3,7 @@ import { fullScreenElementAtom } from "../atoms/fullscreen_element_atom.ts";
 import {
   backgroundColorAtom,
   compactWidthIndexAtom,
+  pageDirectionAtom,
   scrollElementAtom,
   setViewerOptionsAtom,
   viewerElementAtom,
@@ -40,6 +41,7 @@ export const InnerViewer = forwardRef((
   const compactWidthIndex = useAtomValue(compactWidthIndexAtom);
   const viewer = useAtomValue(viewerStateAtom);
   const setViewerOptions = useSetAtom(setViewerOptionsAtom);
+  const pageDirection = useAtomValue(pageDirectionAtom);
   const { status } = viewer;
 
   const controller = useViewerController();
@@ -94,6 +96,7 @@ export const InnerViewer = forwardRef((
         ref={setScrollElement as any}
         dark={isDarkColor(backgroundColor)}
         fullscreen={fullscreenElement === viewerElement}
+        ltr={pageDirection === "leftToRight"}
         onClick={navigate}
         onMouseDown={blockSelection}
         children={status === "complete"
