@@ -25,8 +25,8 @@ import {
 import { useDefault } from "../hooks/use_default.ts";
 import { useViewerController, ViewerController } from "../hooks/use_viewer_controller.ts";
 import { ViewerOptions } from "../types.ts";
+import { LeftBottomControl } from "./left_bottom_control.tsx";
 import { Page } from "./page.tsx";
-import { SupplementaryActionMenu } from "./supplementary_action_menu.tsx";
 
 export const InnerViewer = forwardRef((
   props: HTMLProps<HTMLDivElement> & {
@@ -87,7 +87,7 @@ export const InnerViewer = forwardRef((
         {...otherProps}
       />
       <FullscreenIcon onClick={toggleFullscreen} />
-      {status === "complete" ? <SupplementaryActionMenu /> : false}
+      {status === "complete" ? <LeftBottomControl /> : false}
     </Container>
   );
 });
