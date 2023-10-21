@@ -38,6 +38,11 @@ export const ScrollableLayout = styled("div", {
         overflow: "auto",
       },
     },
+    ltr: {
+      true: {
+        flexFlow: "row wrap",
+      },
+    },
     dark: {
       true: {
         "&::-webkit-scrollbar-thumb": {
