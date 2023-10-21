@@ -1,5 +1,6 @@
 export { createStitches } from "@stitches/react";
 export * from "fflate";
+export * from "https://deno.land/std@0.204.0/async/deferred.ts";
 
 // @deno-types="npm:@types/react"
 export {

@@ -34,18 +34,3 @@ export const getSafeFileName = (str: string) => {
 export const save = (blob: Blob) => {
   return saveAs(blob, `${getSafeFileName(document.title)}.zip`);
 };
-
-export type Deferred<T> = {
-  promise: Promise<T>;
-  resolve: (value: T) => void;
-  reject: (error: unknown) => void;
-};
-
-export const defer = <T>(): Deferred<T> => {
-  let resolve, reject;
-  const promise = new Promise<T>((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-  return { promise, resolve, reject } as unknown as Deferred<T>;
-};

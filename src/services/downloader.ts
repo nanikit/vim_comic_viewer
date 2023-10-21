@@ -1,6 +1,5 @@
-import { zip } from "../deps.ts";
+import { deferred, zip } from "../deps.ts";
 import { ImageSource } from "../types.ts";
-import { defer } from "../utils.ts";
 import { fetchBlob } from "./gm_fetch.ts";
 import { imageSourceToIterable } from "./image_source_to_iterable.ts";
 
@@ -147,9 +146,7 @@ export const download = (
     return { [name]: array };
   };
 
-  const archiveWithReport = async (
-    sources: ImageSource[],
-  ): Promise<Uint8Array> => {
+  const archiveWithReport = async (sources: ImageSource[]): Promise<Uint8Array> => {
     const result = await Promise.all(sources.map(downloadWithReport));
 
     if (signal?.aborted) {
@@ -160,7 +157,7 @@ export const download = (
     const pairs = await Promise.all(result.map(toPair));
     const data = Object.assign({}, ...pairs);
 
-    const value = defer<Uint8Array>();
+    const value = deferred<Uint8Array>();
     const abort = zip(data, { level: 0 }, (error, array) => {
       if (error) {
         value.reject(error);
@@ -171,7 +168,7 @@ export const download = (
     });
     signal?.addEventListener("abort", abort, { once: true });
 
-    return value.promise;
+    return value;
   };
 
   return archiveWithReport(images);
