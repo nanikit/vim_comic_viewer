@@ -11,10 +11,10 @@ import {
 import { FullscreenIcon } from "../components/icons.tsx";
 import { Container, ScrollableLayout } from "../components/scrollable_layout.ts";
 import {
+  forwardRef,
   HTMLProps,
   MouseEventHandler,
   Ref,
-  forwardRef,
   useAtom,
   useAtomValue,
   useCallback,
@@ -23,7 +23,7 @@ import {
   useSetAtom,
 } from "../deps.ts";
 import { useDefault } from "../hooks/use_default.ts";
-import { ViewerController, useViewerController } from "../hooks/use_viewer_controller.ts";
+import { useViewerController, ViewerController } from "../hooks/use_viewer_controller.ts";
 import { ViewerOptions } from "../types.ts";
 import { Page } from "./page.tsx";
 import { SupplementaryActionMenu } from "./supplementary_action_menu.tsx";
