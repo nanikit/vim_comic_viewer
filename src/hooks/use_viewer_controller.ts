@@ -1,4 +1,3 @@
-import { useStore } from "jotai";
 import {
   cancelDownloadAtom,
   downloadAndSaveAtom,
@@ -17,7 +16,7 @@ import {
   viewerElementAtom,
   viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
-import { unmountComponentAtNode, useMemo } from "../deps.ts";
+import { unmountComponentAtNode, useMemo, useStore } from "../deps.ts";
 import { ViewerOptions } from "../types.ts";
 
 export type ViewerController = ReturnType<typeof createViewerController>;

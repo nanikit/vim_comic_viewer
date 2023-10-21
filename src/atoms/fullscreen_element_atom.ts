@@ -1,4 +1,4 @@
-import { atom } from "jotai";
+import { atom } from "../deps.ts";
 import { viewerElementAtom } from "./viewer_atoms.ts";
 
 const fullscreenElementStateAtom = atom<Element | null>(

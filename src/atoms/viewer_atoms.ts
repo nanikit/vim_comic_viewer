@@ -1,5 +1,4 @@
-import { atom } from "jotai";
-import { selectAtom } from "jotai/utils";
+import { atom, selectAtom } from "../deps.ts";
 import { ImageSource, ViewerOptions } from "../types.ts";
 import { createPageAtom } from "./create_page_atom.ts";
 import { gmValueAtom } from "./helper/gm_value_atom.ts";
