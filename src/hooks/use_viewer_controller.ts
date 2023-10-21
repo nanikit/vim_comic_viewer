@@ -6,8 +6,8 @@ import {
   UserDownloadOptions,
 } from "../atoms/downloader_atoms.ts";
 import { toggleFullscreenAtom } from "../atoms/fullscreen_element_atom.ts";
+import { compactWidthIndexAtom } from "../atoms/setting_atoms.ts";
 import {
-  compactWidthIndexAtom,
   goNextAtom,
   goPreviousAtom,
   MaybePages,

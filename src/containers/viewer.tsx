@@ -1,10 +1,12 @@
 import { fullScreenElementAtom } from "../atoms/fullscreen_element_atom.ts";
 import {
   backgroundColorAtom,
-  blockSelectionAtom,
   compactWidthIndexAtom,
-  navigateAtom,
   pageDirectionAtom,
+} from "../atoms/setting_atoms.ts";
+import {
+  blockSelectionAtom,
+  navigateAtom,
   scrollElementAtom,
   setViewerOptionsAtom,
   viewerElementAtom,

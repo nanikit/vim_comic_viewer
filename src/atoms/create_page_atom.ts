@@ -1,12 +1,8 @@
 import { atom, deferred } from "../deps.ts";
 import { imageSourceToIterable } from "../services/image_source_to_iterable.ts";
 import { ImageSource } from "../types.ts";
-import {
-  maxMagnificationRatioAtom,
-  minMagnificationRatioAtom,
-  scrollObserverAtom,
-  viewerSizeAtom,
-} from "./viewer_atoms.ts";
+import { maxMagnificationRatioAtom, minMagnificationRatioAtom } from "./setting_atoms.ts";
+import { scrollObserverAtom, viewerSizeAtom } from "./viewer_atoms.ts";
 
 type PageState = {
   state: "loading";
