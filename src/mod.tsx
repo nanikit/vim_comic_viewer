@@ -26,9 +26,8 @@
 // @resource       scheduler           https://cdn.jsdelivr.net/npm/scheduler@0.23.0/cjs/scheduler.production.min.js
 // @resource       vcv-inject-node-env data:,unsafeWindow.process=%7Benv:%7BNODE_ENV:%22production%22%7D%7D
 // ==/UserScript==
-import { createStore, Provider } from "jotai";
 import { InnerViewer } from "./containers/viewer.tsx";
-import { createRef, forwardRef, Ref, render, useMemo } from "./deps.ts";
+import { createRef, createStore, forwardRef, Provider, Ref, render, useMemo } from "./deps.ts";
 import { ViewerController } from "./hooks/use_viewer_controller.ts";
 import { ViewerOptions } from "./types.ts";
 export { download } from "./services/downloader.ts";

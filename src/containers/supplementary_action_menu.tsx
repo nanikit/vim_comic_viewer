@@ -1,8 +1,7 @@
-import { useAtomValue, useSetAtom } from "jotai";
 import { downloadAndSaveAtom, downloadProgressAtom } from "../atoms/downloader_atoms.ts";
 import { CircularProgress } from "../components/circular_progress.tsx";
 import { DownloadIcon, MenuIcon } from "../components/icons.tsx";
-import { useState } from "../deps.ts";
+import { useAtomValue, useSetAtom, useState } from "../deps.ts";
 import { styled } from "../vendors/stitches.ts";
 import { SettingsDialog } from "./settings_dialog.tsx";
 

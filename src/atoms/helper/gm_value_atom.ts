@@ -1,4 +1,4 @@
-import { atomWithStorage } from "jotai/utils";
+import { atomWithStorage } from "../../deps.ts";
 
 const gmStorage = {
   getItem: <T>(key: string, initialValue: T) => {
