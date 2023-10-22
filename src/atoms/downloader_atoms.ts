@@ -2,7 +2,7 @@ import { atom } from "../deps.ts";
 import { download, DownloadProgress } from "../services/downloader.ts";
 import { ImageSource } from "../types.ts";
 import { save } from "../utils.ts";
-import { viewerStateAtom } from "./viewer_atoms.ts";
+import { viewerStateAtom } from "./viewer_state_atoms.ts";
 
 const aborterAtom = atom<AbortController | null>(null);
 export const cancelDownloadAtom = atom(null, (get) => {
