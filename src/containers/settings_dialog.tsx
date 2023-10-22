@@ -11,7 +11,7 @@ import { useAtom, useId } from "../deps.ts";
 import { styled } from "../vendors/stitches.ts";
 
 const ColorInput = styled("input", {
-  marginLeft: "20px",
+  height: "1.5em",
 });
 
 const ConfigRow = styled("div", {
@@ -21,6 +21,8 @@ const ConfigRow = styled("div", {
 
   margin: "10px 5px",
   gap: "10%",
+  fontSize: "1.3em",
+  fontWeight: "medium",
 
   ":first-child": {
     flex: "2 1 0",
@@ -81,6 +83,11 @@ const Toggle = styled("span", {
   },
 });
 
+const Title = styled("h3", {
+  fontSize: "2em",
+  fontWeight: "bold",
+});
+
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const [minMagnificationRatio, setMinMagnificationRatio] = useAtom(minMagnificationRatioAtom);
   const [maxMagnificationRatio, setMaxMagnificationRatio] = useAtom(maxMagnificationRatioAtom);
@@ -96,7 +103,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <BackdropDialog onClose={onClose}>
-      <h3>{strings.settings}</h3>
+      <Title>{strings.settings}</Title>
       <ConfigRow>
         <label htmlFor={minRatioInputId}>{strings.minMagnificationRatio}</label>
         <input
