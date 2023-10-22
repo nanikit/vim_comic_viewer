@@ -6,43 +6,12 @@ import {
   minMagnificationRatioAtom,
   pageDirectionAtom,
 } from "../atoms/setting_atoms.ts";
-import { useAtom, useId, useRef } from "../deps.ts";
-import { useClickAway } from "../hooks/use_click_away.ts";
+import { BackdropDialog } from "../components/backdrop_dialog.tsx";
+import { useAtom, useId } from "../deps.ts";
 import { styled } from "../vendors/stitches.ts";
 
 const ColorInput = styled("input", {
   marginLeft: "20px",
-});
-
-const CenterDialog = styled("div", {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-
-  display: "flex",
-  flexFlow: "column nowrap",
-  alignItems: "stretch",
-  justifyContent: "center",
-
-  transition: "0.2s",
-  background: "white",
-  padding: "20px",
-  borderRadius: "10px",
-  boxShadow: "0 0 10px 0 rgba(0, 0, 0, 0.2)",
-
-  variants: {
-    isOpen: {
-      true: {
-        opacity: 1,
-        pointerEvents: "auto",
-      },
-      false: {
-        opacity: 0,
-        pointerEvents: "none",
-      },
-    },
-  },
 });
 
 const ConfigRow = styled("div", {
@@ -112,7 +81,7 @@ const Toggle = styled("span", {
   },
 });
 
-export function SettingsDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const [minMagnificationRatio, setMinMagnificationRatio] = useAtom(minMagnificationRatioAtom);
   const [maxMagnificationRatio, setMaxMagnificationRatio] = useAtom(maxMagnificationRatioAtom);
   const [backgroundColor, setBackgroundColor] = useAtom(backgroundColorAtom);
@@ -123,11 +92,10 @@ export function SettingsDialog({ isOpen, onClose }: { isOpen: boolean; onClose: 
   const pageDirectionInputId = useId();
 
   const strings = useAtomValue(i18nAtom);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  useClickAway(dialogRef, onClose);
+  // useClickAway(dialogRef, onClose);
 
   return (
-    <CenterDialog ref={dialogRef} isOpen={isOpen}>
+    <BackdropDialog onClose={onClose}>
       <h3>{strings.settings}</h3>
       <ConfigRow>
         <label htmlFor={minRatioInputId}>{strings.minMagnificationRatio}</label>
@@ -178,6 +146,6 @@ export function SettingsDialog({ isOpen, onClose }: { isOpen: boolean; onClose: 
           <label htmlFor={pageDirectionInputId}>{strings.leftToRight}</label>
         </Toggle>
       </ConfigRow>
-    </CenterDialog>
+    </BackdropDialog>
   );
 }
