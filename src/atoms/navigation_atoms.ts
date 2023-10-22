@@ -70,40 +70,39 @@ export const scrollElementAtom = atom(
 scrollElementAtom.onMount = (set) => () => set(null);
 
 export const goNextAtom = atom(null, (get) => {
-  const { page } = getCurrentPage(get(scrollElementAtom));
+  const scrollElement = get(scrollElementAtom)!;
+  const { page } = getCurrentPage(scrollElement);
   if (!page) {
     return;
   }
 
-  const originBound = page.getBoundingClientRect();
-  let cursor = page as Element;
-  while (cursor.nextElementSibling) {
-    const next = cursor.nextElementSibling;
-    const nextBound = next.getBoundingClientRect();
-    if (originBound.bottom < nextBound.top) {
-      next.scrollIntoView({ block: "center" });
-      break;
-    }
-    cursor = next;
+  const viewerHeight = scrollElement.clientHeight;
+  const ignorableHeight = viewerHeight * 0.05;
+  const scrollBottom = scrollElement.scrollTop + viewerHeight;
+  const remainingHeight = page.offsetTop + page.clientHeight - scrollBottom;
+  if (remainingHeight > ignorableHeight) {
+    const divisor = Math.ceil(remainingHeight / viewerHeight);
+    scrollElement.scrollBy({ top: remainingHeight / divisor });
+  } else {
+    scrollToNextPageTopOrEnd(page);
   }
 });
 
 export const goPreviousAtom = atom(null, (get) => {
-  const { page } = getCurrentPage(get(scrollElementAtom));
+  const scrollElement = get(scrollElementAtom)!;
+  const { page } = getCurrentPage(scrollElement);
   if (!page) {
     return;
   }
 
-  const originBound = page.getBoundingClientRect();
-  let cursor = page as Element;
-  while (cursor.previousElementSibling) {
-    const previous = cursor.previousElementSibling;
-    const previousBound = previous.getBoundingClientRect();
-    if (previousBound.bottom < originBound.top) {
-      previous.scrollIntoView({ block: "center" });
-      break;
-    }
-    cursor = previous;
+  const viewerHeight = scrollElement.clientHeight;
+  const ignorableHeight = viewerHeight * 0.05;
+  const remainingHeight = scrollElement.scrollTop - page.offsetTop;
+  if (remainingHeight > ignorableHeight) {
+    const divisor = Math.ceil(remainingHeight / viewerHeight);
+    scrollElement.scrollBy({ top: -(remainingHeight / divisor) });
+  } else {
+    scrollToPreviousPageBottomOrStart(page);
   }
 });
 
@@ -121,6 +120,36 @@ export const navigateAtom = atom(null, (get, set, event: React.MouseEvent) => {
     set(goNextAtom);
   }
 });
+
+function scrollToNextPageTopOrEnd(page: HTMLElement) {
+  const originBound = page.getBoundingClientRect();
+  let cursor = page as Element;
+  while (cursor.nextElementSibling) {
+    const next = cursor.nextElementSibling;
+    const nextBound = next.getBoundingClientRect();
+    if (originBound.bottom < nextBound.top) {
+      next.scrollIntoView({ block: "start" });
+      return;
+    }
+    cursor = next;
+  }
+  cursor.scrollIntoView({ block: "end" });
+}
+
+function scrollToPreviousPageBottomOrStart(page: HTMLElement) {
+  const originBound = page.getBoundingClientRect();
+  let cursor = page as Element;
+  while (cursor.previousElementSibling) {
+    const previous = cursor.previousElementSibling;
+    const previousBound = previous.getBoundingClientRect();
+    if (previousBound.bottom < originBound.top) {
+      previous.scrollIntoView({ block: "end" });
+      return;
+    }
+    cursor = previous;
+  }
+  cursor.scrollIntoView({ block: "start" });
+}
 
 function getCurrentPage(container: HTMLElement | null) {
   const clientHeight = container?.clientHeight;
