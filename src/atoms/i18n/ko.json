@@ -1,0 +1,8 @@
+{
+  "@@locale": "ko",
+  "settings": "설정",
+  "minMagnificationRatio": "최대 축소율",
+  "maxMagnificationRatio": "최대 확대율",
+  "backgroundColor": "배경색",
+  "leftToRight": "왼쪽부터 보기"
+}
