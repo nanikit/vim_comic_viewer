@@ -1,6 +1,6 @@
 import { downloadAndSaveAtom, downloadProgressAtom } from "../atoms/downloader_atoms.ts";
 import { CircularProgress } from "../components/circular_progress.tsx";
-import { DownloadIcon, MenuIcon } from "../components/icons.tsx";
+import { DownloadIcon, IconSettings } from "../components/icons.tsx";
 import { useAtomValue, useSetAtom, useState } from "../deps.ts";
 import { styled } from "../vendors/stitches.ts";
 import { SettingsDialog } from "./settings_dialog.tsx";
@@ -41,7 +41,7 @@ export function LeftBottomControl() {
             />
           )}
         <MenuActions>
-          <MenuIcon
+          <IconSettings
             onClick={() => {
               setIsOpen((value) => !value);
             }}
@@ -49,7 +49,7 @@ export function LeftBottomControl() {
           <DownloadIcon onClick={() => downloadAndSave()} />
         </MenuActions>
       </LeftBottomFloat>
-      <SettingsDialog isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      {isOpen && <SettingsDialog onClose={() => setIsOpen(false)} />}
     </>
   );
 }

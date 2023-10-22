@@ -29,6 +29,7 @@ export {
 } from "react";
 // @deno-types="npm:@types/react"
 export type {
+  HTMLAttributes,
   HTMLProps,
   MouseEventHandler,
   MutableRefObject,
