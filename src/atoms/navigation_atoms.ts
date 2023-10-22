@@ -1,6 +1,5 @@
 import { atom } from "../deps.ts";
 import { beforeRepaintAtom } from "../modules/use_before_repaint.ts";
-import { viewerElementAtom } from "./viewer_state_atoms.ts";
 
 const scrollElementStateAtom = atom<
   {
@@ -112,7 +111,7 @@ export const goPreviousAtom = atom(null, (get) => {
 });
 
 export const navigateAtom = atom(null, (get, set, event: React.MouseEvent) => {
-  const height = get(viewerElementAtom)?.clientHeight;
+  const height = get(scrollElementAtom)?.clientHeight;
   if (!height || event.button !== 0) {
     return;
   }
