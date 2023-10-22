@@ -1,3 +1,4 @@
+import { i18nAtom } from "../atoms/i18n_atom.ts";
 import {
   navigateAtom,
   scrollElementAtom,
@@ -48,6 +49,7 @@ export const InnerViewer = forwardRef((
   const blockSelection = useSetAtom(blockSelectionAtom);
   const synchronizeScroll = useSetAtom(synchronizeScrollAtom);
   const pageDirection = useAtomValue(pageDirectionAtom);
+  const strings = useAtomValue(i18nAtom);
   const { status } = viewer;
 
   const controller = useViewerController();
@@ -80,14 +82,14 @@ export const InnerViewer = forwardRef((
         onClick={navigate}
         onMouseDown={blockSelection}
         children={status === "complete"
-          ? viewer.pages.map((atom, index) => (
+          ? viewer.pages.map((atom) => (
             <Page
               key={`${atom}`}
               atom={atom}
               {...options?.imageProps}
             />
           ))
-          : <p>{status === "error" ? "에러가 발생했습니다" : "로딩 중..."}</p>}
+          : <p>{status === "error" ? strings.errorIsOccurred : strings.loading}</p>}
         {...otherProps}
       />
       <FullscreenIcon onClick={toggleFullscreen} />

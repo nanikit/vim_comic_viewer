@@ -4,5 +4,8 @@
   "minMagnificationRatio": "최대 축소율",
   "maxMagnificationRatio": "최대 확대율",
   "backgroundColor": "배경색",
-  "leftToRight": "왼쪽부터 보기"
+  "leftToRight": "왼쪽부터 보기",
+  "errorIsOccurred": "에러가 발생했습니다.",
+  "failedToLoadImage": "이미지를 불러오지 못했습니다.",
+  "loading": "로딩 중..."
 }
