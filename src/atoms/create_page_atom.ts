@@ -57,20 +57,24 @@ export function createPageAtom({ index, source }: { index: number; source: Image
     await set(loadAtom);
   });
 
-  const viewAsOriginalSizeAtom = atom((get) => {
+  const magnificationRatioAtom = atom((get) => {
     const viewerSize = get(viewerSizeAtom);
     if (!viewerSize) {
-      return false;
+      return 1;
     }
 
     const state = get(stateAtom);
     if (state.state !== "complete") {
-      return false;
+      return 1;
     }
 
+    return viewerSize.height / state.naturalHeight;
+  });
+
+  const viewAsOriginalSizeAtom = atom((get) => {
     const minRatio = get(minMagnificationRatioAtom);
     const maxRatio = get(maxMagnificationRatioAtom);
-    const ratio = viewerSize.height / state.naturalHeight;
+    const ratio = get(magnificationRatioAtom);
     const isFit = minRatio <= ratio && ratio <= maxRatio;
     return !isFit;
   });
@@ -80,13 +84,16 @@ export function createPageAtom({ index, source }: { index: number; source: Image
 
     const state = get(stateAtom);
     const compactWidthIndex = get(compactWidthIndexAtom);
+    const isOriginalSize = get(viewAsOriginalSizeAtom);
+    const ratio = get(magnificationRatioAtom);
+    const isOverScreen = isOriginalSize && ratio < 1;
 
     return {
       state,
       reloadAtom,
-      fullWidth: index < compactWidthIndex,
+      fullWidth: index < compactWidthIndex || isOverScreen,
+      isOriginalSize,
       imageProps: {
-        originalSize: get(viewAsOriginalSizeAtom),
         ...("src" in state ? { src: state.src } : {}),
         onError: () => imageLoad.resolve(false),
         onLoad: ((event) => imageLoad.resolve(event.currentTarget)) as React.ReactEventHandler<
