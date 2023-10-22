@@ -10,7 +10,7 @@ import { compactWidthIndexAtom } from "../atoms/setting_atoms.ts";
 import {
   goNextAtom,
   goPreviousAtom,
-  MaybePages,
+  pagesAtom,
   reloadErroredAtom,
   setViewerOptionsAtom,
   viewerElementAtom,
@@ -51,7 +51,7 @@ function createViewerController(store: ReturnType<typeof useStore>) {
     },
     downloader,
     get pages() {
-      return (store.get(viewerStateAtom) as MaybePages).pages;
+      return store.get(pagesAtom);
     },
     set compactWidthIndex(value: number) {
       store.set(compactWidthIndexAtom, Math.max(0, value));

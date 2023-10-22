@@ -1,6 +1,6 @@
 import { atom, selectAtom } from "../deps.ts";
 import { ImageSource, ViewerOptions } from "../types.ts";
-import { createPageAtom } from "./create_page_atom.ts";
+import { createPageAtom, PageAtom } from "./create_page_atom.ts";
 import { toggleFullscreenAtom } from "./fullscreen_element_atom.ts";
 
 const viewerElementStateAtom = atom<
@@ -34,6 +34,10 @@ const scrollElementStateAtom = atom<
     resizeObserver: ResizeObserver;
   } | null
 >(null);
+export const scrollObserverAtom = selectAtom(
+  scrollElementStateAtom,
+  (state) => state?.intersectionObserver,
+);
 
 type ViewerState =
   & { options: ViewerOptions }
@@ -42,9 +46,14 @@ type ViewerState =
   } | {
     status: "complete";
     images: ImageSource[];
-    pages: ReturnType<typeof createPageAtom>[];
+    pages: PageAtom[];
   });
 export const viewerStateAtom = atom<ViewerState>({ options: {}, status: "loading" });
+export const pagesAtom = selectAtom(
+  viewerStateAtom,
+  (state) => (state as { pages?: PageAtom[] }).pages,
+);
+
 export const setViewerOptionsAtom = atom(
   null,
   async (get, set, options: ViewerOptions) => {
@@ -168,45 +177,48 @@ const restoreScrollAtom = atom(null, (get, set) => {
   set(pageScrollStateAtom, (prev) => ({ ...prev, ignoreIntersection: true }));
 });
 
-export const scrollObserverAtom = selectAtom(
-  scrollElementStateAtom,
-  (state) => state?.intersectionObserver,
-);
 export const scrollElementAtom = atom(
   (get) => get(scrollElementStateAtom)?.div ?? null,
-  (_get, set, div: HTMLDivElement | null) => {
-    set(scrollElementStateAtom, (state) => {
-      if (state?.div === div) {
-        return state;
+  (get, set, div: HTMLDivElement | null) => {
+    set(scrollElementStateAtom, (previous) => {
+      if (previous?.div === div) {
+        return previous;
       }
 
-      state?.intersectionObserver.disconnect();
-      state?.resizeObserver.disconnect();
+      previous?.intersectionObserver.disconnect();
+      previous?.resizeObserver.disconnect();
+
       if (div === null) {
         return null;
       }
+
       const resizeObserver = new ResizeObserver(() => {
         set(restoreScrollAtom);
       });
       resizeObserver.observe(div);
-      return {
-        div,
-        intersectionObserver: new IntersectionObserver((entries) => set(resetAnchorAtom, entries), {
-          threshold: [0.01, 0.5, 1],
-        }),
-        resizeObserver,
-      };
+      const intersectionObserver = new IntersectionObserver(
+        (entries) => set(resetAnchorAtom, entries),
+        { threshold: [0.01, 0.5, 1] },
+      );
+      for (const pageAtom of get(pagesAtom) ?? []) {
+        const page = get(pageAtom);
+        const element = get(page.elementAtom);
+        if (!element) {
+          continue;
+        }
+        intersectionObserver.observe(element);
+      }
+      return { div, intersectionObserver, resizeObserver };
     });
   },
 );
 scrollElementAtom.onMount = (set) => () => set(null);
 
-export type MaybePages = { pages?: ReturnType<typeof createPageAtom>[] };
 export const reloadErroredAtom = atom(null, (get, set) => {
   window.stop();
 
-  const viewer = get(viewerStateAtom) as MaybePages;
-  for (const atom of viewer?.pages ?? []) {
+  const pages = get(pagesAtom);
+  for (const atom of pages ?? []) {
     const page = get(atom);
     if (page.state.state !== "complete") {
       set(page.reloadAtom);
