@@ -5,17 +5,14 @@ import {
   startDownloadAtom,
   UserDownloadOptions,
 } from "../atoms/downloader_atoms.ts";
-import { toggleFullscreenAtom } from "../atoms/fullscreen_element_atom.ts";
+import { goNextAtom, goPreviousAtom } from "../atoms/navigation_atoms.ts";
 import { compactWidthIndexAtom } from "../atoms/setting_atoms.ts";
 import {
-  goNextAtom,
-  goPreviousAtom,
-  pagesAtom,
   reloadErroredAtom,
   setViewerOptionsAtom,
-  viewerElementAtom,
-  viewerStateAtom,
+  toggleFullscreenAtom,
 } from "../atoms/viewer_atoms.ts";
+import { pagesAtom, viewerElementAtom, viewerStateAtom } from "../atoms/viewer_state_atoms.ts";
 import { unmountComponentAtNode, useMemo, useStore } from "../deps.ts";
 import { ViewerOptions } from "../types.ts";
 

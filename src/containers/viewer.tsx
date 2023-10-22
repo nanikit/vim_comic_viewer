@@ -1,4 +1,4 @@
-import { fullScreenElementAtom } from "../atoms/fullscreen_element_atom.ts";
+import { navigateAtom, scrollElementAtom } from "../atoms/navigation_atoms.ts";
 import {
   backgroundColorAtom,
   compactWidthIndexAtom,
@@ -6,12 +6,10 @@ import {
 } from "../atoms/setting_atoms.ts";
 import {
   blockSelectionAtom,
-  navigateAtom,
-  scrollElementAtom,
+  fullScreenElementAtom,
   setViewerOptionsAtom,
-  viewerElementAtom,
-  viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
+import { viewerElementAtom, viewerStateAtom } from "../atoms/viewer_state_atoms.ts";
 import { FullscreenIcon } from "../components/icons.tsx";
 import { Container, ScrollableLayout } from "../components/scrollable_layout.ts";
 import {
