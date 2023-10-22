@@ -1,4 +1,5 @@
 import { atom } from "../deps.ts";
+import { beforeRepaintAtom } from "../modules/use_before_repaint.ts";
 import { viewerElementAtom } from "./viewer_state_atoms.ts";
 
 const scrollElementStateAtom = atom<
@@ -31,7 +32,7 @@ export const synchronizeScrollAtom = atom(null, (get, set) => {
   set(pageScrollStateAtom, { page, ratio });
 });
 
-const restoreScrollAtom = atom(null, (get, set) => {
+export const restoreScrollAtom = atom(null, (get, set) => {
   const { page, ratio } = get(pageScrollStateAtom);
   const element = get(scrollElementAtom);
   if (!element || !page) {
@@ -45,6 +46,7 @@ const restoreScrollAtom = atom(null, (get, set) => {
   element.scroll({ top: restoredY });
 });
 
+export const scrollElementSizeAtom = atom({ width: 0, height: 0 });
 export const scrollElementAtom = atom(
   (get) => get(scrollElementStateAtom)?.div ?? null,
   (_get, set, div: HTMLDivElement | null) => {
@@ -59,7 +61,10 @@ export const scrollElementAtom = atom(
         return null;
       }
 
-      const resizeObserver = new ResizeObserver(() => {
+      set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
+      const resizeObserver = new ResizeObserver(async () => {
+        set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
+        await set(beforeRepaintAtom);
         set(restoreScrollAtom);
       });
       resizeObserver.observe(div);
