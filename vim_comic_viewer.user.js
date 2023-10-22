@@ -3,22 +3,30 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        9.0.0
+// @version        10.0.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
 // @author         nanikit
 // @license        MIT
-// @resource       @stitches/react  https://cdn.jsdelivr.net/npm/@stitches/react@1.2.8/dist/index.cjs
-// @resource       fflate           https://cdn.jsdelivr.net/npm/fflate@0.7.4/lib/browser.cjs
-// @resource       object-assign    https://cdn.jsdelivr.net/npm/object-assign@4.1.1/index.js
-// @resource       react            https://cdn.jsdelivr.net/npm/react@18.2.0/cjs/react.production.min.js
-// @resource       react-dom        https://cdn.jsdelivr.net/npm/react-dom@18.2.0/cjs/react-dom.production.min.js
-// @resource       scheduler        https://cdn.jsdelivr.net/npm/scheduler@0.23.0/cjs/scheduler.production.min.js
+// @grant          GM_getValue
+// @grant          GM_setValue
+// @grant          GM_xmlhttpRequest
+// @grant          unsafeWindow
+// @resource       @stitches/react     https://cdn.jsdelivr.net/npm/@stitches/react@1.3.1-1/dist/index.cjs
+// @resource       fflate              https://cdn.jsdelivr.net/npm/fflate@0.8.1/lib/browser.cjs
+// @resource       jotai               https://cdn.jsdelivr.net/npm/jotai@2.4.2/index.js
+// @resource       jotai/react         https://cdn.jsdelivr.net/npm/jotai@2.4.2/react.js
+// @resource       jotai/react/utils   https://cdn.jsdelivr.net/npm/jotai@2.4.2/react/utils.js
+// @resource       jotai/utils         https://cdn.jsdelivr.net/npm/jotai@2.4.2/utils.js
+// @resource       jotai/vanilla       https://cdn.jsdelivr.net/npm/jotai@2.4.2/vanilla.js
+// @resource       jotai/vanilla/utils https://cdn.jsdelivr.net/npm/jotai@2.4.2/vanilla/utils.js
+// @resource       react               https://cdn.jsdelivr.net/npm/react@18.2.0/cjs/react.production.min.js
+// @resource       react-dom           https://cdn.jsdelivr.net/npm/react-dom@18.2.0/cjs/react-dom.production.min.js
+// @resource       scheduler           https://cdn.jsdelivr.net/npm/scheduler@0.23.0/cjs/scheduler.production.min.js
+// @resource       vcv-inject-node-env data:,unsafeWindow.process=%7Benv:%7BNODE_ENV:%22production%22%7D%7D
 // ==/UserScript==
-// deno-fmt-ignore-file
-// deno-lint-ignore-file
-
+"use strict";
 
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -49,31 +57,423 @@ __export(mod_exports, {
   Viewer: () => Viewer,
   download: () => download,
   initialize: () => initialize,
-  setTampermonkeyApi: () => setTampermonkeyApi,
-  transformToBlobUrl: () => transformToBlobUrl,
   types: () => types_exports,
   utils: () => utils_exports
 });
 module.exports = __toCommonJS(mod_exports);
 var React = __toESM(require("react"));
+var import_vcv_inject_node_env = require("vcv-inject-node-env");
 var deps_exports = {};
 __export(deps_exports, {
-  Fragment: () => import_react.Fragment,
-  createRef: () => import_react.createRef,
-  forwardRef: () => import_react.forwardRef,
-  useCallback: () => import_react.useCallback,
-  useEffect: () => import_react.useEffect,
-  useImperativeHandle: () => import_react.useImperativeHandle,
-  useMemo: () => import_react.useMemo,
-  useReducer: () => import_react.useReducer,
-  useRef: () => import_react.useRef,
-  useState: () => import_react.useState
+  Fragment: () => import_react2.Fragment,
+  Provider: () => import_jotai.Provider,
+  atom: () => import_jotai.atom,
+  atomWithStorage: () => import_utils.atomWithStorage,
+  createRef: () => import_react2.createRef,
+  createStitches: () => import_react.createStitches,
+  createStore: () => import_jotai.createStore,
+  deferred: () => deferred,
+  forwardRef: () => import_react2.forwardRef,
+  selectAtom: () => import_utils.selectAtom,
+  useAtom: () => import_jotai.useAtom,
+  useAtomValue: () => import_jotai.useAtomValue,
+  useCallback: () => import_react2.useCallback,
+  useEffect: () => import_react2.useEffect,
+  useId: () => import_react2.useId,
+  useImperativeHandle: () => import_react2.useImperativeHandle,
+  useMemo: () => import_react2.useMemo,
+  useReducer: () => import_react2.useReducer,
+  useRef: () => import_react2.useRef,
+  useSetAtom: () => import_jotai.useSetAtom,
+  useState: () => import_react2.useState,
+  useStore: () => import_jotai.useStore
 });
-__reExport(deps_exports, require("@stitches/react"));
+var import_react = require("@stitches/react");
 __reExport(deps_exports, require("fflate"));
-var import_react = require("react");
+function deferred() {
+  let methods;
+  let state = "pending";
+  const promise = new Promise((resolve, reject) => {
+    methods = {
+      async resolve(value) {
+        await value;
+        state = "fulfilled";
+        resolve(value);
+      },
+      reject(reason) {
+        state = "rejected";
+        reject(reason);
+      }
+    };
+  });
+  Object.defineProperty(promise, "state", { get: () => state });
+  return Object.assign(promise, methods);
+}
+var import_jotai = require("jotai");
+var import_utils = require("jotai/utils");
+var import_react2 = require("react");
 __reExport(deps_exports, require("react-dom"));
-var { styled, css, keyframes } = (0, deps_exports.createStitches)({});
+var viewerElementStateAtom = (0, import_jotai.atom)(null);
+var viewerSizeAtom = (0, import_jotai.atom)(null);
+var viewerElementAtom = (0, import_jotai.atom)(
+  (get) => get(viewerElementStateAtom)?.div ?? null,
+  (_get, set, div) => {
+    set(viewerElementStateAtom, (previous) => {
+      previous?.resizeObserver.disconnect();
+      if (!div) {
+        return null;
+      }
+      const observer = new ResizeObserver((entries) => {
+        const { width, height } = entries[0].contentRect;
+        set(viewerSizeAtom, { width, height });
+      });
+      observer.observe(div);
+      return { div, resizeObserver: observer };
+    });
+  }
+);
+var viewerStateAtom = (0, import_jotai.atom)({ options: {}, status: "loading" });
+var pagesAtom = (0, import_utils.selectAtom)(
+  viewerStateAtom,
+  (state) => state.pages
+);
+var scrollElementStateAtom = (0, import_jotai.atom)(null);
+var initialPageScrollState = { page: null, ratio: 0.5 };
+var shouldIgnoreScrollAtom = (0, import_jotai.atom)(false);
+var pageScrollStateAtom = (0, import_jotai.atom)(initialPageScrollState);
+var synchronizeScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
+  const { page, ratio } = getCurrentPage(get(scrollElementAtom));
+  const isViewerExitScroll = !page;
+  if (isViewerExitScroll) {
+    return;
+  }
+  if (get(shouldIgnoreScrollAtom)) {
+    set(shouldIgnoreScrollAtom, false);
+    return;
+  }
+  set(pageScrollStateAtom, { page, ratio });
+});
+var restoreScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
+  const { page, ratio } = get(pageScrollStateAtom);
+  const element = get(scrollElementAtom);
+  if (!element || !page) {
+    return;
+  }
+  const { offsetTop, clientHeight } = page;
+  const restoredY = offsetTop + clientHeight * ratio - element.clientHeight / 2;
+  set(shouldIgnoreScrollAtom, true);
+  element.scroll({ top: restoredY });
+});
+var scrollElementAtom = (0, import_jotai.atom)(
+  (get) => get(scrollElementStateAtom)?.div ?? null,
+  (_get, set, div) => {
+    set(scrollElementStateAtom, (previous) => {
+      if (previous?.div === div) {
+        return previous;
+      }
+      previous?.resizeObserver.disconnect();
+      if (div === null) {
+        return null;
+      }
+      const resizeObserver = new ResizeObserver(() => {
+        set(restoreScrollAtom);
+      });
+      resizeObserver.observe(div);
+      return { div, resizeObserver };
+    });
+  }
+);
+scrollElementAtom.onMount = (set) => () => set(null);
+var goNextAtom = (0, import_jotai.atom)(null, (get) => {
+  const scrollElement = get(scrollElementAtom);
+  const { page } = getCurrentPage(scrollElement);
+  if (!page) {
+    return;
+  }
+  const viewerHeight = scrollElement.clientHeight;
+  const ignorableHeight = viewerHeight * 0.05;
+  const scrollBottom = scrollElement.scrollTop + viewerHeight;
+  const remainingHeight = page.offsetTop + page.clientHeight - scrollBottom;
+  if (remainingHeight > ignorableHeight) {
+    const divisor = Math.ceil(remainingHeight / viewerHeight);
+    scrollElement.scrollBy({ top: remainingHeight / divisor });
+  } else {
+    scrollToNextPageTopOrEnd(page);
+  }
+});
+var goPreviousAtom = (0, import_jotai.atom)(null, (get) => {
+  const scrollElement = get(scrollElementAtom);
+  const { page } = getCurrentPage(scrollElement);
+  if (!page) {
+    return;
+  }
+  const viewerHeight = scrollElement.clientHeight;
+  const ignorableHeight = viewerHeight * 0.05;
+  const remainingHeight = scrollElement.scrollTop - page.offsetTop;
+  if (remainingHeight > ignorableHeight) {
+    const divisor = Math.ceil(remainingHeight / viewerHeight);
+    scrollElement.scrollBy({ top: -(remainingHeight / divisor) });
+  } else {
+    scrollToPreviousPageBottomOrStart(page);
+  }
+});
+var navigateAtom = (0, import_jotai.atom)(null, (get, set, event) => {
+  const height = get(viewerElementAtom)?.clientHeight;
+  if (!height || event.button !== 0) {
+    return;
+  }
+  event.preventDefault();
+  const isTop = event.clientY < height / 2;
+  if (isTop) {
+    set(goPreviousAtom);
+  } else {
+    set(goNextAtom);
+  }
+});
+function scrollToNextPageTopOrEnd(page) {
+  const originBound = page.getBoundingClientRect();
+  let cursor = page;
+  while (cursor.nextElementSibling) {
+    const next = cursor.nextElementSibling;
+    const nextBound = next.getBoundingClientRect();
+    if (originBound.bottom < nextBound.top) {
+      next.scrollIntoView({ block: "start" });
+      return;
+    }
+    cursor = next;
+  }
+  cursor.scrollIntoView({ block: "end" });
+}
+function scrollToPreviousPageBottomOrStart(page) {
+  const originBound = page.getBoundingClientRect();
+  let cursor = page;
+  while (cursor.previousElementSibling) {
+    const previous = cursor.previousElementSibling;
+    const previousBound = previous.getBoundingClientRect();
+    if (previousBound.bottom < originBound.top) {
+      previous.scrollIntoView({ block: "end" });
+      return;
+    }
+    cursor = previous;
+  }
+  cursor.scrollIntoView({ block: "start" });
+}
+function getCurrentPage(container) {
+  const clientHeight = container?.clientHeight;
+  if (!clientHeight) {
+    return initialPageScrollState;
+  }
+  const children = [...container.children];
+  if (!children.length) {
+    return initialPageScrollState;
+  }
+  const viewportTop = container.scrollTop;
+  const viewportBottom = viewportTop + container.clientHeight;
+  const fullyVisiblePages = children.filter(
+    (x) => x.offsetTop >= viewportTop && x.offsetTop + x.clientHeight <= viewportBottom
+  );
+  if (fullyVisiblePages.length) {
+    return { page: fullyVisiblePages[Math.floor(fullyVisiblePages.length / 2)], ratio: 0.5 };
+  }
+  const scrollCenter = (viewportTop + viewportBottom) / 2;
+  const centerCrossingPage = children.find(
+    (x) => x.offsetTop <= scrollCenter && x.offsetTop + x.clientHeight >= scrollCenter
+  );
+  const ratio = (scrollCenter - centerCrossingPage.offsetTop) / centerCrossingPage.clientHeight;
+  return { page: centerCrossingPage, ratio };
+}
+var gmStorage = {
+  getItem: (key, initialValue) => {
+    return GM_getValue(key, initialValue);
+  },
+  setItem: (key, value) => GM_setValue(key, value),
+  removeItem: (key) => GM_deleteValue(key)
+};
+function gmValueAtom(key, defaultValue) {
+  return (0, import_utils.atomWithStorage)(key, defaultValue, gmStorage);
+}
+var backgroundColorAtom = gmValueAtom("vim_comic_viewer.background_color", "#eeeeee");
+var compactWidthIndexAtom = gmValueAtom("vim_comic_viewer.single_page_count", 1);
+var minMagnificationRatioAtom = gmValueAtom(
+  "vim_comic_viewer.min_magnification_ratio",
+  0.5
+);
+var maxMagnificationRatioAtom = gmValueAtom("vim_comic_viewer.max_magnification_ratio", 3);
+var pageDirectionAtom = gmValueAtom(
+  "vim_comic_viewer.page_direction",
+  "rightToLeft"
+);
+function imageSourceToIterable(source) {
+  if (typeof source === "string") {
+    return async function* () {
+      yield source;
+    }();
+  } else if (Array.isArray(source)) {
+    return async function* () {
+      for (const url of source) {
+        yield url;
+      }
+    }();
+  } else {
+    return source();
+  }
+}
+function createPageAtom({ index, source }) {
+  let imageLoad = deferred();
+  const stateAtom = (0, import_jotai.atom)({ state: "loading" });
+  const loadAtom = (0, import_jotai.atom)(null, async (_get, set) => {
+    const urls = [];
+    for await (const url of imageSourceToIterable(source)) {
+      urls.push(url);
+      imageLoad = deferred();
+      set(stateAtom, { src: url, state: "loading" });
+      const result = await imageLoad;
+      switch (result) {
+        case false:
+          continue;
+        case null:
+          return;
+        default: {
+          const img = result;
+          set(stateAtom, { src: url, naturalHeight: img.naturalHeight, state: "complete" });
+          return;
+        }
+      }
+    }
+    set(stateAtom, { urls, state: "error" });
+  });
+  loadAtom.onMount = (set) => {
+    set();
+  };
+  const reloadAtom = (0, import_jotai.atom)(null, async (_get, set) => {
+    imageLoad.resolve(null);
+    await set(loadAtom);
+  });
+  const magnificationRatioAtom = (0, import_jotai.atom)((get) => {
+    const viewerSize = get(viewerSizeAtom);
+    if (!viewerSize) {
+      return 1;
+    }
+    const state = get(stateAtom);
+    if (state.state !== "complete") {
+      return 1;
+    }
+    return viewerSize.height / state.naturalHeight;
+  });
+  const viewAsOriginalSizeAtom = (0, import_jotai.atom)((get) => {
+    const minRatio = get(minMagnificationRatioAtom);
+    const maxRatio = get(maxMagnificationRatioAtom);
+    const ratio = get(magnificationRatioAtom);
+    const isFit = minRatio <= ratio && ratio <= maxRatio;
+    return !isFit;
+  });
+  const aggregateAtom = (0, import_jotai.atom)((get) => {
+    get(loadAtom);
+    const state = get(stateAtom);
+    const compactWidthIndex = get(compactWidthIndexAtom);
+    const isOriginalSize = get(viewAsOriginalSizeAtom);
+    const ratio = get(magnificationRatioAtom);
+    const isOverScreen = isOriginalSize && ratio < 1;
+    return {
+      state,
+      reloadAtom,
+      fullWidth: index < compactWidthIndex || isOverScreen,
+      isOriginalSize,
+      imageProps: {
+        ..."src" in state ? { src: state.src } : {},
+        onError: () => imageLoad.resolve(false),
+        onLoad: (event) => imageLoad.resolve(event.currentTarget)
+      }
+    };
+  });
+  return aggregateAtom;
+}
+var setViewerOptionsAtom = (0, import_jotai.atom)(
+  null,
+  async (get, set, options) => {
+    try {
+      const { source } = options;
+      if (source === get(viewerStateAtom).options.source) {
+        return;
+      }
+      if (!source) {
+        set(viewerStateAtom, (state) => ({
+          ...state,
+          status: "complete",
+          images: [],
+          pages: []
+        }));
+        return;
+      }
+      set(viewerStateAtom, (state) => ({ ...state, status: "loading" }));
+      const images = await source();
+      if (!Array.isArray(images)) {
+        throw new Error(`Invalid comic source type: ${typeof images}`);
+      }
+      set(viewerStateAtom, (state) => ({
+        ...state,
+        status: "complete",
+        images,
+        pages: images.map((source2, index) => createPageAtom({ source: source2, index }))
+      }));
+    } catch (error) {
+      set(viewerStateAtom, (state) => ({ ...state, status: "error" }));
+      console.error(error);
+      throw error;
+    }
+  }
+);
+var reloadErroredAtom = (0, import_jotai.atom)(null, (get, set) => {
+  window.stop();
+  const pages = get(pagesAtom);
+  for (const atom2 of pages ?? []) {
+    const page = get(atom2);
+    if (page.state.state !== "complete") {
+      set(page.reloadAtom);
+    }
+  }
+});
+var fullscreenElementStateAtom = (0, import_jotai.atom)(
+  document.fullscreenElement ?? null
+);
+fullscreenElementStateAtom.onMount = (set) => {
+  const notify = () => set(document.fullscreenElement ?? null);
+  document.addEventListener("fullscreenchange", notify);
+  return () => document.removeEventListener("fullscreenchange", notify);
+};
+var fullScreenElementAtom = (0, import_jotai.atom)(
+  (get) => get(fullscreenElementStateAtom),
+  async (get, set, element) => {
+    const fullscreenElement = get(fullscreenElementStateAtom);
+    if (element === fullscreenElement) {
+      return;
+    }
+    if (element) {
+      await element.requestFullscreen?.();
+      const viewer = get(viewerElementAtom);
+      if (viewer === element) {
+        viewer.focus();
+      }
+    } else {
+      await document.exitFullscreen?.();
+    }
+    set(fullscreenElementStateAtom, element);
+  }
+);
+var toggleFullscreenAtom = (0, import_jotai.atom)(null, async (get, set) => {
+  const fullscreen = get(fullScreenElementAtom);
+  await set(fullScreenElementAtom, fullscreen ? null : get(viewerElementAtom));
+});
+var blockSelectionAtom = (0, import_jotai.atom)(null, (_get, set, event) => {
+  if (event.detail >= 2) {
+    event.preventDefault();
+  }
+  if (event.buttons === 3) {
+    set(toggleFullscreenAtom);
+    event.preventDefault();
+  }
+});
+var { styled, css, keyframes } = (0, import_react.createStitches)({});
 var Svg = styled("svg", {
   opacity: "50%",
   filter: "drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)",
@@ -84,12 +484,12 @@ var Svg = styled("svg", {
     transform: "scale(1.1)"
   }
 });
-var downloadCss = { width: "40px", marginLeft: "20px" };
+var downloadCss = { width: "40px" };
 var fullscreenCss = {
-  right: "24px",
   position: "absolute",
-  width: "40px",
-  bottom: "8px"
+  right: "1%",
+  bottom: "1%",
+  width: "40px"
 };
 var DownloadIcon = (props) =>  React.createElement(
   Svg,
@@ -127,9 +527,6 @@ var CircledX = (props) => {
   return  React.createElement(
     ErrorIcon,
     {
-      version: "1.1",
-      id: "Layer_1",
-      xmlns: "http://www.w3.org/2000/svg",
       x: "0px",
       y: "0px",
       viewBox: "0 0 122.881 122.88",
@@ -139,17 +536,24 @@ var CircledX = (props) => {
      React.createElement("g", null,  React.createElement("path", { d: "M61.44,0c16.966,0,32.326,6.877,43.445,17.996c11.119,11.118,17.996,26.479,17.996,43.444 c0,16.967-6.877,32.326-17.996,43.444C93.766,116.003,78.406,122.88,61.44,122.88c-16.966,0-32.326-6.877-43.444-17.996 C6.877,93.766,0,78.406,0,61.439c0-16.965,6.877-32.326,17.996-43.444C29.114,6.877,44.474,0,61.44,0L61.44,0z M80.16,37.369 c1.301-1.302,3.412-1.302,4.713,0c1.301,1.301,1.301,3.411,0,4.713L65.512,61.444l19.361,19.362c1.301,1.301,1.301,3.411,0,4.713 c-1.301,1.301-3.412,1.301-4.713,0L60.798,66.157L41.436,85.52c-1.301,1.301-3.412,1.301-4.713,0c-1.301-1.302-1.301-3.412,0-4.713 l19.363-19.362L36.723,42.082c-1.301-1.302-1.301-3.412,0-4.713c1.301-1.302,3.412-1.302,4.713,0l19.363,19.362L80.16,37.369 L80.16,37.369z M100.172,22.708C90.26,12.796,76.566,6.666,61.44,6.666c-15.126,0-28.819,6.13-38.731,16.042 C12.797,32.62,6.666,46.314,6.666,61.439c0,15.126,6.131,28.82,16.042,38.732c9.912,9.911,23.605,16.042,38.731,16.042 c15.126,0,28.82-6.131,38.732-16.042c9.912-9.912,16.043-23.606,16.043-38.732C116.215,46.314,110.084,32.62,100.172,22.708 L100.172,22.708z" }))
   );
 };
-var MenuIcon = (props) =>  React.createElement(
-  Svg,
-  {
-    xmlns: "http://www.w3.org/2000/svg",
-    viewBox: "0 0 24 24",
-    width: "40px",
-    height: "40px",
-    ...props
-  },
-   React.createElement("path", { d: "M 3 5 A 1.0001 1.0001 0 1 0 3 7 L 21 7 A 1.0001 1.0001 0 1 0 21 5 L 3 5 z M 3 11 A 1.0001 1.0001 0 1 0 3 13 L 21 13 A 1.0001 1.0001 0 1 0 21 11 L 3 11 z M 3 17 A 1.0001 1.0001 0 1 0 3 19 L 21 19 A 1.0001 1.0001 0 1 0 21 17 L 3 17 z" })
-);
+var IconSettings = (props) => {
+  return  React.createElement(
+    Svg,
+    {
+      fill: "none",
+      stroke: "currentColor",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      strokeWidth: 2,
+      viewBox: "0 0 24 24",
+      height: "40px",
+      width: "40px",
+      ...props
+    },
+     React.createElement("path", { d: "M15 12 A3 3 0 0 1 12 15 A3 3 0 0 1 9 12 A3 3 0 0 1 15 12 z" }),
+     React.createElement("path", { d: "M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" })
+  );
+};
 var defaultScrollbar = {
   "scrollbarWidth": "initial",
   "scrollbarColor": "initial",
@@ -161,9 +565,51 @@ var defaultScrollbar = {
   "&::-webkit-scrollbar-track": { all: "initial" }
 };
 var Container = styled("div", {
-  position: "relative",
   height: "100%",
-  userSelect: "none"
+  userSelect: "none",
+  fontFamily: "Pretendard, NanumGothic, sans-serif",
+  fontSize: "1vmin",
+  "*:where(:not(html, iframe, canvas, img, svg, video, audio):not(svg *, symbol *))": {
+    all: "unset",
+    display: "revert"
+  },
+  "*, *::before, *::after": {
+    boxSizing: "border-box"
+  },
+  "a, button": {
+    cursor: "revert"
+  },
+  "ol, ul, menu": {
+    listStyle: "none"
+  },
+  "img": {
+    maxInlineSize: "100%",
+    maxBlockSize: "100%"
+  },
+  "table": {
+    borderCollapse: "collapse"
+  },
+  "input, textarea": {
+    userSelect: "auto"
+  },
+  "textarea": {
+    whiteSpace: "revert"
+  },
+  "meter": {
+    appearance: "revert"
+  },
+  ":where(pre)": {
+    all: "revert"
+  },
+  "::placeholder": {
+    color: "unset"
+  },
+  "::marker": {
+    content: "initial"
+  },
+  ":where([hidden])": {
+    display: "none"
+  }
 });
 var ScrollableLayout = styled("div", {
   outline: 0,
@@ -179,11 +625,15 @@ var ScrollableLayout = styled("div", {
   variants: {
     fullscreen: {
       true: {
-        display: "flex",
         position: "fixed",
         top: 0,
         bottom: 0,
         overflow: "auto"
+      }
+    },
+    ltr: {
+      true: {
+        flexFlow: "row wrap"
       }
     },
     dark: {
@@ -198,7 +648,6 @@ var ScrollableLayout = styled("div", {
 });
 var utils_exports = {};
 __export(utils_exports, {
-  defer: () => defer,
   getSafeFileName: () => getSafeFileName,
   insertCss: () => insertCss,
   isTyping: () => isTyping,
@@ -208,18 +657,13 @@ __export(utils_exports, {
   waitDomContent: () => waitDomContent
 });
 var timeout = (millisecond) => new Promise((resolve) => setTimeout(resolve, millisecond));
-var waitDomContent = (document2) => document2.readyState === "loading" ? new Promise(
-  (r) => document2.addEventListener("readystatechange", r, { once: true })
-) : true;
+var waitDomContent = (document2) => document2.readyState === "loading" ? new Promise((r) => document2.addEventListener("readystatechange", r, { once: true })) : true;
 var insertCss = (css2) => {
   const style = document.createElement("style");
   style.innerHTML = css2;
   document.head.append(style);
 };
-var isTyping = (event) => {
-  var _a, _b, _c, _d;
-  return ((_c = (_b = (_a = event.target) == null ? void 0 : _a.tagName) == null ? void 0 : _b.match) == null ? void 0 : _c.call(_b, /INPUT|TEXTAREA/)) || ((_d = event.target) == null ? void 0 : _d.isContentEditable);
-};
+var isTyping = (event) => event.target?.tagName?.match?.(/INPUT|TEXTAREA/) || event.target?.isContentEditable;
 var saveAs = async (blob, name) => {
   const a = document.createElement("a");
   a.download = name;
@@ -235,21 +679,8 @@ var getSafeFileName = (str) => {
 var save = (blob) => {
   return saveAs(blob, `${getSafeFileName(document.title)}.zip`);
 };
-var defer = () => {
-  let resolve, reject;
-  const promise = new Promise((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-  return { promise, resolve, reject };
-};
-var maybeNotHotkey = (event) => event.ctrlKey || event.altKey || event.metaKey || isTyping(event);
-var useDefault = ({
-  enable,
-  controller
-}) => {
+function useDefault({ enable, controller }) {
   const defaultKeyHandler = async (event) => {
-    var _a;
     if (maybeNotHotkey(event)) {
       return;
     }
@@ -263,7 +694,7 @@ var useDefault = ({
         controller.goPrevious();
         break;
       case ";":
-        await ((_a = controller.downloader) == null ? void 0 : _a.downloadWithProgress());
+        await controller.downloader?.downloadAndSave();
         break;
       case "/":
         controller.compactWidthIndex++;
@@ -275,8 +706,9 @@ var useDefault = ({
         controller.reloadErrored();
         break;
       default:
-        break;
+        return;
     }
+    event.stopPropagation();
   };
   const defaultGlobalKeyHandler = (event) => {
     if (maybeNotHotkey(event)) {
@@ -286,44 +718,50 @@ var useDefault = ({
       controller.toggleFullscreen();
     }
   };
-  (0, import_react.useEffect)(() => {
+  (0, import_react2.useEffect)(() => {
     if (!controller || !enable) {
       return;
     }
-    controller.container.addEventListener("keydown", defaultKeyHandler);
+    controller.container?.addEventListener("keydown", defaultKeyHandler);
     addEventListener("keydown", defaultGlobalKeyHandler);
     return () => {
-      controller.container.removeEventListener("keydown", defaultKeyHandler);
+      controller.container?.removeEventListener("keydown", defaultKeyHandler);
       removeEventListener("keydown", defaultGlobalKeyHandler);
     };
   }, [controller, enable]);
-};
-var useFullscreenElement = () => {
-  const [element, setElement] = (0, import_react.useState)(
-    document.fullscreenElement || void 0
-  );
-  (0, import_react.useEffect)(() => {
-    const notify = () => setElement(document.fullscreenElement || void 0);
-    document.addEventListener("fullscreenchange", notify);
-    return () => document.removeEventListener("fullscreenchange", notify);
-  }, []);
-  return element;
-};
-var tampermonkeyApi = {};
-function setTampermonkeyApi(api) {
-  tampermonkeyApi = api != null ? api : {};
 }
-var gmFetch = (resource, init) => {
-  const method = (init == null ? void 0 : init.body) ? "POST" : "GET";
+function maybeNotHotkey(event) {
+  const { ctrlKey, altKey, metaKey } = event;
+  return ctrlKey || altKey || metaKey || isTyping(event);
+}
+async function fetchBlob(url, init) {
+  try {
+    const response = await fetch(url, init);
+    return await response.blob();
+  } catch (error) {
+    if (init?.signal?.aborted) {
+      throw error;
+    }
+    const isOriginDifferent = new URL(url).origin !== location.origin;
+    if (isOriginDifferent) {
+      return await gmFetch(url, init).blob();
+    } else {
+      throw new Error("CORS blocked and cannot use GM_xmlhttpRequest", {
+        cause: error
+      });
+    }
+  }
+}
+function gmFetch(resource, init) {
+  const method = init?.body ? "POST" : "GET";
   const xhr = (type) => {
     return new Promise((resolve, reject) => {
-      var _a;
-      const request = tampermonkeyApi.GM_xmlhttpRequest({
+      const request = GM_xmlhttpRequest({
         method,
         url: resource,
-        headers: init == null ? void 0 : init.headers,
+        headers: init?.headers,
         responseType: type === "text" ? void 0 : type,
-        data: init == null ? void 0 : init.body,
+        data: init?.body,
         onload: (response) => {
           if (type === "text") {
             resolve(response.responseText);
@@ -334,7 +772,7 @@ var gmFetch = (resource, init) => {
         onerror: reject,
         onabort: reject
       });
-      (_a = init == null ? void 0 : init.signal) == null ? void 0 : _a.addEventListener(
+      init?.signal?.addEventListener(
         "abort",
         () => {
           request.abort();
@@ -348,62 +786,13 @@ var gmFetch = (resource, init) => {
     json: () => xhr("json"),
     text: () => xhr("text")
   };
-};
-var fetchBlob = async (url, init) => {
-  var _a;
-  try {
-    const response = await fetch(url, init);
-    return await response.blob();
-  } catch (error) {
-    if ((_a = init == null ? void 0 : init.signal) == null ? void 0 : _a.aborted) {
-      throw error;
-    }
-    const isOriginDifferent = new URL(url).origin !== location.origin;
-    if (isOriginDifferent && tampermonkeyApi.GM_xmlhttpRequest) {
-      return await gmFetch(url, init).blob();
-    } else {
-      throw new Error("CORS blocked and cannot use GM_xmlhttpRequest", {
-        cause: error
-      });
-    }
-  }
-};
-var imageSourceToIterable = (source) => {
-  if (typeof source === "string") {
-    return async function* () {
-      yield source;
-    }();
-  } else if (Array.isArray(source)) {
-    return async function* () {
-      for (const url of source) {
-        yield url;
-      }
-    }();
-  } else {
-    return source();
-  }
-};
-var transformToBlobUrl = (source) => async () => {
-  const imageSources = await source();
-  return imageSources.map(
-    (imageSource) => async function* () {
-      for await (const url of imageSourceToIterable(imageSource)) {
-        try {
-          const blob = await fetchBlob(url);
-          yield URL.createObjectURL(blob);
-        } catch (error) {
-          console.log(error);
-        }
-      }
-    }
-  );
-};
+}
 var isGmCancelled = (error) => {
   return error instanceof Function;
 };
 async function* downloadImage({ source, signal }) {
   for await (const url of imageSourceToIterable(source)) {
-    if (signal == null ? void 0 : signal.aborted) {
+    if (signal?.aborted) {
       break;
     }
     try {
@@ -423,7 +812,7 @@ var getExtension = (url) => {
     return ".txt";
   }
   const extension = url.match(/\.[^/?#]{3,4}?(?=[?#]|$)/);
-  return (extension == null ? void 0 : extension[0]) || ".jpg";
+  return extension?.[0] || ".jpg";
 };
 var guessExtension = (array) => {
   const { 0: a, 1: b, 2: c, 3: d } = array;
@@ -455,7 +844,7 @@ var download = (images, options) => {
     }
     const total = images.length;
     const settled = resolvedCount + rejectedCount;
-    onProgress == null ? void 0 : onProgress({
+    onProgress?.({
       total,
       started: startedCount,
       settled,
@@ -471,7 +860,7 @@ var download = (images, options) => {
     for await (const event of downloadImage({ source, signal })) {
       if ("error" in event) {
         errors.push(event.error);
-        onError == null ? void 0 : onError(event.error);
+        onError?.(event.error);
         continue;
       }
       if (event.url) {
@@ -489,21 +878,20 @@ var download = (images, options) => {
   };
   const cipher = Math.floor(Math.log10(images.length)) + 1;
   const toPair = async ({ url, blob }, index) => {
-    var _a;
     const array = new Uint8Array(await blob.arrayBuffer());
     const pad = `${index}`.padStart(cipher, "0");
-    const name = `${pad}${(_a = guessExtension(array)) != null ? _a : getExtension(url)}`;
+    const name = `${pad}${guessExtension(array) ?? getExtension(url)}`;
     return { [name]: array };
   };
   const archiveWithReport = async (sources) => {
     const result = await Promise.all(sources.map(downloadWithReport));
-    if (signal == null ? void 0 : signal.aborted) {
+    if (signal?.aborted) {
       reportProgress({ isCancelled: true });
       throw new Error("aborted");
     }
     const pairs = await Promise.all(result.map(toPair));
     const data = Object.assign({}, ...pairs);
-    const value = defer();
+    const value = deferred();
     const abort = (0, deps_exports.zip)(data, { level: 0 }, (error, array) => {
       if (error) {
         value.reject(error);
@@ -512,493 +900,116 @@ var download = (images, options) => {
         value.resolve(array);
       }
     });
-    signal == null ? void 0 : signal.addEventListener("abort", abort, { once: true });
-    return value.promise;
+    signal?.addEventListener("abort", abort, { once: true });
+    return value;
   };
   return archiveWithReport(images);
 };
-var useRerender = () => {
-  const [, rerender] = (0, import_react.useReducer)(() => ({}), {});
-  return rerender;
-};
-var isNotAbort = (error) => !/aborted/i.test(`${error}`);
-var logIfNotAborted = (error) => {
-  if (isNotAbort(error)) {
-    console.error(error);
+var aborterAtom = (0, import_jotai.atom)(null);
+var cancelDownloadAtom = (0, import_jotai.atom)(null, (get) => {
+  get(aborterAtom)?.abort();
+});
+var downloadProgressAtom = (0, import_jotai.atom)({
+  value: 0,
+  text: "",
+  error: false
+});
+var startDownloadAtom = (0, import_jotai.atom)(null, async (get, set, options) => {
+  const viewerState = get(viewerStateAtom);
+  if (viewerState.status !== "complete") {
+    return;
   }
-};
-var makeDownloader = (images) => {
-  let aborter = new AbortController();
-  let rerender;
-  let progress = {
-    value: 0,
-    text: "",
-    error: false
-  };
-  const startDownload = (options) => {
-    aborter = new AbortController();
-    return download(images, { ...options, signal: aborter.signal });
-  };
-  const downloadAndSave = async (options) => {
-    const zip2 = await startDownload(options);
-    if (zip2) {
-      await save(new Blob([zip2]));
-    }
-  };
-  const reportProgress = (event) => {
+  const aborter = new AbortController();
+  set(aborterAtom, (previous) => {
+    previous?.abort();
+    return aborter;
+  });
+  addEventListener("beforeunload", confirmDownloadAbort);
+  try {
+    return await download(options?.images ?? viewerState.images, {
+      onProgress: reportProgress,
+      onError: logIfNotAborted,
+      signal: aborter.signal
+    });
+  } finally {
+    removeEventListener("beforeunload", confirmDownloadAbort);
+  }
+  function reportProgress(event) {
     const { total, started, settled, rejected, isCancelled, isComplete } = event;
     const value = started / total * 0.1 + settled / total * 0.89;
     const text = `${(value * 100).toFixed(1)}%`;
     const error = !!rejected;
     if (isComplete || isCancelled) {
-      progress = { value: 0, text: "", error: false };
-      rerender == null ? void 0 : rerender();
-    } else if (text !== progress.text) {
-      progress = { value, text, error };
-      rerender == null ? void 0 : rerender();
-    }
-  };
-  const downloadWithProgress = async () => {
-    try {
-      await downloadAndSave({
-        onProgress: reportProgress,
-        onError: logIfNotAborted
-      });
-    } catch (error) {
-      if (isNotAbort(error)) {
-        throw error;
-      }
-    }
-  };
-  const guard = (event) => {
-    event.preventDefault();
-  };
-  const useInstance = () => {
-    const { error, text } = progress;
-    rerender = useRerender();
-    (0, import_react.useEffect)(() => {
-      if (error || !text) {
-        return;
-      }
-      addEventListener("beforeunload", guard);
-      return () => removeEventListener("beforeunload", guard);
-    }, [error || !text]);
-  };
-  return {
-    get progress() {
-      return progress;
-    },
-    download: startDownload,
-    downloadAndSave,
-    downloadWithProgress,
-    cancelDownload: () => aborter.abort(),
-    useInstance
-  };
-};
-var makePageController = ({ source, observer }) => {
-  let imageLoad;
-  let state;
-  let setState;
-  let key = "";
-  const load = async () => {
-    const urls = [];
-    key = `${Math.random()}`;
-    for await (const url of imageSourceToIterable(source)) {
-      urls.push(url);
-      imageLoad = defer();
-      setState == null ? void 0 : setState({ src: url, state: "loading" });
-      const result = await imageLoad.promise;
-      switch (result) {
-        case true:
-          setState == null ? void 0 : setState({ src: url, state: "complete" });
-          return;
-        case null:
-          return;
-      }
-    }
-    setState == null ? void 0 : setState({ urls, state: "error" });
-  };
-  const useInstance = ({ ref }) => {
-    [state, setState] = (0, import_react.useState)({ src: "", state: "loading" });
-    (0, import_react.useEffect)(() => {
-      load();
-    }, []);
-    (0, import_react.useEffect)(() => {
-      const target = ref == null ? void 0 : ref.current;
-      if (target && observer) {
-        observer.observe(target);
-        return () => observer.unobserve(target);
-      }
-    }, [observer, ref.current]);
-    return {
-      key,
-      ...state.src ? { src: state.src } : {},
-      onError: () => imageLoad.resolve(false),
-      onLoad: () => imageLoad.resolve(true)
-    };
-  };
-  return {
-    get state() {
-      return state;
-    },
-    reload: async () => {
-      setState == null ? void 0 : setState({ state: "complete" });
-      imageLoad.resolve(null);
-      await load();
-    },
-    useInstance
-  };
-};
-var useIntersectionObserver = (callback, options) => {
-  const [observer, setObserver] = (0, import_react.useState)();
-  (0, import_react.useEffect)(() => {
-    const newObserver = new IntersectionObserver(callback, options);
-    setObserver(newObserver);
-    return () => newObserver.disconnect();
-  }, [callback, options]);
-  return observer;
-};
-var useIntersection = (callback, options) => {
-  const memo = (0, import_react.useRef)( new Map());
-  const filterIntersections = (0, import_react.useCallback)(
-    (newEntries) => {
-      const memoized = memo.current;
-      for (const entry of newEntries) {
-        if (entry.isIntersecting) {
-          memoized.set(entry.target, entry);
-        } else {
-          memoized.delete(entry.target);
-        }
-      }
-      callback([...memoized.values()]);
-    },
-    [callback]
-  );
-  return useIntersectionObserver(filterIntersections, options);
-};
-var useResize = (target, transformer) => {
-  const [value, setValue] = (0, import_react.useState)(() => transformer(void 0));
-  const callbackRef = (0, import_react.useRef)(transformer);
-  callbackRef.current = transformer;
-  (0, import_react.useEffect)(() => {
-    if (!target) {
-      return;
-    }
-    const observer = new ResizeObserver((entries) => {
-      setValue(callbackRef.current(entries[0]));
-    });
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [target, callbackRef]);
-  return value;
-};
-var getCurrentPage = (container, entries) => {
-  if (!entries.length) {
-    return container.firstElementChild || void 0;
-  }
-  const children = [...container.children];
-  const fullyVisibles = entries.filter((x) => x.intersectionRatio === 1);
-  if (fullyVisibles.length) {
-    fullyVisibles.sort((a, b) => {
-      return children.indexOf(a.target) - children.indexOf(b.target);
-    });
-    return fullyVisibles[Math.floor(fullyVisibles.length / 2)].target;
-  }
-  return entries.sort((a, b) => {
-    const ratio = {
-      a: a.intersectionRatio,
-      b: b.intersectionRatio
-    };
-    const index = {
-      a: children.indexOf(a.target),
-      b: children.indexOf(b.target)
-    };
-    return (ratio.b - ratio.a) * 1e4 + (index.a - index.b);
-  })[0].target;
-};
-var makePageNavigator = (ref) => {
-  let currentPage;
-  let ratio;
-  let ignoreIntersection = false;
-  const resetAnchor = (entries) => {
-    const container = ref.current;
-    if (!(container == null ? void 0 : container.clientHeight) || entries.length === 0) {
-      return;
-    }
-    if (ignoreIntersection) {
-      ignoreIntersection = false;
-      return;
-    }
-    const page = getCurrentPage(container, entries);
-    const y = container.scrollTop + container.clientHeight / 2;
-    currentPage = page;
-    ratio = (y - page.offsetTop) / page.clientHeight;
-  };
-  const goNext = () => {
-    ignoreIntersection = false;
-    if (!currentPage) {
-      return;
-    }
-    const originBound = currentPage.getBoundingClientRect();
-    let cursor = currentPage;
-    while (cursor.nextElementSibling) {
-      const next = cursor.nextElementSibling;
-      const nextBound = next.getBoundingClientRect();
-      if (originBound.bottom < nextBound.top) {
-        next.scrollIntoView({ block: "center" });
-        break;
-      }
-      cursor = next;
-    }
-  };
-  const goPrevious = () => {
-    ignoreIntersection = false;
-    if (!currentPage) {
-      return;
-    }
-    const originBound = currentPage.getBoundingClientRect();
-    let cursor = currentPage;
-    while (cursor.previousElementSibling) {
-      const previous = cursor.previousElementSibling;
-      const previousBound = previous.getBoundingClientRect();
-      if (previousBound.bottom < originBound.top) {
-        previous.scrollIntoView({ block: "center" });
-        break;
-      }
-      cursor = previous;
-    }
-  };
-  const restoreScroll = () => {
-    const container = ref.current;
-    if (!container || ratio === void 0 || currentPage === void 0) {
-      return;
-    }
-    const restoredY = currentPage.offsetTop + currentPage.clientHeight * (ratio - 0.5);
-    container.scroll({ top: restoredY });
-    ignoreIntersection = true;
-  };
-  const intersectionOption = { threshold: [0.01, 0.5, 1] };
-  let observer;
-  const useInstance = () => {
-    observer = useIntersection(resetAnchor, intersectionOption);
-    useResize(ref.current, restoreScroll);
-  };
-  return {
-    get observer() {
-      return observer;
-    },
-    goNext,
-    goPrevious,
-    useInstance
-  };
-};
-var usePageNavigator = (ref) => {
-  const navigator = (0, import_react.useMemo)(() => makePageNavigator(ref), [ref]);
-  navigator.useInstance();
-  return navigator;
-};
-var makeViewerController = ({ ref, navigator, rerender }) => {
-  var _a, _b, _c;
-  const compactPageKey = "vim_comic_viewer.single_page_count";
-  let options = {};
-  let images = [];
-  let status = "loading";
-  let compactWidthIndex = (_c = (_b = (_a = tampermonkeyApi).GM_getValue) == null ? void 0 : _b.call(_a, compactPageKey, 1)) != null ? _c : 1;
-  let downloader;
-  let pages = [];
-  const toggleFullscreen = () => {
-    var _a2;
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
+      set(downloadProgressAtom, { value: 0, text: "", error: false });
     } else {
-      (_a2 = ref.current) == null ? void 0 : _a2.requestFullscreen();
+      set(downloadProgressAtom, (previous) => {
+        if (text !== previous.text) {
+          return { value, text, error };
+        }
+        return previous;
+      });
     }
-  };
-  const loadImages = async (source) => {
-    try {
-      [images, downloader] = [[], void 0];
-      if (!source) {
-        status = "complete";
-        return;
-      }
-      [status, pages] = ["loading", []];
-      rerender();
-      images = await source();
-      if (!Array.isArray(images)) {
-        throw new Error(`Invalid comic source type: ${typeof images}`);
-      }
-      status = "complete";
-      downloader = makeDownloader(images);
-      pages = images.map(
-        (x) => makePageController({ source: x, observer: navigator.observer })
-      );
-    } catch (error) {
-      status = "error";
-      console.log(error);
-      throw error;
-    } finally {
-      rerender();
-    }
-  };
-  const reloadErrored = () => {
-    window.stop();
-    for (const controller of pages) {
-      if (controller.state.state !== "complete") {
-        controller.reload();
-      }
-    }
+  }
+});
+var downloadAndSaveAtom = (0, import_jotai.atom)(null, async (_get, set, options) => {
+  const zip2 = await set(startDownloadAtom, options);
+  if (zip2) {
+    await save(new Blob([zip2]));
+  }
+});
+function logIfNotAborted(error) {
+  if (isNotAbort(error)) {
+    console.error(error);
+  }
+}
+function isNotAbort(error) {
+  return !/aborted/i.test(`${error}`);
+}
+function confirmDownloadAbort(event) {
+  event.preventDefault();
+  event.returnValue = "";
+}
+function useViewerController() {
+  const store = (0, import_jotai.useStore)();
+  return (0, import_react2.useMemo)(() => createViewerController(store), [store]);
+}
+function createViewerController(store) {
+  const downloader = {
+    get progress() {
+      return store.get(downloadProgressAtom);
+    },
+    download: (options) => store.set(startDownloadAtom, options),
+    downloadAndSave: (options) => store.set(downloadAndSaveAtom, options),
+    cancel: () => store.set(cancelDownloadAtom)
   };
   return {
     get options() {
-      return options;
+      return store.get(viewerStateAtom).options;
     },
     get status() {
-      return status;
+      return store.get(viewerStateAtom).status;
     },
     get container() {
-      return ref.current;
+      return store.get(viewerElementAtom);
     },
     get compactWidthIndex() {
-      return compactWidthIndex;
+      return store.get(compactWidthIndexAtom);
     },
-    get downloader() {
-      return downloader;
-    },
-    get download() {
-      var _a2;
-      return (_a2 = downloader == null ? void 0 : downloader.download) != null ? _a2 : () => Promise.resolve(new Uint8Array());
-    },
+    downloader,
     get pages() {
-      return pages;
+      return store.get(pagesAtom);
     },
     set compactWidthIndex(value) {
-      var _a2, _b2;
-      compactWidthIndex = Math.max(0, value);
-      (_b2 = (_a2 = tampermonkeyApi).GM_setValue) == null ? void 0 : _b2.call(_a2, compactPageKey, compactWidthIndex);
-      rerender();
+      store.set(compactWidthIndexAtom, Math.max(0, value));
     },
-    setOptions: async (value) => {
-      const { source } = value;
-      const isSourceChanged = source !== options.source;
-      options = value;
-      if (isSourceChanged) {
-        await loadImages(source);
-      }
-    },
-    goPrevious: navigator.goPrevious,
-    goNext: navigator.goNext,
-    toggleFullscreen,
-    reloadErrored,
-    unmount: () => (0, deps_exports.unmountComponentAtNode)(ref.current)
+    setOptions: (value) => store.set(setViewerOptionsAtom, value),
+    goPrevious: () => store.set(goPreviousAtom),
+    goNext: () => store.set(goNextAtom),
+    toggleFullscreen: () => store.set(toggleFullscreenAtom),
+    reloadErrored: () => store.set(reloadErroredAtom),
+    unmount: () => (0, deps_exports.unmountComponentAtNode)(store.get(viewerElementAtom))
   };
-};
-var useViewerController = ({ ref, scrollRef }) => {
-  const rerender = useRerender();
-  const navigator = usePageNavigator(scrollRef);
-  const controller = (0, import_react.useMemo)(
-    () => makeViewerController({ ref, navigator, rerender }),
-    [ref, navigator]
-  );
-  return controller;
-};
-var stretch = keyframes({
-  "0%": {
-    top: "8px",
-    height: "64px"
-  },
-  "50%": {
-    top: "24px",
-    height: "32px"
-  },
-  "100%": {
-    top: "24px",
-    height: "32px"
-  }
-});
-var SpinnerContainer = styled("div", {
-  position: "absolute",
-  left: "0",
-  top: "0",
-  right: "0",
-  bottom: "0",
-  margin: "auto",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  div: {
-    display: "inline-block",
-    width: "16px",
-    margin: "0 4px",
-    background: "#fff",
-    animation: `${stretch} 1.2s cubic-bezier(0, 0.5, 0.5, 1) infinite`
-  },
-  "div:nth-child(1)": {
-    "animation-delay": "-0.24s"
-  },
-  "div:nth-child(2)": {
-    "animation-delay": "-0.12s"
-  },
-  "div:nth-child(3)": {
-    "animation-delay": "0"
-  }
-});
-var Spinner = () =>  React.createElement(SpinnerContainer, null,  React.createElement("div", null),  React.createElement("div", null),  React.createElement("div", null));
-var Overlay = styled("div", {
-  position: "relative",
-  margin: "4px 0.5px",
-  maxWidth: "100%",
-  height: "100%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  "@media print": {
-    margin: 0
-  },
-  variants: {
-    placeholder: {
-      true: { width: "45%" }
-    },
-    fullWidth: {
-      true: { width: "100%" }
-    }
-  }
-});
-var LinkColumn = styled("div", {
-  display: "flex",
-  flexFlow: "column nowrap",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-  boxShadow: "1px 1px 3px",
-  padding: "1rem 1.5rem",
-  transition: "box-shadow 1s easeOutExpo",
-  "&:hover": {
-    boxShadow: "2px 2px 5px"
-  },
-  "&:active": {
-    boxShadow: "0 0 2px"
-  }
-});
-var Image = styled("img", {
-  position: "relative",
-  height: "100%",
-  objectFit: "contain",
-  maxWidth: "100%"
-});
-var Page = ({
-  fullWidth,
-  controller,
-  ...props
-}) => {
-  const ref = (0, import_react.useRef)(null);
-  const imageProps = controller.useInstance({ ref });
-  const { state, src, urls } = controller.state;
-  const reloadErrored = (0, import_react.useCallback)(async (event) => {
-    event.stopPropagation();
-    await controller.reload();
-  }, []);
-  return  React.createElement(Overlay, { ref, placeholder: state !== "complete", fullWidth }, state === "loading" &&  React.createElement(Spinner, null), state === "error" &&  React.createElement(LinkColumn, { onClick: reloadErrored },  React.createElement(CircledX, null),  React.createElement("p", null, "이미지를 불러오지 못했습니다"),  React.createElement("p", null, src ? src : urls == null ? void 0 : urls.join("\n"))),  React.createElement(Image, { ...imageProps, ...props }));
-};
+}
 var Svg2 = styled("svg", {
   position: "absolute",
   bottom: "8px",
@@ -1049,113 +1060,393 @@ var CircularProgress = (props) => {
     }
   ),  React.createElement(CenterText, { x: "50%", y: "50%" }, text || ""));
 };
-var LeftBottomFloat = (0, deps_exports.styled)("div", {
+var import_jotai2 = require("jotai");
+var en_default = {
+  "@@locale": "en",
+  settings: "Settings",
+  minMagnificationRatio: "Minimal magnification ratio",
+  maxMagnificationRatio: "Maximal magnification ratio",
+  backgroundColor: "Background color",
+  leftToRight: "Left to right"
+};
+var ko_default = {
+  "@@locale": "ko",
+  settings: "설정",
+  minMagnificationRatio: "최대 축소율",
+  maxMagnificationRatio: "최대 확대율",
+  backgroundColor: "배경색",
+  leftToRight: "왼쪽부터 보기"
+};
+var translations = { en: en_default, ko: ko_default };
+var i18nStateAtom = (0, import_jotai.atom)(en_default);
+var i18nAtom = (0, import_jotai.atom)((get) => get(i18nStateAtom), (_get, set) => {
+  for (const language of navigator.languages) {
+    const locale = language.split("-")[0];
+    const translation = translations[locale];
+    if (translation) {
+      set(i18nStateAtom, translation);
+      return;
+    }
+  }
+});
+i18nAtom.onMount = (set) => {
+  set();
+  addEventListener("languagechange", set);
+  return () => {
+    removeEventListener("languagechange", set);
+  };
+};
+var Backdrop = styled("div", {
   position: "absolute",
-  bottom: "0.5%",
-  left: "0.5%",
+  top: 0,
+  left: 0,
+  width: "100%",
+  height: "100%",
+  background: "rgba(0, 0, 0, 0.5)",
+  transition: "0.2s",
+  variants: {
+    isOpen: {
+      true: {
+        opacity: 1,
+        pointerEvents: "auto"
+      },
+      false: {
+        opacity: 0,
+        pointerEvents: "none"
+      }
+    }
+  }
+});
+var CenterDialog = styled("div", {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  display: "flex",
+  flexFlow: "column nowrap",
+  alignItems: "stretch",
+  justifyContent: "center",
+  transition: "0.2s",
+  background: "white",
+  padding: "20px",
+  borderRadius: "10px",
+  boxShadow: "0 0 10px 0 rgba(0, 0, 0, 0.2)"
+});
+function BackdropDialog({ onClose, ...props }) {
+  const [isOpen, setIsOpen] = (0, import_react2.useState)(false);
+  const close = async () => {
+    setIsOpen(false);
+    await timeout(200);
+    onClose();
+  };
+  (0, import_react2.useEffect)(() => {
+    setIsOpen(true);
+  }, []);
+  return  React.createElement(Backdrop, { isOpen, onClick: close },  React.createElement(
+    CenterDialog,
+    {
+      onClick: (event) => {
+        event.stopPropagation();
+      },
+      ...props
+    }
+  ));
+}
+var ColorInput = styled("input", {
+  height: "1.5em"
+});
+var ConfigRow = styled("div", {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  margin: "10px 5px",
+  gap: "10%",
+  fontSize: "1.3em",
+  fontWeight: "medium",
+  ":first-child": {
+    flex: "2 1 0"
+  },
+  ":nth-child(2)": {
+    flex: "1 1 0",
+    minWidth: "0"
+  }
+});
+var HiddenInput = styled("input", {
+  opacity: 0,
+  width: 0,
+  height: 0
+});
+var Toggle = styled("span", {
+  "--width": "60px",
+  "label": {
+    position: "relative",
+    display: "inline-flex",
+    margin: 0,
+    width: "var(--width)",
+    height: "calc(var(--width) / 2)",
+    borderRadius: "calc(var(--width) / 2)",
+    cursor: "pointer",
+    textIndent: "-9999px",
+    background: "grey"
+  },
+  "label:after": {
+    position: "absolute",
+    top: "calc(var(--width) * 0.025)",
+    left: "calc(var(--width) * 0.025)",
+    width: "calc(var(--width) * 0.45)",
+    height: "calc(var(--width) * 0.45)",
+    borderRadius: "calc(var(--width) * 0.45)",
+    content: "",
+    background: "#fff",
+    transition: "0.3s"
+  },
+  "input:checked + label": {
+    background: "#bada55"
+  },
+  "input:checked + label:after": {
+    left: "calc(var(--width) * 0.975)",
+    transform: "translateX(-100%)"
+  },
+  "label:active:after": {
+    width: "calc(var(--width) * 0.65)"
+  }
+});
+var Title = styled("h3", {
+  fontSize: "2em",
+  fontWeight: "bold"
+});
+function SettingsDialog({ onClose }) {
+  const [minMagnificationRatio, setMinMagnificationRatio] = (0, import_jotai.useAtom)(minMagnificationRatioAtom);
+  const [maxMagnificationRatio, setMaxMagnificationRatio] = (0, import_jotai.useAtom)(maxMagnificationRatioAtom);
+  const [backgroundColor, setBackgroundColor] = (0, import_jotai.useAtom)(backgroundColorAtom);
+  const [pageDirection, setPageDirection] = (0, import_jotai.useAtom)(pageDirectionAtom);
+  const minRatioInputId = (0, import_react2.useId)();
+  const maxRatioInputId = (0, import_react2.useId)();
+  const colorInputId = (0, import_react2.useId)();
+  const pageDirectionInputId = (0, import_react2.useId)();
+  const strings = (0, import_jotai2.useAtomValue)(i18nAtom);
+  return  React.createElement(BackdropDialog, { onClose },  React.createElement(Title, null, strings.settings),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: minRatioInputId }, strings.minMagnificationRatio),  React.createElement(
+    "input",
+    {
+      type: "number",
+      step: 0.1,
+      id: minRatioInputId,
+      value: minMagnificationRatio,
+      onChange: (event) => {
+        setMinMagnificationRatio(event.currentTarget.valueAsNumber);
+      }
+    }
+  )),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: maxRatioInputId }, strings.maxMagnificationRatio),  React.createElement(
+    "input",
+    {
+      type: "number",
+      step: 0.1,
+      id: maxRatioInputId,
+      value: maxMagnificationRatio,
+      onChange: (event) => {
+        setMaxMagnificationRatio(event.currentTarget.valueAsNumber);
+      }
+    }
+  )),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: colorInputId }, strings.backgroundColor),  React.createElement(
+    ColorInput,
+    {
+      type: "color",
+      id: colorInputId,
+      value: backgroundColor,
+      onChange: (event) => {
+        setBackgroundColor(event.currentTarget.value);
+      }
+    }
+  )),  React.createElement(ConfigRow, null,  React.createElement("p", null, strings.leftToRight),  React.createElement(Toggle, null,  React.createElement(
+    HiddenInput,
+    {
+      type: "checkbox",
+      id: pageDirectionInputId,
+      checked: pageDirection === "leftToRight",
+      onChange: (event) => {
+        setPageDirection(event.currentTarget.checked ? "leftToRight" : "rightToLeft");
+      }
+    }
+  ),  React.createElement("label", { htmlFor: pageDirectionInputId }, strings.leftToRight))));
+}
+var LeftBottomFloat = styled("div", {
+  position: "absolute",
+  bottom: "1%",
+  left: "1%",
   display: "flex",
   flexFlow: "column"
 });
-var MenuActions = (0, deps_exports.styled)("div", {
+var MenuActions = styled("div", {
   display: "flex",
-  alignItems: "center"
+  flexFlow: "column nowrap",
+  alignItems: "center",
+  gap: "16px"
 });
-var ColorInput = (0, deps_exports.styled)("input", {
-  marginLeft: "20px"
-});
-var SupplementaryActionMenu = ({ downloader, color, onColorChange }) => {
-  var _a;
-  const { value, text, error } = (_a = downloader.progress) != null ? _a : {};
-  downloader.useInstance();
-  const [isOpen, setIsOpen] = (0, import_react.useState)(false);
-  return  React.createElement(LeftBottomFloat, null, !!text &&  React.createElement(
+function LeftBottomControl() {
+  const { value, text, error } = (0, import_jotai.useAtomValue)(downloadProgressAtom);
+  const cancelDownload = (0, import_jotai.useSetAtom)(downloadProgressAtom);
+  const downloadAndSave = (0, import_jotai.useSetAtom)(downloadAndSaveAtom);
+  const [isOpen, setIsOpen] = (0, import_react2.useState)(false);
+  return  React.createElement(React.Fragment, null,  React.createElement(LeftBottomFloat, null, !!text &&  React.createElement(
     CircularProgress,
     {
       radius: 50,
       strokeWidth: 10,
-      value: value != null ? value : 0,
+      value: value ?? 0,
       text,
       error,
-      onClick: downloader.cancelDownload
+      onClick: cancelDownload
     }
   ),  React.createElement(MenuActions, null,  React.createElement(
-    MenuIcon,
+    IconSettings,
     {
       onClick: () => {
         setIsOpen((value2) => !value2);
       }
     }
-  ), !!isOpen &&  React.createElement(React.Fragment, null,  React.createElement(DownloadIcon, { onClick: downloader.downloadWithProgress }),  React.createElement(
-    ColorInput,
-    {
-      type: "color",
-      value: color,
-      onChange: (event) => {
-        onColorChange == null ? void 0 : onColorChange(event.currentTarget.value);
-      }
-    }
-  ))));
-};
-var Viewer = (0, import_react.forwardRef)((props, refHandle) => {
-  const { useDefault: enableDefault, options: viewerOptions, ...otherProps } = props;
-  const ref = (0, import_react.useRef)();
-  const scrollRef = (0, import_react.useRef)();
-  const fullscreenElement = useFullscreenElement();
-  const controller = useViewerController({ ref, scrollRef });
-  const {
-    options,
-    pages,
-    status,
-    downloader,
-    toggleFullscreen,
-    compactWidthIndex
-  } = controller;
-  const navigate = (0, import_react.useCallback)((event) => {
-    var _a;
-    const height = (_a = ref.current) == null ? void 0 : _a.clientHeight;
-    if (!height || event.button !== 0) {
-      return;
-    }
-    event.preventDefault();
-    const isTop = event.clientY < height / 2;
-    if (isTop) {
-      controller.goPrevious();
-    } else {
-      controller.goNext();
-    }
-  }, [controller]);
-  const blockSelection = (0, import_react.useCallback)(
-    (event) => {
-      if (event.detail >= 2) {
-        event.preventDefault();
-      }
-      if (event.buttons === 3) {
-        controller.toggleFullscreen();
-        event.preventDefault();
-      }
+  ),  React.createElement(DownloadIcon, { onClick: () => downloadAndSave() }))), isOpen &&  React.createElement(SettingsDialog, { onClose: () => setIsOpen(false) }));
+}
+var stretch = keyframes({
+  "0%": {
+    top: "8px",
+    height: "64px"
+  },
+  "50%": {
+    top: "24px",
+    height: "32px"
+  },
+  "100%": {
+    top: "24px",
+    height: "32px"
+  }
+});
+var SpinnerContainer = styled("div", {
+  position: "absolute",
+  left: "0",
+  top: "0",
+  right: "0",
+  bottom: "0",
+  margin: "auto",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  div: {
+    display: "inline-block",
+    width: "16px",
+    margin: "0 4px",
+    background: "#fff",
+    animation: `${stretch} 1.2s cubic-bezier(0, 0.5, 0.5, 1) infinite`
+  },
+  "div:nth-child(1)": {
+    "animation-delay": "-0.24s"
+  },
+  "div:nth-child(2)": {
+    "animation-delay": "-0.12s"
+  },
+  "div:nth-child(3)": {
+    "animation-delay": "0"
+  }
+});
+var Spinner = () =>  React.createElement(SpinnerContainer, null,  React.createElement("div", null),  React.createElement("div", null),  React.createElement("div", null));
+var Overlay = styled("div", {
+  position: "relative",
+  margin: "0.5px 0.5px",
+  maxWidth: "100%",
+  height: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  "@media print": {
+    margin: 0
+  },
+  variants: {
+    placeholder: {
+      true: { width: "45%", height: "100%" }
     },
-    [controller]
-  );
-  useDefault({ enable: props.useDefault, controller });
-  const backgroundColorKey = "vim_comic_viewer.background_color";
-  const [backgroundColor, setBackgroundColor] = (0, import_react.useState)(() => {
-    var _a, _b, _c;
-    return (_c = (_b = (_a = tampermonkeyApi).GM_getValue) == null ? void 0 : _b.call(_a, backgroundColorKey, "#eeeeee")) != null ? _c : "#eeeeee";
-  });
-  (0, import_react.useImperativeHandle)(refHandle, () => controller, [controller]);
-  (0, import_react.useEffect)(() => {
-    controller.setOptions(viewerOptions);
-  }, [controller, viewerOptions]);
-  (0, import_react.useEffect)(() => {
-    var _a, _b;
-    if (ref.current && fullscreenElement === ref.current) {
-      (_b = (_a = ref.current) == null ? void 0 : _a.focus) == null ? void 0 : _b.call(_a);
+    fullWidth: {
+      true: { width: "100%" }
+    },
+    originalSize: {
+      true: {
+        minHeight: "100%",
+        height: "auto"
+      }
     }
-  }, [ref.current, fullscreenElement]);
+  }
+});
+var LinkColumn = styled("div", {
+  display: "flex",
+  flexFlow: "column nowrap",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  boxShadow: "1px 1px 3px",
+  padding: "1rem 1.5rem",
+  transition: "box-shadow 1s easeOutExpo",
+  "&:hover": {
+    boxShadow: "2px 2px 5px"
+  },
+  "&:active": {
+    boxShadow: "0 0 2px"
+  }
+});
+var Image = styled("img", {
+  position: "relative",
+  height: "100%",
+  maxWidth: "100%",
+  objectFit: "contain",
+  variants: {
+    originalSize: {
+      true: { height: "auto" }
+    }
+  }
+});
+var Page = ({ atom: atom2, ...props }) => {
+  const { imageProps, fullWidth, reloadAtom, isOriginalSize, state: pageState } = (0, import_jotai.useAtomValue)(
+    atom2
+  );
+  const reload = (0, import_jotai.useSetAtom)(reloadAtom);
+  const { state } = pageState;
+  const reloadErrored = async (event) => {
+    event.stopPropagation();
+    await reload();
+  };
+  return  React.createElement(
+    Overlay,
+    {
+      placeholder: state !== "complete",
+      originalSize: isOriginalSize,
+      fullWidth
+    },
+    state === "loading" &&  React.createElement(Spinner, null),
+    state === "error" &&  React.createElement(LinkColumn, { onClick: reloadErrored },  React.createElement(CircledX, null),  React.createElement("p", null, "이미지를 불러오지 못했습니다"),  React.createElement("p", null, pageState.urls?.join("\n"))),
+     React.createElement(Image, { ...imageProps, originalSize: isOriginalSize, ...props })
+  );
+};
+var InnerViewer = (0, import_react2.forwardRef)((props, refHandle) => {
+  const { useDefault: enableDefault, options: viewerOptions, ...otherProps } = props;
+  const [viewerElement, setViewerElement] = (0, import_jotai.useAtom)(viewerElementAtom);
+  const setScrollElement = (0, import_jotai.useSetAtom)(scrollElementAtom);
+  const fullscreenElement = (0, import_jotai.useAtomValue)(fullScreenElementAtom);
+  const backgroundColor = (0, import_jotai.useAtomValue)(backgroundColorAtom);
+  const viewer = (0, import_jotai.useAtomValue)(viewerStateAtom);
+  const setViewerOptions = (0, import_jotai.useSetAtom)(setViewerOptionsAtom);
+  const navigate = (0, import_jotai.useSetAtom)(navigateAtom);
+  const blockSelection = (0, import_jotai.useSetAtom)(blockSelectionAtom);
+  const synchronizeScroll = (0, import_jotai.useSetAtom)(synchronizeScrollAtom);
+  const pageDirection = (0, import_jotai.useAtomValue)(pageDirectionAtom);
+  const { status } = viewer;
+  const controller = useViewerController();
+  const { options, toggleFullscreen } = controller;
+  useDefault({ enable: props.useDefault, controller });
+  (0, import_react2.useImperativeHandle)(refHandle, () => controller, [controller]);
+  (0, import_react2.useEffect)(() => {
+    setViewerOptions(viewerOptions);
+  }, [viewerOptions]);
   return  React.createElement(
     Container,
     {
-      ref,
+      ref: setViewerElement,
       tabIndex: -1,
       className: "vim_comic_viewer",
       css: { backgroundColor }
@@ -1163,36 +1454,26 @@ var Viewer = (0, import_react.forwardRef)((props, refHandle) => {
      React.createElement(
       ScrollableLayout,
       {
-        ref: scrollRef,
+        ref: setScrollElement,
         dark: isDarkColor(backgroundColor),
-        fullscreen: fullscreenElement === ref.current,
+        fullscreen: fullscreenElement === viewerElement,
+        ltr: pageDirection === "leftToRight",
+        onScroll: synchronizeScroll,
         onClick: navigate,
         onMouseDown: blockSelection,
-        children: status === "complete" ? pages.map((controller2, index) =>  React.createElement(
+        children: status === "complete" ? viewer.pages.map((atom2, index) =>  React.createElement(
           Page,
           {
-            key: index,
-            controller: controller2,
-            fullWidth: index < compactWidthIndex,
-            ...options == null ? void 0 : options.imageProps
+            key: `${atom2}`,
+            atom: atom2,
+            ...options?.imageProps
           }
         )) :  React.createElement("p", null, status === "error" ? "에러가 발생했습니다" : "로딩 중..."),
         ...otherProps
       }
     ),
      React.createElement(FullscreenIcon, { onClick: toggleFullscreen }),
-    downloader ?  React.createElement(
-      SupplementaryActionMenu,
-      {
-        downloader,
-        color: backgroundColor,
-        onColorChange: (newColor) => {
-          var _a, _b;
-          (_b = (_a = tampermonkeyApi).GM_setValue) == null ? void 0 : _b.call(_a, backgroundColorKey, newColor);
-          setBackgroundColor(newColor);
-        }
-      }
-    ) : false
+    status === "complete" ?  React.createElement(LeftBottomControl, null) : false
   );
 });
 function isDarkColor(rgbColor) {
@@ -1205,17 +1486,22 @@ function isDarkColor(rgbColor) {
   return luminance < 0.5;
 }
 var types_exports = {};
-var getDefaultRoot = () => {
-  const div = document.createElement("div");
-  div.setAttribute(
-    "style",
-    "width: 0; height: 0; position: fixed;"
+function initialize(options) {
+  const store = (0, import_jotai.createStore)();
+  const ref = (0, import_react2.createRef)();
+  (0, deps_exports.render)(
+     React.createElement(import_jotai.Provider, { store },  React.createElement(InnerViewer, { ref, options, useDefault: true })),
+    getDefaultRoot()
   );
+  return Promise.resolve(ref.current);
+}
+var Viewer = (0, import_react2.forwardRef)(({ options, useDefault: useDefault2 }, ref) => {
+  const store = (0, import_react2.useMemo)(import_jotai.createStore, []);
+  return  React.createElement(import_jotai.Provider, { store },  React.createElement(InnerViewer, { ...{ options, ref, useDefault: useDefault2 } }));
+});
+function getDefaultRoot() {
+  const div = document.createElement("div");
+  div.setAttribute("style", "width: 0; height: 0; position: fixed;");
   document.body.append(div);
   return div;
-};
-var initialize = (options) => {
-  const ref = (0, import_react.createRef)();
-  (0, deps_exports.render)( React.createElement(Viewer, { ref, options, useDefault: true }), getDefaultRoot());
-  return Promise.resolve(ref.current);
-};
+}
