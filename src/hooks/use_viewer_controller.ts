@@ -8,11 +8,13 @@ import {
 import { goNextAtom, goPreviousAtom } from "../atoms/navigation_atoms.ts";
 import { compactWidthIndexAtom } from "../atoms/setting_atoms.ts";
 import {
+  pagesAtom,
   reloadErroredAtom,
   setViewerOptionsAtom,
   toggleFullscreenAtom,
+  viewerElementAtom,
+  viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
-import { pagesAtom, viewerElementAtom, viewerStateAtom } from "../atoms/viewer_state_atoms.ts";
 import { unmountComponentAtNode, useMemo, useStore } from "../deps.ts";
 import { ViewerOptions } from "../types.ts";
 
