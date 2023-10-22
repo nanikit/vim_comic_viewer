@@ -17,9 +17,9 @@ import { viewerElementAtom, viewerStateAtom } from "../atoms/viewer_state_atoms.
 import { FullscreenIcon } from "../components/icons.tsx";
 import { Container, ScrollableLayout } from "../components/scrollable_layout.ts";
 import {
+  forwardRef,
   HTMLProps,
   Ref,
-  forwardRef,
   useAtom,
   useAtomValue,
   useEffect,
@@ -27,7 +27,7 @@ import {
   useSetAtom,
 } from "../deps.ts";
 import { useDefault } from "../hooks/use_default.ts";
-import { ViewerController, useViewerController } from "../hooks/use_viewer_controller.ts";
+import { useViewerController, ViewerController } from "../hooks/use_viewer_controller.ts";
 import { ViewerOptions } from "../types.ts";
 import { LeftBottomControl } from "./left_bottom_control.tsx";
 import { Page } from "./page.tsx";
