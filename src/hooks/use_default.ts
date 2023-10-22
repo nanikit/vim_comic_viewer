@@ -33,8 +33,10 @@ export function useDefault({ enable, controller }: {
         controller.reloadErrored();
         break;
       default:
-        break;
+        return;
     }
+
+    event.stopPropagation();
   };
 
   const defaultGlobalKeyHandler = (event: KeyboardEvent): void => {
