@@ -1,3 +1,7 @@
+### 10.0.1
+
+- Fix not restored scroll in some cases.
+
 # 10.0.0
 
 - Adopt new build tool.

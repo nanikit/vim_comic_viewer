@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        10.0.0
+// @version        10.0.1
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -81,6 +81,7 @@ __export(deps_exports, {
   useEffect: () => import_react2.useEffect,
   useId: () => import_react2.useId,
   useImperativeHandle: () => import_react2.useImperativeHandle,
+  useLayoutEffect: () => import_react2.useLayoutEffect,
   useMemo: () => import_react2.useMemo,
   useReducer: () => import_react2.useReducer,
   useRef: () => import_react2.useRef,
@@ -113,25 +114,24 @@ var import_jotai = require("jotai");
 var import_utils = require("jotai/utils");
 var import_react2 = require("react");
 __reExport(deps_exports, require("react-dom"));
-var viewerElementStateAtom = (0, import_jotai.atom)(null);
-var viewerSizeAtom = (0, import_jotai.atom)(null);
-var viewerElementAtom = (0, import_jotai.atom)(
-  (get) => get(viewerElementStateAtom)?.div ?? null,
-  (_get, set, div) => {
-    set(viewerElementStateAtom, (previous) => {
-      previous?.resizeObserver.disconnect();
-      if (!div) {
-        return null;
-      }
-      const observer = new ResizeObserver((entries) => {
-        const { width, height } = entries[0].contentRect;
-        set(viewerSizeAtom, { width, height });
-      });
-      observer.observe(div);
-      return { div, resizeObserver: observer };
-    });
+var beforeRepaintStateAtom = (0, import_jotai.atom)({ repaint: null });
+var beforeRepaintAtom = (0, import_jotai.atom)((get) => get(beforeRepaintStateAtom), async (get, set) => {
+  const { repaint } = get(beforeRepaintStateAtom);
+  if (repaint?.state === "pending") {
+    await repaint;
+  } else {
+    const newRepaint = deferred();
+    set(beforeRepaintStateAtom, { repaint: newRepaint });
+    await newRepaint;
   }
-);
+});
+var useBeforeRepaint = () => {
+  const { repaint } = (0, import_jotai.useAtomValue)(beforeRepaintAtom);
+  (0, import_react2.useLayoutEffect)(() => {
+    repaint?.resolve(null);
+  }, [repaint]);
+};
+var viewerElementAtom = (0, import_jotai.atom)(null);
 var viewerStateAtom = (0, import_jotai.atom)({ options: {}, status: "loading" });
 var pagesAtom = (0, import_utils.selectAtom)(
   viewerStateAtom,
@@ -164,6 +164,7 @@ var restoreScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
   set(shouldIgnoreScrollAtom, true);
   element.scroll({ top: restoredY });
 });
+var scrollElementSizeAtom = (0, import_jotai.atom)({ width: 0, height: 0 });
 var scrollElementAtom = (0, import_jotai.atom)(
   (get) => get(scrollElementStateAtom)?.div ?? null,
   (_get, set, div) => {
@@ -175,7 +176,10 @@ var scrollElementAtom = (0, import_jotai.atom)(
       if (div === null) {
         return null;
       }
-      const resizeObserver = new ResizeObserver(() => {
+      set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
+      const resizeObserver = new ResizeObserver(async () => {
+        set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
+        await set(beforeRepaintAtom);
         set(restoreScrollAtom);
       });
       resizeObserver.observe(div);
@@ -350,7 +354,7 @@ function createPageAtom({ index, source }) {
     await set(loadAtom);
   });
   const magnificationRatioAtom = (0, import_jotai.atom)((get) => {
-    const viewerSize = get(viewerSizeAtom);
+    const viewerSize = get(scrollElementSizeAtom);
     if (!viewerSize) {
       return 1;
     }
@@ -1438,6 +1442,7 @@ var InnerViewer = (0, import_react2.forwardRef)((props, refHandle) => {
   const { status } = viewer;
   const controller = useViewerController();
   const { options, toggleFullscreen } = controller;
+  useBeforeRepaint();
   useDefault({ enable: props.useDefault, controller });
   (0, import_react2.useImperativeHandle)(refHandle, () => controller, [controller]);
   (0, import_react2.useEffect)(() => {

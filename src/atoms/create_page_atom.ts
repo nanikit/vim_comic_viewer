@@ -1,12 +1,12 @@
 import { atom, deferred } from "../deps.ts";
 import { imageSourceToIterable } from "../services/image_source_to_iterable.ts";
 import { ImageSource } from "../types.ts";
+import { scrollElementSizeAtom } from "./navigation_atoms.ts";
 import {
   compactWidthIndexAtom,
   maxMagnificationRatioAtom,
   minMagnificationRatioAtom,
 } from "./setting_atoms.ts";
-import { viewerSizeAtom } from "./viewer_state_atoms.ts";
 
 type PageState = {
   state: "loading";
@@ -58,7 +58,7 @@ export function createPageAtom({ index, source }: { index: number; source: Image
   });
 
   const magnificationRatioAtom = atom((get) => {
-    const viewerSize = get(viewerSizeAtom);
+    const viewerSize = get(scrollElementSizeAtom);
     if (!viewerSize) {
       return 1;
     }
