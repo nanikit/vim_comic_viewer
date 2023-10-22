@@ -1,4 +1,8 @@
-import { navigateAtom, scrollElementAtom } from "../atoms/navigation_atoms.ts";
+import {
+  navigateAtom,
+  scrollElementAtom,
+  synchronizeScrollAtom,
+} from "../atoms/navigation_atoms.ts";
 import {
   backgroundColorAtom,
   compactWidthIndexAtom,
@@ -13,9 +17,9 @@ import { viewerElementAtom, viewerStateAtom } from "../atoms/viewer_state_atoms.
 import { FullscreenIcon } from "../components/icons.tsx";
 import { Container, ScrollableLayout } from "../components/scrollable_layout.ts";
 import {
-  forwardRef,
   HTMLProps,
   Ref,
+  forwardRef,
   useAtom,
   useAtomValue,
   useEffect,
@@ -23,7 +27,7 @@ import {
   useSetAtom,
 } from "../deps.ts";
 import { useDefault } from "../hooks/use_default.ts";
-import { useViewerController, ViewerController } from "../hooks/use_viewer_controller.ts";
+import { ViewerController, useViewerController } from "../hooks/use_viewer_controller.ts";
 import { ViewerOptions } from "../types.ts";
 import { LeftBottomControl } from "./left_bottom_control.tsx";
 import { Page } from "./page.tsx";
@@ -45,6 +49,7 @@ export const InnerViewer = forwardRef((
   const setViewerOptions = useSetAtom(setViewerOptionsAtom);
   const navigate = useSetAtom(navigateAtom);
   const blockSelection = useSetAtom(blockSelectionAtom);
+  const synchronizeScroll = useSetAtom(synchronizeScrollAtom);
   const pageDirection = useAtomValue(pageDirectionAtom);
   const { status } = viewer;
 
@@ -72,6 +77,7 @@ export const InnerViewer = forwardRef((
         dark={isDarkColor(backgroundColor)}
         fullscreen={fullscreenElement === viewerElement}
         ltr={pageDirection === "leftToRight"}
+        onScroll={synchronizeScroll}
         onClick={navigate}
         onMouseDown={blockSelection}
         children={status === "complete"

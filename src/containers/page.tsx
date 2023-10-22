@@ -4,8 +4,7 @@ import { Image, LinkColumn, Overlay, Spinner } from "../components/spinner.tsx";
 import { MouseEventHandler, useAtomValue, useSetAtom } from "../deps.ts";
 
 export const Page = ({ fullWidth, atom, ...props }: { atom: PageAtom; fullWidth?: boolean }) => {
-  const { elementAtom, imageProps, reloadAtom, state: pageState } = useAtomValue(atom);
-  const setElement = useSetAtom(elementAtom);
+  const { imageProps, reloadAtom, state: pageState } = useAtomValue(atom);
   const reload = useSetAtom(reloadAtom);
   const { state } = pageState;
 
@@ -16,7 +15,6 @@ export const Page = ({ fullWidth, atom, ...props }: { atom: PageAtom; fullWidth?
 
   return (
     <Overlay
-      ref={setElement}
       placeholder={state !== "complete"}
       originalSize={imageProps.originalSize}
       fullWidth={fullWidth}

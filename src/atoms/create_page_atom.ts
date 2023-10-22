@@ -1,7 +1,6 @@
 import { atom, deferred } from "../deps.ts";
 import { imageSourceToIterable } from "../services/image_source_to_iterable.ts";
 import { ImageSource } from "../types.ts";
-import { scrollObserverAtom } from "./navigation_atoms.ts";
 import { maxMagnificationRatioAtom, minMagnificationRatioAtom } from "./setting_atoms.ts";
 import { viewerSizeAtom } from "./viewer_state_atoms.ts";
 
@@ -23,23 +22,6 @@ export function createPageAtom({ source }: { source: ImageSource }) {
   let imageLoad = deferred<HTMLImageElement | false | null>();
 
   const stateAtom = atom<PageState>({ state: "loading" });
-  const elementStateAtom = atom<HTMLImageElement | null>(null);
-  const elementAtom = atom(
-    (get) => get(elementStateAtom),
-    (get, set, element: HTMLImageElement | null) => {
-      const observer = get(scrollObserverAtom);
-      set(elementStateAtom, (previous) => {
-        if (previous) {
-          observer?.unobserve(previous);
-        }
-        if (element) {
-          observer?.observe(element);
-        }
-        return element;
-      });
-    },
-  );
-
   const loadAtom = atom(null, async (_get, set) => {
     const urls = [];
     for await (const url of imageSourceToIterable(source)) {
@@ -96,7 +78,6 @@ export function createPageAtom({ source }: { source: ImageSource }) {
 
     return {
       state,
-      elementAtom,
       reloadAtom,
       imageProps: {
         originalSize: get(viewAsOriginalSizeAtom),
