@@ -1,70 +1,58 @@
-import { atom, selectAtom } from "../deps.ts";
-import { pagesAtom, viewerElementAtom } from "./viewer_state_atoms.ts";
+import { atom } from "../deps.ts";
+import { viewerElementAtom } from "./viewer_state_atoms.ts";
 
 const scrollElementStateAtom = atom<
   {
     div: HTMLDivElement;
-    intersectionObserver: IntersectionObserver;
     resizeObserver: ResizeObserver;
   } | null
 >(null);
-export const scrollObserverAtom = selectAtom(
-  scrollElementStateAtom,
-  (state) => state?.intersectionObserver,
-);
 
 type PageScrollState = {
-  currentPage?: HTMLElement;
-  ratio?: number;
-  ignoreIntersection: boolean;
+  page: HTMLElement | null;
+  ratio: number;
 };
-const pageScrollStateAtom = atom<PageScrollState>({
-  ignoreIntersection: false,
-});
+const initialPageScrollState = { page: null, ratio: 0.5 };
+const shouldIgnoreScrollAtom = atom(false);
+const pageScrollStateAtom = atom<PageScrollState>(initialPageScrollState);
 
-const resetAnchorAtom = atom(null, (get, set, entries: IntersectionObserverEntry[]) => {
-  const element = get(scrollElementAtom);
-  if (!element?.clientHeight || entries.length === 0) {
+export const synchronizeScrollAtom = atom(null, (get, set) => {
+  const { page, ratio } = getCurrentPage(get(scrollElementAtom));
+  const isViewerExitScroll = !page;
+  if (isViewerExitScroll) {
     return;
   }
 
-  const state = get(pageScrollStateAtom);
-  if (state.ignoreIntersection) {
-    set(pageScrollStateAtom, (prev) => ({ ...prev, ignoreIntersection: false }));
+  if (get(shouldIgnoreScrollAtom)) {
+    set(shouldIgnoreScrollAtom, false);
     return;
   }
 
-  const page = getCurrentPage(element, entries) as HTMLElement;
-  const y = element.scrollTop + element.clientHeight / 2;
-  set(pageScrollStateAtom, (prev) => ({
-    ...prev,
-    currentPage: page,
-    ratio: (y - page.offsetTop) / page.clientHeight,
-  }));
+  set(pageScrollStateAtom, { page, ratio });
 });
 
 const restoreScrollAtom = atom(null, (get, set) => {
-  const state = get(pageScrollStateAtom);
+  const { page, ratio } = get(pageScrollStateAtom);
   const element = get(scrollElementAtom);
-  if (!element || state.ratio === undefined || state.currentPage === undefined) {
+  if (!element || !page) {
     return;
   }
 
-  const restoredY = state.currentPage.offsetTop +
-    state.currentPage.clientHeight * (state.ratio - 0.5);
+  const { offsetTop, clientHeight } = page;
+  const restoredY = offsetTop + clientHeight * ratio - element.clientHeight / 2;
+
+  set(shouldIgnoreScrollAtom, true);
   element.scroll({ top: restoredY });
-  set(pageScrollStateAtom, (prev) => ({ ...prev, ignoreIntersection: true }));
 });
 
 export const scrollElementAtom = atom(
   (get) => get(scrollElementStateAtom)?.div ?? null,
-  (get, set, div: HTMLDivElement | null) => {
+  (_get, set, div: HTMLDivElement | null) => {
     set(scrollElementStateAtom, (previous) => {
       if (previous?.div === div) {
         return previous;
       }
 
-      previous?.intersectionObserver.disconnect();
       previous?.resizeObserver.disconnect();
 
       if (div === null) {
@@ -75,33 +63,20 @@ export const scrollElementAtom = atom(
         set(restoreScrollAtom);
       });
       resizeObserver.observe(div);
-      const intersectionObserver = new IntersectionObserver(
-        (entries) => set(resetAnchorAtom, entries),
-        { threshold: [0.01, 0.5, 1] },
-      );
-      for (const pageAtom of get(pagesAtom) ?? []) {
-        const page = get(pageAtom);
-        const element = get(page.elementAtom);
-        if (!element) {
-          continue;
-        }
-        intersectionObserver.observe(element);
-      }
-      return { div, intersectionObserver, resizeObserver };
+      return { div, resizeObserver };
     });
   },
 );
 scrollElementAtom.onMount = (set) => () => set(null);
 
-export const goNextAtom = atom(null, (get, set) => {
-  const state = get(pageScrollStateAtom);
-  set(pageScrollStateAtom, (prev) => ({ ...prev, ignoreIntersection: false }));
-  if (!state.currentPage) {
+export const goNextAtom = atom(null, (get) => {
+  const { page } = getCurrentPage(get(scrollElementAtom));
+  if (!page) {
     return;
   }
 
-  const originBound = state.currentPage.getBoundingClientRect();
-  let cursor = state.currentPage as Element;
+  const originBound = page.getBoundingClientRect();
+  let cursor = page as Element;
   while (cursor.nextElementSibling) {
     const next = cursor.nextElementSibling;
     const nextBound = next.getBoundingClientRect();
@@ -113,15 +88,14 @@ export const goNextAtom = atom(null, (get, set) => {
   }
 });
 
-export const goPreviousAtom = atom(null, (get, set) => {
-  const state = get(pageScrollStateAtom);
-  set(pageScrollStateAtom, (prev) => ({ ...prev, ignoreIntersection: false }));
-  if (!state.currentPage) {
+export const goPreviousAtom = atom(null, (get) => {
+  const { page } = getCurrentPage(get(scrollElementAtom));
+  if (!page) {
     return;
   }
 
-  const originBound = state.currentPage.getBoundingClientRect();
-  let cursor = state.currentPage as Element;
+  const originBound = page.getBoundingClientRect();
+  let cursor = page as Element;
   while (cursor.previousElementSibling) {
     const previous = cursor.previousElementSibling;
     const previousBound = previous.getBoundingClientRect();
@@ -148,29 +122,29 @@ export const navigateAtom = atom(null, (get, set, event: React.MouseEvent) => {
   }
 });
 
-function getCurrentPage(container: HTMLElement, entries: IntersectionObserverEntry[]) {
-  if (!entries.length) {
-    return container.firstElementChild || undefined;
+function getCurrentPage(container: HTMLElement | null) {
+  const clientHeight = container?.clientHeight;
+  if (!clientHeight) {
+    return initialPageScrollState;
+  }
+  const children = [...((container.children as unknown) as Iterable<HTMLElement>)];
+  if (!children.length) {
+    return initialPageScrollState;
   }
 
-  const children = [...((container.children as unknown) as Iterable<Element>)];
-  const fullyVisiblePages = entries.filter((x) => x.intersectionRatio === 1);
+  const viewportTop = container.scrollTop;
+  const viewportBottom = viewportTop + container.clientHeight;
+  const fullyVisiblePages = children.filter((x) =>
+    x.offsetTop >= viewportTop && x.offsetTop + x.clientHeight <= viewportBottom
+  );
   if (fullyVisiblePages.length) {
-    fullyVisiblePages.sort((a, b) => {
-      return children.indexOf(a.target) - children.indexOf(b.target);
-    });
-    return fullyVisiblePages[Math.floor(fullyVisiblePages.length / 2)].target;
+    return { page: fullyVisiblePages[Math.floor(fullyVisiblePages.length / 2)]!, ratio: 0.5 };
   }
 
-  return entries.sort((a, b) => {
-    const ratio = {
-      a: a.intersectionRatio,
-      b: b.intersectionRatio,
-    };
-    const index = {
-      a: children.indexOf(a.target),
-      b: children.indexOf(b.target),
-    };
-    return (ratio.b - ratio.a) * 10000 + (index.a - index.b);
-  })[0].target;
+  const scrollCenter = (viewportTop + viewportBottom) / 2;
+  const centerCrossingPage = children.find((x) =>
+    x.offsetTop <= scrollCenter && x.offsetTop + x.clientHeight >= scrollCenter
+  )!;
+  const ratio = (scrollCenter - centerCrossingPage.offsetTop) / centerCrossingPage.clientHeight;
+  return { page: centerCrossingPage, ratio };
 }
