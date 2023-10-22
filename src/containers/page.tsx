@@ -3,8 +3,8 @@ import { CircledX } from "../components/icons.tsx";
 import { Image, LinkColumn, Overlay, Spinner } from "../components/spinner.tsx";
 import { MouseEventHandler, useAtomValue, useSetAtom } from "../deps.ts";
 
-export const Page = ({ fullWidth, atom, ...props }: { atom: PageAtom; fullWidth?: boolean }) => {
-  const { imageProps, reloadAtom, state: pageState } = useAtomValue(atom);
+export const Page = ({ atom, ...props }: { atom: PageAtom }) => {
+  const { imageProps, fullWidth, reloadAtom, state: pageState } = useAtomValue(atom);
   const reload = useSetAtom(reloadAtom);
   const { state } = pageState;
 
