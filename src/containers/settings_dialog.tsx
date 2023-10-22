@@ -1,3 +1,5 @@
+import { useAtomValue } from "jotai";
+import { i18nAtom } from "../atoms/i18n_atom.ts";
 import {
   backgroundColorAtom,
   maxMagnificationRatioAtom,
@@ -50,6 +52,14 @@ const ConfigRow = styled("div", {
 
   margin: "10px 5px",
   gap: "10%",
+
+  ":first-child": {
+    flex: "2 1 0",
+  },
+  ":nth-child(2)": {
+    flex: "1 1 0",
+    minWidth: "0",
+  },
 });
 
 const HiddenInput = styled("input", {
@@ -103,9 +113,6 @@ const Toggle = styled("span", {
 });
 
 export function SettingsDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  useClickAway(dialogRef, onClose);
-
   const [minMagnificationRatio, setMinMagnificationRatio] = useAtom(minMagnificationRatioAtom);
   const [maxMagnificationRatio, setMaxMagnificationRatio] = useAtom(maxMagnificationRatioAtom);
   const [backgroundColor, setBackgroundColor] = useAtom(backgroundColorAtom);
@@ -115,11 +122,15 @@ export function SettingsDialog({ isOpen, onClose }: { isOpen: boolean; onClose: 
   const colorInputId = useId();
   const pageDirectionInputId = useId();
 
+  const strings = useAtomValue(i18nAtom);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useClickAway(dialogRef, onClose);
+
   return (
     <CenterDialog ref={dialogRef} isOpen={isOpen}>
-      <h3>Settings</h3>
+      <h3>{strings.settings}</h3>
       <ConfigRow>
-        <label htmlFor={minRatioInputId}>Min magnification ratio</label>
+        <label htmlFor={minRatioInputId}>{strings.minMagnificationRatio}</label>
         <input
           type="number"
           step={0.1}
@@ -131,7 +142,7 @@ export function SettingsDialog({ isOpen, onClose }: { isOpen: boolean; onClose: 
         />
       </ConfigRow>
       <ConfigRow>
-        <label htmlFor={maxRatioInputId}>Max magnification ratio</label>
+        <label htmlFor={maxRatioInputId}>{strings.maxMagnificationRatio}</label>
         <input
           type="number"
           step={0.1}
@@ -143,7 +154,7 @@ export function SettingsDialog({ isOpen, onClose }: { isOpen: boolean; onClose: 
         />
       </ConfigRow>
       <ConfigRow>
-        <label htmlFor={colorInputId}>Background</label>
+        <label htmlFor={colorInputId}>{strings.backgroundColor}</label>
         <ColorInput
           type="color"
           id={colorInputId}
@@ -154,7 +165,7 @@ export function SettingsDialog({ isOpen, onClose }: { isOpen: boolean; onClose: 
         />
       </ConfigRow>
       <ConfigRow>
-        <p>Left to right</p>
+        <p>{strings.leftToRight}</p>
         <Toggle>
           <HiddenInput
             type="checkbox"
@@ -164,7 +175,7 @@ export function SettingsDialog({ isOpen, onClose }: { isOpen: boolean; onClose: 
               setPageDirection(event.currentTarget.checked ? "leftToRight" : "rightToLeft");
             }}
           />
-          <label htmlFor={pageDirectionInputId}>Left to right</label>
+          <label htmlFor={pageDirectionInputId}>{strings.leftToRight}</label>
         </Toggle>
       </ConfigRow>
     </CenterDialog>

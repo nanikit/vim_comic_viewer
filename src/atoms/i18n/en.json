@@ -1,0 +1,8 @@
+{
+  "@@locale": "en",
+  "settings": "Settings",
+  "minMagnificationRatio": "Minimal magnification ratio",
+  "maxMagnificationRatio": "Maximal magnification ratio",
+  "backgroundColor": "Background color",
+  "leftToRight": "Left to right"
+}
