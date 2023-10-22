@@ -1,16 +1,9 @@
-import { createPageAtom } from "../atoms/create_page_atom.ts";
+import { PageAtom } from "../atoms/create_page_atom.ts";
 import { CircledX } from "../components/icons.tsx";
 import { Image, LinkColumn, Overlay, Spinner } from "../components/spinner.tsx";
 import { MouseEventHandler, useAtomValue, useSetAtom } from "../deps.ts";
 
-export const Page = ({
-  fullWidth,
-  atom,
-  ...props
-}: {
-  atom: ReturnType<typeof createPageAtom>;
-  fullWidth?: boolean;
-}) => {
+export const Page = ({ fullWidth, atom, ...props }: { atom: PageAtom; fullWidth?: boolean }) => {
   const { elementAtom, imageProps, reloadAtom, state: pageState } = useAtomValue(atom);
   const setElement = useSetAtom(elementAtom);
   const reload = useSetAtom(reloadAtom);

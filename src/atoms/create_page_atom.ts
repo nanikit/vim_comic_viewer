@@ -16,6 +16,8 @@ type PageState = {
   naturalHeight: number;
 };
 
+export type PageAtom = ReturnType<typeof createPageAtom>;
+
 export function createPageAtom({ source }: { source: ImageSource }) {
   let imageLoad = deferred<HTMLImageElement | false | null>();
 
@@ -24,8 +26,8 @@ export function createPageAtom({ source }: { source: ImageSource }) {
   const elementAtom = atom(
     (get) => get(elementStateAtom),
     (get, set, element: HTMLImageElement | null) => {
+      const observer = get(scrollObserverAtom);
       set(elementStateAtom, (previous) => {
-        const observer = get(scrollObserverAtom);
         if (previous) {
           observer?.unobserve(previous);
         }

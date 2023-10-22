@@ -1,7 +1,16 @@
 export { createStitches } from "@stitches/react";
 export * from "fflate";
 export * from "https://deno.land/std@0.204.0/async/deferred.ts";
-export { atom, createStore, Provider, useAtom, useAtomValue, useSetAtom, useStore } from "jotai";
+export {
+  type Atom,
+  atom,
+  createStore,
+  Provider,
+  useAtom,
+  useAtomValue,
+  useSetAtom,
+  useStore,
+} from "jotai";
 export { atomWithStorage, selectAtom } from "jotai/utils";
 
 // @deno-types="npm:@types/react"
