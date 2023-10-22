@@ -1,4 +1,5 @@
 import { PageAtom } from "../atoms/create_page_atom.ts";
+import { i18nAtom } from "../atoms/i18n_atom.ts";
 import { CircledX } from "../components/icons.tsx";
 import { Image, LinkColumn, Overlay, Spinner } from "../components/spinner.tsx";
 import { MouseEventHandler, useAtomValue, useSetAtom } from "../deps.ts";
@@ -7,6 +8,7 @@ export const Page = ({ atom, ...props }: { atom: PageAtom }) => {
   const { imageProps, fullWidth, reloadAtom, isOriginalSize, state: pageState } = useAtomValue(
     atom,
   );
+  const strings = useAtomValue(i18nAtom);
   const reload = useSetAtom(reloadAtom);
   const { state } = pageState;
 
@@ -25,10 +27,8 @@ export const Page = ({ atom, ...props }: { atom: PageAtom }) => {
       {state === "error" && (
         <LinkColumn onClick={reloadErrored}>
           <CircledX />
-          <p>이미지를 불러오지 못했습니다</p>
-          <p>
-            {pageState.urls?.join("\n")}
-          </p>
+          <p>{strings.failedToLoadImage}</p>
+          <p>{pageState.urls?.join("\n")}</p>
         </LinkColumn>
       )}
       <Image {...imageProps} originalSize={isOriginalSize} {...props} />

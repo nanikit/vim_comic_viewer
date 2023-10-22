@@ -4,5 +4,8 @@
   "minMagnificationRatio": "Minimal magnification ratio",
   "maxMagnificationRatio": "Maximal magnification ratio",
   "backgroundColor": "Background color",
-  "leftToRight": "Left to right"
+  "leftToRight": "Left to right",
+  "errorIsOccurred": "Error is occurred.",
+  "failedToLoadImage": "Failed to load image.",
+  "loading": "Loading..."
 }
