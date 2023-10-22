@@ -1,3 +1,9 @@
+# 10.0.0
+
+- Adopt new build tool.
+- Support long image by showing original size.
+- Add view left to right option.
+
 ### 9.0.1
 
 - Restore default background color.
