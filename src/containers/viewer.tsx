@@ -3,11 +3,7 @@ import {
   scrollElementAtom,
   synchronizeScrollAtom,
 } from "../atoms/navigation_atoms.ts";
-import {
-  backgroundColorAtom,
-  compactWidthIndexAtom,
-  pageDirectionAtom,
-} from "../atoms/setting_atoms.ts";
+import { backgroundColorAtom, pageDirectionAtom } from "../atoms/setting_atoms.ts";
 import {
   blockSelectionAtom,
   fullScreenElementAtom,
@@ -44,7 +40,6 @@ export const InnerViewer = forwardRef((
   const setScrollElement = useSetAtom(scrollElementAtom);
   const fullscreenElement = useAtomValue(fullScreenElementAtom);
   const backgroundColor = useAtomValue(backgroundColorAtom);
-  const compactWidthIndex = useAtomValue(compactWidthIndexAtom);
   const viewer = useAtomValue(viewerStateAtom);
   const setViewerOptions = useSetAtom(setViewerOptionsAtom);
   const navigate = useSetAtom(navigateAtom);
@@ -85,7 +80,6 @@ export const InnerViewer = forwardRef((
             <Page
               key={`${atom}`}
               atom={atom}
-              fullWidth={index < compactWidthIndex}
               {...options?.imageProps}
             />
           ))

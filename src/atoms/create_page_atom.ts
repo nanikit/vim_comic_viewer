@@ -1,7 +1,11 @@
 import { atom, deferred } from "../deps.ts";
 import { imageSourceToIterable } from "../services/image_source_to_iterable.ts";
 import { ImageSource } from "../types.ts";
-import { maxMagnificationRatioAtom, minMagnificationRatioAtom } from "./setting_atoms.ts";
+import {
+  compactWidthIndexAtom,
+  maxMagnificationRatioAtom,
+  minMagnificationRatioAtom,
+} from "./setting_atoms.ts";
 import { viewerSizeAtom } from "./viewer_state_atoms.ts";
 
 type PageState = {
@@ -18,7 +22,7 @@ type PageState = {
 
 export type PageAtom = ReturnType<typeof createPageAtom>;
 
-export function createPageAtom({ source }: { source: ImageSource }) {
+export function createPageAtom({ index, source }: { index: number; source: ImageSource }) {
   let imageLoad = deferred<HTMLImageElement | false | null>();
 
   const stateAtom = atom<PageState>({ state: "loading" });
@@ -75,10 +79,12 @@ export function createPageAtom({ source }: { source: ImageSource }) {
     get(loadAtom);
 
     const state = get(stateAtom);
+    const compactWidthIndex = get(compactWidthIndexAtom);
 
     return {
       state,
       reloadAtom,
+      fullWidth: index < compactWidthIndex,
       imageProps: {
         originalSize: get(viewAsOriginalSizeAtom),
         ...("src" in state ? { src: state.src } : {}),

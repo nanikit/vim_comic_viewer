@@ -33,7 +33,7 @@ export const setViewerOptionsAtom = atom(
         ...state,
         status: "complete",
         images,
-        pages: images.map((source) => createPageAtom({ source })),
+        pages: images.map((source, index) => createPageAtom({ source, index })),
       }));
     } catch (error) {
       set(viewerStateAtom, (state) => ({ ...state, status: "error" }));
