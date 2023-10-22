@@ -4,9 +4,9 @@ import { ImageSource } from "../types.ts";
 import { save } from "../utils.ts";
 import { viewerStateAtom } from "./viewer_atoms.ts";
 
-const aborterAtom = atom(new AbortController());
+const aborterAtom = atom<AbortController | null>(null);
 export const cancelDownloadAtom = atom(null, (get) => {
-  get(aborterAtom).abort();
+  get(aborterAtom)?.abort();
 });
 
 export const downloadProgressAtom = atom({
@@ -25,7 +25,7 @@ export const startDownloadAtom = atom(null, async (get, set, options?: UserDownl
 
   const aborter = new AbortController();
   set(aborterAtom, (previous) => {
-    previous.abort();
+    previous?.abort();
     return aborter;
   });
 
