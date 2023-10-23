@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        10.0.1
+// @version        10.0.2
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -114,6 +114,47 @@ var import_jotai = require("jotai");
 var import_utils = require("jotai/utils");
 var import_react2 = require("react");
 __reExport(deps_exports, require("react-dom"));
+var en_default = {
+  "@@locale": "en",
+  settings: "Settings",
+  minMagnificationRatio: "Minimal magnification ratio",
+  maxMagnificationRatio: "Maximal magnification ratio",
+  backgroundColor: "Background color",
+  leftToRight: "Left to right",
+  errorIsOccurred: "Error is occurred.",
+  failedToLoadImage: "Failed to load image.",
+  loading: "Loading..."
+};
+var ko_default = {
+  "@@locale": "ko",
+  settings: "설정",
+  minMagnificationRatio: "최대 축소율",
+  maxMagnificationRatio: "최대 확대율",
+  backgroundColor: "배경색",
+  leftToRight: "왼쪽부터 보기",
+  errorIsOccurred: "에러가 발생했습니다.",
+  failedToLoadImage: "이미지를 불러오지 못했습니다.",
+  loading: "로딩 중..."
+};
+var translations = { en: en_default, ko: ko_default };
+var i18nStateAtom = (0, import_jotai.atom)(en_default);
+var i18nAtom = (0, import_jotai.atom)((get) => get(i18nStateAtom), (_get, set) => {
+  for (const language of navigator.languages) {
+    const locale = language.split("-")[0];
+    const translation = translations[locale];
+    if (translation) {
+      set(i18nStateAtom, translation);
+      return;
+    }
+  }
+});
+i18nAtom.onMount = (set) => {
+  set();
+  addEventListener("languagechange", set);
+  return () => {
+    removeEventListener("languagechange", set);
+  };
+};
 var beforeRepaintStateAtom = (0, import_jotai.atom)({ repaint: null });
 var beforeRepaintAtom = (0, import_jotai.atom)((get) => get(beforeRepaintStateAtom), async (get, set) => {
   const { repaint } = get(beforeRepaintStateAtom);
@@ -131,12 +172,6 @@ var useBeforeRepaint = () => {
     repaint?.resolve(null);
   }, [repaint]);
 };
-var viewerElementAtom = (0, import_jotai.atom)(null);
-var viewerStateAtom = (0, import_jotai.atom)({ options: {}, status: "loading" });
-var pagesAtom = (0, import_utils.selectAtom)(
-  viewerStateAtom,
-  (state) => state.pages
-);
 var scrollElementStateAtom = (0, import_jotai.atom)(null);
 var initialPageScrollState = { page: null, ratio: 0.5 };
 var shouldIgnoreScrollAtom = (0, import_jotai.atom)(false);
@@ -222,7 +257,7 @@ var goPreviousAtom = (0, import_jotai.atom)(null, (get) => {
   }
 });
 var navigateAtom = (0, import_jotai.atom)(null, (get, set, event) => {
-  const height = get(viewerElementAtom)?.clientHeight;
+  const height = get(scrollElementAtom)?.clientHeight;
   if (!height || event.button !== 0) {
     return;
   }
@@ -392,6 +427,12 @@ function createPageAtom({ index, source }) {
   });
   return aggregateAtom;
 }
+var viewerElementAtom = (0, import_jotai.atom)(null);
+var viewerStateAtom = (0, import_jotai.atom)({ options: {}, status: "loading" });
+var pagesAtom = (0, import_utils.selectAtom)(
+  viewerStateAtom,
+  (state) => state.pages
+);
 var setViewerOptionsAtom = (0, import_jotai.atom)(
   null,
   async (get, set, options) => {
@@ -569,10 +610,13 @@ var defaultScrollbar = {
   "&::-webkit-scrollbar-track": { all: "initial" }
 };
 var Container = styled("div", {
+  position: "relative",
   height: "100%",
+  overflow: "hidden",
   userSelect: "none",
   fontFamily: "Pretendard, NanumGothic, sans-serif",
   fontSize: "1vmin",
+  color: "black",
   "*:where(:not(html, iframe, canvas, img, svg, video, audio):not(svg *, symbol *))": {
     all: "unset",
     display: "revert"
@@ -1065,41 +1109,6 @@ var CircularProgress = (props) => {
   ),  React.createElement(CenterText, { x: "50%", y: "50%" }, text || ""));
 };
 var import_jotai2 = require("jotai");
-var en_default = {
-  "@@locale": "en",
-  settings: "Settings",
-  minMagnificationRatio: "Minimal magnification ratio",
-  maxMagnificationRatio: "Maximal magnification ratio",
-  backgroundColor: "Background color",
-  leftToRight: "Left to right"
-};
-var ko_default = {
-  "@@locale": "ko",
-  settings: "설정",
-  minMagnificationRatio: "최대 축소율",
-  maxMagnificationRatio: "최대 확대율",
-  backgroundColor: "배경색",
-  leftToRight: "왼쪽부터 보기"
-};
-var translations = { en: en_default, ko: ko_default };
-var i18nStateAtom = (0, import_jotai.atom)(en_default);
-var i18nAtom = (0, import_jotai.atom)((get) => get(i18nStateAtom), (_get, set) => {
-  for (const language of navigator.languages) {
-    const locale = language.split("-")[0];
-    const translation = translations[locale];
-    if (translation) {
-      set(i18nStateAtom, translation);
-      return;
-    }
-  }
-});
-i18nAtom.onMount = (set) => {
-  set();
-  addEventListener("languagechange", set);
-  return () => {
-    removeEventListener("languagechange", set);
-  };
-};
 var Backdrop = styled("div", {
   position: "absolute",
   top: 0,
@@ -1163,16 +1172,25 @@ var ConfigRow = styled("div", {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  margin: "10px 5px",
   gap: "10%",
-  fontSize: "1.3em",
-  fontWeight: "medium",
+  "&& > *": {
+    fontSize: "1.3em",
+    fontWeight: "medium",
+    minWidth: "0",
+    margin: 0,
+    padding: 0
+  },
+  "& > input": {
+    appearance: "meter",
+    border: "gray 1px solid",
+    borderRadius: "0.2em",
+    textAlign: "center"
+  },
   ":first-child": {
     flex: "2 1 0"
   },
   ":nth-child(2)": {
-    flex: "1 1 0",
-    minWidth: "0"
+    flex: "1 1 0"
   }
 });
 var HiddenInput = styled("input", {
@@ -1217,7 +1235,8 @@ var Toggle = styled("span", {
 });
 var Title = styled("h3", {
   fontSize: "2em",
-  fontWeight: "bold"
+  fontWeight: "bold",
+  lineHeight: 1.5
 });
 function SettingsDialog({ onClose }) {
   const [minMagnificationRatio, setMinMagnificationRatio] = (0, import_jotai.useAtom)(minMagnificationRatioAtom);
@@ -1229,7 +1248,7 @@ function SettingsDialog({ onClose }) {
   const colorInputId = (0, import_react2.useId)();
   const pageDirectionInputId = (0, import_react2.useId)();
   const strings = (0, import_jotai2.useAtomValue)(i18nAtom);
-  return  React.createElement(BackdropDialog, { onClose },  React.createElement(Title, null, strings.settings),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: minRatioInputId }, strings.minMagnificationRatio),  React.createElement(
+  return  React.createElement(BackdropDialog, { css: { gap: "1.3em" }, onClose },  React.createElement(Title, null, strings.settings),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: minRatioInputId }, strings.minMagnificationRatio),  React.createElement(
     "input",
     {
       type: "number",
@@ -1409,6 +1428,7 @@ var Page = ({ atom: atom2, ...props }) => {
   const { imageProps, fullWidth, reloadAtom, isOriginalSize, state: pageState } = (0, import_jotai.useAtomValue)(
     atom2
   );
+  const strings = (0, import_jotai.useAtomValue)(i18nAtom);
   const reload = (0, import_jotai.useSetAtom)(reloadAtom);
   const { state } = pageState;
   const reloadErrored = async (event) => {
@@ -1423,7 +1443,7 @@ var Page = ({ atom: atom2, ...props }) => {
       fullWidth
     },
     state === "loading" &&  React.createElement(Spinner, null),
-    state === "error" &&  React.createElement(LinkColumn, { onClick: reloadErrored },  React.createElement(CircledX, null),  React.createElement("p", null, "이미지를 불러오지 못했습니다"),  React.createElement("p", null, pageState.urls?.join("\n"))),
+    state === "error" &&  React.createElement(LinkColumn, { onClick: reloadErrored },  React.createElement(CircledX, null),  React.createElement("p", null, strings.failedToLoadImage),  React.createElement("p", null, pageState.urls?.join("\n"))),
      React.createElement(Image, { ...imageProps, originalSize: isOriginalSize, ...props })
   );
 };
@@ -1439,6 +1459,7 @@ var InnerViewer = (0, import_react2.forwardRef)((props, refHandle) => {
   const blockSelection = (0, import_jotai.useSetAtom)(blockSelectionAtom);
   const synchronizeScroll = (0, import_jotai.useSetAtom)(synchronizeScrollAtom);
   const pageDirection = (0, import_jotai.useAtomValue)(pageDirectionAtom);
+  const strings = (0, import_jotai.useAtomValue)(i18nAtom);
   const { status } = viewer;
   const controller = useViewerController();
   const { options, toggleFullscreen } = controller;
@@ -1466,14 +1487,14 @@ var InnerViewer = (0, import_react2.forwardRef)((props, refHandle) => {
         onScroll: synchronizeScroll,
         onClick: navigate,
         onMouseDown: blockSelection,
-        children: status === "complete" ? viewer.pages.map((atom2, index) =>  React.createElement(
+        children: status === "complete" ? viewer.pages.map((atom2) =>  React.createElement(
           Page,
           {
             key: `${atom2}`,
             atom: atom2,
             ...options?.imageProps
           }
-        )) :  React.createElement("p", null, status === "error" ? "에러가 발생했습니다" : "로딩 중..."),
+        )) :  React.createElement("p", null, status === "error" ? strings.errorIsOccurred : strings.loading),
         ...otherProps
       }
     ),

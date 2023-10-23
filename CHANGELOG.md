@@ -1,3 +1,7 @@
+### 10.0.2
+
+- Fix icons overflowing viewer.
+
 ### 10.0.1
 
 - Fix not restored scroll in some cases.
