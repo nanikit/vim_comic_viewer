@@ -19,17 +19,29 @@ const ConfigRow = styled("div", {
   alignItems: "center",
   justifyContent: "space-between",
 
-  margin: "10px 5px",
   gap: "10%",
-  fontSize: "1.3em",
-  fontWeight: "medium",
+
+  "&& > *": {
+    fontSize: "1.3em",
+    fontWeight: "medium",
+    minWidth: "0",
+
+    margin: 0,
+    padding: 0,
+  },
+
+  "& > input": {
+    appearance: "meter",
+    border: "gray 1px solid",
+    borderRadius: "0.2em",
+    textAlign: "center",
+  },
 
   ":first-child": {
     flex: "2 1 0",
   },
   ":nth-child(2)": {
     flex: "1 1 0",
-    minWidth: "0",
   },
 });
 
@@ -86,6 +98,7 @@ const Toggle = styled("span", {
 const Title = styled("h3", {
   fontSize: "2em",
   fontWeight: "bold",
+  lineHeight: 1.5,
 });
 
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
@@ -97,12 +110,10 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const maxRatioInputId = useId();
   const colorInputId = useId();
   const pageDirectionInputId = useId();
-
   const strings = useAtomValue(i18nAtom);
-  // useClickAway(dialogRef, onClose);
 
   return (
-    <BackdropDialog onClose={onClose}>
+    <BackdropDialog css={{ gap: "1.3em" }} onClose={onClose}>
       <Title>{strings.settings}</Title>
       <ConfigRow>
         <label htmlFor={minRatioInputId}>{strings.minMagnificationRatio}</label>

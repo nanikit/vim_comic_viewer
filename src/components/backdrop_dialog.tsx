@@ -1,4 +1,4 @@
-import { HTMLAttributes, useEffect, useState } from "../deps.ts";
+import { ComponentProps, useEffect, useState } from "../deps.ts";
 import { timeout } from "../utils.ts";
 import { styled } from "../vendors/stitches.ts";
 
@@ -45,7 +45,7 @@ const CenterDialog = styled("div", {
 });
 
 export function BackdropDialog(
-  { onClose, ...props }: HTMLAttributes<HTMLDivElement> & { onClose: () => void },
+  { onClose, ...props }: ComponentProps<typeof CenterDialog> & { onClose: () => void },
 ) {
   const [isOpen, setIsOpen] = useState(false);
 

@@ -12,10 +12,15 @@ const defaultScrollbar = {
 };
 
 export const Container = styled("div", {
+  position: "relative",
+
   height: "100%",
+  overflow: "hidden",
   userSelect: "none",
+
   fontFamily: "Pretendard, NanumGothic, sans-serif",
   fontSize: "1vmin",
+  color: "black",
 
   // CSS reset https://elad2412.github.io/the-new-css-reset/
   "*:where(:not(html, iframe, canvas, img, svg, video, audio):not(svg *, symbol *))": {
