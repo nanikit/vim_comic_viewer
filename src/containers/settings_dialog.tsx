@@ -2,8 +2,8 @@ import { useAtomValue } from "jotai";
 import { i18nAtom } from "../atoms/i18n_atom.ts";
 import {
   backgroundColorAtom,
-  maxMagnificationRatioAtom,
-  minMagnificationRatioAtom,
+  maxZoomInExponentAtom,
+  maxZoomOutExponentAtom,
   pageDirectionAtom,
 } from "../atoms/setting_atoms.ts";
 import { BackdropDialog } from "../components/backdrop_dialog.tsx";
@@ -102,40 +102,44 @@ const Title = styled("h3", {
 });
 
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
-  const [minMagnificationRatio, setMinMagnificationRatio] = useAtom(minMagnificationRatioAtom);
-  const [maxMagnificationRatio, setMaxMagnificationRatio] = useAtom(maxMagnificationRatioAtom);
+  const [maxZoomOutExponent, setMaxZoomOutExponent] = useAtom(maxZoomOutExponentAtom);
+  const [maxZoomInExponent, setMaxZoomInExponent] = useAtom(maxZoomInExponentAtom);
   const [backgroundColor, setBackgroundColor] = useAtom(backgroundColorAtom);
   const [pageDirection, setPageDirection] = useAtom(pageDirectionAtom);
-  const minRatioInputId = useId();
-  const maxRatioInputId = useId();
+  const zoomOutExponentInputId = useId();
+  const zoomInExponentInputId = useId();
   const colorInputId = useId();
   const pageDirectionInputId = useId();
   const strings = useAtomValue(i18nAtom);
+  const maxZoomOut = formatMultiplier(maxZoomOutExponent);
+  const maxZoomIn = formatMultiplier(maxZoomInExponent);
 
   return (
     <BackdropDialog css={{ gap: "1.3em" }} onClose={onClose}>
       <Title>{strings.settings}</Title>
       <ConfigRow>
-        <label htmlFor={minRatioInputId}>{strings.minMagnificationRatio}</label>
+        <label htmlFor={zoomOutExponentInputId}>{strings.maxZoomOut}: {maxZoomOut}</label>
         <input
           type="number"
+          min={0}
           step={0.1}
-          id={minRatioInputId}
-          value={minMagnificationRatio}
+          id={zoomOutExponentInputId}
+          value={maxZoomOutExponent}
           onChange={(event) => {
-            setMinMagnificationRatio(event.currentTarget.valueAsNumber);
+            setMaxZoomOutExponent(event.currentTarget.valueAsNumber || 0);
           }}
         />
       </ConfigRow>
       <ConfigRow>
-        <label htmlFor={maxRatioInputId}>{strings.maxMagnificationRatio}</label>
+        <label htmlFor={zoomInExponentInputId}>{strings.maxZoomIn}: {maxZoomIn}</label>
         <input
           type="number"
+          min={0}
           step={0.1}
-          id={maxRatioInputId}
-          value={maxMagnificationRatio}
+          id={zoomInExponentInputId}
+          value={maxZoomInExponent}
           onChange={(event) => {
-            setMaxMagnificationRatio(event.currentTarget.valueAsNumber);
+            setMaxZoomInExponent(event.currentTarget.valueAsNumber || 0);
           }}
         />
       </ConfigRow>
@@ -166,4 +170,10 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
       </ConfigRow>
     </BackdropDialog>
   );
+}
+
+function formatMultiplier(maxZoomOutExponent: number) {
+  return Math.sqrt(2) ** maxZoomOutExponent === Infinity
+    ? "∞"
+    : `${(Math.sqrt(2) ** maxZoomOutExponent).toPrecision(2)}x`;
 }
