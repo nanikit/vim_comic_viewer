@@ -4,8 +4,8 @@ import { ImageSource } from "../types.ts";
 import { scrollElementSizeAtom } from "./navigation_atoms.ts";
 import {
   compactWidthIndexAtom,
-  maxMagnificationRatioAtom,
-  minMagnificationRatioAtom,
+  maxZoomInExponentAtom,
+  maxZoomOutExponentAtom,
 } from "./setting_atoms.ts";
 
 type PageState = {
@@ -57,7 +57,7 @@ export function createPageAtom({ index, source }: { index: number; source: Image
     await set(loadAtom);
   });
 
-  const magnificationRatioAtom = atom((get) => {
+  const imageToViewerSizeRatioAtom = atom((get) => {
     const viewerSize = get(scrollElementSizeAtom);
     if (!viewerSize) {
       return 1;
@@ -68,15 +68,17 @@ export function createPageAtom({ index, source }: { index: number; source: Image
       return 1;
     }
 
-    return viewerSize.height / state.naturalHeight;
+    return state.naturalHeight / viewerSize.height;
   });
 
-  const viewAsOriginalSizeAtom = atom((get) => {
-    const minRatio = get(minMagnificationRatioAtom);
-    const maxRatio = get(maxMagnificationRatioAtom);
-    const ratio = get(magnificationRatioAtom);
-    const isFit = minRatio <= ratio && ratio <= maxRatio;
-    return !isFit;
+  const shouldBeOriginalSizeAtom = atom((get) => {
+    const maxZoomInExponent = get(maxZoomInExponentAtom);
+    const maxZoomOutExponent = get(maxZoomOutExponentAtom);
+    const imageRatio = get(imageToViewerSizeRatioAtom);
+    const minZoomRatio = Math.sqrt(2) ** maxZoomOutExponent;
+    const maxZoomRatio = Math.sqrt(2) ** maxZoomInExponent;
+    const isOver = minZoomRatio < imageRatio || imageRatio < 1 / maxZoomRatio;
+    return isOver;
   });
 
   const aggregateAtom = atom((get) => {
@@ -84,15 +86,16 @@ export function createPageAtom({ index, source }: { index: number; source: Image
 
     const state = get(stateAtom);
     const compactWidthIndex = get(compactWidthIndexAtom);
-    const isOriginalSize = get(viewAsOriginalSizeAtom);
-    const ratio = get(magnificationRatioAtom);
-    const isOverScreen = isOriginalSize && ratio < 1;
+    const shouldBeOriginalSize = get(shouldBeOriginalSizeAtom);
+    const ratio = get(imageToViewerSizeRatioAtom);
+    const isLarge = ratio > 1;
+    const canMessUpRow = shouldBeOriginalSize && isLarge;
 
     return {
       state,
       reloadAtom,
-      fullWidth: index < compactWidthIndex || isOverScreen,
-      isOriginalSize,
+      fullWidth: index < compactWidthIndex || canMessUpRow,
+      shouldBeOriginalSize,
       imageProps: {
         ...("src" in state ? { src: state.src } : {}),
         onError: () => imageLoad.resolve(false),

@@ -1,8 +1,8 @@
 {
   "@@locale": "ko",
   "settings": "설정",
-  "minMagnificationRatio": "최대 축소율",
-  "maxMagnificationRatio": "최대 확대율",
+  "maxZoomOut": "최대 축소",
+  "maxZoomIn": "최대 확대",
   "backgroundColor": "배경색",
   "leftToRight": "왼쪽부터 보기",
   "errorIsOccurred": "에러가 발생했습니다.",

@@ -1,8 +1,8 @@
 {
   "@@locale": "en",
   "settings": "Settings",
-  "minMagnificationRatio": "Minimal magnification ratio",
-  "maxMagnificationRatio": "Maximal magnification ratio",
+  "maxZoomOut": "Maximum zoom out",
+  "maxZoomIn": "Maximum zoom in",
   "backgroundColor": "Background color",
   "leftToRight": "Left to right",
   "errorIsOccurred": "Error is occurred.",
