@@ -11,7 +11,7 @@ export {
   useSetAtom,
   useStore,
 } from "jotai";
-export { atomWithStorage, selectAtom } from "jotai/utils";
+export { atomWithStorage, createJSONStorage, selectAtom } from "jotai/utils";
 
 // @deno-types="npm:@types/react"
 export {

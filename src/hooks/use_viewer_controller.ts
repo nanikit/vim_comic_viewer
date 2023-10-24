@@ -6,7 +6,7 @@ import {
   UserDownloadOptions,
 } from "../atoms/downloader_atoms.ts";
 import { goNextAtom, goPreviousAtom } from "../atoms/navigation_atoms.ts";
-import { compactWidthIndexAtom } from "../atoms/setting_atoms.ts";
+import { compactWidthIndexAtom } from "../atoms/persistent_atoms.ts";
 import {
   pagesAtom,
   reloadErroredAtom,

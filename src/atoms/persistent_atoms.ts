@@ -1,4 +1,4 @@
-import { gmValueAtom } from "./helper/gm_value_atom.ts";
+import { gmValueAtom, sessionAtom } from "./helper/storage_atoms.ts";
 
 type PageDirection = "leftToRight" | "rightToLeft";
 
@@ -11,3 +11,5 @@ export const pageDirectionAtom = gmValueAtom<PageDirection>(
   "vim_comic_viewer.page_direction",
   "rightToLeft",
 );
+
+export const modeAtom = sessionAtom<"normal" | "fullscreen">("vim_comic_viewer.mode", "normal");
