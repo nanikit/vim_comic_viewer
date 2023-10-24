@@ -1,4 +1,4 @@
-import { ComponentProps, useEffect, useState } from "../deps.ts";
+import { ComponentProps, useState } from "../deps.ts";
 import { timeout } from "../utils.ts";
 import { styled } from "../vendors/stitches.ts";
 
@@ -55,16 +55,17 @@ export function BackdropDialog(
     onClose();
   };
 
-  useEffect(() => {
-    setIsOpen(true);
-  }, []);
+  const closeIfEnter = (event: React.KeyboardEvent) => {
+    if (event.key === "Enter") {
+      close();
+      event.stopPropagation();
+    }
+  };
 
   return (
-    <Backdrop isOpen={isOpen} onClick={close}>
+    <Backdrop isOpen={isOpen} onClick={close} onKeyDown={closeIfEnter}>
       <CenterDialog
-        onClick={(event) => {
-          event.stopPropagation();
-        }}
+        onClick={(event) => event.stopPropagation()}
         {...props}
       >
       </CenterDialog>
