@@ -69,7 +69,6 @@ export const InnerViewer = forwardRef((
     <Container
       ref={setViewerElement}
       tabIndex={-1}
-      className="vim_comic_viewer"
       css={{ backgroundColor }}
     >
       <ScrollableLayout
