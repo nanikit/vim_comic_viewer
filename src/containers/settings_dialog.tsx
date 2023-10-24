@@ -5,7 +5,7 @@ import {
   maxZoomInExponentAtom,
   maxZoomOutExponentAtom,
   pageDirectionAtom,
-} from "../atoms/setting_atoms.ts";
+} from "../atoms/persistent_atoms.ts";
 import { BackdropDialog } from "../components/backdrop_dialog.tsx";
 import { useAtom, useId } from "../deps.ts";
 import { styled } from "../vendors/stitches.ts";

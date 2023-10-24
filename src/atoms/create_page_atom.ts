@@ -6,7 +6,7 @@ import {
   compactWidthIndexAtom,
   maxZoomInExponentAtom,
   maxZoomOutExponentAtom,
-} from "./setting_atoms.ts";
+} from "./persistent_atoms.ts";
 
 type PageState = {
   state: "loading";
