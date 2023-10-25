@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        10.0.2
+// @version        11.0.1
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -1170,6 +1170,9 @@ function BackdropDialog({ onClose, ...props }) {
       event.stopPropagation();
     }
   };
+  (0, import_react2.useEffect)(() => {
+    setIsOpen(true);
+  }, []);
   return  React.createElement(Backdrop, { isOpen, onClick: close, onKeyDown: closeIfEnter },  React.createElement(
     CenterDialog,
     {

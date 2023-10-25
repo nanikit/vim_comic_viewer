@@ -1,4 +1,4 @@
-import { ComponentProps, useState } from "../deps.ts";
+import { ComponentProps, useEffect, useState } from "../deps.ts";
 import { timeout } from "../utils.ts";
 import { styled } from "../vendors/stitches.ts";
 
@@ -61,6 +61,10 @@ export function BackdropDialog(
       event.stopPropagation();
     }
   };
+
+  useEffect(() => {
+    setIsOpen(true);
+  }, []);
 
   return (
     <Backdrop isOpen={isOpen} onClick={close} onKeyDown={closeIfEnter}>
