@@ -69,6 +69,7 @@ __export(deps_exports, {
   Provider: () => import_jotai.Provider,
   atom: () => import_jotai.atom,
   atomWithStorage: () => import_utils.atomWithStorage,
+  createJSONStorage: () => import_utils.createJSONStorage,
   createRef: () => import_react2.createRef,
   createStitches: () => import_react.createStitches,
   createStore: () => import_jotai.createStore,
@@ -117,8 +118,8 @@ __reExport(deps_exports, require("react-dom"));
 var en_default = {
   "@@locale": "en",
   settings: "Settings",
-  minMagnificationRatio: "Minimal magnification ratio",
-  maxMagnificationRatio: "Maximal magnification ratio",
+  maxZoomOut: "Maximum zoom out",
+  maxZoomIn: "Maximum zoom in",
   backgroundColor: "Background color",
   leftToRight: "Left to right",
   errorIsOccurred: "Error is occurred.",
@@ -128,8 +129,8 @@ var en_default = {
 var ko_default = {
   "@@locale": "ko",
   settings: "설정",
-  minMagnificationRatio: "최대 축소율",
-  maxMagnificationRatio: "최대 확대율",
+  maxZoomOut: "최대 축소",
+  maxZoomIn: "최대 확대",
   backgroundColor: "배경색",
   leftToRight: "왼쪽부터 보기",
   errorIsOccurred: "에러가 발생했습니다.",
@@ -155,40 +156,27 @@ i18nAtom.onMount = (set) => {
     removeEventListener("languagechange", set);
   };
 };
-var beforeRepaintStateAtom = (0, import_jotai.atom)({ repaint: null });
-var beforeRepaintAtom = (0, import_jotai.atom)((get) => get(beforeRepaintStateAtom), async (get, set) => {
-  const { repaint } = get(beforeRepaintStateAtom);
-  if (repaint?.state === "pending") {
-    await repaint;
-  } else {
-    const newRepaint = deferred();
-    set(beforeRepaintStateAtom, { repaint: newRepaint });
-    await newRepaint;
-  }
-});
-var useBeforeRepaint = () => {
-  const { repaint } = (0, import_jotai.useAtomValue)(beforeRepaintAtom);
-  (0, import_react2.useLayoutEffect)(() => {
-    repaint?.resolve(null);
-  }, [repaint]);
-};
 var scrollElementStateAtom = (0, import_jotai.atom)(null);
 var initialPageScrollState = { page: null, ratio: 0.5 };
-var shouldIgnoreScrollAtom = (0, import_jotai.atom)(false);
+var scrollElementSizeAtom = (0, import_jotai.atom)({ width: 0, height: 0 });
 var pageScrollStateAtom = (0, import_jotai.atom)(initialPageScrollState);
 var synchronizeScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
-  const { page, ratio } = getCurrentPage(get(scrollElementAtom));
-  const isViewerExitScroll = !page;
-  if (isViewerExitScroll) {
-    return;
+  const scrollElement = get(scrollElementAtom);
+  const previous = { ...get(pageScrollStateAtom), ...get(scrollElementSizeAtom) };
+  const current = getCurrentPage(scrollElement);
+  const height = scrollElement?.clientHeight ?? 0;
+  const width = scrollElement?.clientWidth ?? 0;
+  const isResizing = !current.page || height !== previous.height || width !== previous.width;
+  if (isResizing) {
+    set(restoreScrollAtom);
+    set(scrollElementSizeAtom, (previous2) => {
+      return previous2.width === width && previous2.height === height ? previous2 : { width, height };
+    });
+  } else {
+    set(pageScrollStateAtom, current);
   }
-  if (get(shouldIgnoreScrollAtom)) {
-    set(shouldIgnoreScrollAtom, false);
-    return;
-  }
-  set(pageScrollStateAtom, { page, ratio });
 });
-var restoreScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
+var restoreScrollAtom = (0, import_jotai.atom)(null, (get) => {
   const { page, ratio } = get(pageScrollStateAtom);
   const element = get(scrollElementAtom);
   if (!element || !page) {
@@ -196,10 +184,8 @@ var restoreScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
   }
   const { offsetTop, clientHeight } = page;
   const restoredY = offsetTop + clientHeight * ratio - element.clientHeight / 2;
-  set(shouldIgnoreScrollAtom, true);
   element.scroll({ top: restoredY });
 });
-var scrollElementSizeAtom = (0, import_jotai.atom)({ width: 0, height: 0 });
 var scrollElementAtom = (0, import_jotai.atom)(
   (get) => get(scrollElementStateAtom)?.div ?? null,
   (_get, set, div) => {
@@ -212,9 +198,8 @@ var scrollElementAtom = (0, import_jotai.atom)(
         return null;
       }
       set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
-      const resizeObserver = new ResizeObserver(async () => {
+      const resizeObserver = new ResizeObserver(() => {
         set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
-        await set(beforeRepaintAtom);
         set(restoreScrollAtom);
       });
       resizeObserver.observe(div);
@@ -331,17 +316,24 @@ var gmStorage = {
 function gmValueAtom(key, defaultValue) {
   return (0, import_utils.atomWithStorage)(key, defaultValue, gmStorage);
 }
+var jsonSessionStorage = (0, import_utils.createJSONStorage)(() => sessionStorage);
+function sessionAtom(key, defaultValue) {
+  const atom2 = (0, import_utils.atomWithStorage)(
+    key,
+    jsonSessionStorage.getItem(key, defaultValue),
+    jsonSessionStorage
+  );
+  return atom2;
+}
 var backgroundColorAtom = gmValueAtom("vim_comic_viewer.background_color", "#eeeeee");
 var compactWidthIndexAtom = gmValueAtom("vim_comic_viewer.single_page_count", 1);
-var minMagnificationRatioAtom = gmValueAtom(
-  "vim_comic_viewer.min_magnification_ratio",
-  0.5
-);
-var maxMagnificationRatioAtom = gmValueAtom("vim_comic_viewer.max_magnification_ratio", 3);
+var maxZoomOutExponentAtom = gmValueAtom("vim_comic_viewer.max_zoom_out_exponent", 3);
+var maxZoomInExponentAtom = gmValueAtom("vim_comic_viewer.max_zoom_in_exponent", 3);
 var pageDirectionAtom = gmValueAtom(
   "vim_comic_viewer.page_direction",
   "rightToLeft"
 );
+var modeAtom = sessionAtom("vim_comic_viewer.mode", "normal");
 function imageSourceToIterable(source) {
   if (typeof source === "string") {
     return async function* () {
@@ -388,7 +380,7 @@ function createPageAtom({ index, source }) {
     imageLoad.resolve(null);
     await set(loadAtom);
   });
-  const magnificationRatioAtom = (0, import_jotai.atom)((get) => {
+  const imageToViewerSizeRatioAtom = (0, import_jotai.atom)((get) => {
     const viewerSize = get(scrollElementSizeAtom);
     if (!viewerSize) {
       return 1;
@@ -397,27 +389,30 @@ function createPageAtom({ index, source }) {
     if (state.state !== "complete") {
       return 1;
     }
-    return viewerSize.height / state.naturalHeight;
+    return state.naturalHeight / viewerSize.height;
   });
-  const viewAsOriginalSizeAtom = (0, import_jotai.atom)((get) => {
-    const minRatio = get(minMagnificationRatioAtom);
-    const maxRatio = get(maxMagnificationRatioAtom);
-    const ratio = get(magnificationRatioAtom);
-    const isFit = minRatio <= ratio && ratio <= maxRatio;
-    return !isFit;
+  const shouldBeOriginalSizeAtom = (0, import_jotai.atom)((get) => {
+    const maxZoomInExponent = get(maxZoomInExponentAtom);
+    const maxZoomOutExponent = get(maxZoomOutExponentAtom);
+    const imageRatio = get(imageToViewerSizeRatioAtom);
+    const minZoomRatio = Math.sqrt(2) ** maxZoomOutExponent;
+    const maxZoomRatio = Math.sqrt(2) ** maxZoomInExponent;
+    const isOver = minZoomRatio < imageRatio || imageRatio < 1 / maxZoomRatio;
+    return isOver;
   });
   const aggregateAtom = (0, import_jotai.atom)((get) => {
     get(loadAtom);
     const state = get(stateAtom);
     const compactWidthIndex = get(compactWidthIndexAtom);
-    const isOriginalSize = get(viewAsOriginalSizeAtom);
-    const ratio = get(magnificationRatioAtom);
-    const isOverScreen = isOriginalSize && ratio < 1;
+    const shouldBeOriginalSize = get(shouldBeOriginalSizeAtom);
+    const ratio = get(imageToViewerSizeRatioAtom);
+    const isLarge = ratio > 1;
+    const canMessUpRow = shouldBeOriginalSize && isLarge;
     return {
       state,
       reloadAtom,
-      fullWidth: index < compactWidthIndex || isOverScreen,
-      isOriginalSize,
+      fullWidth: index < compactWidthIndex || canMessUpRow,
+      shouldBeOriginalSize,
       imageProps: {
         ..."src" in state ? { src: state.src } : {},
         onError: () => imageLoad.resolve(false),
@@ -427,7 +422,23 @@ function createPageAtom({ index, source }) {
   });
   return aggregateAtom;
 }
-var viewerElementAtom = (0, import_jotai.atom)(null);
+var isViewerFullscreenAtom = (0, import_jotai.atom)((get) => {
+  const fullscreenElement = get(fullscreenElementAtom);
+  const viewerElement = get(viewerElementAtom);
+  return fullscreenElement === viewerElement;
+});
+var viewerElementStateAtom = (0, import_jotai.atom)(null);
+var viewerElementAtom = (0, import_jotai.atom)(
+  (get) => get(viewerElementStateAtom),
+  (get, set, element) => {
+    set(viewerElementStateAtom, element);
+    const isFullscreen = get(isViewerFullscreenAtom);
+    const wasFullscreen = get(modeAtom) === "fullscreen";
+    const shouldEnterFullscreen = !isFullscreen && wasFullscreen;
+    if (element && shouldEnterFullscreen) {
+    }
+  }
+);
 var viewerStateAtom = (0, import_jotai.atom)({ options: {}, status: "loading" });
 var pagesAtom = (0, import_utils.selectAtom)(
   viewerStateAtom,
@@ -486,7 +497,7 @@ fullscreenElementStateAtom.onMount = (set) => {
   document.addEventListener("fullscreenchange", notify);
   return () => document.removeEventListener("fullscreenchange", notify);
 };
-var fullScreenElementAtom = (0, import_jotai.atom)(
+var fullscreenElementAtom = (0, import_jotai.atom)(
   (get) => get(fullscreenElementStateAtom),
   async (get, set, element) => {
     const fullscreenElement = get(fullscreenElementStateAtom);
@@ -506,8 +517,9 @@ var fullScreenElementAtom = (0, import_jotai.atom)(
   }
 );
 var toggleFullscreenAtom = (0, import_jotai.atom)(null, async (get, set) => {
-  const fullscreen = get(fullScreenElementAtom);
-  await set(fullScreenElementAtom, fullscreen ? null : get(viewerElementAtom));
+  const isFullscreen = get(isViewerFullscreenAtom);
+  await set(fullscreenElementAtom, isFullscreen ? null : get(viewerElementAtom));
+  set(modeAtom, isFullscreen ? "normal" : "fullscreen");
 });
 var blockSelectionAtom = (0, import_jotai.atom)(null, (_get, set, event) => {
   if (event.detail >= 2) {
@@ -1152,15 +1164,16 @@ function BackdropDialog({ onClose, ...props }) {
     await timeout(200);
     onClose();
   };
-  (0, import_react2.useEffect)(() => {
-    setIsOpen(true);
-  }, []);
-  return  React.createElement(Backdrop, { isOpen, onClick: close },  React.createElement(
+  const closeIfEnter = (event) => {
+    if (event.key === "Enter") {
+      close();
+      event.stopPropagation();
+    }
+  };
+  return  React.createElement(Backdrop, { isOpen, onClick: close, onKeyDown: closeIfEnter },  React.createElement(
     CenterDialog,
     {
-      onClick: (event) => {
-        event.stopPropagation();
-      },
+      onClick: (event) => event.stopPropagation(),
       ...props
     }
   ));
@@ -1239,35 +1252,39 @@ var Title = styled("h3", {
   lineHeight: 1.5
 });
 function SettingsDialog({ onClose }) {
-  const [minMagnificationRatio, setMinMagnificationRatio] = (0, import_jotai.useAtom)(minMagnificationRatioAtom);
-  const [maxMagnificationRatio, setMaxMagnificationRatio] = (0, import_jotai.useAtom)(maxMagnificationRatioAtom);
+  const [maxZoomOutExponent, setMaxZoomOutExponent] = (0, import_jotai.useAtom)(maxZoomOutExponentAtom);
+  const [maxZoomInExponent, setMaxZoomInExponent] = (0, import_jotai.useAtom)(maxZoomInExponentAtom);
   const [backgroundColor, setBackgroundColor] = (0, import_jotai.useAtom)(backgroundColorAtom);
   const [pageDirection, setPageDirection] = (0, import_jotai.useAtom)(pageDirectionAtom);
-  const minRatioInputId = (0, import_react2.useId)();
-  const maxRatioInputId = (0, import_react2.useId)();
+  const zoomOutExponentInputId = (0, import_react2.useId)();
+  const zoomInExponentInputId = (0, import_react2.useId)();
   const colorInputId = (0, import_react2.useId)();
   const pageDirectionInputId = (0, import_react2.useId)();
   const strings = (0, import_jotai2.useAtomValue)(i18nAtom);
-  return  React.createElement(BackdropDialog, { css: { gap: "1.3em" }, onClose },  React.createElement(Title, null, strings.settings),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: minRatioInputId }, strings.minMagnificationRatio),  React.createElement(
+  const maxZoomOut = formatMultiplier(maxZoomOutExponent);
+  const maxZoomIn = formatMultiplier(maxZoomInExponent);
+  return  React.createElement(BackdropDialog, { css: { gap: "1.3em" }, onClose },  React.createElement(Title, null, strings.settings),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: zoomOutExponentInputId }, strings.maxZoomOut, ": ", maxZoomOut),  React.createElement(
     "input",
     {
       type: "number",
+      min: 0,
       step: 0.1,
-      id: minRatioInputId,
-      value: minMagnificationRatio,
+      id: zoomOutExponentInputId,
+      value: maxZoomOutExponent,
       onChange: (event) => {
-        setMinMagnificationRatio(event.currentTarget.valueAsNumber);
+        setMaxZoomOutExponent(event.currentTarget.valueAsNumber || 0);
       }
     }
-  )),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: maxRatioInputId }, strings.maxMagnificationRatio),  React.createElement(
+  )),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: zoomInExponentInputId }, strings.maxZoomIn, ": ", maxZoomIn),  React.createElement(
     "input",
     {
       type: "number",
+      min: 0,
       step: 0.1,
-      id: maxRatioInputId,
-      value: maxMagnificationRatio,
+      id: zoomInExponentInputId,
+      value: maxZoomInExponent,
       onChange: (event) => {
-        setMaxMagnificationRatio(event.currentTarget.valueAsNumber);
+        setMaxZoomInExponent(event.currentTarget.valueAsNumber || 0);
       }
     }
   )),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: colorInputId }, strings.backgroundColor),  React.createElement(
@@ -1291,6 +1308,9 @@ function SettingsDialog({ onClose }) {
       }
     }
   ),  React.createElement("label", { htmlFor: pageDirectionInputId }, strings.leftToRight))));
+}
+function formatMultiplier(maxZoomOutExponent) {
+  return Math.sqrt(2) ** maxZoomOutExponent === Infinity ? "∞" : `${(Math.sqrt(2) ** maxZoomOutExponent).toPrecision(2)}x`;
 }
 var LeftBottomFloat = styled("div", {
   position: "absolute",
@@ -1425,9 +1445,7 @@ var Image = styled("img", {
   }
 });
 var Page = ({ atom: atom2, ...props }) => {
-  const { imageProps, fullWidth, reloadAtom, isOriginalSize, state: pageState } = (0, import_jotai.useAtomValue)(
-    atom2
-  );
+  const { imageProps, fullWidth, reloadAtom, shouldBeOriginalSize, state: pageState } = (0, import_jotai.useAtomValue)(atom2);
   const strings = (0, import_jotai.useAtomValue)(i18nAtom);
   const reload = (0, import_jotai.useSetAtom)(reloadAtom);
   const { state } = pageState;
@@ -1439,19 +1457,19 @@ var Page = ({ atom: atom2, ...props }) => {
     Overlay,
     {
       placeholder: state !== "complete",
-      originalSize: isOriginalSize,
+      originalSize: shouldBeOriginalSize,
       fullWidth
     },
     state === "loading" &&  React.createElement(Spinner, null),
     state === "error" &&  React.createElement(LinkColumn, { onClick: reloadErrored },  React.createElement(CircledX, null),  React.createElement("p", null, strings.failedToLoadImage),  React.createElement("p", null, pageState.urls?.join("\n"))),
-     React.createElement(Image, { ...imageProps, originalSize: isOriginalSize, ...props })
+     React.createElement(Image, { ...imageProps, originalSize: shouldBeOriginalSize, ...props })
   );
 };
 var InnerViewer = (0, import_react2.forwardRef)((props, refHandle) => {
   const { useDefault: enableDefault, options: viewerOptions, ...otherProps } = props;
   const [viewerElement, setViewerElement] = (0, import_jotai.useAtom)(viewerElementAtom);
   const setScrollElement = (0, import_jotai.useSetAtom)(scrollElementAtom);
-  const fullscreenElement = (0, import_jotai.useAtomValue)(fullScreenElementAtom);
+  const fullscreenElement = (0, import_jotai.useAtomValue)(fullscreenElementAtom);
   const backgroundColor = (0, import_jotai.useAtomValue)(backgroundColorAtom);
   const viewer = (0, import_jotai.useAtomValue)(viewerStateAtom);
   const setViewerOptions = (0, import_jotai.useSetAtom)(setViewerOptionsAtom);
@@ -1463,7 +1481,6 @@ var InnerViewer = (0, import_react2.forwardRef)((props, refHandle) => {
   const { status } = viewer;
   const controller = useViewerController();
   const { options, toggleFullscreen } = controller;
-  useBeforeRepaint();
   useDefault({ enable: props.useDefault, controller });
   (0, import_react2.useImperativeHandle)(refHandle, () => controller, [controller]);
   (0, import_react2.useEffect)(() => {
@@ -1474,7 +1491,6 @@ var InnerViewer = (0, import_react2.forwardRef)((props, refHandle) => {
     {
       ref: setViewerElement,
       tabIndex: -1,
-      className: "vim_comic_viewer",
       css: { backgroundColor }
     },
      React.createElement(
