@@ -1,5 +1,4 @@
 import { atom } from "../deps.ts";
-import { beforeRepaintAtom } from "../modules/use_before_repaint.ts";
 
 const scrollElementStateAtom = atom<
   {
@@ -13,25 +12,29 @@ type PageScrollState = {
   ratio: number;
 };
 const initialPageScrollState = { page: null, ratio: 0.5 };
-const shouldIgnoreScrollAtom = atom(false);
+export const scrollElementSizeAtom = atom({ width: 0, height: 0 });
 const pageScrollStateAtom = atom<PageScrollState>(initialPageScrollState);
 
 export const synchronizeScrollAtom = atom(null, (get, set) => {
-  const { page, ratio } = getCurrentPage(get(scrollElementAtom));
-  const isViewerExitScroll = !page;
-  if (isViewerExitScroll) {
-    return;
-  }
+  const scrollElement = get(scrollElementAtom);
+  const previous = { ...get(pageScrollStateAtom), ...get(scrollElementSizeAtom) };
 
-  if (get(shouldIgnoreScrollAtom)) {
-    set(shouldIgnoreScrollAtom, false);
-    return;
+  const current = getCurrentPage(scrollElement);
+  const height = scrollElement?.clientHeight ?? 0;
+  const width = scrollElement?.clientWidth ?? 0;
+  const isResizing = !current.page || height !== previous.height || width !== previous.width;
+  if (isResizing) {
+    set(restoreScrollAtom);
+    // Resize observer is not always fired.
+    set(scrollElementSizeAtom, (previous) => {
+      return previous.width === width && previous.height === height ? previous : { width, height };
+    });
+  } else {
+    set(pageScrollStateAtom, current);
   }
-
-  set(pageScrollStateAtom, { page, ratio });
 });
 
-export const restoreScrollAtom = atom(null, (get, set) => {
+export const restoreScrollAtom = atom(null, (get) => {
   const { page, ratio } = get(pageScrollStateAtom);
   const element = get(scrollElementAtom);
   if (!element || !page) {
@@ -41,11 +44,9 @@ export const restoreScrollAtom = atom(null, (get, set) => {
   const { offsetTop, clientHeight } = page;
   const restoredY = offsetTop + clientHeight * ratio - element.clientHeight / 2;
 
-  set(shouldIgnoreScrollAtom, true);
   element.scroll({ top: restoredY });
 });
 
-export const scrollElementSizeAtom = atom({ width: 0, height: 0 });
 export const scrollElementAtom = atom(
   (get) => get(scrollElementStateAtom)?.div ?? null,
   (_get, set, div: HTMLDivElement | null) => {
@@ -61,9 +62,8 @@ export const scrollElementAtom = atom(
       }
 
       set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
-      const resizeObserver = new ResizeObserver(async () => {
+      const resizeObserver = new ResizeObserver(() => {
         set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
-        await set(beforeRepaintAtom);
         set(restoreScrollAtom);
       });
       resizeObserver.observe(div);

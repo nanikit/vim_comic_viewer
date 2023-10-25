@@ -26,7 +26,6 @@ import {
 } from "../deps.ts";
 import { useDefault } from "../hooks/use_default.ts";
 import { useViewerController, ViewerController } from "../hooks/use_viewer_controller.ts";
-import { useBeforeRepaint } from "../modules/use_before_repaint.ts";
 import { ViewerOptions } from "../types.ts";
 import { LeftBottomControl } from "./left_bottom_control.tsx";
 import { Page } from "./page.tsx";
@@ -54,8 +53,6 @@ export const InnerViewer = forwardRef((
 
   const controller = useViewerController();
   const { options, toggleFullscreen } = controller;
-
-  useBeforeRepaint();
 
   useDefault({ enable: props.useDefault, controller });
 
