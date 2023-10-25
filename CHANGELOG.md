@@ -1,3 +1,14 @@
+## Criteria
+
+- **Major change is a breaking one that programmer should care.**
+- _Minor change is a one affecting user more or less._
+- Patch change is none of above.
+
+# 11.0.0
+
+- **.vim_comic_viewer class name is removed**.
+- _Change magnification settings. Previous settings will be reset._
+
 ### 10.0.2
 
 - Fix icons overflowing viewer.
@@ -8,9 +19,9 @@
 
 # 10.0.0
 
-- Adopt new build tool.
-- Support long image by showing original size.
-- Add view left to right option.
+- **Adopt new build tool. There are no metadata requirement notices from now.**
+- _Support long image by showing original size._
+- _Add view left to right option._
 
 ### 9.0.1
 
@@ -19,7 +30,7 @@
 
 # 9.0.0
 
-- Add the following for configuration memory.
+- **Add the following for configuration memory.**
 
   ```
   // @grant GM_setValue
@@ -47,7 +58,7 @@
 
 # 8.0.0
 
-- Upgrade dependencies. The following is example of resolved packages.
+- **Upgrade dependencies. The following is example of resolved packages.**
 
 ```
 // @resource       @stitches/react  https://cdn.jsdelivr.net/npm/@stitches/react@1.2.8/dist/index.cjs
@@ -70,7 +81,8 @@
 
 # 7.0.0
 
-- Update stitches to 1.2.6. Dependent script's resource pragma should be changed like the following.
+- **Update stitches to 1.2.6. Dependent script's resource pragma should be changed like the
+  following.**
 
 ```
 // @resource       fflate           https://cdn.jsdelivr.net/npm/fflate@0.7.2/lib/browser.cjs
@@ -85,21 +97,21 @@
 
 ## 6.2.0
 
-- Add reload errored image feature (default key: <kbd>'</kbd>)
+- _Add reload errored image feature (default key: <kbd>'</kbd>)_
 - Reduce page horizontal gap to 1px.
 - Fix not showing image url when fetch fails.
 - Don't print exception when download is aborted.
 
 ## 6.1.0
 
-- Use file content to determine file extension.
+- _Use file content to determine file extension._
 - Remove download progress animation
 
 # 6.0.0
 
 Performance improvement: downloaded file zipping is now almost instant.
 
-- Change jszip dependency to fflate.
+- **Change jszip dependency to fflate.**
 
 Script user should replace
 
@@ -109,14 +121,14 @@ with
 
 `// @resource fflate https://cdn.jsdelivr.net/npm/fflate@0.7.1/lib/browser.cjs`
 
-- `ViewerController.download` is now
-  - returns `Uint8Array`.
+- **`ViewerController.download` is now**
+  - **returns `Uint8Array`.**
   - throws if cancelled.
 - Remove `saveZipAs` util function.
 
 # 5.0.0
 
-- Show first page as single by default.
+- _Show first page as single by default._
 - Add new default key binding: /, ? for adjusting page start.
 
 ## 4.1.0
@@ -130,6 +142,6 @@ with
 
 # 4.0.0
 
+- **Replace `initialize` parameter type with `ViewerOptions`**.
+- **Remove `initializeWithDefault`.**
 - Expose `<Viewer />` for react usage.
-- Replace `initialize` parameter type with `ViewerOptions`.
-- Remove `initializeWithDefault`.
