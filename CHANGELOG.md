@@ -2,7 +2,15 @@
 
 - **Major change is a breaking one that programmer should care.**
 - _Minor change is a one affecting user more or less._
-- Patch change is none of above.
+- Patch change is none of above or fix.
+
+### Unreleased
+
+- Fix image division around threshold.
+
+### 11.0.1
+
+- Fix not appearing settings dialog.
 
 # 11.0.0
 

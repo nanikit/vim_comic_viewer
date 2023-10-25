@@ -77,7 +77,9 @@ export const ScrollableLayout = styled("div", {
   alignItems: "center",
   flexFlow: "row-reverse wrap",
   overflowY: "auto",
+  gap: "1px",
   ...defaultScrollbar,
+
   variants: {
     fullscreen: {
       true: {

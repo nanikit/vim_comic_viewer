@@ -42,7 +42,7 @@ export const restoreScrollAtom = atom(null, (get) => {
   }
 
   const { offsetTop, clientHeight } = page;
-  const restoredY = offsetTop + clientHeight * ratio - element.clientHeight / 2;
+  const restoredY = Math.floor(offsetTop + clientHeight * ratio - element.clientHeight / 2);
 
   element.scroll({ top: restoredY });
 });
@@ -83,10 +83,12 @@ export const goNextAtom = atom(null, (get) => {
   const viewerHeight = scrollElement.clientHeight;
   const ignorableHeight = viewerHeight * 0.05;
   const scrollBottom = scrollElement.scrollTop + viewerHeight;
-  const remainingHeight = page.offsetTop + page.clientHeight - scrollBottom;
+  // HACK: scrollTop has fractional px for unknown reason, -1 is monkey patching for it.
+  const remainingHeight = page.offsetTop + page.clientHeight - Math.ceil(scrollBottom) - 1;
   if (remainingHeight > ignorableHeight) {
     const divisor = Math.ceil(remainingHeight / viewerHeight);
-    scrollElement.scrollBy({ top: remainingHeight / divisor });
+    const delta = Math.ceil(remainingHeight / divisor);
+    scrollElement.scroll({ top: Math.floor(scrollElement.scrollTop + delta) });
   } else {
     scrollToNextPageTopOrEnd(page);
   }
@@ -101,10 +103,12 @@ export const goPreviousAtom = atom(null, (get) => {
 
   const viewerHeight = scrollElement.clientHeight;
   const ignorableHeight = viewerHeight * 0.05;
-  const remainingHeight = scrollElement.scrollTop - page.offsetTop;
+  // HACK: scrollTop has fractional px for unknown reason, -1 is monkey patching for it.
+  const remainingHeight = scrollElement.scrollTop - Math.ceil(page.offsetTop) - 1;
   if (remainingHeight > ignorableHeight) {
     const divisor = Math.ceil(remainingHeight / viewerHeight);
-    scrollElement.scrollBy({ top: -(remainingHeight / divisor) });
+    const delta = -Math.ceil(remainingHeight / divisor);
+    scrollElement.scroll({ top: Math.floor(scrollElement.scrollTop + delta) });
   } else {
     scrollToPreviousPageBottomOrStart(page);
   }
@@ -126,12 +130,11 @@ export const navigateAtom = atom(null, (get, set, event: React.MouseEvent) => {
 });
 
 function scrollToNextPageTopOrEnd(page: HTMLElement) {
-  const originBound = page.getBoundingClientRect();
+  const pageBottom = page.offsetTop + page.clientHeight;
   let cursor = page as Element;
   while (cursor.nextElementSibling) {
-    const next = cursor.nextElementSibling;
-    const nextBound = next.getBoundingClientRect();
-    if (originBound.bottom < nextBound.top) {
+    const next = cursor.nextElementSibling as HTMLElement;
+    if (pageBottom < next.offsetTop) {
       next.scrollIntoView({ block: "start" });
       return;
     }
@@ -141,12 +144,13 @@ function scrollToNextPageTopOrEnd(page: HTMLElement) {
 }
 
 function scrollToPreviousPageBottomOrStart(page: HTMLElement) {
-  const originBound = page.getBoundingClientRect();
+  const pageTop = page.offsetTop;
+
   let cursor = page as Element;
   while (cursor.previousElementSibling) {
-    const previous = cursor.previousElementSibling;
-    const previousBound = previous.getBoundingClientRect();
-    if (previousBound.bottom < originBound.top) {
+    const previous = cursor.previousElementSibling as HTMLElement;
+    const previousBottom = previous.offsetTop + previous.clientHeight;
+    if (previousBottom < pageTop) {
       previous.scrollIntoView({ block: "end" });
       return;
     }
