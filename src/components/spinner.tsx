@@ -54,7 +54,6 @@ export const Spinner = () => (
 export const Overlay = styled("div", {
   position: "relative",
 
-  margin: "0.5px 0.5px",
   maxWidth: "100%",
   height: "100%",
 
