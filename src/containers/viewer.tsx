@@ -18,6 +18,7 @@ import {
   forwardRef,
   HTMLProps,
   Ref,
+  ToastContainer,
   useAtom,
   useAtomValue,
   useEffect,
@@ -90,6 +91,7 @@ export const InnerViewer = forwardRef((
       />
       <FullscreenIcon onClick={toggleFullscreen} />
       {status === "complete" ? <LeftBottomControl /> : false}
+      <ToastContainer />
     </Container>
   );
 });
