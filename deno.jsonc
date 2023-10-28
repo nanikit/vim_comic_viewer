@@ -14,8 +14,8 @@
     "jsxImportSource": "react"
   },
   "tasks": {
-    "build": "deno run --allow-all https://raw.githubusercontent.com/nanikit/deno_userscript_linker/1b44163c0fd1d99e00a9ddc51b09038c5f117f57/mod.ts --inject src/react_shim.ts -o vim_comic_viewer.user.js src/mod.tsx",
-    "watch": "deno run --allow-all https://raw.githubusercontent.com/nanikit/deno_userscript_linker/1b44163c0fd1d99e00a9ddc51b09038c5f117f57/mod.ts --inject src/react_shim.ts -o vim_comic_viewer.user.js src/mod.tsx --watch"
+    "build": "deno run --allow-all https://raw.githubusercontent.com/nanikit/deno_userscript_linker/a99d968e9bf70721ec54ed9834ad868d126583d8/mod.ts --inject src/react_shim.ts -o vim_comic_viewer.user.js src/mod.tsx",
+    "watch": "deno run --allow-all https://raw.githubusercontent.com/nanikit/deno_userscript_linker/a99d968e9bf70721ec54ed9834ad868d126583d8/mod.ts --inject src/react_shim.ts -o vim_comic_viewer.user.js src/mod.tsx --watch"
   },
   "exclude": ["vim_comic_viewer.user.js"],
   "imports": {
@@ -27,6 +27,7 @@
     "react": "npm:react",
     "react/jsx-runtime": "npm:@types/react/jsx-runtime",
     "tampermonkey": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/60ab8a805a1c5c4225027068e604ef4687cdf379/types/tampermonkey/index.d.ts",
+    "react-toastify": "npm:react-toastify",
     "vcv-inject-node-env": "data:text/javascript,unsafeWindow.process=%7Benv:%7BNODE_ENV:%22production%22%7D%7D"
   }
 }
