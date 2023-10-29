@@ -11,7 +11,7 @@ import {
   pagesAtom,
   reloadErroredAtom,
   setViewerOptionsAtom,
-  toggleFullscreenAtom,
+  toggleImmersiveAtom,
   viewerElementAtom,
   viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
@@ -59,7 +59,7 @@ function createViewerController(store: ReturnType<typeof useStore>) {
     setOptions: (value: ViewerOptions) => store.set(setViewerOptionsAtom, value),
     goPrevious: () => store.set(goPreviousAtom),
     goNext: () => store.set(goNextAtom),
-    toggleFullscreen: () => store.set(toggleFullscreenAtom),
+    toggleFullscreen: () => store.set(toggleImmersiveAtom),
     reloadErrored: () => store.set(reloadErroredAtom),
     unmount: () => unmountComponentAtNode(store.get(viewerElementAtom)!),
   };

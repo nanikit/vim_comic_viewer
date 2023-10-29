@@ -22,47 +22,24 @@ export const Container = styled("div", {
   fontSize: "1vmin",
   color: "black",
 
-  // CSS reset https://elad2412.github.io/the-new-css-reset/
-  "*:where(:not(html, iframe, canvas, img, svg, video, audio):not(svg *, symbol *))": {
-    all: "unset",
-    display: "revert",
+  "&:focus-visible": {
+    // For overriding Chrome 118.0.5993.118 UA style sheet
+    // :focus-visible { outline: -webkit-focus-ring-color auto 1px; }
+    outline: "none",
   },
-  "*, *::before, *::after": {
-    boxSizing: "border-box",
-  },
-  "a, button": {
-    cursor: "revert",
-  },
-  "ol, ul, menu": {
-    listStyle: "none",
-  },
-  "img": {
-    maxInlineSize: "100%",
-    maxBlockSize: "100%",
-  },
-  "table": {
-    borderCollapse: "collapse",
-  },
-  "input, textarea": {
-    userSelect: "auto",
-  },
-  "textarea": {
-    whiteSpace: "revert",
-  },
-  "meter": {
-    appearance: "revert",
-  },
-  ":where(pre)": {
-    all: "revert",
-  },
-  "::placeholder": {
-    color: "unset",
-  },
-  "::marker": {
-    content: "initial",
-  },
-  ":where([hidden])": {
-    display: "none",
+
+  variants: {
+    immersive: {
+      true: {
+        position: "fixed",
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+
+        zIndex: 9999999,
+      },
+    },
   },
 });
 

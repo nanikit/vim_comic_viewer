@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        11.0.1
+// @version        12.0.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -63,7 +63,7 @@ export const Viewer = forwardRef(({ options, useDefault }: {
 
 function getDefaultRoot() {
   const div = document.createElement("div");
-  div.setAttribute("style", "width: 0; height: 0; position: fixed;");
+  div.setAttribute("style", "width: 0; height: 0;");
   document.body.append(div);
   return div;
 }

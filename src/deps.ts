@@ -11,7 +11,7 @@ export {
   useSetAtom,
   useStore,
 } from "jotai";
-export { atomWithStorage, createJSONStorage, selectAtom } from "jotai/utils";
+export { atomWithStorage, createJSONStorage, RESET, selectAtom } from "jotai/utils";
 export { toast, ToastContainer } from "react-toastify";
 
 import "./vendors/toastify_css.ts";

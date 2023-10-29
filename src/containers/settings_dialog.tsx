@@ -1,4 +1,5 @@
 import { useAtomValue } from "jotai";
+import { isFullscreenPreferredSettingsAtom } from "../atoms/fullscreen_atom.ts";
 import { i18nAtom } from "../atoms/i18n_atom.ts";
 import {
   backgroundColorAtom,
@@ -106,10 +107,14 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const [maxZoomInExponent, setMaxZoomInExponent] = useAtom(maxZoomInExponentAtom);
   const [backgroundColor, setBackgroundColor] = useAtom(backgroundColorAtom);
   const [pageDirection, setPageDirection] = useAtom(pageDirectionAtom);
+  const [isFullscreenPreferred, setIsFullscreenPreferred] = useAtom(
+    isFullscreenPreferredSettingsAtom,
+  );
   const zoomOutExponentInputId = useId();
   const zoomInExponentInputId = useId();
   const colorInputId = useId();
   const pageDirectionInputId = useId();
+  const fullscreenInputId = useId();
   const strings = useAtomValue(i18nAtom);
   const maxZoomOut = formatMultiplier(maxZoomOutExponent);
   const maxZoomIn = formatMultiplier(maxZoomInExponent);
@@ -153,6 +158,20 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
             setBackgroundColor(event.currentTarget.value);
           }}
         />
+      </ConfigRow>
+      <ConfigRow>
+        <p>{strings.useFullScreen}</p>
+        <Toggle>
+          <HiddenInput
+            type="checkbox"
+            id={fullscreenInputId}
+            checked={isFullscreenPreferred}
+            onChange={(event) => {
+              setIsFullscreenPreferred(event.currentTarget.checked);
+            }}
+          />
+          <label htmlFor={fullscreenInputId}>{strings.useFullScreen}</label>
+        </Toggle>
       </ConfigRow>
       <ConfigRow>
         <p>{strings.leftToRight}</p>

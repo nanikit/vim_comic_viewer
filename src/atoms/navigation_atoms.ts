@@ -27,7 +27,8 @@ export const synchronizeScrollAtom = atom(null, (get, set) => {
     set(restoreScrollAtom);
     // Resize observer is not always fired.
     set(scrollElementSizeAtom, (previous) => {
-      return previous.width === width && previous.height === height ? previous : { width, height };
+      const isChanged = previous.width !== width || previous.height !== height;
+      return isChanged ? previous : { width, height };
     });
   } else {
     set(pageScrollStateAtom, current);
@@ -159,7 +160,7 @@ function scrollToPreviousPageBottomOrStart(page: HTMLElement) {
   cursor.scrollIntoView({ block: "start" });
 }
 
-function getCurrentPage(container: HTMLElement | null) {
+export function getCurrentPage(container: HTMLElement | null) {
   const clientHeight = container?.clientHeight;
   if (!clientHeight) {
     return initialPageScrollState;
@@ -181,7 +182,11 @@ function getCurrentPage(container: HTMLElement | null) {
   const scrollCenter = (viewportTop + viewportBottom) / 2;
   const centerCrossingPage = children.find((x) =>
     x.offsetTop <= scrollCenter && x.offsetTop + x.clientHeight >= scrollCenter
-  )!;
+  );
+  if (!centerCrossingPage) {
+    return initialPageScrollState;
+  }
+
   const ratio = (scrollCenter - centerCrossingPage.offsetTop) / centerCrossingPage.clientHeight;
   return { page: centerCrossingPage, ratio };
 }

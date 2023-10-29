@@ -1,3 +1,4 @@
+import { fullscreenElementAtom, viewerModeAtom } from "../atoms/fullscreen_atom.ts";
 import { i18nAtom } from "../atoms/i18n_atom.ts";
 import {
   navigateAtom,
@@ -7,7 +8,6 @@ import {
 import { backgroundColorAtom, pageDirectionAtom } from "../atoms/persistent_atoms.ts";
 import {
   blockSelectionAtom,
-  fullscreenElementAtom,
   setViewerOptionsAtom,
   viewerElementAtom,
   viewerStateAtom,
@@ -50,6 +50,7 @@ export const InnerViewer = forwardRef((
   const synchronizeScroll = useSetAtom(synchronizeScrollAtom);
   const pageDirection = useAtomValue(pageDirectionAtom);
   const strings = useAtomValue(i18nAtom);
+  const mode = useAtomValue(viewerModeAtom);
   const { status } = viewer;
 
   const controller = useViewerController();
@@ -68,6 +69,7 @@ export const InnerViewer = forwardRef((
       ref={setViewerElement}
       tabIndex={-1}
       css={{ backgroundColor }}
+      immersive={mode === "window"}
     >
       <ScrollableLayout
         // deno-lint-ignore no-explicit-any
