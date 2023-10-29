@@ -7,7 +7,8 @@
 ### 12.0.0
 
 - **Change build system.**
-- _Restore viewer open state on load._
+- _Restore viewer open state on same tab load._
+- _Add full screen configuration._
 - Fix image division around threshold.
 
 ### 11.0.1
