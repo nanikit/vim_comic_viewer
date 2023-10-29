@@ -4,8 +4,10 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
-### Unreleased
+### 12.0.0
 
+- **Change build system.**
+- _Restore viewer open state on load._
 - Fix image division around threshold.
 
 ### 11.0.1

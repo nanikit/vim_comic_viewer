@@ -7,5 +7,7 @@
   "leftToRight": "Left to right",
   "errorIsOccurred": "Error is occurred.",
   "failedToLoadImage": "Failed to load image.",
-  "loading": "Loading..."
+  "loading": "Loading...",
+  "fullScreenRestorationGuide": "Enter full screen yourself if you want to keep the viewer open in full screen.",
+  "useFullScreen": "Use full screen"
 }

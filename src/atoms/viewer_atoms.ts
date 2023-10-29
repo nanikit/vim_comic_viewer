@@ -1,26 +1,52 @@
-import { atom, selectAtom } from "../deps.ts";
+import { atom, selectAtom, toast } from "../deps.ts";
 import { ImageSource, ViewerOptions } from "../types.ts";
+import { timeout } from "../utils.ts";
 import { createPageAtom, PageAtom } from "./create_page_atom.ts";
-import { modeAtom } from "./persistent_atoms.ts";
+import {
+  cssImmersiveAtom,
+  preventDoubleScrollBarAtom,
+  viewerElementStateAtom,
+  viewerFullscreenAtom,
+} from "./fullscreen_atom.ts";
+import { i18nAtom } from "./i18n_atom.ts";
+import { fullscreenNoticeCountAtom, isFullscreenPreferredAtom } from "./persistent_atoms.ts";
 
-const isViewerFullscreenAtom = atom((get) => {
-  const fullscreenElement = get(fullscreenElementAtom);
-  const viewerElement = get(viewerElementAtom);
-  return fullscreenElement === viewerElement;
-});
-
-export const viewerElementStateAtom = atom<HTMLDivElement | null>(null);
 export const viewerElementAtom = atom(
   (get) => get(viewerElementStateAtom),
-  (get, set, element: HTMLDivElement | null) => {
+  async (get, set, element: HTMLDivElement | null) => {
     set(viewerElementStateAtom, element);
 
-    const isFullscreen = get(isViewerFullscreenAtom);
-    const wasFullscreen = get(modeAtom) === "fullscreen";
-    const shouldEnterFullscreen = !isFullscreen && wasFullscreen;
-    if (element && shouldEnterFullscreen) {
+    const isViewerFullscreen = get(viewerFullscreenAtom);
+    const isFullscreenPreferred = get(isFullscreenPreferredAtom);
+    const isImmersive = get(cssImmersiveAtom);
+    const shouldEnterFullscreen = isFullscreenPreferred && isImmersive;
+    if (isViewerFullscreen === shouldEnterFullscreen || !element) {
+      return;
+    }
+
+    const isUserFullscreen = window.innerHeight === screen.height ||
+      window.innerWidth === screen.width;
+    if (isUserFullscreen) {
+      return;
+    }
+
+    try {
+      if (shouldEnterFullscreen) {
+        await set(viewerFullscreenAtom, true);
+      }
+    } catch (error) {
+      set(preventDoubleScrollBarAtom);
       // Failed to execute 'requestFullscreen' on 'Element': API can only be initiated by a user gesture.
-      // set(toggleFullscreenAtom);
+      if (error?.message === "Permissions check failed") {
+        if (get(fullscreenNoticeCountAtom) >= 3) {
+          return;
+        }
+        toast(get(i18nAtom).fullScreenRestorationGuide);
+        await timeout(5000);
+        set(fullscreenNoticeCountAtom, (count) => count + 1);
+        return;
+      }
+      throw error;
     }
   },
 );
@@ -34,7 +60,10 @@ type ViewerState =
     images: ImageSource[];
     pages: PageAtom[];
   });
-export const viewerStateAtom = atom<ViewerState>({ options: {}, status: "loading" });
+export const viewerStateAtom = atom<ViewerState>({
+  options: {},
+  status: "loading",
+});
 export const pagesAtom = selectAtom(
   viewerStateAtom,
   (state) => (state as { pages?: PageAtom[] }).pages,
@@ -92,39 +121,16 @@ export const reloadErroredAtom = atom(null, (get, set) => {
   }
 });
 
-const fullscreenElementStateAtom = atom<Element | null>(
-  document.fullscreenElement ?? null,
-);
-fullscreenElementStateAtom.onMount = (set) => {
-  const notify = () => set(document.fullscreenElement ?? null);
-  document.addEventListener("fullscreenchange", notify);
-  return () => document.removeEventListener("fullscreenchange", notify);
-};
-export const fullscreenElementAtom = atom(
-  (get) => get(fullscreenElementStateAtom),
-  async (get, set, element: Element | null) => {
-    const fullscreenElement = get(fullscreenElementStateAtom);
-    if (element === fullscreenElement) {
-      return;
-    }
+export const toggleImmersiveAtom = atom(null, async (get, set) => {
+  const wasImmersive = get(cssImmersiveAtom);
+  set(cssImmersiveAtom, !wasImmersive);
 
-    if (element) {
-      await element.requestFullscreen?.();
-      const viewer = get(viewerElementAtom);
-      if (viewer === element) {
-        viewer.focus();
-      }
-    } else {
-      await document.exitFullscreen?.();
-    }
-    set(fullscreenElementStateAtom, element);
-  },
-);
+  const isFullscreenPreferred = get(isFullscreenPreferredAtom);
+  if (!isFullscreenPreferred) {
+    return;
+  }
 
-export const toggleFullscreenAtom = atom(null, async (get, set) => {
-  const isFullscreen = get(isViewerFullscreenAtom);
-  await set(fullscreenElementAtom, isFullscreen ? null : get(viewerElementAtom));
-  set(modeAtom, isFullscreen ? "normal" : "fullscreen");
+  await set(viewerFullscreenAtom, !wasImmersive);
 });
 
 export const blockSelectionAtom = atom(null, (_get, set, event: React.MouseEvent) => {
@@ -133,7 +139,7 @@ export const blockSelectionAtom = atom(null, (_get, set, event: React.MouseEvent
   }
 
   if (event.buttons === 3) {
-    set(toggleFullscreenAtom);
+    set(toggleImmersiveAtom);
     event.preventDefault();
   }
 });
