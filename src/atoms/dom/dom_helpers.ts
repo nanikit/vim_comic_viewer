@@ -18,3 +18,7 @@ export async function setFullscreenElement(element: Element | null) {
     await document.exitFullscreen?.();
   }
 }
+
+export function focusWithoutScroll(element: HTMLElement | null) {
+  element?.focus({ preventScroll: true });
+}

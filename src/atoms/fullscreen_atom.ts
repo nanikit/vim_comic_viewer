@@ -1,6 +1,6 @@
-import { atom } from "../deps.ts";
+import { atom, RESET } from "../deps.ts";
 import { timeout } from "../utils.ts";
-import { setFullscreenElement, showBodyScrollbar } from "./dom/dom_helpers.ts";
+import { focusWithoutScroll, setFullscreenElement, showBodyScrollbar } from "./dom/dom_helpers.ts";
 import { isFullscreenPreferredAtom, isImmersiveAtom } from "./persistent_atoms.ts";
 
 const fullscreenElementAtom = atom<Element | null>(
@@ -83,7 +83,14 @@ export const cssImmersiveAtom = atom(
     get(doubleScrollBarHideAtom);
     return get(isImmersiveAtom);
   },
-  async (get, set, value: boolean) => {
+  async (get, set, value: boolean | typeof RESET) => {
+    if (value === RESET) {
+      if (get(isImmersiveAtom)) {
+        focusWithoutScroll(get(viewerElementStateAtom));
+      }
+      return;
+    }
+
     set(isImmersiveAtom, value);
     set(doubleScrollBarHideAtom);
 
@@ -93,10 +100,11 @@ export const cssImmersiveAtom = atom(
     }
 
     if (value) {
-      get(viewerElementStateAtom)?.focus({ preventScroll: true });
+      focusWithoutScroll(get(viewerElementStateAtom));
     }
   },
 );
+cssImmersiveAtom.onMount = (set) => void set(RESET);
 
 export const isFullscreenPreferredSettingsAtom = atom(
   (get) => get(isFullscreenPreferredAtom),
