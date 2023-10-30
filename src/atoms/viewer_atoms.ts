@@ -4,7 +4,6 @@ import { timeout } from "../utils.ts";
 import { createPageAtom, PageAtom } from "./create_page_atom.ts";
 import {
   cssImmersiveAtom,
-  preventDoubleScrollBarAtom,
   viewerElementStateAtom,
   viewerFullscreenAtom,
 } from "./fullscreen_atom.ts";
@@ -35,7 +34,6 @@ export const viewerElementAtom = atom(
         await set(viewerFullscreenAtom, true);
       }
     } catch (error) {
-      set(preventDoubleScrollBarAtom);
       // Failed to execute 'requestFullscreen' on 'Element': API can only be initiated by a user gesture.
       if (error?.message === "Permissions check failed") {
         if (get(fullscreenNoticeCountAtom) >= 3) {
@@ -122,15 +120,7 @@ export const reloadErroredAtom = atom(null, (get, set) => {
 });
 
 export const toggleImmersiveAtom = atom(null, async (get, set) => {
-  const wasImmersive = get(cssImmersiveAtom);
-  set(cssImmersiveAtom, !wasImmersive);
-
-  const isFullscreenPreferred = get(isFullscreenPreferredAtom);
-  if (!isFullscreenPreferred) {
-    return;
-  }
-
-  await set(viewerFullscreenAtom, !wasImmersive);
+  await set(cssImmersiveAtom, !get(cssImmersiveAtom));
 });
 
 export const blockSelectionAtom = atom(null, (_get, set, event: React.MouseEvent) => {
