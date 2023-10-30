@@ -8,8 +8,8 @@ import {
 import { backgroundColorAtom, pageDirectionAtom } from "../atoms/persistent_atoms.ts";
 import {
   blockSelectionAtom,
+  settableViewerElementAtom,
   setViewerOptionsAtom,
-  viewerElementAtom,
   viewerModeAtom,
   viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
@@ -39,7 +39,7 @@ export const InnerViewer = forwardRef((
   refHandle: Ref<ViewerController>,
 ) => {
   const { useDefault: enableDefault, options: viewerOptions, ...otherProps } = props;
-  const setViewerElement = useSetAtom(viewerElementAtom);
+  const setViewerElement = useSetAtom(settableViewerElementAtom);
   const setScrollElement = useSetAtom(scrollElementAtom);
   const isFullscreen = useAtomValue(viewerFullscreenAtom);
   const backgroundColor = useAtomValue(backgroundColorAtom);

@@ -5,6 +5,7 @@ import {
   startDownloadAtom,
   UserDownloadOptions,
 } from "../atoms/downloader_atoms.ts";
+import { viewerElementAtom } from "../atoms/fullscreen_atom.ts";
 import { goNextAtom, goPreviousAtom } from "../atoms/navigation_atoms.ts";
 import { compactWidthIndexAtom } from "../atoms/persistent_atoms.ts";
 import {
@@ -12,7 +13,6 @@ import {
   reloadErroredAtom,
   setViewerOptionsAtom,
   toggleImmersiveAtom,
-  viewerElementAtom,
   viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
 import { unmountComponentAtNode, useMemo, useStore } from "../deps.ts";

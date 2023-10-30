@@ -4,9 +4,9 @@ import ko from "./i18n/ko.json" assert { type: "json" };
 
 const translations = { en, ko } as Record<string, typeof en>;
 
-const i18nStateAtom = atom(getLanguage());
-export const i18nAtom = atom((get) => get(i18nStateAtom), (_get, set) => {
-  set(i18nStateAtom, getLanguage());
+const i18nStringsAtom = atom(getLanguage());
+export const i18nAtom = atom((get) => get(i18nStringsAtom), (_get, set) => {
+  set(i18nStringsAtom, getLanguage());
 });
 i18nAtom.onMount = (set) => {
   addEventListener("languagechange", set);
