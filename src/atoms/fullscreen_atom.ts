@@ -1,5 +1,6 @@
 import { atom, RESET } from "../deps.ts";
 import { timeout } from "../utils.ts";
+import { setFullscreenElement, showBodyScrollbar } from "./dom/dom_helpers.ts";
 import { isFullscreenPreferredAtom, isImmersiveAtom } from "./persistent_atoms.ts";
 
 const fullscreenElementStateAtom = atom<Element | null>(
@@ -56,11 +57,7 @@ export const fullscreenElementAtom = atom(
       return;
     }
 
-    if (element) {
-      await element.requestFullscreen?.();
-    } else {
-      await document.exitFullscreen?.();
-    }
+    await setFullscreenElement(element);
     set(fullscreenSynchronizationAtom, element);
   },
 );
@@ -73,17 +70,9 @@ export const viewerFullscreenAtom = atom((get) => {
   await set(fullscreenElementAtom, value ? viewer : null);
 });
 
-const globalCss = document.createElement("style");
-globalCss.innerHTML = `html, body {
-  overflow: hidden;
-}`;
 export const preventDoubleScrollBarAtom = atom(null, (get) => {
   const shouldRemoveDuplicateScrollBar = !get(viewerFullscreenAtom) && get(cssImmersiveAtom);
-  if (shouldRemoveDuplicateScrollBar) {
-    document.head.append(globalCss);
-  } else {
-    globalCss.remove();
-  }
+  showBodyScrollbar(!shouldRemoveDuplicateScrollBar);
 });
 
 export const cssImmersiveAtom = atom(
