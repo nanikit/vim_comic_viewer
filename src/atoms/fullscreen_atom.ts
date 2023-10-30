@@ -3,7 +3,7 @@ import { timeout } from "../utils.ts";
 import { setFullscreenElement, showBodyScrollbar } from "./dom/dom_helpers.ts";
 import { isFullscreenPreferredAtom, isImmersiveAtom } from "./persistent_atoms.ts";
 
-const fullscreenElementStateAtom = atom<Element | null>(
+const fullscreenElementAtom = atom<Element | null>(
   document.fullscreenElement ?? null,
 );
 export const viewerElementStateAtom = atom<HTMLDivElement | null>(null);
@@ -24,10 +24,10 @@ beforeUnloadAtom.onMount = (set) => {
 const fullscreenSynchronizationAtom = atom(
   (get) => {
     get(beforeUnloadAtom);
-    return get(fullscreenElementStateAtom);
+    return get(fullscreenElementAtom);
   },
   (get, set, element: Element | null) => {
-    set(fullscreenElementStateAtom, element);
+    set(fullscreenElementAtom, element);
 
     const isFullscreenPreferred = get(isFullscreenPreferredAtom);
     if (!isFullscreenPreferred) {
@@ -49,8 +49,8 @@ fullscreenSynchronizationAtom.onMount = (set) => {
   return () => document.removeEventListener("fullscreenchange", notify);
 };
 
-export const fullscreenElementAtom = atom(
-  (get) => get(fullscreenSynchronizationAtom),
+export const settableFullscreenElementAtom = atom(
+  (get) => get(fullscreenElementAtom),
   async (get, set, element: Element | null) => {
     const fullscreenElement = get(fullscreenSynchronizationAtom);
     if (element === fullscreenElement) {
@@ -61,13 +61,14 @@ export const fullscreenElementAtom = atom(
     set(fullscreenSynchronizationAtom, element);
   },
 );
+
 export const viewerFullscreenAtom = atom((get) => {
-  const fullscreenElement = get(fullscreenElementAtom);
+  const fullscreenElement = get(settableFullscreenElementAtom);
   const viewerElement = get(viewerElementStateAtom);
   return fullscreenElement === viewerElement;
 }, async (get, set, value: boolean) => {
   const viewer = get(viewerElementStateAtom);
-  await set(fullscreenElementAtom, value ? viewer : null);
+  await set(settableFullscreenElementAtom, value ? viewer : null);
   set(doubleScrollBarHideAtom);
 });
 
@@ -96,12 +97,6 @@ export const cssImmersiveAtom = atom(
     }
   },
 );
-
-export const viewerModeAtom = atom((get) => {
-  const isFullscreen = get(viewerFullscreenAtom);
-  const isImmersive = get(cssImmersiveAtom);
-  return isFullscreen ? "fullscreen" : isImmersive ? "window" : "normal";
-});
 
 export const isFullscreenPreferredSettingsAtom = atom(
   (get) => get(isFullscreenPreferredAtom),
