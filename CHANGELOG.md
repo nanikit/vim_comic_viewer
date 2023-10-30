@@ -4,6 +4,10 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+### 12.0.2
+
+- Fix not focusing after open state restoration.
+
 ### 12.0.1
 
 - Fix not intended scroll when initializing viewer.
