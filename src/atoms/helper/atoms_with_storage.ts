@@ -6,12 +6,12 @@ const gmStorage = {
   removeItem: (key: string) => GM_deleteValue(key),
 };
 
-export function gmValueAtom<T>(key: string, defaultValue: T) {
+export function atomWithGmValue<T>(key: string, defaultValue: T) {
   return atomWithStorage<T>(key, GM_getValue(key, defaultValue), gmStorage);
 }
 
 const jsonSessionStorage = createJSONStorage(() => sessionStorage);
-export function sessionAtom<T>(key: string, defaultValue: T) {
+export function atomWithSession<T>(key: string, defaultValue: T) {
   const atom = atomWithStorage<T>(
     key,
     jsonSessionStorage.getItem(key, defaultValue) as T,
