@@ -28,9 +28,7 @@ const fullscreenSynchronizationAtom = atom(
   },
   (get, set, element: Element | null) => {
     set(fullscreenElementAtom, element);
-
-    const isFullscreenPreferred = get(isFullscreenPreferredAtom);
-    if (!isFullscreenPreferred) {
+    if (!get(isFullscreenPreferredAtom)) {
       return;
     }
 
@@ -49,19 +47,6 @@ fullscreenSynchronizationAtom.onMount = (set) => {
   return () => document.removeEventListener("fullscreenchange", notify);
 };
 
-export const settableFullscreenElementAtom = atom(
-  (get) => get(fullscreenElementAtom),
-  async (get, set, element: Element | null) => {
-    const fullscreenElement = get(fullscreenSynchronizationAtom);
-    if (element === fullscreenElement) {
-      return;
-    }
-
-    await setFullscreenElement(element);
-    set(fullscreenSynchronizationAtom, element);
-  },
-);
-
 const doubleScrollBarHidingAtom = atom(null, (get) => {
   const shouldRemoveDuplicateScrollBar = !get(viewerFullscreenAtom) && get(isImmersiveAtom);
   showBodyScrollbar(!shouldRemoveDuplicateScrollBar);
@@ -69,12 +54,19 @@ const doubleScrollBarHidingAtom = atom(null, (get) => {
 doubleScrollBarHidingAtom.onMount = (set) => set();
 
 export const viewerFullscreenAtom = atom((get) => {
+  get(fullscreenSynchronizationAtom);
   const fullscreenElement = get(fullscreenElementAtom);
   const viewerElement = get(viewerElementAtom);
   return fullscreenElement === viewerElement;
 }, async (get, set, value: boolean) => {
-  const viewer = get(viewerElementAtom);
-  await set(settableFullscreenElementAtom, value ? viewer : null);
+  const element = value ? get(viewerElementAtom) : null;
+  const fullscreenElement = get(fullscreenElementAtom);
+  if (element === fullscreenElement) {
+    return;
+  }
+
+  await setFullscreenElement(element);
+  set(fullscreenSynchronizationAtom, element);
   set(doubleScrollBarHidingAtom);
 });
 

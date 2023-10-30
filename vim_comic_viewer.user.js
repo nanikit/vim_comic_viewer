@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        12.0.2
+// @version        12.0.3
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -211,7 +211,7 @@ var isImmersiveAtom = atomWithSession("vim_comic_viewer.is_immersive", false);
 var fullscreenElementAtom = (0, import_jotai.atom)(
   document.fullscreenElement ?? null
 );
-var viewerElementStateAtom = (0, import_jotai.atom)(null);
+var viewerElementAtom = (0, import_jotai.atom)(null);
 var isBeforeUnloadAtom = (0, import_jotai.atom)(false);
 var beforeUnloadAtom = (0, import_jotai.atom)(null, async (_get, set) => {
   set(isBeforeUnloadAtom, true);
@@ -231,11 +231,10 @@ var fullscreenSynchronizationAtom = (0, import_jotai.atom)(
   },
   (get, set, element) => {
     set(fullscreenElementAtom, element);
-    const isFullscreenPreferred = get(isFullscreenPreferredAtom);
-    if (!isFullscreenPreferred) {
+    if (!get(isFullscreenPreferredAtom)) {
       return;
     }
-    const isFullscreen = get(viewerElementStateAtom) === element;
+    const isFullscreen = get(viewerElementAtom) === element;
     const wasImmersive = get(cssImmersiveAtom);
     const isViewerFullscreenExit = wasImmersive && !isFullscreen;
     const isNavigationExit = get(isBeforeUnloadAtom);
@@ -249,51 +248,46 @@ fullscreenSynchronizationAtom.onMount = (set) => {
   document.addEventListener("fullscreenchange", notify);
   return () => document.removeEventListener("fullscreenchange", notify);
 };
-var settableFullscreenElementAtom = (0, import_jotai.atom)(
-  (get) => get(fullscreenElementAtom),
-  async (get, set, element) => {
-    const fullscreenElement = get(fullscreenSynchronizationAtom);
-    if (element === fullscreenElement) {
-      return;
-    }
-    await setFullscreenElement(element);
-    set(fullscreenSynchronizationAtom, element);
-  }
-);
-var viewerFullscreenAtom = (0, import_jotai.atom)((get) => {
-  const fullscreenElement = get(settableFullscreenElementAtom);
-  const viewerElement = get(viewerElementStateAtom);
-  return fullscreenElement === viewerElement;
-}, async (get, set, value) => {
-  const viewer = get(viewerElementStateAtom);
-  await set(settableFullscreenElementAtom, value ? viewer : null);
-  set(doubleScrollBarHideAtom);
-});
-var doubleScrollBarHideAtom = (0, import_jotai.atom)(null, (get) => {
+var doubleScrollBarHidingAtom = (0, import_jotai.atom)(null, (get) => {
   const shouldRemoveDuplicateScrollBar = !get(viewerFullscreenAtom) && get(isImmersiveAtom);
   showBodyScrollbar(!shouldRemoveDuplicateScrollBar);
 });
-doubleScrollBarHideAtom.onMount = (set) => set();
+doubleScrollBarHidingAtom.onMount = (set) => set();
+var viewerFullscreenAtom = (0, import_jotai.atom)((get) => {
+  get(fullscreenSynchronizationAtom);
+  const fullscreenElement = get(fullscreenElementAtom);
+  const viewerElement = get(viewerElementAtom);
+  return fullscreenElement === viewerElement;
+}, async (get, set, value) => {
+  const element = value ? get(viewerElementAtom) : null;
+  const fullscreenElement = get(fullscreenElementAtom);
+  if (element === fullscreenElement) {
+    return;
+  }
+  await setFullscreenElement(element);
+  set(fullscreenSynchronizationAtom, element);
+  set(doubleScrollBarHidingAtom);
+});
 var cssImmersiveAtom = (0, import_jotai.atom)(
   (get) => {
-    get(doubleScrollBarHideAtom);
+    get(doubleScrollBarHidingAtom);
     return get(isImmersiveAtom);
   },
   async (get, set, value) => {
     if (value === import_utils2.RESET) {
       if (get(isImmersiveAtom)) {
-        focusWithoutScroll(get(viewerElementStateAtom));
+        focusWithoutScroll(get(viewerElementAtom));
       }
       return;
     }
     set(isImmersiveAtom, value);
-    set(doubleScrollBarHideAtom);
+    set(doubleScrollBarHidingAtom);
+    if (value) {
+      focusWithoutScroll(get(viewerElementAtom));
+    }
     const isFullscreenPreferred = get(isFullscreenPreferredAtom);
     if (isFullscreenPreferred) {
       await set(viewerFullscreenAtom, value);
-    }
-    if (value) {
-      focusWithoutScroll(get(viewerElementStateAtom));
     }
   }
 );
@@ -302,7 +296,7 @@ var isFullscreenPreferredSettingsAtom = (0, import_jotai.atom)(
   (get) => get(isFullscreenPreferredAtom),
   (get, set, value) => {
     set(isFullscreenPreferredAtom, value);
-    set(doubleScrollBarHideAtom);
+    set(doubleScrollBarHidingAtom);
     const isImmersive = get(cssImmersiveAtom);
     const shouldEnterFullscreen = value && isImmersive;
     set(viewerFullscreenAtom, shouldEnterFullscreen);
@@ -335,9 +329,9 @@ var ko_default = {
   useFullScreen: "\uC804\uCCB4 \uD654\uBA74"
 };
 var translations = { en: en_default, ko: ko_default };
-var i18nStateAtom = (0, import_jotai.atom)(getLanguage());
-var i18nAtom = (0, import_jotai.atom)((get) => get(i18nStateAtom), (_get, set) => {
-  set(i18nStateAtom, getLanguage());
+var i18nStringsAtom = (0, import_jotai.atom)(getLanguage());
+var i18nAtom = (0, import_jotai.atom)((get) => get(i18nStringsAtom), (_get, set) => {
+  set(i18nStringsAtom, getLanguage());
 });
 i18nAtom.onMount = (set) => {
   addEventListener("languagechange", set);
@@ -598,10 +592,10 @@ function createPageAtom({ index, source }) {
   });
   return aggregateAtom;
 }
-var viewerElementAtom = (0, import_jotai.atom)(
-  (get) => get(viewerElementStateAtom),
+var settableViewerElementAtom = (0, import_jotai.atom)(
+  (get) => get(viewerElementAtom),
   async (get, set, element) => {
-    set(viewerElementStateAtom, element);
+    set(viewerElementAtom, element);
     const isViewerFullscreen = get(viewerFullscreenAtom);
     const isFullscreenPreferred = get(isFullscreenPreferredAtom);
     const isImmersive = get(cssImmersiveAtom);
@@ -1596,7 +1590,7 @@ var Page = ({ atom: atom2, ...props }) => {
 };
 var InnerViewer = (0, import_react2.forwardRef)((props, refHandle) => {
   const { useDefault: enableDefault, options: viewerOptions, ...otherProps } = props;
-  const setViewerElement = (0, import_jotai.useSetAtom)(viewerElementAtom);
+  const setViewerElement = (0, import_jotai.useSetAtom)(settableViewerElementAtom);
   const setScrollElement = (0, import_jotai.useSetAtom)(scrollElementAtom);
   const isFullscreen = (0, import_jotai.useAtomValue)(viewerFullscreenAtom);
   const backgroundColor = (0, import_jotai.useAtomValue)(backgroundColorAtom);
