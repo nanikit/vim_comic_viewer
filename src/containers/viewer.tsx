@@ -1,4 +1,4 @@
-import { settableFullscreenElementAtom } from "../atoms/fullscreen_atom.ts";
+import { viewerFullscreenAtom } from "../atoms/fullscreen_atom.ts";
 import { i18nAtom } from "../atoms/i18n_atom.ts";
 import {
   navigateAtom,
@@ -20,7 +20,6 @@ import {
   HTMLProps,
   Ref,
   ToastContainer,
-  useAtom,
   useAtomValue,
   useEffect,
   useImperativeHandle,
@@ -40,9 +39,9 @@ export const InnerViewer = forwardRef((
   refHandle: Ref<ViewerController>,
 ) => {
   const { useDefault: enableDefault, options: viewerOptions, ...otherProps } = props;
-  const [viewerElement, setViewerElement] = useAtom(viewerElementAtom);
+  const setViewerElement = useSetAtom(viewerElementAtom);
   const setScrollElement = useSetAtom(scrollElementAtom);
-  const fullscreenElement = useAtomValue(settableFullscreenElementAtom);
+  const isFullscreen = useAtomValue(viewerFullscreenAtom);
   const backgroundColor = useAtomValue(backgroundColorAtom);
   const viewer = useAtomValue(viewerStateAtom);
   const setViewerOptions = useSetAtom(setViewerOptionsAtom);
@@ -76,7 +75,7 @@ export const InnerViewer = forwardRef((
         // deno-lint-ignore no-explicit-any
         ref={setScrollElement as any}
         dark={isDarkColor(backgroundColor)}
-        fullscreen={fullscreenElement === viewerElement}
+        fullscreen={isFullscreen}
         ltr={pageDirection === "leftToRight"}
         onScroll={synchronizeScroll}
         onClick={navigate}
