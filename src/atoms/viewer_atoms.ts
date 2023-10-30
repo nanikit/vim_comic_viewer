@@ -49,6 +49,12 @@ export const viewerElementAtom = atom(
   },
 );
 
+export const viewerModeAtom = atom((get) => {
+  const isFullscreen = get(viewerFullscreenAtom);
+  const isImmersive = get(cssImmersiveAtom);
+  return isFullscreen ? "fullscreen" : isImmersive ? "window" : "normal";
+});
+
 type ViewerState =
   & { options: ViewerOptions }
   & ({

@@ -1,4 +1,4 @@
-import { fullscreenElementAtom, viewerModeAtom } from "../atoms/fullscreen_atom.ts";
+import { settableFullscreenElementAtom } from "../atoms/fullscreen_atom.ts";
 import { i18nAtom } from "../atoms/i18n_atom.ts";
 import {
   navigateAtom,
@@ -10,6 +10,7 @@ import {
   blockSelectionAtom,
   setViewerOptionsAtom,
   viewerElementAtom,
+  viewerModeAtom,
   viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
 import { FullscreenIcon } from "../components/icons.tsx";
@@ -41,7 +42,7 @@ export const InnerViewer = forwardRef((
   const { useDefault: enableDefault, options: viewerOptions, ...otherProps } = props;
   const [viewerElement, setViewerElement] = useAtom(viewerElementAtom);
   const setScrollElement = useSetAtom(scrollElementAtom);
-  const fullscreenElement = useAtomValue(fullscreenElementAtom);
+  const fullscreenElement = useAtomValue(settableFullscreenElementAtom);
   const backgroundColor = useAtomValue(backgroundColorAtom);
   const viewer = useAtomValue(viewerStateAtom);
   const setViewerOptions = useSetAtom(setViewerOptionsAtom);
