@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        12.0.0
+// @version        12.0.1
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -156,16 +156,34 @@ var save = (blob) => {
 insertCss(GM_getResourceText("react-toastify-css"));
 var import_react2 = require("react");
 __reExport(deps_exports, require("react-dom"));
+var globalCss = document.createElement("style");
+globalCss.innerHTML = `html, body {
+  overflow: hidden;
+}`;
+function showBodyScrollbar(doShow) {
+  if (doShow) {
+    globalCss.remove();
+  } else {
+    document.head.append(globalCss);
+  }
+}
+async function setFullscreenElement(element) {
+  if (element) {
+    await element.requestFullscreen?.();
+  } else {
+    await document.exitFullscreen?.();
+  }
+}
 var gmStorage = {
   getItem: GM_getValue,
   setItem: GM_setValue,
   removeItem: (key) => GM_deleteValue(key)
 };
-function gmValueAtom(key, defaultValue) {
+function atomWithGmValue(key, defaultValue) {
   return (0, import_utils2.atomWithStorage)(key, GM_getValue(key, defaultValue), gmStorage);
 }
 var jsonSessionStorage = (0, import_utils2.createJSONStorage)(() => sessionStorage);
-function sessionAtom(key, defaultValue) {
+function atomWithSession(key, defaultValue) {
   const atom2 = (0, import_utils2.atomWithStorage)(
     key,
     jsonSessionStorage.getItem(key, defaultValue),
@@ -173,20 +191,20 @@ function sessionAtom(key, defaultValue) {
   );
   return atom2;
 }
-var backgroundColorAtom = gmValueAtom("vim_comic_viewer.background_color", "#eeeeee");
-var compactWidthIndexAtom = gmValueAtom("vim_comic_viewer.single_page_count", 1);
-var maxZoomOutExponentAtom = gmValueAtom("vim_comic_viewer.max_zoom_out_exponent", 3);
-var maxZoomInExponentAtom = gmValueAtom("vim_comic_viewer.max_zoom_in_exponent", 3);
-var pageDirectionAtom = gmValueAtom(
+var backgroundColorAtom = atomWithGmValue("vim_comic_viewer.background_color", "#eeeeee");
+var compactWidthIndexAtom = atomWithGmValue("vim_comic_viewer.single_page_count", 1);
+var maxZoomOutExponentAtom = atomWithGmValue("vim_comic_viewer.max_zoom_out_exponent", 3);
+var maxZoomInExponentAtom = atomWithGmValue("vim_comic_viewer.max_zoom_in_exponent", 3);
+var pageDirectionAtom = atomWithGmValue(
   "vim_comic_viewer.page_direction",
   "rightToLeft"
 );
-var isFullscreenPreferredAtom = gmValueAtom("vim_comic_viewer.use_full_screen", true);
-var fullscreenNoticeCountAtom = gmValueAtom(
+var isFullscreenPreferredAtom = atomWithGmValue("vim_comic_viewer.use_full_screen", true);
+var fullscreenNoticeCountAtom = atomWithGmValue(
   "vim_comic_viewer.full_screen_notice_count",
   0
 );
-var isImmersiveAtom = sessionAtom("vim_comic_viewer.is_immersive", false);
+var isImmersiveAtom = atomWithSession("vim_comic_viewer.is_immersive", false);
 var fullscreenElementStateAtom = (0, import_jotai.atom)(
   document.fullscreenElement ?? null
 );
@@ -235,11 +253,7 @@ var fullscreenElementAtom = (0, import_jotai.atom)(
     if (element === fullscreenElement) {
       return;
     }
-    if (element) {
-      await element.requestFullscreen?.();
-    } else {
-      await document.exitFullscreen?.();
-    }
+    await setFullscreenElement(element);
     set(fullscreenSynchronizationAtom, element);
   }
 );
@@ -250,32 +264,30 @@ var viewerFullscreenAtom = (0, import_jotai.atom)((get) => {
 }, async (get, set, value) => {
   const viewer = get(viewerElementStateAtom);
   await set(fullscreenElementAtom, value ? viewer : null);
+  set(doubleScrollBarHideAtom);
 });
-var globalCss = document.createElement("style");
-globalCss.innerHTML = `html, body {
-  overflow: hidden;
-}`;
-var preventDoubleScrollBarAtom = (0, import_jotai.atom)(null, (get) => {
-  const shouldRemoveDuplicateScrollBar = !get(viewerFullscreenAtom) && get(cssImmersiveAtom);
-  if (shouldRemoveDuplicateScrollBar) {
-    document.head.append(globalCss);
-  } else {
-    globalCss.remove();
-  }
+var doubleScrollBarHideAtom = (0, import_jotai.atom)(null, (get) => {
+  const shouldRemoveDuplicateScrollBar = !get(viewerFullscreenAtom) && get(isImmersiveAtom);
+  showBodyScrollbar(!shouldRemoveDuplicateScrollBar);
 });
+doubleScrollBarHideAtom.onMount = (set) => set();
 var cssImmersiveAtom = (0, import_jotai.atom)(
-  (get) => get(isImmersiveAtom),
-  (get, set, value) => {
-    if (value !== import_utils2.RESET) {
-      set(isImmersiveAtom, value);
+  (get) => {
+    get(doubleScrollBarHideAtom);
+    return get(isImmersiveAtom);
+  },
+  async (get, set, value) => {
+    set(isImmersiveAtom, value);
+    set(doubleScrollBarHideAtom);
+    const isFullscreenPreferred = get(isFullscreenPreferredAtom);
+    if (isFullscreenPreferred) {
+      await set(viewerFullscreenAtom, value);
     }
-    set(preventDoubleScrollBarAtom);
     if (value) {
-      get(viewerElementStateAtom)?.focus();
+      get(viewerElementStateAtom)?.focus({ preventScroll: true });
     }
   }
 );
-cssImmersiveAtom.onMount = (set) => set(import_utils2.RESET);
 var viewerModeAtom = (0, import_jotai.atom)((get) => {
   const isFullscreen = get(viewerFullscreenAtom);
   const isImmersive = get(cssImmersiveAtom);
@@ -285,7 +297,7 @@ var isFullscreenPreferredSettingsAtom = (0, import_jotai.atom)(
   (get) => get(isFullscreenPreferredAtom),
   (get, set, value) => {
     set(isFullscreenPreferredAtom, value);
-    set(preventDoubleScrollBarAtom);
+    set(doubleScrollBarHideAtom);
     const isImmersive = get(cssImmersiveAtom);
     const shouldEnterFullscreen = value && isImmersive;
     set(viewerFullscreenAtom, shouldEnterFullscreen);
@@ -601,7 +613,6 @@ var viewerElementAtom = (0, import_jotai.atom)(
         await set(viewerFullscreenAtom, true);
       }
     } catch (error) {
-      set(preventDoubleScrollBarAtom);
       if (error?.message === "Permissions check failed") {
         if (get(fullscreenNoticeCountAtom) >= 3) {
           return;
@@ -669,13 +680,7 @@ var reloadErroredAtom = (0, import_jotai.atom)(null, (get, set) => {
   }
 });
 var toggleImmersiveAtom = (0, import_jotai.atom)(null, async (get, set) => {
-  const wasImmersive = get(cssImmersiveAtom);
-  set(cssImmersiveAtom, !wasImmersive);
-  const isFullscreenPreferred = get(isFullscreenPreferredAtom);
-  if (!isFullscreenPreferred) {
-    return;
-  }
-  await set(viewerFullscreenAtom, !wasImmersive);
+  await set(cssImmersiveAtom, !get(cssImmersiveAtom));
 });
 var blockSelectionAtom = (0, import_jotai.atom)(null, (_get, set, event) => {
   if (event.detail >= 2) {
