@@ -8,13 +8,13 @@ const fullscreenElementAtom = atom<Element | null>(
 );
 export const viewerElementStateAtom = atom<HTMLDivElement | null>(null);
 
-const beforeUnloadStateAtom = atom(false);
+const isBeforeUnloadAtom = atom(false);
 const beforeUnloadAtom = atom(null, async (_get, set) => {
-  set(beforeUnloadStateAtom, true);
+  set(isBeforeUnloadAtom, true);
   for (let i = 0; i < 5; i++) {
     await timeout(100);
   }
-  set(beforeUnloadStateAtom, false);
+  set(isBeforeUnloadAtom, false);
 });
 beforeUnloadAtom.onMount = (set) => {
   addEventListener("beforeunload", set);
@@ -37,7 +37,7 @@ const fullscreenSynchronizationAtom = atom(
     const isFullscreen = get(viewerElementStateAtom) === element;
     const wasImmersive = get(cssImmersiveAtom);
     const isViewerFullscreenExit = wasImmersive && !isFullscreen;
-    const isNavigationExit = get(beforeUnloadStateAtom);
+    const isNavigationExit = get(isBeforeUnloadAtom);
     if (isViewerFullscreenExit && !isNavigationExit) {
       set(cssImmersiveAtom, false);
     }
