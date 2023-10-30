@@ -2,18 +2,14 @@ import { atom, selectAtom, toast } from "../deps.ts";
 import { ImageSource, ViewerOptions } from "../types.ts";
 import { timeout } from "../utils.ts";
 import { createPageAtom, PageAtom } from "./create_page_atom.ts";
-import {
-  cssImmersiveAtom,
-  viewerElementStateAtom,
-  viewerFullscreenAtom,
-} from "./fullscreen_atom.ts";
+import { cssImmersiveAtom, viewerElementAtom, viewerFullscreenAtom } from "./fullscreen_atom.ts";
 import { i18nAtom } from "./i18n_atom.ts";
 import { fullscreenNoticeCountAtom, isFullscreenPreferredAtom } from "./persistent_atoms.ts";
 
-export const viewerElementAtom = atom(
-  (get) => get(viewerElementStateAtom),
+export const settableViewerElementAtom = atom(
+  (get) => get(viewerElementAtom),
   async (get, set, element: HTMLDivElement | null) => {
-    set(viewerElementStateAtom, element);
+    set(viewerElementAtom, element);
 
     const isViewerFullscreen = get(viewerFullscreenAtom);
     const isFullscreenPreferred = get(isFullscreenPreferredAtom);

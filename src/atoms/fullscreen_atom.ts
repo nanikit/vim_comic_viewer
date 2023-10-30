@@ -6,7 +6,7 @@ import { isFullscreenPreferredAtom, isImmersiveAtom } from "./persistent_atoms.t
 const fullscreenElementAtom = atom<Element | null>(
   document.fullscreenElement ?? null,
 );
-export const viewerElementStateAtom = atom<HTMLDivElement | null>(null);
+export const viewerElementAtom = atom<HTMLDivElement | null>(null);
 
 const isBeforeUnloadAtom = atom(false);
 const beforeUnloadAtom = atom(null, async (_get, set) => {
@@ -34,7 +34,7 @@ const fullscreenSynchronizationAtom = atom(
       return;
     }
 
-    const isFullscreen = get(viewerElementStateAtom) === element;
+    const isFullscreen = get(viewerElementAtom) === element;
     const wasImmersive = get(cssImmersiveAtom);
     const isViewerFullscreenExit = wasImmersive && !isFullscreen;
     const isNavigationExit = get(isBeforeUnloadAtom);
@@ -62,45 +62,44 @@ export const settableFullscreenElementAtom = atom(
   },
 );
 
-export const viewerFullscreenAtom = atom((get) => {
-  const fullscreenElement = get(settableFullscreenElementAtom);
-  const viewerElement = get(viewerElementStateAtom);
-  return fullscreenElement === viewerElement;
-}, async (get, set, value: boolean) => {
-  const viewer = get(viewerElementStateAtom);
-  await set(settableFullscreenElementAtom, value ? viewer : null);
-  set(doubleScrollBarHideAtom);
-});
-
-export const doubleScrollBarHideAtom = atom(null, (get) => {
+const doubleScrollBarHidingAtom = atom(null, (get) => {
   const shouldRemoveDuplicateScrollBar = !get(viewerFullscreenAtom) && get(isImmersiveAtom);
   showBodyScrollbar(!shouldRemoveDuplicateScrollBar);
 });
-doubleScrollBarHideAtom.onMount = (set) => set();
+doubleScrollBarHidingAtom.onMount = (set) => set();
+
+export const viewerFullscreenAtom = atom((get) => {
+  const fullscreenElement = get(fullscreenElementAtom);
+  const viewerElement = get(viewerElementAtom);
+  return fullscreenElement === viewerElement;
+}, async (get, set, value: boolean) => {
+  const viewer = get(viewerElementAtom);
+  await set(settableFullscreenElementAtom, value ? viewer : null);
+  set(doubleScrollBarHidingAtom);
+});
 
 export const cssImmersiveAtom = atom(
   (get) => {
-    get(doubleScrollBarHideAtom);
+    get(doubleScrollBarHidingAtom);
     return get(isImmersiveAtom);
   },
   async (get, set, value: boolean | typeof RESET) => {
     if (value === RESET) {
       if (get(isImmersiveAtom)) {
-        focusWithoutScroll(get(viewerElementStateAtom));
+        focusWithoutScroll(get(viewerElementAtom));
       }
       return;
     }
 
     set(isImmersiveAtom, value);
-    set(doubleScrollBarHideAtom);
+    set(doubleScrollBarHidingAtom);
+    if (value) {
+      focusWithoutScroll(get(viewerElementAtom));
+    }
 
     const isFullscreenPreferred = get(isFullscreenPreferredAtom);
     if (isFullscreenPreferred) {
       await set(viewerFullscreenAtom, value);
-    }
-
-    if (value) {
-      focusWithoutScroll(get(viewerElementStateAtom));
     }
   },
 );
@@ -110,7 +109,7 @@ export const isFullscreenPreferredSettingsAtom = atom(
   (get) => get(isFullscreenPreferredAtom),
   (get, set, value: boolean) => {
     set(isFullscreenPreferredAtom, value);
-    set(doubleScrollBarHideAtom);
+    set(doubleScrollBarHidingAtom);
 
     const isImmersive = get(cssImmersiveAtom);
     const shouldEnterFullscreen = value && isImmersive;
