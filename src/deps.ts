@@ -5,6 +5,7 @@ export {
   type Atom,
   atom,
   createStore,
+  type ExtractAtomValue,
   Provider,
   useAtom,
   useAtomValue,

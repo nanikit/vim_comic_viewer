@@ -81,6 +81,8 @@ export function createPageAtom({ index, source }: { index: number; source: Image
     return isOver;
   });
 
+  const divAtom = atom<HTMLDivElement | null>(null);
+
   const aggregateAtom = atom((get) => {
     get(loadAtom);
 
@@ -93,6 +95,7 @@ export function createPageAtom({ index, source }: { index: number; source: Image
 
     return {
       state,
+      divAtom,
       reloadAtom,
       fullWidth: index < compactWidthIndex || canMessUpRow,
       shouldBeOriginalSize,
