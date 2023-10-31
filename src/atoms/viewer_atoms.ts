@@ -2,7 +2,11 @@ import { atom, selectAtom, toast } from "../deps.ts";
 import { ImageSource, ViewerOptions } from "../types.ts";
 import { timeout } from "../utils.ts";
 import { createPageAtom, PageAtom } from "./create_page_atom.ts";
-import { cssImmersiveAtom, viewerElementAtom, viewerFullscreenAtom } from "./fullscreen_atom.ts";
+import {
+  fullscreenAwareImmersiveAtom,
+  viewerElementAtom,
+  viewerFullscreenAtom,
+} from "./fullscreen_atom.ts";
 import { i18nAtom } from "./i18n_atom.ts";
 import { fullscreenNoticeCountAtom, isFullscreenPreferredAtom } from "./persistent_atoms.ts";
 
@@ -13,7 +17,7 @@ export const settableViewerElementAtom = atom(
 
     const isViewerFullscreen = get(viewerFullscreenAtom);
     const isFullscreenPreferred = get(isFullscreenPreferredAtom);
-    const isImmersive = get(cssImmersiveAtom);
+    const isImmersive = get(fullscreenAwareImmersiveAtom);
     const shouldEnterFullscreen = isFullscreenPreferred && isImmersive;
     if (isViewerFullscreen === shouldEnterFullscreen || !element) {
       return;
@@ -47,7 +51,7 @@ export const settableViewerElementAtom = atom(
 
 export const viewerModeAtom = atom((get) => {
   const isFullscreen = get(viewerFullscreenAtom);
-  const isImmersive = get(cssImmersiveAtom);
+  const isImmersive = get(fullscreenAwareImmersiveAtom);
   return isFullscreen ? "fullscreen" : isImmersive ? "window" : "normal";
 });
 
@@ -122,7 +126,7 @@ export const reloadErroredAtom = atom(null, (get, set) => {
 });
 
 export const toggleImmersiveAtom = atom(null, async (get, set) => {
-  await set(cssImmersiveAtom, !get(cssImmersiveAtom));
+  await set(fullscreenAwareImmersiveAtom, !get(fullscreenAwareImmersiveAtom));
 });
 
 export const blockSelectionAtom = atom(null, (_get, set, event: React.MouseEvent) => {
