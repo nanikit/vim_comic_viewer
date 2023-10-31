@@ -14,7 +14,6 @@ const doubleScrollBarHidingAtom = atom(null, (get) => {
   const shouldRemoveDuplicateScrollBar = !get(isViewerFullscreenAtom) && get(isImmersiveAtom);
   showBodyScrollbar(!shouldRemoveDuplicateScrollBar);
 });
-doubleScrollBarHidingAtom.onMount = (set) => set();
 
 export const viewerFullscreenAtom = atom((get) => {
   return get(isViewerFullscreenAtom);
@@ -36,16 +35,12 @@ const cssImmersiveAtom = atom(
     return get(isImmersiveAtom);
   },
   (get, set, value: boolean | typeof RESET) => {
-    if (value === RESET) {
-      if (get(isImmersiveAtom)) {
-        focusWithoutScroll(get(viewerElementAtom));
-      }
-      return;
+    if (value !== RESET) {
+      set(isImmersiveAtom, value);
     }
 
-    set(isImmersiveAtom, value);
     set(doubleScrollBarHidingAtom);
-    if (value) {
+    if (value !== false) {
       focusWithoutScroll(get(viewerElementAtom));
     }
   },
