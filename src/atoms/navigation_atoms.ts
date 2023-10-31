@@ -1,4 +1,5 @@
 import { atom } from "../deps.ts";
+import { getCurrentViewerScroll, PageScrollState } from "./dom/dom_helpers.ts";
 
 const scrollElementStateAtom = atom<
   {
@@ -7,19 +8,14 @@ const scrollElementStateAtom = atom<
   } | null
 >(null);
 
-type PageScrollState = {
-  page: HTMLElement | null;
-  ratio: number;
-};
-const initialPageScrollState = { page: null, ratio: 0.5 };
 export const scrollElementSizeAtom = atom({ width: 0, height: 0 });
-const pageScrollStateAtom = atom<PageScrollState>(initialPageScrollState);
+export const pageScrollStateAtom = atom<PageScrollState<HTMLDivElement>>(getCurrentViewerScroll());
 
 export const synchronizeScrollAtom = atom(null, (get, set) => {
   const scrollElement = get(scrollElementAtom);
   const previous = { ...get(pageScrollStateAtom), ...get(scrollElementSizeAtom) };
 
-  const current = getCurrentPage(scrollElement);
+  const current = getCurrentViewerScroll(scrollElement);
   const height = scrollElement?.clientHeight ?? 0;
   const width = scrollElement?.clientWidth ?? 0;
   const isResizing = !current.page || height !== previous.height || width !== previous.width;
@@ -76,7 +72,7 @@ scrollElementAtom.onMount = (set) => () => set(null);
 
 export const goNextAtom = atom(null, (get) => {
   const scrollElement = get(scrollElementAtom)!;
-  const { page } = getCurrentPage(scrollElement);
+  const { page } = getCurrentViewerScroll(scrollElement);
   if (!page) {
     return;
   }
@@ -97,7 +93,7 @@ export const goNextAtom = atom(null, (get) => {
 
 export const goPreviousAtom = atom(null, (get) => {
   const scrollElement = get(scrollElementAtom)!;
-  const { page } = getCurrentPage(scrollElement);
+  const { page } = getCurrentViewerScroll(scrollElement);
   if (!page) {
     return;
   }
@@ -158,35 +154,4 @@ function scrollToPreviousPageBottomOrStart(page: HTMLElement) {
     cursor = previous;
   }
   cursor.scrollIntoView({ block: "start" });
-}
-
-export function getCurrentPage(container: HTMLElement | null) {
-  const clientHeight = container?.clientHeight;
-  if (!clientHeight) {
-    return initialPageScrollState;
-  }
-  const children = [...((container.children as unknown) as Iterable<HTMLElement>)];
-  if (!children.length) {
-    return initialPageScrollState;
-  }
-
-  const viewportTop = container.scrollTop;
-  const viewportBottom = viewportTop + container.clientHeight;
-  const fullyVisiblePages = children.filter((x) =>
-    x.offsetTop >= viewportTop && x.offsetTop + x.clientHeight <= viewportBottom
-  );
-  if (fullyVisiblePages.length) {
-    return { page: fullyVisiblePages[Math.floor(fullyVisiblePages.length / 2)]!, ratio: 0.5 };
-  }
-
-  const scrollCenter = (viewportTop + viewportBottom) / 2;
-  const centerCrossingPage = children.find((x) =>
-    x.offsetTop <= scrollCenter && x.offsetTop + x.clientHeight >= scrollCenter
-  );
-  if (!centerCrossingPage) {
-    return initialPageScrollState;
-  }
-
-  const ratio = (scrollCenter - centerCrossingPage.offsetTop) / centerCrossingPage.clientHeight;
-  return { page: centerCrossingPage, ratio };
 }

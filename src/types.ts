@@ -1,6 +1,7 @@
 export type ViewerOptions = {
   source?: ComicSource;
   imageProps?: Record<string, string>;
+  noSyncScroll?: boolean;
 };
 
 export type ComicSource = () => ImageSource[] | Promise<ImageSource[]>;
