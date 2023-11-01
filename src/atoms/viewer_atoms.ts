@@ -271,7 +271,7 @@ export const reloadErroredAtom = atom(null, (get, set) => {
   const pages = get(pagesAtom);
   for (const atom of pages ?? []) {
     const page = get(atom);
-    if (page.state.state !== "complete") {
+    if (page.state.status !== "complete") {
       set(page.reloadAtom);
     }
   }
