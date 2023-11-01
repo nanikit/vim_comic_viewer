@@ -9,13 +9,13 @@ import {
 } from "./persistent_atoms.ts";
 
 type PageState = {
-  state: "loading";
+  status: "loading";
   src?: string;
 } | {
-  state: "error";
+  status: "error";
   urls: string[];
 } | {
-  state: "complete";
+  status: "complete";
   src: string;
   naturalHeight: number;
 };
@@ -25,13 +25,13 @@ export type PageAtom = ReturnType<typeof createPageAtom>;
 export function createPageAtom({ index, source }: { index: number; source: ImageSource }) {
   let imageLoad = deferred<HTMLImageElement | false | null>();
 
-  const stateAtom = atom<PageState>({ state: "loading" });
+  const stateAtom = atom<PageState>({ status: "loading" });
   const loadAtom = atom(null, async (_get, set) => {
     const urls = [];
     for await (const url of imageSourceToIterable(source)) {
       urls.push(url);
       imageLoad = deferred();
-      set(stateAtom, { src: url, state: "loading" });
+      set(stateAtom, { src: url, status: "loading" });
 
       const result = await imageLoad;
       switch (result) {
@@ -41,12 +41,12 @@ export function createPageAtom({ index, source }: { index: number; source: Image
           return;
         default: {
           const img = result;
-          set(stateAtom, { src: url, naturalHeight: img.naturalHeight, state: "complete" });
+          set(stateAtom, { src: url, naturalHeight: img.naturalHeight, status: "complete" });
           return;
         }
       }
     }
-    set(stateAtom, { urls, state: "error" });
+    set(stateAtom, { urls, status: "error" });
   });
   loadAtom.onMount = (set) => {
     set();
@@ -64,7 +64,7 @@ export function createPageAtom({ index, source }: { index: number; source: Image
     }
 
     const state = get(stateAtom);
-    if (state.state !== "complete") {
+    if (state.status !== "complete") {
       return 1;
     }
 

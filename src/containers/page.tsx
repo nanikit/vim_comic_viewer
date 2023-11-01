@@ -10,7 +10,7 @@ export const Page = ({ atom, ...props }: { atom: PageAtom }) => {
   const strings = useAtomValue(i18nAtom);
   const reload = useSetAtom(reloadAtom);
   const setDiv = useSetAtom(divAtom);
-  const { state } = pageState;
+  const { status } = pageState;
 
   const reloadErrored: MouseEventHandler = async (event) => {
     event.stopPropagation();
@@ -20,12 +20,12 @@ export const Page = ({ atom, ...props }: { atom: PageAtom }) => {
   return (
     <Overlay
       ref={setDiv}
-      placeholder={state !== "complete"}
+      placeholder={status !== "complete"}
       originalSize={shouldBeOriginalSize}
       fullWidth={fullWidth}
     >
-      {state === "loading" && <Spinner />}
-      {state === "error" && (
+      {status === "loading" && <Spinner />}
+      {status === "error" && (
         <LinkColumn onClick={reloadErrored}>
           <CircledX />
           <p>{strings.failedToLoadImage}</p>
