@@ -85,10 +85,10 @@ const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
     }
     return get(divAtom) ?? [];
   });
-
+  const snappedRatio = Math.abs(ratio - 0.5) < 0.1 ? 0.5 : ratio;
   set(pageScrollStateAtom, {
     page: get(viewerPage.divAtom),
-    ratio,
+    ratio: snappedRatio,
     fullyVisiblePages,
   });
 });
