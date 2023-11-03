@@ -15,10 +15,12 @@ export function useDefault({ enable, controller }: {
       case "j":
       case "ArrowDown":
         controller.goNext();
+        event.preventDefault();
         break;
       case "k":
       case "ArrowUp":
         controller.goPrevious();
+        event.preventDefault();
         break;
       case ";":
         await controller.downloader?.downloadAndSave();

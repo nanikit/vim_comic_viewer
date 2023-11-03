@@ -69,11 +69,11 @@ export const InnerViewer = forwardRef((
   return (
     <Container
       ref={setViewerElement}
-      tabIndex={-1}
       css={{ backgroundColor }}
       immersive={mode === "window"}
     >
       <ScrollableLayout
+        tabIndex={0}
         // deno-lint-ignore no-explicit-any
         ref={setScrollElement as any}
         dark={isDarkColor(backgroundColor)}

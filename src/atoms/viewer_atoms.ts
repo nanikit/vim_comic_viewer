@@ -10,7 +10,7 @@ import {
   viewerFullscreenAtom,
 } from "./fullscreen_atom.ts";
 import { i18nAtom } from "./i18n_atom.ts";
-import { pageScrollStateAtom } from "./navigation_atoms.ts";
+import { pageScrollStateAtom, scrollElementAtom } from "./navigation_atoms.ts";
 import {
   fullscreenNoticeCountAtom,
   isFullscreenPreferredAtom,
@@ -104,13 +104,13 @@ export const isViewerImmersiveAtom = atom(
     }
     set(doubleScrollBarHidingAtom);
 
-    const viewer = get(viewerElementAtom);
-    if (!viewer) {
+    const scrollable = get(scrollElementAtom);
+    if (!scrollable) {
       return;
     }
 
     if (value !== false) {
-      focusWithoutScroll(viewer);
+      focusWithoutScroll(scrollable);
     }
     if (value === RESET) {
       return;
