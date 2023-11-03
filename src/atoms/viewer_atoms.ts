@@ -79,15 +79,11 @@ const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   }
 
   const fullyVisiblePages = fullyVisibleWindowPages.flatMap((img) => {
-    const divAtom = urlToViewerPages.get(img.src)?.divAtom;
-    if (!divAtom) {
-      return [];
-    }
-    return get(divAtom) ?? [];
+    return urlToViewerPages.get(img.src)?.div ?? [];
   });
   const snappedRatio = Math.abs(ratio - 0.5) < 0.1 ? 0.5 : ratio;
   set(pageScrollStateAtom, {
-    page: get(viewerPage.divAtom),
+    page: viewerPage.div,
     ratio: snappedRatio,
     fullyVisiblePages,
   });

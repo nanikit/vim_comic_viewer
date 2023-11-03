@@ -24,6 +24,7 @@ export type PageAtom = ReturnType<typeof createPageAtom>;
 
 export function createPageAtom({ index, source }: { index: number; source: ImageSource }) {
   let imageLoad = deferred<HTMLImageElement | false | null>();
+  let div: HTMLDivElement | null = null;
 
   const stateAtom = atom<PageState>({ status: "loading" });
   const loadAtom = atom(null, async (_get, set) => {
@@ -81,8 +82,6 @@ export function createPageAtom({ index, source }: { index: number; source: Image
     return isOver;
   });
 
-  const divAtom = atom<HTMLDivElement | null>(null);
-
   const aggregateAtom = atom((get) => {
     get(loadAtom);
 
@@ -95,7 +94,10 @@ export function createPageAtom({ index, source }: { index: number; source: Image
 
     return {
       state,
-      divAtom,
+      div,
+      setDiv: (newDiv: HTMLDivElement | null) => {
+        div = newDiv;
+      },
       reloadAtom,
       fullWidth: index < compactWidthIndex || canMessUpRow,
       shouldBeOriginalSize,
