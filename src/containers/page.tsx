@@ -5,11 +5,10 @@ import { Image, LinkColumn, Overlay, Spinner } from "../components/spinner.tsx";
 import { MouseEventHandler, useAtomValue, useSetAtom } from "../deps.ts";
 
 export const Page = ({ atom, ...props }: { atom: PageAtom }) => {
-  const { imageProps, fullWidth, reloadAtom, shouldBeOriginalSize, state: pageState, divAtom } =
+  const { imageProps, fullWidth, reloadAtom, shouldBeOriginalSize, state: pageState, setDiv } =
     useAtomValue(atom);
   const strings = useAtomValue(i18nAtom);
   const reload = useSetAtom(reloadAtom);
-  const setDiv = useSetAtom(divAtom);
   const { status } = pageState;
 
   const reloadErrored: MouseEventHandler = async (event) => {
