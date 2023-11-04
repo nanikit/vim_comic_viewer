@@ -29,8 +29,9 @@
 // @resource       link:scheduler           https://cdn.jsdelivr.net/npm/scheduler@0.23.0/cjs/scheduler.production.min.js
 // @resource       link:vcv-inject-node-env data:,unsafeWindow.process=%7Benv:%7BNODE_ENV:%22production%22%7D%7D
 // ==/UserScript==
+import { rootAtom } from "./atoms/viewer_atoms.ts";
 import { InnerViewer } from "./containers/viewer.tsx";
-import { createRef, createStore, forwardRef, Provider, Ref, render, useMemo } from "./deps.ts";
+import { createRoot, createStore, deferred, forwardRef, Provider, useMemo } from "./deps.ts";
 import { ViewerController } from "./hooks/use_viewer_controller.ts";
 import { ViewerOptions } from "./types.ts";
 export { download } from "./services/downloader.ts";
@@ -39,24 +40,26 @@ export * as utils from "./utils.ts";
 
 export function initialize(options: ViewerOptions): Promise<ViewerController> {
   const store = createStore();
-  const ref = createRef<ViewerController>();
-  render(
+  const root = createRoot(getDefaultRoot());
+  const deferredController = deferred<ViewerController>();
+  root.render(
     <Provider store={store}>
-      <InnerViewer ref={ref} options={options} useDefault />
+      <InnerViewer onInitialized={deferredController.resolve} options={options} useDefault />
     </Provider>,
-    getDefaultRoot(),
   );
-  return Promise.resolve(ref.current!);
+  store.set(rootAtom, root);
+  return deferredController;
 }
 
-export const Viewer = forwardRef(({ options, useDefault }: {
+export const Viewer = forwardRef(({ options, useDefault, onInitialized }: {
   options: ViewerOptions;
   useDefault?: boolean;
-}, ref: Ref<ViewerController>) => {
+  onInitialized?: (controller: ViewerController) => void;
+}) => {
   const store = useMemo(createStore, []);
   return (
     <Provider store={store}>
-      <InnerViewer {...{ options, ref, useDefault }} />
+      <InnerViewer {...{ options, onInitialized, useDefault }} />
     </Provider>
   );
 });

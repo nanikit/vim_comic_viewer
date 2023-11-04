@@ -11,11 +11,12 @@ import { compactWidthIndexAtom } from "../atoms/persistent_atoms.ts";
 import {
   pagesAtom,
   reloadErroredAtom,
+  rootAtom,
   setViewerOptionsAtom,
   toggleImmersiveAtom,
   viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
-import { unmountComponentAtNode, useMemo, useStore } from "../deps.ts";
+import { useMemo, useStore } from "../deps.ts";
 import { ViewerOptions } from "../types.ts";
 
 export type ViewerController = ReturnType<typeof createViewerController>;
@@ -61,6 +62,6 @@ function createViewerController(store: ReturnType<typeof useStore>) {
     goNext: () => store.set(goNextAtom),
     toggleFullscreen: () => store.set(toggleImmersiveAtom),
     reloadErrored: () => store.set(reloadErroredAtom),
-    unmount: () => unmountComponentAtNode(store.get(scrollBarStyleFactorAtom).viewerElement!),
+    unmount: () => store.get(rootAtom)?.unmount(),
   };
 }

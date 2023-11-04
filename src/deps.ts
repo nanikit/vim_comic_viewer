@@ -44,5 +44,5 @@ export type {
   SVGProps,
 } from "react";
 
-// @deno-types="npm:@types/react-dom"
-export * from "react-dom";
+// @deno-types="npm:@types/react-dom/client"
+export { createRoot, type Root } from "react-dom";
