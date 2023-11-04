@@ -3,11 +3,11 @@ globalCss.innerHTML = `html, body {
   overflow: hidden;
 }`;
 
-export function showBodyScrollbar(doShow: boolean) {
-  if (doShow) {
-    globalCss.remove();
-  } else {
+export function hideBodyScrollBar(doHide: boolean) {
+  if (doHide) {
     document.head.append(globalCss);
+  } else {
+    globalCss.remove();
   }
 }
 
