@@ -5,7 +5,7 @@ import {
   startDownloadAtom,
   UserDownloadOptions,
 } from "../atoms/downloader_atoms.ts";
-import { viewerElementAtom } from "../atoms/fullscreen_atom.ts";
+import { scrollBarStyleFactorAtom } from "../atoms/fullscreen_atom.ts";
 import { goNextAtom, goPreviousAtom } from "../atoms/navigation_atoms.ts";
 import { compactWidthIndexAtom } from "../atoms/persistent_atoms.ts";
 import {
@@ -43,7 +43,7 @@ function createViewerController(store: ReturnType<typeof useStore>) {
       return store.get(viewerStateAtom).status;
     },
     get container() {
-      return store.get(viewerElementAtom);
+      return store.get(scrollBarStyleFactorAtom).viewerElement;
     },
     get compactWidthIndex() {
       return store.get(compactWidthIndexAtom);
@@ -61,6 +61,6 @@ function createViewerController(store: ReturnType<typeof useStore>) {
     goNext: () => store.set(goNextAtom),
     toggleFullscreen: () => store.set(toggleImmersiveAtom),
     reloadErrored: () => store.set(reloadErroredAtom),
-    unmount: () => unmountComponentAtNode(store.get(viewerElementAtom)!),
+    unmount: () => unmountComponentAtNode(store.get(scrollBarStyleFactorAtom).viewerElement!),
   };
 }

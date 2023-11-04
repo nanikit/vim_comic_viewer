@@ -3,19 +3,10 @@ import { ImageSource, ViewerOptions } from "../types.ts";
 import { timeout } from "../utils.ts";
 import { createPageAtom, PageAtom } from "./create_page_atom.ts";
 import { focusWithoutScroll, getCurrentWindowScroll } from "./dom/dom_helpers.ts";
-import {
-  doubleScrollBarHidingAtom,
-  fullscreenElementAtom,
-  viewerElementAtom,
-  viewerFullscreenAtom,
-} from "./fullscreen_atom.ts";
+import { scrollBarStyleFactorAtom, viewerFullscreenAtom } from "./fullscreen_atom.ts";
 import { i18nAtom } from "./i18n_atom.ts";
 import { pageScrollStateAtom, scrollElementAtom } from "./navigation_atoms.ts";
-import {
-  fullscreenNoticeCountAtom,
-  isFullscreenPreferredAtom,
-  isImmersiveAtom,
-} from "./persistent_atoms.ts";
+import { fullscreenNoticeCountAtom, isFullscreenPreferredAtom } from "./persistent_atoms.ts";
 
 type ViewerState =
   & { options: ViewerOptions }
@@ -90,15 +81,11 @@ const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
 });
 
 export const isViewerImmersiveAtom = atom(
-  (get) => {
-    get(doubleScrollBarHidingAtom);
-    return get(isImmersiveAtom);
-  },
+  (get) => get(scrollBarStyleFactorAtom).isImmersive,
   (get, set, value: boolean | typeof RESET) => {
     if (value !== RESET) {
-      set(isImmersiveAtom, value);
+      set(scrollBarStyleFactorAtom, { isImmersive: value });
     }
-    set(doubleScrollBarHidingAtom);
 
     const scrollable = get(scrollElementAtom);
     if (!scrollable) {
@@ -132,24 +119,23 @@ beforeUnloadAtom.onMount = (set) => {
   return () => removeEventListener("beforeunload", set);
 };
 
-export const fullscreenSynchronizationAtom = atom(
+const fullscreenSynchronizationAtom = atom(
   (get) => {
     get(beforeUnloadAtom);
-    return get(fullscreenElementAtom);
+    return get(scrollBarStyleFactorAtom).fullscreenElement;
   },
   (get, set, element: Element | null) => {
-    set(fullscreenElementAtom, element);
-    if (!get(isFullscreenPreferredAtom)) {
-      return;
-    }
-
-    const isFullscreen = get(viewerElementAtom) === element;
+    const isFullscreenPreferred = get(isFullscreenPreferredAtom);
+    const isFullscreen = element === get(scrollBarStyleFactorAtom).viewerElement;
     const wasImmersive = get(isViewerImmersiveAtom);
     const isViewerFullscreenExit = wasImmersive && !isFullscreen;
     const isNavigationExit = get(isBeforeUnloadAtom);
-    if (isViewerFullscreenExit && !isNavigationExit) {
-      set(isViewerImmersiveAtom, false);
-    }
+    const shouldExitImmersive = isFullscreenPreferred && isViewerFullscreenExit &&
+      !isNavigationExit;
+    set(scrollBarStyleFactorAtom, {
+      fullscreenElement: element,
+      isImmersive: shouldExitImmersive ? false : undefined,
+    });
   },
 );
 
@@ -179,7 +165,7 @@ fullscreenSyncWithWindowScrollAtom.onMount = (set) => {
 export const setViewerElementAtom = atom(
   null,
   async (get, set, element: HTMLDivElement | null) => {
-    set(viewerElementAtom, element);
+    set(scrollBarStyleFactorAtom, { viewerElement: element });
 
     const isViewerFullscreen = get(viewerFullscreenAtom);
     const isFullscreenPreferred = get(isFullscreenPreferredAtom);
