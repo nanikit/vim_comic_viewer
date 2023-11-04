@@ -1,4 +1,4 @@
-import { atom, ExtractAtomValue, RESET, selectAtom, toast } from "../deps.ts";
+import { atom, ExtractAtomValue, RESET, Root, selectAtom, toast } from "../deps.ts";
 import { ImageSource, ViewerOptions } from "../types.ts";
 import { timeout } from "../utils.ts";
 import { createPageAtom, PageAtom } from "./create_page_atom.ts";
@@ -25,6 +25,7 @@ export const pagesAtom = selectAtom(
   viewerStateAtom,
   (state) => (state as { pages?: PageAtom[] }).pages,
 );
+export const rootAtom = atom<Root | null>(null);
 
 const transferViewerScrollToWindowAtom = atom(null, (get) => {
   const { page, ratio } = get(pageScrollStateAtom);

@@ -16,30 +16,21 @@ import {
 } from "../atoms/viewer_atoms.ts";
 import { FullscreenIcon } from "../components/icons.tsx";
 import { Container, ScrollableLayout } from "../components/scrollable_layout.ts";
-import {
-  forwardRef,
-  HTMLProps,
-  Ref,
-  ToastContainer,
-  useAtomValue,
-  useEffect,
-  useImperativeHandle,
-  useSetAtom,
-} from "../deps.ts";
+import { HTMLProps, ToastContainer, useAtomValue, useEffect, useSetAtom } from "../deps.ts";
 import { useDefault } from "../hooks/use_default.ts";
 import { useViewerController, ViewerController } from "../hooks/use_viewer_controller.ts";
 import { ViewerOptions } from "../types.ts";
 import { LeftBottomControl } from "./left_bottom_control.tsx";
 import { Page } from "./page.tsx";
 
-export const InnerViewer = forwardRef((
+export function InnerViewer(
   props: HTMLProps<HTMLDivElement> & {
     useDefault?: boolean;
     options: ViewerOptions;
+    onInitialized?: (controller: ViewerController) => void;
   },
-  refHandle: Ref<ViewerController>,
-) => {
-  const { useDefault: enableDefault, options: viewerOptions, ...otherProps } = props;
+) {
+  const { useDefault: enableDefault, options: viewerOptions, onInitialized, ...otherProps } = props;
   const setViewerElement = useSetAtom(setViewerElementAtom);
   const setScrollElement = useSetAtom(scrollElementAtom);
   const isFullscreen = useAtomValue(viewerFullscreenAtom);
@@ -60,7 +51,9 @@ export const InnerViewer = forwardRef((
 
   useDefault({ enable: props.useDefault, controller });
 
-  useImperativeHandle(refHandle, () => controller, [controller]);
+  useEffect(() => {
+    onInitialized?.(controller);
+  }, [controller]);
 
   useEffect(() => {
     setViewerOptions(viewerOptions);
@@ -98,7 +91,7 @@ export const InnerViewer = forwardRef((
       <ToastContainer />
     </Container>
   );
-});
+}
 
 // #878787 -> true, #888888 -> false,
 function isDarkColor(rgbColor: string) {
