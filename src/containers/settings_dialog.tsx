@@ -23,7 +23,7 @@ const ConfigRow = styled("div", {
   gap: "10%",
 
   "&& > *": {
-    fontSize: "1.3em",
+    fontSize: "1em",
     fontWeight: "medium",
     minWidth: "0",
 
@@ -97,9 +97,11 @@ const Toggle = styled("span", {
 });
 
 const Title = styled("h3", {
-  fontSize: "2em",
+  fontSize: "1.5em",
   fontWeight: "bold",
   lineHeight: 1.5,
+  margin: 0,
+  marginBottom: "0.3em",
 });
 
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
@@ -120,7 +122,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const maxZoomIn = formatMultiplier(maxZoomInExponent);
 
   return (
-    <BackdropDialog css={{ gap: "1.3em" }} onClose={onClose}>
+    <BackdropDialog css={{ gap: "0.8em" }} onClose={onClose}>
       <Title>{strings.settings}</Title>
       <ConfigRow>
         <label htmlFor={zoomOutExponentInputId}>{strings.maxZoomOut}: {maxZoomOut}</label>
