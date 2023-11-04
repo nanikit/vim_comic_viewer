@@ -9,5 +9,9 @@
   "failedToLoadImage": "Failed to load image.",
   "loading": "Loading...",
   "fullScreenRestorationGuide": "Enter full screen yourself if you want to keep the viewer open in full screen.",
-  "useFullScreen": "Use full screen"
+  "useFullScreen": "Use full screen",
+  "downloading": "Downloading...",
+  "cancel": "CANCEL",
+  "downloadComplete": "Download complete.",
+  "errorOccurredWhileDownloading": "Error occurred while downloading."
 }

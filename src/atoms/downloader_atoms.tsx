@@ -1,18 +1,14 @@
-import { atom } from "../deps.ts";
+import { DownloadCancel } from "../components/download_cancel.tsx";
+import { atom, Id, toast } from "../deps.ts";
 import { download, DownloadProgress } from "../services/downloader.ts";
 import { ImageSource } from "../types.ts";
-import { save } from "../utils.ts";
+import { save, timeout } from "../utils.ts";
+import { i18nAtom } from "./i18n_atom.ts";
 import { viewerStateAtom } from "./viewer_atoms.ts";
 
 const aborterAtom = atom<AbortController | null>(null);
 export const cancelDownloadAtom = atom(null, (get) => {
   get(aborterAtom)?.abort();
-});
-
-export const downloadProgressAtom = atom({
-  value: 0,
-  text: "",
-  error: false,
 });
 
 export type UserDownloadOptions = { images?: ImageSource[] };
@@ -29,8 +25,10 @@ export const startDownloadAtom = atom(null, async (get, set, options?: UserDownl
     return aborter;
   });
 
+  let toastId: Id | null = null;
   addEventListener("beforeunload", confirmDownloadAbort);
   try {
+    toastId = toast(<DownloadCancel onClick={aborter.abort} />, { autoClose: false, progress: 0 });
     return await download(options?.images ?? viewerState.images, {
       onProgress: reportProgress,
       onError: logIfNotAborted,
@@ -40,20 +38,36 @@ export const startDownloadAtom = atom(null, async (get, set, options?: UserDownl
     removeEventListener("beforeunload", confirmDownloadAbort);
   }
 
-  function reportProgress(event: DownloadProgress) {
-    const { total, started, settled, rejected, isCancelled, isComplete } = event;
+  async function reportProgress(event: DownloadProgress) {
+    if (!toastId) {
+      return;
+    }
+
+    const { total, started, settled, rejected, status } = event;
     const value = (started / total) * 0.1 + (settled / total) * 0.89;
-    const text = `${(value * 100).toFixed(1)}%`;
-    const error = !!rejected;
-    if (isComplete || isCancelled) {
-      set(downloadProgressAtom, { value: 0, text: "", error: false });
-    } else {
-      set(downloadProgressAtom, (previous) => {
-        if (text !== previous.text) {
-          return { value, text, error };
-        }
-        return previous;
-      });
+    switch (status) {
+      case "ongoing":
+        toast.update(toastId, { type: rejected > 0 ? "warning" : "default", progress: value });
+        break;
+      case "complete":
+        toast.update(toastId, {
+          type: "success",
+          render: get(i18nAtom).downloadComplete,
+          progress: 0.9999,
+        });
+        await timeout(1000);
+        toast.done(toastId);
+        break;
+      case "error":
+        toast.update(toastId, {
+          type: "error",
+          render: get(i18nAtom).errorOccurredWhileDownloading,
+          progress: 0,
+        });
+        break;
+      case "cancelled":
+        toast.done(toastId);
+        break;
     }
   }
 });

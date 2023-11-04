@@ -190,7 +190,7 @@ export const setViewerElementAtom = atom(
         if (get(fullscreenNoticeCountAtom) >= 3) {
           return;
         }
-        toast(get(i18nAtom).fullScreenRestorationGuide);
+        toast(get(i18nAtom).fullScreenRestorationGuide, { type: "info" });
         await timeout(5000);
         set(fullscreenNoticeCountAtom, (count) => count + 1);
         return;

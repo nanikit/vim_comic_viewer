@@ -13,7 +13,7 @@ export {
   useStore,
 } from "jotai";
 export { atomWithStorage, createJSONStorage, RESET, selectAtom } from "jotai/utils";
-export { toast, ToastContainer } from "react-toastify";
+export { type Id, toast, ToastContainer } from "react-toastify";
 
 import "./vendors/toastify_css.ts";
 
