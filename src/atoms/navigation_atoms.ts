@@ -131,7 +131,7 @@ function scrollToNextPageTopOrEnd(page: HTMLElement) {
   let cursor = page as Element;
   while (cursor.nextElementSibling) {
     const next = cursor.nextElementSibling as HTMLElement;
-    if (pageBottom < next.offsetTop) {
+    if (pageBottom <= next.offsetTop) {
       next.scrollIntoView({ block: "start" });
       return;
     }
@@ -147,7 +147,7 @@ function scrollToPreviousPageBottomOrStart(page: HTMLElement) {
   while (cursor.previousElementSibling) {
     const previous = cursor.previousElementSibling as HTMLElement;
     const previousBottom = previous.offsetTop + previous.clientHeight;
-    if (previousBottom < pageTop) {
+    if (previousBottom <= pageTop) {
       previous.scrollIntoView({ block: "end" });
       return;
     }
