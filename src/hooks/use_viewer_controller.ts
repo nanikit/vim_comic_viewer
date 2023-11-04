@@ -1,10 +1,9 @@
 import {
   cancelDownloadAtom,
   downloadAndSaveAtom,
-  downloadProgressAtom,
   startDownloadAtom,
   UserDownloadOptions,
-} from "../atoms/downloader_atoms.ts";
+} from "../atoms/downloader_atoms.tsx";
 import { scrollBarStyleFactorAtom } from "../atoms/fullscreen_atom.ts";
 import { goNextAtom, goPreviousAtom } from "../atoms/navigation_atoms.ts";
 import { compactWidthIndexAtom } from "../atoms/persistent_atoms.ts";
@@ -28,9 +27,6 @@ export function useViewerController() {
 
 function createViewerController(store: ReturnType<typeof useStore>) {
   const downloader = {
-    get progress() {
-      return store.get(downloadProgressAtom);
-    },
     download: (options?: UserDownloadOptions) => store.set(startDownloadAtom, options),
     downloadAndSave: (options?: UserDownloadOptions) => store.set(downloadAndSaveAtom, options),
     cancel: () => store.set(cancelDownloadAtom),

@@ -9,5 +9,9 @@
   "failedToLoadImage": "이미지를 불러오지 못했습니다.",
   "loading": "로딩 중...",
   "fullScreenRestorationGuide": "뷰어 전체 화면을 유지하려면 직접 전체 화면을 켜 주세요 (F11).",
-  "useFullScreen": "전체 화면"
+  "useFullScreen": "전체 화면",
+  "downloading": "다운로드 중...",
+  "cancel": "취소",
+  "downloadComplete": "다운로드 완료",
+  "errorOccurredWhileDownloading": "다운로드 도중 오류가 발생했습니다"
 }

@@ -3,13 +3,13 @@ import { ImageSource } from "../types.ts";
 import { fetchBlob } from "./gm_fetch.ts";
 import { imageSourceToIterable } from "./image_source_to_iterable.ts";
 
+export type DownloadStatus = "ongoing" | "complete" | "error" | "cancelled";
 export type DownloadProgress = {
   total: number;
   started: number;
   rejected: number;
   settled: number;
-  isComplete?: boolean;
-  isCancelled?: boolean;
+  status: DownloadStatus;
 };
 
 export type DownloadOptions = {
@@ -78,27 +78,24 @@ export const download = (
   let startedCount = 0;
   let resolvedCount = 0;
   let rejectedCount = 0;
-  let hasCancelled = false;
+  let status: DownloadStatus = "ongoing";
 
   const reportProgress = (
-    { isCancelled, isComplete }: { isCancelled?: true; isComplete?: true } = {},
+    { transition }: { transition?: typeof status } = {},
   ) => {
-    if (hasCancelled) {
+    if (status !== "ongoing") {
       return;
     }
-    if (isCancelled) {
-      hasCancelled = true;
+    if (transition) {
+      status = transition;
     }
 
-    const total = images.length;
-    const settled = resolvedCount + rejectedCount;
     onProgress?.({
-      total,
+      total: images.length,
       started: startedCount,
-      settled,
+      settled: resolvedCount + rejectedCount,
       rejected: rejectedCount,
-      isCancelled: hasCancelled,
-      isComplete,
+      status,
     });
   };
 
@@ -150,8 +147,8 @@ export const download = (
     const result = await Promise.all(sources.map(downloadWithReport));
 
     if (signal?.aborted) {
-      reportProgress({ isCancelled: true });
-      throw new Error("aborted");
+      reportProgress({ transition: "cancelled" });
+      signal.throwIfAborted();
     }
 
     const pairs = await Promise.all(result.map(toPair));
@@ -160,9 +157,10 @@ export const download = (
     const value = deferred<Uint8Array>();
     const abort = zip(data, { level: 0 }, (error, array) => {
       if (error) {
+        reportProgress({ transition: "error" });
         value.reject(error);
       } else {
-        reportProgress({ isComplete: true });
+        reportProgress({ transition: "complete" });
         value.resolve(array);
       }
     });
