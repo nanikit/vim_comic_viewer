@@ -46,7 +46,7 @@ export function getCurrentViewerScroll(
   return getCurrentScroll(children);
 }
 
-export function getCurrentWindowScroll(urls: string[]): PageScrollState<HTMLImageElement> {
+export function getUrlImgs(urls: string[]) {
   const pages = [];
   const imgs = document.querySelectorAll<HTMLImageElement>("img[src]");
   for (const img of imgs) {
@@ -54,16 +54,18 @@ export function getCurrentWindowScroll(urls: string[]): PageScrollState<HTMLImag
       pages.push(img);
     }
   }
-
-  return getCurrentScroll(pages);
+  return pages;
 }
 
-function getCurrentScroll<T extends HTMLElement>(elements: T[]): PageScrollState<T> {
+export function getCurrentScroll<T extends HTMLElement>(elements: T[]): PageScrollState<T> {
+  if (!elements.length) {
+    return emptyScroll;
+  }
+
   const pages = elements.map((page) => ({ page, rect: page.getBoundingClientRect() }));
   const fullyVisiblePages = pages.filter(({ rect }) =>
     rect.y >= 0 && rect.y + rect.height <= innerHeight
   );
-
   if (fullyVisiblePages.length) {
     return {
       page: fullyVisiblePages[Math.floor(fullyVisiblePages.length / 2)].page,
@@ -76,11 +78,16 @@ function getCurrentScroll<T extends HTMLElement>(elements: T[]): PageScrollState
   const centerCrossingPage = pages.find(({ rect }) =>
     rect.top <= scrollCenter && rect.bottom >= scrollCenter
   );
-  if (!centerCrossingPage) {
-    return emptyScroll;
+  if (centerCrossingPage) {
+    const centerCrossingRect = centerCrossingPage.rect;
+    const ratio = 1 - ((centerCrossingRect.bottom - scrollCenter) / centerCrossingRect.height);
+    return { page: centerCrossingPage.page, ratio, fullyVisiblePages: [] };
   }
 
-  const centerCrossingRect = centerCrossingPage.rect;
-  const ratio = 1 - ((centerCrossingRect.bottom - scrollCenter) / centerCrossingRect.height);
-  return { page: centerCrossingPage.page, ratio, fullyVisiblePages: [] };
+  const firstPage = pages[0];
+  const lastPage = pages[pages.length - 1];
+  if (scrollCenter < pages[0].rect.top) {
+    return { page: firstPage.page, ratio: 0, fullyVisiblePages: [] };
+  }
+  return { page: lastPage.page, ratio: 1, fullyVisiblePages: [] };
 }
