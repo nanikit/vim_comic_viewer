@@ -82,7 +82,7 @@ const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
 
 export const isViewerImmersiveAtom = atom(
   (get) => get(scrollBarStyleFactorAtom).isImmersive,
-  (get, set, value: boolean | typeof RESET) => {
+  async (get, set, value: boolean | typeof RESET) => {
     if (value !== RESET) {
       set(scrollBarStyleFactorAtom, { isImmersive: value });
     }
@@ -97,6 +97,10 @@ export const isViewerImmersiveAtom = atom(
     }
     if (value === RESET) {
       return;
+    }
+
+    if (get(isFullscreenPreferredAtom)) {
+      await set(viewerFullscreenAtom, value);
     }
 
     if (!get(viewerStateAtom).options.noSyncScroll) {
@@ -139,17 +143,6 @@ const fullscreenSynchronizationAtom = atom(
   },
 );
 
-export const fullscreenAwareImmersiveAtom = atom(
-  (get) => get(isViewerImmersiveAtom),
-  async (get, set, value: boolean) => {
-    set(isViewerImmersiveAtom, value);
-
-    if (get(isFullscreenPreferredAtom)) {
-      await set(viewerFullscreenAtom, value);
-    }
-  },
-);
-
 export const fullscreenSyncWithWindowScrollAtom = atom(
   (get) => get(fullscreenSynchronizationAtom),
   (_get, set, element: Element | null) => {
@@ -169,7 +162,7 @@ export const setViewerElementAtom = atom(
 
     const isViewerFullscreen = get(viewerFullscreenAtom);
     const isFullscreenPreferred = get(isFullscreenPreferredAtom);
-    const isImmersive = get(fullscreenAwareImmersiveAtom);
+    const isImmersive = get(isViewerImmersiveAtom);
     const shouldEnterFullscreen = isFullscreenPreferred && isImmersive;
     if (isViewerFullscreen === shouldEnterFullscreen || !element) {
       return;
@@ -203,7 +196,7 @@ export const setViewerElementAtom = atom(
 
 export const viewerModeAtom = atom((get) => {
   const isFullscreen = get(viewerFullscreenAtom);
-  const isImmersive = get(fullscreenAwareImmersiveAtom);
+  const isImmersive = get(isViewerImmersiveAtom);
   return isFullscreen ? "fullscreen" : isImmersive ? "window" : "normal";
 });
 
@@ -260,7 +253,7 @@ export const reloadErroredAtom = atom(null, (get, set) => {
 });
 
 export const toggleImmersiveAtom = atom(null, async (get, set) => {
-  await set(fullscreenAwareImmersiveAtom, !get(fullscreenAwareImmersiveAtom));
+  await set(isViewerImmersiveAtom, !get(isViewerImmersiveAtom));
 });
 
 export const blockSelectionAtom = atom(null, (_get, set, event: React.MouseEvent) => {
