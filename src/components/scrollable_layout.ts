@@ -19,7 +19,7 @@ export const Container = styled("div", {
   userSelect: "none",
 
   fontFamily: "Pretendard, NanumGothic, sans-serif",
-  fontSize: "1vmin",
+  fontSize: "16px",
   color: "black",
 
   "&:focus-visible": {
