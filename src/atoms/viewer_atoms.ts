@@ -2,7 +2,7 @@ import { atom, ExtractAtomValue, RESET, selectAtom, toast } from "../deps.ts";
 import { ImageSource, ViewerOptions } from "../types.ts";
 import { timeout } from "../utils.ts";
 import { createPageAtom, PageAtom } from "./create_page_atom.ts";
-import { focusWithoutScroll, getCurrentWindowScroll } from "./dom/dom_helpers.ts";
+import { focusWithoutScroll, getCurrentScroll, getUrlImgs } from "./dom/dom_helpers.ts";
 import { scrollBarStyleFactorAtom, viewerFullscreenAtom } from "./fullscreen_atom.ts";
 import { i18nAtom } from "./i18n_atom.ts";
 import { pageScrollStateAtom, scrollElementAtom } from "./navigation_atoms.ts";
@@ -59,7 +59,12 @@ const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
     }
   }
   const urls = [...urlToViewerPages.keys()];
-  const { page, ratio, fullyVisiblePages: fullyVisibleWindowPages } = getCurrentWindowScroll(urls);
+  const imgs = getUrlImgs(urls);
+  const viewerImgs = new Set(viewerPages.flatMap((page) => page.div?.querySelector("img") ?? []));
+  const originalImgs = imgs.filter((img) => !viewerImgs.has(img));
+  const { page, ratio, fullyVisiblePages: fullyVisibleWindowPages } = getCurrentScroll(
+    originalImgs,
+  );
   if (!page) {
     return;
   }
