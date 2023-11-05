@@ -5,7 +5,7 @@ import { createPageAtom, PageAtom } from "./create_page_atom.ts";
 import { focusWithoutScroll, getCurrentScroll, getUrlImgs } from "./dom/dom_helpers.ts";
 import { scrollBarStyleFactorAtom, viewerFullscreenAtom } from "./fullscreen_atom.ts";
 import { i18nAtom } from "./i18n_atom.ts";
-import { pageScrollStateAtom, scrollElementAtom } from "./navigation_atoms.ts";
+import { pageScrollStateAtom, restoreScrollAtom, scrollElementAtom } from "./navigation_atoms.ts";
 import { fullscreenNoticeCountAtom, isFullscreenPreferredAtom } from "./persistent_atoms.ts";
 
 type ViewerState =
@@ -78,6 +78,7 @@ const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   const fullyVisiblePages = fullyVisibleWindowPages.flatMap((img) => {
     return urlToViewerPages.get(img.src)?.div ?? [];
   });
+
   const snappedRatio = Math.abs(ratio - 0.5) < 0.1 ? 0.5 : ratio;
   set(pageScrollStateAtom, {
     page: viewerPage.div,
@@ -90,6 +91,9 @@ export const isViewerImmersiveAtom = atom(
   (get) => get(scrollBarStyleFactorAtom).isImmersive,
   async (get, set, value: boolean | typeof RESET) => {
     if (value !== RESET) {
+      if (!get(viewerStateAtom).options.noSyncScroll && value) {
+        set(transferWindowScrollToViewerAtom);
+      }
       set(scrollBarStyleFactorAtom, { isImmersive: value });
     }
 
@@ -109,8 +113,12 @@ export const isViewerImmersiveAtom = atom(
       await set(viewerFullscreenAtom, value);
     }
 
-    if (!get(viewerStateAtom).options.noSyncScroll) {
-      set(value ? transferWindowScrollToViewerAtom : transferViewerScrollToWindowAtom);
+    if (value) {
+      // HACK: have to wait reflow uncertain times.
+      await timeout(1);
+      set(restoreScrollAtom);
+    } else if (!get(viewerStateAtom).options.noSyncScroll) {
+      set(transferViewerScrollToWindowAtom);
     }
   },
 );
