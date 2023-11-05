@@ -127,31 +127,44 @@ export const navigateAtom = atom(null, (get, set, event: React.MouseEvent) => {
 });
 
 function scrollToNextPageTopOrEnd(page: HTMLElement) {
+  const scrollable = page.offsetParent;
+  if (!scrollable) {
+    return;
+  }
+
   const pageBottom = page.offsetTop + page.clientHeight;
-  let cursor = page as Element;
+  let cursor = page as HTMLElement;
   while (cursor.nextElementSibling) {
     const next = cursor.nextElementSibling as HTMLElement;
     if (pageBottom <= next.offsetTop) {
-      next.scrollIntoView({ block: "start" });
+      scrollable.scroll({ top: next.offsetTop });
       return;
     }
     cursor = next;
   }
-  cursor.scrollIntoView({ block: "end" });
+
+  scrollable.scroll({ top: cursor.offsetTop + cursor.clientHeight });
 }
 
 function scrollToPreviousPageBottomOrStart(page: HTMLElement) {
-  const pageTop = page.offsetTop;
+  const scrollable = page.offsetParent;
+  if (!scrollable) {
+    return;
+  }
 
-  let cursor = page as Element;
+  const pageTop = page.offsetTop;
+  let cursor = page as HTMLElement;
   while (cursor.previousElementSibling) {
     const previous = cursor.previousElementSibling as HTMLElement;
     const previousBottom = previous.offsetTop + previous.clientHeight;
     if (previousBottom <= pageTop) {
-      previous.scrollIntoView({ block: "end" });
+      scrollable.scroll({
+        top: previous.offsetTop + previous.clientHeight - scrollable.clientHeight,
+      });
       return;
     }
     cursor = previous;
   }
-  cursor.scrollIntoView({ block: "start" });
+
+  scrollable.scroll({ top: cursor.offsetTop });
 }
