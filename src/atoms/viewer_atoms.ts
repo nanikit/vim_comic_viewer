@@ -259,6 +259,10 @@ export const reloadErroredAtom = atom(null, (get, set) => {
 });
 
 export const toggleImmersiveAtom = atom(null, async (get, set) => {
+  if (get(viewerModeAtom) === "window" && get(isFullscreenPreferredAtom)) {
+    set(viewerFullscreenAtom, true);
+    return;
+  }
   await set(isViewerImmersiveAtom, !get(isViewerImmersiveAtom));
 });
 
