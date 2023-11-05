@@ -11,21 +11,21 @@ const scrollElementStateAtom = atom<
 export const scrollElementSizeAtom = atom({ width: 0, height: 0 });
 export const pageScrollStateAtom = atom<PageScrollState<HTMLDivElement>>(getCurrentViewerScroll());
 
+const previousSizeAtom = atom({ width: 0, height: 0 });
 export const synchronizeScrollAtom = atom(null, (get, set) => {
   const scrollElement = get(scrollElementAtom);
-  const previous = { ...get(pageScrollStateAtom), ...get(scrollElementSizeAtom) };
-
   const current = getCurrentViewerScroll(scrollElement);
+  if (!current.page) {
+    return;
+  }
+
   const height = scrollElement?.clientHeight ?? 0;
   const width = scrollElement?.clientWidth ?? 0;
-  const isResizing = !current.page || height !== previous.height || width !== previous.width;
+  const previous = get(previousSizeAtom);
+  const isResizing = height !== previous.height || width !== previous.width;
   if (isResizing) {
     set(restoreScrollAtom);
-    // Resize observer is not always fired.
-    set(scrollElementSizeAtom, (previous) => {
-      const isChanged = previous.width !== width || previous.height !== height;
-      return isChanged ? previous : { width, height };
-    });
+    set(previousSizeAtom, { width, height });
   } else {
     set(pageScrollStateAtom, current);
   }
@@ -33,15 +33,14 @@ export const synchronizeScrollAtom = atom(null, (get, set) => {
 
 export const restoreScrollAtom = atom(null, (get) => {
   const { page, ratio } = get(pageScrollStateAtom);
-  const element = get(scrollElementAtom);
-  if (!element || !page) {
+  const scrollable = get(scrollElementAtom);
+  if (!scrollable || !page) {
     return;
   }
 
   const { offsetTop, clientHeight } = page;
-  const restoredY = Math.floor(offsetTop + clientHeight * ratio - element.clientHeight / 2);
-
-  element.scroll({ top: restoredY });
+  const restoredY = Math.floor(offsetTop + clientHeight * ratio - scrollable.clientHeight / 2);
+  scrollable.scroll({ top: restoredY });
 });
 
 export const scrollElementAtom = atom(
@@ -61,7 +60,7 @@ export const scrollElementAtom = atom(
       set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
       const resizeObserver = new ResizeObserver(() => {
         set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
-        set(restoreScrollAtom);
+        set(synchronizeScrollAtom);
       });
       resizeObserver.observe(div);
       return { div, resizeObserver };
