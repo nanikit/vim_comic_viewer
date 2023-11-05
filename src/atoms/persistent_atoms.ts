@@ -17,4 +17,4 @@ export const fullscreenNoticeCountAtom = atomWithGmValue(
   0,
 );
 
-export const isImmersiveAtom = atomWithSession("vim_comic_viewer.is_immersive", false);
+export const wasImmersiveAtom = atomWithSession("vim_comic_viewer.was_immersive", false);

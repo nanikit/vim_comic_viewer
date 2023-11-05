@@ -1,6 +1,6 @@
 import { atom, ExtractAtomValue } from "../deps.ts";
 import { hideBodyScrollBar, setFullscreenElement } from "./dom/dom_helpers.ts";
-import { isFullscreenPreferredAtom, isImmersiveAtom } from "./persistent_atoms.ts";
+import { isFullscreenPreferredAtom, wasImmersiveAtom } from "./persistent_atoms.ts";
 
 const fullscreenElementAtom = atom<Element | null>(null);
 const viewerElementAtom = atom<HTMLDivElement | null>(null);
@@ -12,13 +12,13 @@ export const isViewerFullscreenAtom = atom((get) =>
 type ScrollBarFactors = {
   fullscreenElement?: ExtractAtomValue<typeof fullscreenElementAtom>;
   viewerElement?: ExtractAtomValue<typeof viewerElementAtom>;
-  isImmersive?: ExtractAtomValue<typeof isImmersiveAtom>;
+  isImmersive?: ExtractAtomValue<typeof wasImmersiveAtom>;
 };
 export const scrollBarStyleFactorAtom = atom(
   (get) => ({
     fullscreenElement: get(fullscreenElementAtom),
     viewerElement: get(viewerElementAtom),
-    isImmersive: get(isImmersiveAtom),
+    isImmersive: get(wasImmersiveAtom),
   }),
   (get, set, factors: ScrollBarFactors) => {
     const { fullscreenElement, viewerElement, isImmersive } = factors;
@@ -29,10 +29,10 @@ export const scrollBarStyleFactorAtom = atom(
       set(viewerElementAtom, viewerElement);
     }
     if (isImmersive !== undefined) {
-      set(isImmersiveAtom, isImmersive);
+      set(wasImmersiveAtom, isImmersive);
     }
 
-    const canScrollBarDuplicate = !get(isViewerFullscreenAtom) && get(isImmersiveAtom);
+    const canScrollBarDuplicate = !get(isViewerFullscreenAtom) && get(wasImmersiveAtom);
     hideBodyScrollBar(canScrollBarDuplicate);
   },
 );
@@ -55,7 +55,7 @@ export const isFullscreenPreferredSettingsAtom = atom(
   async (get, set, value: boolean) => {
     set(isFullscreenPreferredAtom, value);
 
-    const isImmersive = get(isImmersiveAtom);
+    const isImmersive = get(wasImmersiveAtom);
     const shouldEnterFullscreen = value && isImmersive;
     await set(viewerFullscreenAtom, shouldEnterFullscreen);
   },
