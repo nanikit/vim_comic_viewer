@@ -68,7 +68,7 @@ export function getCurrentScroll<T extends HTMLElement>(elements: T[]): PageScro
   );
   if (fullyVisiblePages.length) {
     return {
-      page: fullyVisiblePages[Math.floor(fullyVisiblePages.length / 2)].page,
+      page: fullyVisiblePages[0].page,
       ratio: 0.5,
       fullyVisiblePages: fullyVisiblePages.map((x) => x.page),
     };
