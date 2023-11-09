@@ -3,10 +3,10 @@ import { isFullscreenPreferredSettingsAtom } from "../../atoms/fullscreen_atom.t
 import { i18nAtom } from "../../atoms/i18n_atom.ts";
 import {
   backgroundColorAtom,
-  compactWidthIndexAtom,
   maxZoomInExponentAtom,
   maxZoomOutExponentAtom,
   pageDirectionAtom,
+  singlePageCountAtom,
 } from "../../atoms/persistent_atoms.ts";
 import { useAtom, useId } from "../../deps.ts";
 import { styled } from "../../vendors/stitches.ts";
@@ -14,7 +14,7 @@ import { styled } from "../../vendors/stitches.ts";
 export function SettingsTab() {
   const [maxZoomOutExponent, setMaxZoomOutExponent] = useAtom(maxZoomOutExponentAtom);
   const [maxZoomInExponent, setMaxZoomInExponent] = useAtom(maxZoomInExponentAtom);
-  const [singlePageCount, setSinglePageCount] = useAtom(compactWidthIndexAtom);
+  const [singlePageCount, setSinglePageCount] = useAtom(singlePageCountAtom);
   const [backgroundColor, setBackgroundColor] = useAtom(backgroundColorAtom);
   const [pageDirection, setPageDirection] = useAtom(pageDirectionAtom);
   const [isFullscreenPreferred, setIsFullscreenPreferred] = useAtom(

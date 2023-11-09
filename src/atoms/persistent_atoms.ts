@@ -3,7 +3,7 @@ import { atomWithGmValue, atomWithSession } from "./helper/atoms_with_storage.ts
 type PageDirection = "leftToRight" | "rightToLeft";
 
 export const backgroundColorAtom = atomWithGmValue("vim_comic_viewer.background_color", "#eeeeee");
-export const compactWidthIndexAtom = atomWithGmValue("vim_comic_viewer.single_page_count", 1);
+export const singlePageCountAtom = atomWithGmValue("vim_comic_viewer.single_page_count", 1);
 // maxZoomOutRatio = Math.sqrt(2) ** maxZoomOutExponent
 export const maxZoomOutExponentAtom = atomWithGmValue("vim_comic_viewer.max_zoom_out_exponent", 3);
 export const maxZoomInExponentAtom = atomWithGmValue("vim_comic_viewer.max_zoom_in_exponent", 3);
