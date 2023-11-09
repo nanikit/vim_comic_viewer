@@ -9,6 +9,10 @@ const Backdrop = styled("div", {
   width: "100%",
   height: "100%",
 
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+
   background: "rgba(0, 0, 0, 0.5)",
   transition: "0.2s",
 
@@ -27,15 +31,8 @@ const Backdrop = styled("div", {
 });
 
 const CenterDialog = styled("div", {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-
-  display: "flex",
-  flexFlow: "column nowrap",
-  alignItems: "stretch",
-  justifyContent: "center",
+  minWidth: "20em",
+  minHeight: "20em",
 
   transition: "0.2s",
   background: "white",

@@ -2,7 +2,7 @@ import { downloadAndSaveAtom } from "../atoms/downloader_atoms.tsx";
 import { DownloadIcon, IconSettings } from "../components/icons.tsx";
 import { useSetAtom, useState } from "../deps.ts";
 import { styled } from "../vendors/stitches.ts";
-import { SettingsDialog } from "./settings_dialog.tsx";
+import { ViewerDialog } from "./viewer_dialog.tsx";
 
 const LeftBottomFloat = styled("div", {
   position: "absolute",
@@ -35,7 +35,7 @@ export function LeftBottomControl() {
           <DownloadIcon onClick={() => downloadAndSave()} />
         </MenuActions>
       </LeftBottomFloat>
-      {isOpen && <SettingsDialog onClose={() => setIsOpen(false)} />}
+      {isOpen && <ViewerDialog onClose={() => setIsOpen(false)} />}
     </>
   );
 }
