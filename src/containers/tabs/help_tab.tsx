@@ -30,6 +30,12 @@ const keyBindingsAtom = atom((get) => {
         <kbd>i</kbd>, <kbd>Enter⏎</kbd>, <kbd>NumPad0</kbd>
       </>,
     ],
+    [
+      strings.toggleViewerWithTogglingFullscreenSetting,
+      <>
+        <kbd>⇧Shift</kbd>+<kbd>i</kbd>
+      </>,
+    ],
     [strings.nextPage, <kbd>j</kbd>],
     [strings.previousPage, <kbd>k</kbd>],
     [strings.download, <kbd>;</kbd>],

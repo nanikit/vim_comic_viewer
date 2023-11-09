@@ -2,7 +2,12 @@ import { atom, ExtractAtomValue, RESET, Root, selectAtom, toast } from "../deps.
 import { ImageSource, ViewerOptions } from "../types.ts";
 import { timeout } from "../utils.ts";
 import { createPageAtom, PageAtom } from "./create_page_atom.ts";
-import { focusWithoutScroll, getCurrentScroll, getUrlImgs } from "./dom/dom_helpers.ts";
+import {
+  focusWithoutScroll,
+  getCurrentScroll,
+  getUrlImgs,
+  isUserGesturePermissionError,
+} from "./dom/dom_helpers.ts";
 import { scrollBarStyleFactorAtom, viewerFullscreenAtom } from "./fullscreen_atom.ts";
 import { i18nAtom } from "./i18n_atom.ts";
 import { pageScrollStateAtom, restoreScrollAtom, scrollElementAtom } from "./navigation_atoms.ts";
@@ -109,16 +114,18 @@ export const isViewerImmersiveAtom = atom(
       return;
     }
 
-    if (get(isFullscreenPreferredAtom)) {
-      await set(viewerFullscreenAtom, value);
-    }
-
-    if (value) {
-      // HACK: have to wait reflow uncertain times.
-      await timeout(1);
-      set(restoreScrollAtom);
-    } else if (!get(viewerStateAtom).options.noSyncScroll) {
-      set(transferViewerScrollToWindowAtom);
+    try {
+      if (get(isFullscreenPreferredAtom)) {
+        await set(viewerFullscreenAtom, value);
+      }
+    } finally {
+      if (value) {
+        // HACK: have to wait reflow uncertain times.
+        await timeout(1);
+        set(restoreScrollAtom);
+      } else if (!get(viewerStateAtom).options.noSyncScroll) {
+        set(transferViewerScrollToWindowAtom);
+      }
     }
   },
 );
@@ -193,8 +200,7 @@ export const setViewerElementAtom = atom(
         await set(viewerFullscreenAtom, true);
       }
     } catch (error) {
-      // Failed to execute 'requestFullscreen' on 'Element': API can only be initiated by a user gesture.
-      if (error?.message === "Permissions check failed") {
+      if (isUserGesturePermissionError(error)) {
         if (get(fullscreenNoticeCountAtom) >= 3) {
           return;
         }
@@ -268,7 +274,7 @@ export const reloadErroredAtom = atom(null, (get, set) => {
 
 export const toggleImmersiveAtom = atom(null, async (get, set) => {
   if (get(viewerModeAtom) === "window" && get(isFullscreenPreferredAtom)) {
-    set(viewerFullscreenAtom, true);
+    await set(viewerFullscreenAtom, true);
     return;
   }
   await set(isViewerImmersiveAtom, !get(isViewerImmersiveAtom));

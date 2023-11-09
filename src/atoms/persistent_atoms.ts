@@ -11,7 +11,7 @@ export const pageDirectionAtom = atomWithGmValue<PageDirection>(
   "vim_comic_viewer.page_direction",
   "rightToLeft",
 );
-export const isFullscreenPreferredAtom = atomWithGmValue("vim_comic_viewer.use_full_screen", true);
+export const isFullscreenPreferredAtom = atomWithGmValue("vim_comic_viewer.use_full_screen", false);
 export const fullscreenNoticeCountAtom = atomWithGmValue(
   "vim_comic_viewer.full_screen_notice_count",
   0,

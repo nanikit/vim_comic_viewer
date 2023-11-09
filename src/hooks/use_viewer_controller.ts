@@ -6,8 +6,9 @@ import {
 } from "../atoms/downloader_atoms.tsx";
 import { scrollBarStyleFactorAtom } from "../atoms/fullscreen_atom.ts";
 import { goNextAtom, goPreviousAtom } from "../atoms/navigation_atoms.ts";
-import { compactWidthIndexAtom } from "../atoms/persistent_atoms.ts";
+import { compactWidthIndexAtom, isFullscreenPreferredAtom } from "../atoms/persistent_atoms.ts";
 import {
+  isViewerImmersiveAtom,
   pagesAtom,
   reloadErroredAtom,
   rootAtom,
@@ -57,6 +58,15 @@ function createViewerController(store: ReturnType<typeof useStore>) {
     goPrevious: () => store.set(goPreviousAtom),
     goNext: () => store.set(goNextAtom),
     toggleFullscreen: () => store.set(toggleImmersiveAtom),
+    toggleWithFullscreenPreferred: async () => {
+      if (store.get(isViewerImmersiveAtom)) {
+        await store.set(toggleImmersiveAtom);
+        store.set(isFullscreenPreferredAtom, !store.get(isFullscreenPreferredAtom));
+      } else {
+        store.set(isFullscreenPreferredAtom, !store.get(isFullscreenPreferredAtom));
+        await store.set(toggleImmersiveAtom);
+      }
+    },
     reloadErrored: () => store.set(reloadErroredAtom),
     unmount: () => store.get(rootAtom)?.unmount(),
   };

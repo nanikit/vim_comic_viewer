@@ -91,3 +91,14 @@ export function getCurrentScroll<T extends HTMLElement>(elements: T[]): PageScro
   }
   return { page: lastPage.page, ratio: 1, fullyVisiblePages: [] };
 }
+
+export function isUserGesturePermissionError(error: unknown) {
+  // Failed to execute 'requestFullscreen' on 'Element': API can only be initiated by a user gesture.
+  return (error as { message?: string })?.message === "Permissions check failed";
+}
+
+/** Fast fullscreen change can cause this. */
+export function isDocumentNotActiveError(error: unknown) {
+  const message = (error as { message?: string })?.message;
+  return message?.match(/Failed to execute '.*?' on 'Document': Document not active/) ?? false;
+}

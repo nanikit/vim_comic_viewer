@@ -41,13 +41,17 @@ export function useDefault({ enable, controller }: {
     event.stopPropagation();
   };
 
-  const defaultGlobalKeyHandler = (event: KeyboardEvent): void => {
+  const defaultGlobalKeyHandler = (event: KeyboardEvent) => {
     if (maybeNotHotkey(event)) {
       return;
     }
 
     if (["KeyI", "Numpad0", "Enter"].includes(event.code)) {
-      controller.toggleFullscreen();
+      if (event.shiftKey) {
+        controller.toggleWithFullscreenPreferred();
+      } else {
+        controller.toggleFullscreen();
+      }
     }
   };
 
@@ -56,8 +60,8 @@ export function useDefault({ enable, controller }: {
       return;
     }
 
-    controller.container?.addEventListener("keydown", defaultKeyHandler);
     addEventListener("keydown", defaultGlobalKeyHandler);
+    controller.container?.addEventListener("keydown", defaultKeyHandler);
     return () => {
       controller.container?.removeEventListener("keydown", defaultKeyHandler);
       removeEventListener("keydown", defaultGlobalKeyHandler);
