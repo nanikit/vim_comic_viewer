@@ -18,6 +18,7 @@
   "errorOccurredWhileDownloading": "다운로드 도중 오류가 발생했습니다",
   "keyBindings": "단축키",
   "toggleViewer": "뷰어 전환",
+  "toggleViewerWithTogglingFullscreenSetting": "전체화면 설정을 바꾸면서 전환",
   "nextPage": "다음 페이지",
   "previousPage": "이전 페이지",
   "download": "다운로드",

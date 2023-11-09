@@ -18,6 +18,7 @@
   "errorOccurredWhileDownloading": "Error occurred while downloading.",
   "keyBindings": "Key bindings",
   "toggleViewer": "Toggle viewer",
+  "toggleViewerWithTogglingFullscreenSetting": "Toggle viewer with toggling fullscreen setting",
   "nextPage": "Next page",
   "previousPage": "Previous page",
   "download": "Download",
