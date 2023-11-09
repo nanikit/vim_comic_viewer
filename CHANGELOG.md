@@ -4,6 +4,10 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+### 12.1.1
+
+- Fix scroll bug.
+
 ## 12.1.0
 
 - _Add page content scroll sync._

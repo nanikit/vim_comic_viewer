@@ -117,13 +117,14 @@ export const isViewerImmersiveAtom = atom(
     try {
       if (get(isFullscreenPreferredAtom)) {
         await set(viewerFullscreenAtom, value);
+        if (value) {
+          // HACK: have to wait reflow uncertain times.
+          await timeout(1);
+          set(restoreScrollAtom);
+        }
       }
     } finally {
-      if (value) {
-        // HACK: have to wait reflow uncertain times.
-        await timeout(1);
-        set(restoreScrollAtom);
-      } else if (!get(viewerStateAtom).options.noSyncScroll) {
+      if (!value && !get(viewerStateAtom).options.noSyncScroll) {
         set(transferViewerScrollToWindowAtom);
       }
     }
