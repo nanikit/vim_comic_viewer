@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        12.0.3
+// @version        12.1.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -13,9 +13,9 @@
 // @grant          GM_setValue
 // @grant          GM_xmlhttpRequest
 // @grant          unsafeWindow
-// @resource       react-toastify-css       https://cdn.jsdelivr.net/npm/react-toastify@9.1.3/dist/ReactToastify.css
-// @resource       link:clsx                https://cdn.jsdelivr.net/npm/clsx@2.0.0/dist/clsx.js
+// @resource       link:@headlessui/react   https://cdn.jsdelivr.net/npm/@headlessui/react@1.7.17/dist/headlessui.prod.cjs
 // @resource       link:@stitches/react     https://cdn.jsdelivr.net/npm/@stitches/react@1.3.1-1/dist/index.cjs
+// @resource       link:clsx                https://cdn.jsdelivr.net/npm/clsx@2.0.0/dist/clsx.js
 // @resource       link:fflate              https://cdn.jsdelivr.net/npm/fflate@0.8.1/lib/browser.cjs
 // @resource       link:jotai               https://cdn.jsdelivr.net/npm/jotai@2.4.2/index.js
 // @resource       link:jotai/react         https://cdn.jsdelivr.net/npm/jotai@2.4.2/react.js
@@ -28,6 +28,7 @@
 // @resource       link:react-toastify      https://cdn.jsdelivr.net/npm/react-toastify@9.1.3/dist/react-toastify.js
 // @resource       link:scheduler           https://cdn.jsdelivr.net/npm/scheduler@0.23.0/cjs/scheduler.production.min.js
 // @resource       link:vcv-inject-node-env data:,unsafeWindow.process=%7Benv:%7BNODE_ENV:%22production%22%7D%7D
+// @resource       react-toastify-css       https://cdn.jsdelivr.net/npm/react-toastify@9.1.3/dist/ReactToastify.css
 // ==/UserScript==
 "use strict";
 
@@ -68,32 +69,36 @@ var React = __toESM(require("react"));
 var import_vcv_inject_node_env = require("vcv-inject-node-env");
 var deps_exports = {};
 __export(deps_exports, {
-  Fragment: () => import_react2.Fragment,
+  Dialog: () => import_react2.Dialog,
+  Fragment: () => import_react3.Fragment,
   Provider: () => import_jotai.Provider,
   RESET: () => import_utils2.RESET,
+  Tab: () => import_react2.Tab,
   ToastContainer: () => import_react_toastify.ToastContainer,
   atom: () => import_jotai.atom,
   atomWithStorage: () => import_utils2.atomWithStorage,
+  createContext: () => import_react3.createContext,
   createJSONStorage: () => import_utils2.createJSONStorage,
-  createRef: () => import_react2.createRef,
+  createRef: () => import_react3.createRef,
+  createRoot: () => import_react_dom.createRoot,
   createStitches: () => import_react.createStitches,
   createStore: () => import_jotai.createStore,
   deferred: () => deferred,
-  forwardRef: () => import_react2.forwardRef,
+  forwardRef: () => import_react3.forwardRef,
   selectAtom: () => import_utils2.selectAtom,
   toast: () => import_react_toastify.toast,
   useAtom: () => import_jotai.useAtom,
   useAtomValue: () => import_jotai.useAtomValue,
-  useCallback: () => import_react2.useCallback,
-  useEffect: () => import_react2.useEffect,
-  useId: () => import_react2.useId,
-  useImperativeHandle: () => import_react2.useImperativeHandle,
-  useLayoutEffect: () => import_react2.useLayoutEffect,
-  useMemo: () => import_react2.useMemo,
-  useReducer: () => import_react2.useReducer,
-  useRef: () => import_react2.useRef,
+  useCallback: () => import_react3.useCallback,
+  useEffect: () => import_react3.useEffect,
+  useId: () => import_react3.useId,
+  useImperativeHandle: () => import_react3.useImperativeHandle,
+  useLayoutEffect: () => import_react3.useLayoutEffect,
+  useMemo: () => import_react3.useMemo,
+  useReducer: () => import_react3.useReducer,
+  useRef: () => import_react3.useRef,
   useSetAtom: () => import_jotai.useSetAtom,
-  useState: () => import_react2.useState,
+  useState: () => import_react3.useState,
   useStore: () => import_jotai.useStore
 });
 var import_react = require("@stitches/react");
@@ -154,17 +159,33 @@ var save = (blob) => {
   return saveAs(blob, `${getSafeFileName(document.title)}.zip`);
 };
 insertCss(GM_getResourceText("react-toastify-css"));
-var import_react2 = require("react");
-__reExport(deps_exports, require("react-dom"));
+var import_react2 = require("@headlessui/react");
+var import_react3 = require("react");
+var import_react_dom = require("react-dom");
+function imageSourceToIterable(source) {
+  if (typeof source === "string") {
+    return async function* () {
+      yield source;
+    }();
+  } else if (Array.isArray(source)) {
+    return async function* () {
+      for (const url of source) {
+        yield url;
+      }
+    }();
+  } else {
+    return source();
+  }
+}
 var globalCss = document.createElement("style");
 globalCss.innerHTML = `html, body {
   overflow: hidden;
 }`;
-function showBodyScrollbar(doShow) {
-  if (doShow) {
-    globalCss.remove();
-  } else {
+function hideBodyScrollBar(doHide) {
+  if (doHide) {
     document.head.append(globalCss);
+  } else {
+    globalCss.remove();
   }
 }
 async function setFullscreenElement(element) {
@@ -175,210 +196,90 @@ async function setFullscreenElement(element) {
   }
 }
 function focusWithoutScroll(element) {
-  element?.focus({ preventScroll: true });
+  element.focus({ preventScroll: true });
 }
-var gmStorage = {
-  getItem: GM_getValue,
-  setItem: GM_setValue,
-  removeItem: (key) => GM_deleteValue(key)
-};
-function atomWithGmValue(key, defaultValue) {
-  return (0, import_utils2.atomWithStorage)(key, GM_getValue(key, defaultValue), gmStorage);
+var emptyScroll = { page: null, ratio: 0, fullyVisiblePages: [] };
+function getCurrentViewerScroll(container) {
+  const children = [...container?.children ?? []];
+  if (!container || !children.length) {
+    return emptyScroll;
+  }
+  return getCurrentScroll(children);
 }
-var jsonSessionStorage = (0, import_utils2.createJSONStorage)(() => sessionStorage);
-function atomWithSession(key, defaultValue) {
-  const atom2 = (0, import_utils2.atomWithStorage)(
-    key,
-    jsonSessionStorage.getItem(key, defaultValue),
-    jsonSessionStorage
+function getUrlImgs(urls) {
+  const pages = [];
+  const imgs = document.querySelectorAll("img[src]");
+  for (const img of imgs) {
+    if (urls.includes(img.src)) {
+      pages.push(img);
+    }
+  }
+  return pages;
+}
+function getCurrentScroll(elements) {
+  if (!elements.length) {
+    return emptyScroll;
+  }
+  const pages = elements.map((page) => ({ page, rect: page.getBoundingClientRect() }));
+  const fullyVisiblePages = pages.filter(
+    ({ rect }) => rect.y >= 0 && rect.y + rect.height <= innerHeight
   );
-  return atom2;
+  if (fullyVisiblePages.length) {
+    return {
+      page: fullyVisiblePages[0].page,
+      ratio: 0.5,
+      fullyVisiblePages: fullyVisiblePages.map((x) => x.page)
+    };
+  }
+  const scrollCenter = innerHeight / 2;
+  const centerCrossingPage = pages.find(
+    ({ rect }) => rect.top <= scrollCenter && rect.bottom >= scrollCenter
+  );
+  if (centerCrossingPage) {
+    const centerCrossingRect = centerCrossingPage.rect;
+    const ratio = 1 - (centerCrossingRect.bottom - scrollCenter) / centerCrossingRect.height;
+    return { page: centerCrossingPage.page, ratio, fullyVisiblePages: [] };
+  }
+  const firstPage = pages[0];
+  const lastPage = pages[pages.length - 1];
+  if (scrollCenter < pages[0].rect.top) {
+    return { page: firstPage.page, ratio: 0, fullyVisiblePages: [] };
+  }
+  return { page: lastPage.page, ratio: 1, fullyVisiblePages: [] };
 }
-var backgroundColorAtom = atomWithGmValue("vim_comic_viewer.background_color", "#eeeeee");
-var compactWidthIndexAtom = atomWithGmValue("vim_comic_viewer.single_page_count", 1);
-var maxZoomOutExponentAtom = atomWithGmValue("vim_comic_viewer.max_zoom_out_exponent", 3);
-var maxZoomInExponentAtom = atomWithGmValue("vim_comic_viewer.max_zoom_in_exponent", 3);
-var pageDirectionAtom = atomWithGmValue(
-  "vim_comic_viewer.page_direction",
-  "rightToLeft"
-);
-var isFullscreenPreferredAtom = atomWithGmValue("vim_comic_viewer.use_full_screen", true);
-var fullscreenNoticeCountAtom = atomWithGmValue(
-  "vim_comic_viewer.full_screen_notice_count",
-  0
-);
-var isImmersiveAtom = atomWithSession("vim_comic_viewer.is_immersive", false);
-var fullscreenElementAtom = (0, import_jotai.atom)(
-  document.fullscreenElement ?? null
-);
-var viewerElementAtom = (0, import_jotai.atom)(null);
-var isBeforeUnloadAtom = (0, import_jotai.atom)(false);
-var beforeUnloadAtom = (0, import_jotai.atom)(null, async (_get, set) => {
-  set(isBeforeUnloadAtom, true);
-  for (let i = 0; i < 5; i++) {
-    await timeout(100);
-  }
-  set(isBeforeUnloadAtom, false);
-});
-beforeUnloadAtom.onMount = (set) => {
-  addEventListener("beforeunload", set);
-  return () => removeEventListener("beforeunload", set);
-};
-var fullscreenSynchronizationAtom = (0, import_jotai.atom)(
-  (get) => {
-    get(beforeUnloadAtom);
-    return get(fullscreenElementAtom);
-  },
-  (get, set, element) => {
-    set(fullscreenElementAtom, element);
-    if (!get(isFullscreenPreferredAtom)) {
-      return;
-    }
-    const isFullscreen = get(viewerElementAtom) === element;
-    const wasImmersive = get(cssImmersiveAtom);
-    const isViewerFullscreenExit = wasImmersive && !isFullscreen;
-    const isNavigationExit = get(isBeforeUnloadAtom);
-    if (isViewerFullscreenExit && !isNavigationExit) {
-      set(cssImmersiveAtom, false);
-    }
-  }
-);
-fullscreenSynchronizationAtom.onMount = (set) => {
-  const notify = () => set(document.fullscreenElement ?? null);
-  document.addEventListener("fullscreenchange", notify);
-  return () => document.removeEventListener("fullscreenchange", notify);
-};
-var doubleScrollBarHidingAtom = (0, import_jotai.atom)(null, (get) => {
-  const shouldRemoveDuplicateScrollBar = !get(viewerFullscreenAtom) && get(isImmersiveAtom);
-  showBodyScrollbar(!shouldRemoveDuplicateScrollBar);
-});
-doubleScrollBarHidingAtom.onMount = (set) => set();
-var viewerFullscreenAtom = (0, import_jotai.atom)((get) => {
-  get(fullscreenSynchronizationAtom);
-  const fullscreenElement = get(fullscreenElementAtom);
-  const viewerElement = get(viewerElementAtom);
-  return fullscreenElement === viewerElement;
-}, async (get, set, value) => {
-  const element = value ? get(viewerElementAtom) : null;
-  const fullscreenElement = get(fullscreenElementAtom);
-  if (element === fullscreenElement) {
-    return;
-  }
-  await setFullscreenElement(element);
-  set(fullscreenSynchronizationAtom, element);
-  set(doubleScrollBarHidingAtom);
-});
-var cssImmersiveAtom = (0, import_jotai.atom)(
-  (get) => {
-    get(doubleScrollBarHidingAtom);
-    return get(isImmersiveAtom);
-  },
-  async (get, set, value) => {
-    if (value === import_utils2.RESET) {
-      if (get(isImmersiveAtom)) {
-        focusWithoutScroll(get(viewerElementAtom));
-      }
-      return;
-    }
-    set(isImmersiveAtom, value);
-    set(doubleScrollBarHidingAtom);
-    if (value) {
-      focusWithoutScroll(get(viewerElementAtom));
-    }
-    const isFullscreenPreferred = get(isFullscreenPreferredAtom);
-    if (isFullscreenPreferred) {
-      await set(viewerFullscreenAtom, value);
-    }
-  }
-);
-cssImmersiveAtom.onMount = (set) => void set(import_utils2.RESET);
-var isFullscreenPreferredSettingsAtom = (0, import_jotai.atom)(
-  (get) => get(isFullscreenPreferredAtom),
-  (get, set, value) => {
-    set(isFullscreenPreferredAtom, value);
-    set(doubleScrollBarHidingAtom);
-    const isImmersive = get(cssImmersiveAtom);
-    const shouldEnterFullscreen = value && isImmersive;
-    set(viewerFullscreenAtom, shouldEnterFullscreen);
-  }
-);
-var en_default = {
-  "@@locale": "en",
-  settings: "Settings",
-  maxZoomOut: "Maximum zoom out",
-  maxZoomIn: "Maximum zoom in",
-  backgroundColor: "Background color",
-  leftToRight: "Left to right",
-  errorIsOccurred: "Error is occurred.",
-  failedToLoadImage: "Failed to load image.",
-  loading: "Loading...",
-  fullScreenRestorationGuide: "Enter full screen yourself if you want to keep the viewer open in full screen.",
-  useFullScreen: "Use full screen"
-};
-var ko_default = {
-  "@@locale": "ko",
-  settings: "\uC124\uC815",
-  maxZoomOut: "\uCD5C\uB300 \uCD95\uC18C",
-  maxZoomIn: "\uCD5C\uB300 \uD655\uB300",
-  backgroundColor: "\uBC30\uACBD\uC0C9",
-  leftToRight: "\uC67C\uCABD\uBD80\uD130 \uBCF4\uAE30",
-  errorIsOccurred: "\uC5D0\uB7EC\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.",
-  failedToLoadImage: "\uC774\uBBF8\uC9C0\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.",
-  loading: "\uB85C\uB529 \uC911...",
-  fullScreenRestorationGuide: "\uBDF0\uC5B4 \uC804\uCCB4 \uD654\uBA74\uC744 \uC720\uC9C0\uD558\uB824\uBA74 \uC9C1\uC811 \uC804\uCCB4 \uD654\uBA74\uC744 \uCF1C \uC8FC\uC138\uC694 (F11).",
-  useFullScreen: "\uC804\uCCB4 \uD654\uBA74"
-};
-var translations = { en: en_default, ko: ko_default };
-var i18nStringsAtom = (0, import_jotai.atom)(getLanguage());
-var i18nAtom = (0, import_jotai.atom)((get) => get(i18nStringsAtom), (_get, set) => {
-  set(i18nStringsAtom, getLanguage());
-});
-i18nAtom.onMount = (set) => {
-  addEventListener("languagechange", set);
-  return () => {
-    removeEventListener("languagechange", set);
-  };
-};
-function getLanguage() {
-  for (const language of navigator.languages) {
-    const locale = language.split("-")[0];
-    const translation = translations[locale];
-    if (translation) {
-      return translation;
-    }
-  }
-  return en_default;
+function isUserGesturePermissionError(error) {
+  return error?.message === "Permissions check failed";
 }
 var scrollElementStateAtom = (0, import_jotai.atom)(null);
-var initialPageScrollState = { page: null, ratio: 0.5 };
 var scrollElementSizeAtom = (0, import_jotai.atom)({ width: 0, height: 0 });
-var pageScrollStateAtom = (0, import_jotai.atom)(initialPageScrollState);
+var pageScrollStateAtom = (0, import_jotai.atom)(getCurrentViewerScroll());
+var previousSizeAtom = (0, import_jotai.atom)({ width: 0, height: 0 });
 var synchronizeScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
   const scrollElement = get(scrollElementAtom);
-  const previous = { ...get(pageScrollStateAtom), ...get(scrollElementSizeAtom) };
-  const current = getCurrentPage(scrollElement);
+  const current = getCurrentViewerScroll(scrollElement);
+  if (!current.page) {
+    return;
+  }
   const height = scrollElement?.clientHeight ?? 0;
   const width = scrollElement?.clientWidth ?? 0;
-  const isResizing = !current.page || height !== previous.height || width !== previous.width;
+  const previous = get(previousSizeAtom);
+  const isResizing = height !== previous.height || width !== previous.width;
   if (isResizing) {
     set(restoreScrollAtom);
-    set(scrollElementSizeAtom, (previous2) => {
-      const isChanged = previous2.width !== width || previous2.height !== height;
-      return isChanged ? previous2 : { width, height };
-    });
+    set(previousSizeAtom, { width, height });
   } else {
     set(pageScrollStateAtom, current);
   }
 });
 var restoreScrollAtom = (0, import_jotai.atom)(null, (get) => {
   const { page, ratio } = get(pageScrollStateAtom);
-  const element = get(scrollElementAtom);
-  if (!element || !page) {
+  const scrollable = get(scrollElementAtom);
+  if (!scrollable || !page) {
     return;
   }
   const { offsetTop, clientHeight } = page;
-  const restoredY = Math.floor(offsetTop + clientHeight * ratio - element.clientHeight / 2);
-  element.scroll({ top: restoredY });
+  const restoredY = Math.floor(offsetTop + clientHeight * ratio - scrollable.clientHeight / 2);
+  scrollable.scroll({ top: restoredY });
 });
 var scrollElementAtom = (0, import_jotai.atom)(
   (get) => get(scrollElementStateAtom)?.div ?? null,
@@ -394,7 +295,7 @@ var scrollElementAtom = (0, import_jotai.atom)(
       set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
       const resizeObserver = new ResizeObserver(() => {
         set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
-        set(restoreScrollAtom);
+        set(synchronizeScrollAtom);
       });
       resizeObserver.observe(div);
       return { div, resizeObserver };
@@ -404,7 +305,7 @@ var scrollElementAtom = (0, import_jotai.atom)(
 scrollElementAtom.onMount = (set) => () => set(null);
 var goNextAtom = (0, import_jotai.atom)(null, (get) => {
   const scrollElement = get(scrollElementAtom);
-  const { page } = getCurrentPage(scrollElement);
+  const { page } = getCurrentViewerScroll(scrollElement);
   if (!page) {
     return;
   }
@@ -422,7 +323,7 @@ var goNextAtom = (0, import_jotai.atom)(null, (get) => {
 });
 var goPreviousAtom = (0, import_jotai.atom)(null, (get) => {
   const scrollElement = get(scrollElementAtom);
-  const { page } = getCurrentPage(scrollElement);
+  const { page } = getCurrentViewerScroll(scrollElement);
   if (!page) {
     return;
   }
@@ -451,83 +352,83 @@ var navigateAtom = (0, import_jotai.atom)(null, (get, set, event) => {
   }
 });
 function scrollToNextPageTopOrEnd(page) {
+  const scrollable = page.offsetParent;
+  if (!scrollable) {
+    return;
+  }
   const pageBottom = page.offsetTop + page.clientHeight;
   let cursor = page;
   while (cursor.nextElementSibling) {
     const next = cursor.nextElementSibling;
-    if (pageBottom < next.offsetTop) {
-      next.scrollIntoView({ block: "start" });
+    if (pageBottom <= next.offsetTop) {
+      scrollable.scroll({ top: next.offsetTop });
       return;
     }
     cursor = next;
   }
-  cursor.scrollIntoView({ block: "end" });
+  scrollable.scroll({ top: cursor.offsetTop + cursor.clientHeight });
 }
 function scrollToPreviousPageBottomOrStart(page) {
+  const scrollable = page.offsetParent;
+  if (!scrollable) {
+    return;
+  }
   const pageTop = page.offsetTop;
   let cursor = page;
   while (cursor.previousElementSibling) {
     const previous = cursor.previousElementSibling;
     const previousBottom = previous.offsetTop + previous.clientHeight;
-    if (previousBottom < pageTop) {
-      previous.scrollIntoView({ block: "end" });
+    if (previousBottom <= pageTop) {
+      scrollable.scroll({
+        top: previous.offsetTop + previous.clientHeight - scrollable.clientHeight
+      });
       return;
     }
     cursor = previous;
   }
-  cursor.scrollIntoView({ block: "start" });
+  scrollable.scroll({ top: cursor.offsetTop });
 }
-function getCurrentPage(container) {
-  const clientHeight = container?.clientHeight;
-  if (!clientHeight) {
-    return initialPageScrollState;
-  }
-  const children = [...container.children];
-  if (!children.length) {
-    return initialPageScrollState;
-  }
-  const viewportTop = container.scrollTop;
-  const viewportBottom = viewportTop + container.clientHeight;
-  const fullyVisiblePages = children.filter(
-    (x) => x.offsetTop >= viewportTop && x.offsetTop + x.clientHeight <= viewportBottom
+var gmStorage = {
+  getItem: GM_getValue,
+  setItem: GM_setValue,
+  removeItem: (key) => GM_deleteValue(key)
+};
+function atomWithGmValue(key, defaultValue) {
+  return (0, import_utils2.atomWithStorage)(key, GM_getValue(key, defaultValue), gmStorage);
+}
+var jsonSessionStorage = (0, import_utils2.createJSONStorage)(() => sessionStorage);
+function atomWithSession(key, defaultValue) {
+  const atom2 = (0, import_utils2.atomWithStorage)(
+    key,
+    jsonSessionStorage.getItem(key, defaultValue),
+    jsonSessionStorage
   );
-  if (fullyVisiblePages.length) {
-    return { page: fullyVisiblePages[Math.floor(fullyVisiblePages.length / 2)], ratio: 0.5 };
-  }
-  const scrollCenter = (viewportTop + viewportBottom) / 2;
-  const centerCrossingPage = children.find(
-    (x) => x.offsetTop <= scrollCenter && x.offsetTop + x.clientHeight >= scrollCenter
-  );
-  if (!centerCrossingPage) {
-    return initialPageScrollState;
-  }
-  const ratio = (scrollCenter - centerCrossingPage.offsetTop) / centerCrossingPage.clientHeight;
-  return { page: centerCrossingPage, ratio };
+  return atom2;
 }
-function imageSourceToIterable(source) {
-  if (typeof source === "string") {
-    return async function* () {
-      yield source;
-    }();
-  } else if (Array.isArray(source)) {
-    return async function* () {
-      for (const url of source) {
-        yield url;
-      }
-    }();
-  } else {
-    return source();
-  }
-}
+var backgroundColorAtom = atomWithGmValue("vim_comic_viewer.background_color", "#eeeeee");
+var singlePageCountAtom = atomWithGmValue("vim_comic_viewer.single_page_count", 1);
+var maxZoomOutExponentAtom = atomWithGmValue("vim_comic_viewer.max_zoom_out_exponent", 3);
+var maxZoomInExponentAtom = atomWithGmValue("vim_comic_viewer.max_zoom_in_exponent", 3);
+var pageDirectionAtom = atomWithGmValue(
+  "vim_comic_viewer.page_direction",
+  "rightToLeft"
+);
+var isFullscreenPreferredAtom = atomWithGmValue("vim_comic_viewer.use_full_screen", false);
+var fullscreenNoticeCountAtom = atomWithGmValue(
+  "vim_comic_viewer.full_screen_notice_count",
+  0
+);
+var wasImmersiveAtom = atomWithSession("vim_comic_viewer.was_immersive", false);
 function createPageAtom({ index, source }) {
   let imageLoad = deferred();
-  const stateAtom = (0, import_jotai.atom)({ state: "loading" });
+  let div = null;
+  const stateAtom = (0, import_jotai.atom)({ status: "loading" });
   const loadAtom = (0, import_jotai.atom)(null, async (_get, set) => {
     const urls = [];
     for await (const url of imageSourceToIterable(source)) {
       urls.push(url);
       imageLoad = deferred();
-      set(stateAtom, { src: url, state: "loading" });
+      set(stateAtom, { src: url, status: "loading" });
       const result = await imageLoad;
       switch (result) {
         case false:
@@ -536,12 +437,12 @@ function createPageAtom({ index, source }) {
           return;
         default: {
           const img = result;
-          set(stateAtom, { src: url, naturalHeight: img.naturalHeight, state: "complete" });
+          set(stateAtom, { src: url, naturalHeight: img.naturalHeight, status: "complete" });
           return;
         }
       }
     }
-    set(stateAtom, { urls, state: "error" });
+    set(stateAtom, { urls, status: "error" });
   });
   loadAtom.onMount = (set) => {
     set();
@@ -556,7 +457,7 @@ function createPageAtom({ index, source }) {
       return 1;
     }
     const state = get(stateAtom);
-    if (state.state !== "complete") {
+    if (state.status !== "complete") {
       return 1;
     }
     return state.naturalHeight / viewerSize.height;
@@ -573,13 +474,17 @@ function createPageAtom({ index, source }) {
   const aggregateAtom = (0, import_jotai.atom)((get) => {
     get(loadAtom);
     const state = get(stateAtom);
-    const compactWidthIndex = get(compactWidthIndexAtom);
+    const compactWidthIndex = get(singlePageCountAtom);
     const shouldBeOriginalSize = get(shouldBeOriginalSizeAtom);
     const ratio = get(imageToViewerSizeRatioAtom);
     const isLarge = ratio > 1;
     const canMessUpRow = shouldBeOriginalSize && isLarge;
     return {
       state,
+      div,
+      setDiv: (newDiv) => {
+        div = newDiv;
+      },
       reloadAtom,
       fullWidth: index < compactWidthIndex || canMessUpRow,
       shouldBeOriginalSize,
@@ -592,13 +497,272 @@ function createPageAtom({ index, source }) {
   });
   return aggregateAtom;
 }
-var settableViewerElementAtom = (0, import_jotai.atom)(
-  (get) => get(viewerElementAtom),
+var fullscreenElementAtom = (0, import_jotai.atom)(null);
+var viewerElementAtom = (0, import_jotai.atom)(null);
+var isViewerFullscreenAtom = (0, import_jotai.atom)(
+  (get) => get(fullscreenElementAtom) === get(viewerElementAtom)
+);
+var scrollBarStyleFactorAtom = (0, import_jotai.atom)(
+  (get) => ({
+    fullscreenElement: get(fullscreenElementAtom),
+    viewerElement: get(viewerElementAtom),
+    isImmersive: get(wasImmersiveAtom)
+  }),
+  (get, set, factors) => {
+    const { fullscreenElement, viewerElement, isImmersive } = factors;
+    if (fullscreenElement !== void 0) {
+      set(fullscreenElementAtom, fullscreenElement);
+    }
+    if (viewerElement !== void 0) {
+      set(viewerElementAtom, viewerElement);
+    }
+    if (isImmersive !== void 0) {
+      set(wasImmersiveAtom, isImmersive);
+    }
+    const canScrollBarDuplicate = !get(isViewerFullscreenAtom) && get(wasImmersiveAtom);
+    hideBodyScrollBar(canScrollBarDuplicate);
+  }
+);
+scrollBarStyleFactorAtom.onMount = (set) => set({});
+var viewerFullscreenAtom = (0, import_jotai.atom)((get) => {
+  return get(isViewerFullscreenAtom);
+}, async (get, _set, value) => {
+  const element = value ? get(viewerElementAtom) : null;
+  const { fullscreenElement } = get(scrollBarStyleFactorAtom);
+  if (element === fullscreenElement) {
+    return;
+  }
+  await setFullscreenElement(element);
+});
+var isFullscreenPreferredSettingsAtom = (0, import_jotai.atom)(
+  (get) => get(isFullscreenPreferredAtom),
+  async (get, set, value) => {
+    set(isFullscreenPreferredAtom, value);
+    const isImmersive = get(wasImmersiveAtom);
+    const shouldEnterFullscreen = value && isImmersive;
+    await set(viewerFullscreenAtom, shouldEnterFullscreen);
+  }
+);
+var en_default = {
+  "@@locale": "en",
+  settings: "Settings",
+  help: "Help",
+  maxZoomOut: "Maximum zoom out",
+  maxZoomIn: "Maximum zoom in",
+  singlePageCount: "single page count",
+  backgroundColor: "Background color",
+  leftToRight: "Left to right",
+  errorIsOccurred: "Error is occurred.",
+  failedToLoadImage: "Failed to load image.",
+  loading: "Loading...",
+  fullScreenRestorationGuide: "Enter full screen yourself if you want to keep the viewer open in full screen.",
+  useFullScreen: "Use full screen",
+  downloading: "Downloading...",
+  cancel: "CANCEL",
+  downloadComplete: "Download complete.",
+  errorOccurredWhileDownloading: "Error occurred while downloading.",
+  keyBindings: "Key bindings",
+  toggleViewer: "Toggle viewer",
+  toggleViewerWithTogglingFullscreenSetting: "Toggle viewer with toggling fullscreen setting",
+  nextPage: "Next page",
+  previousPage: "Previous page",
+  download: "Download",
+  refresh: "Refresh",
+  increaseSinglePageCount: "Increase single page count",
+  decreaseSinglePageCount: "Decrease single page count"
+};
+var ko_default = {
+  "@@locale": "ko",
+  settings: "설정",
+  help: "도움말",
+  maxZoomOut: "최대 축소",
+  maxZoomIn: "최대 확대",
+  singlePageCount: "한쪽 페이지 수",
+  backgroundColor: "배경색",
+  leftToRight: "왼쪽부터 보기",
+  errorIsOccurred: "에러가 발생했습니다.",
+  failedToLoadImage: "이미지를 불러오지 못했습니다.",
+  loading: "로딩 중...",
+  fullScreenRestorationGuide: "뷰어 전체 화면을 유지하려면 직접 전체 화면을 켜 주세요 (F11).",
+  useFullScreen: "전체 화면",
+  downloading: "다운로드 중...",
+  cancel: "취소",
+  downloadComplete: "다운로드 완료",
+  errorOccurredWhileDownloading: "다운로드 도중 오류가 발생했습니다",
+  keyBindings: "단축키",
+  toggleViewer: "뷰어 전환",
+  toggleViewerWithTogglingFullscreenSetting: "전체화면 설정을 바꾸면서 전환",
+  nextPage: "다음 페이지",
+  previousPage: "이전 페이지",
+  download: "다운로드",
+  refresh: "새로고침",
+  increaseSinglePageCount: "한쪽 페이지 수 늘리기",
+  decreaseSinglePageCount: "한쪽 페이지 수 줄이기"
+};
+var translations = { en: en_default, ko: ko_default };
+var i18nStringsAtom = (0, import_jotai.atom)(getLanguage());
+var i18nAtom = (0, import_jotai.atom)((get) => get(i18nStringsAtom), (_get, set) => {
+  set(i18nStringsAtom, getLanguage());
+});
+i18nAtom.onMount = (set) => {
+  addEventListener("languagechange", set);
+  return () => {
+    removeEventListener("languagechange", set);
+  };
+};
+function getLanguage() {
+  for (const language of navigator.languages) {
+    const locale = language.split("-")[0];
+    const translation = translations[locale];
+    if (translation) {
+      return translation;
+    }
+  }
+  return en_default;
+}
+var viewerStateAtom = (0, import_jotai.atom)({
+  options: {},
+  status: "loading"
+});
+var pagesAtom = (0, import_utils2.selectAtom)(
+  viewerStateAtom,
+  (state) => state.pages
+);
+var rootAtom = (0, import_jotai.atom)(null);
+var transferViewerScrollToWindowAtom = (0, import_jotai.atom)(null, (get) => {
+  const { page, ratio } = get(pageScrollStateAtom);
+  const src = page?.querySelector("img")?.src;
+  if (!src) {
+    return;
+  }
+  const fileName = src.split("/").pop()?.split("?")[0];
+  const candidates = document.querySelectorAll(`img[src*="${fileName}"]`);
+  const original = [...candidates].find((img) => img.src === src);
+  const isViewerImage = original?.parentElement === page;
+  if (!original || isViewerImage) {
+    return;
+  }
+  const rect = original.getBoundingClientRect();
+  const top = window.scrollY + rect.y + rect.height * ratio - window.innerHeight / 2;
+  scroll({ behavior: "instant", top });
+});
+var transferWindowScrollToViewerAtom = (0, import_jotai.atom)(null, (get, set) => {
+  const viewerPages = get(pagesAtom)?.map(get);
+  if (!viewerPages || !viewerPages.length) {
+    return;
+  }
+  const urlToViewerPages =  new Map();
+  for (const viewerPage2 of viewerPages) {
+    if (viewerPage2.imageProps.src) {
+      urlToViewerPages.set(viewerPage2.imageProps.src, viewerPage2);
+    }
+  }
+  const urls = [...urlToViewerPages.keys()];
+  const imgs = getUrlImgs(urls);
+  const viewerImgs = new Set(viewerPages.flatMap((page2) => page2.div?.querySelector("img") ?? []));
+  const originalImgs = imgs.filter((img) => !viewerImgs.has(img));
+  const { page, ratio, fullyVisiblePages: fullyVisibleWindowPages } = getCurrentScroll(
+    originalImgs
+  );
+  if (!page) {
+    return;
+  }
+  const viewerPage = urlToViewerPages.get(page.src);
+  if (!viewerPage) {
+    return;
+  }
+  const fullyVisiblePages = fullyVisibleWindowPages.flatMap((img) => {
+    return urlToViewerPages.get(img.src)?.div ?? [];
+  });
+  const snappedRatio = Math.abs(ratio - 0.5) < 0.1 ? 0.5 : ratio;
+  set(pageScrollStateAtom, {
+    page: viewerPage.div,
+    ratio: snappedRatio,
+    fullyVisiblePages
+  });
+});
+var isViewerImmersiveAtom = (0, import_jotai.atom)(
+  (get) => get(scrollBarStyleFactorAtom).isImmersive,
+  async (get, set, value) => {
+    if (value !== import_utils2.RESET) {
+      if (!get(viewerStateAtom).options.noSyncScroll && value) {
+        set(transferWindowScrollToViewerAtom);
+      }
+      set(scrollBarStyleFactorAtom, { isImmersive: value });
+    }
+    const scrollable = get(scrollElementAtom);
+    if (!scrollable) {
+      return;
+    }
+    if (value !== false) {
+      focusWithoutScroll(scrollable);
+    }
+    if (value === import_utils2.RESET) {
+      return;
+    }
+    try {
+      if (get(isFullscreenPreferredAtom)) {
+        await set(viewerFullscreenAtom, value);
+      }
+    } finally {
+      if (value) {
+        await timeout(1);
+        set(restoreScrollAtom);
+      } else if (!get(viewerStateAtom).options.noSyncScroll) {
+        set(transferViewerScrollToWindowAtom);
+      }
+    }
+  }
+);
+isViewerImmersiveAtom.onMount = (set) => void set(import_utils2.RESET);
+var isBeforeUnloadAtom = (0, import_jotai.atom)(false);
+var beforeUnloadAtom = (0, import_jotai.atom)(null, async (_get, set) => {
+  set(isBeforeUnloadAtom, true);
+  for (let i = 0; i < 5; i++) {
+    await timeout(100);
+  }
+  set(isBeforeUnloadAtom, false);
+});
+beforeUnloadAtom.onMount = (set) => {
+  addEventListener("beforeunload", set);
+  return () => removeEventListener("beforeunload", set);
+};
+var fullscreenSynchronizationAtom = (0, import_jotai.atom)(
+  (get) => {
+    get(beforeUnloadAtom);
+    return get(scrollBarStyleFactorAtom).fullscreenElement;
+  },
+  (get, set, element) => {
+    const isFullscreenPreferred = get(isFullscreenPreferredAtom);
+    const isFullscreen = element === get(scrollBarStyleFactorAtom).viewerElement;
+    const wasImmersive = get(isViewerImmersiveAtom);
+    const isViewerFullscreenExit = wasImmersive && !isFullscreen;
+    const isNavigationExit = get(isBeforeUnloadAtom);
+    const shouldExitImmersive = isFullscreenPreferred && isViewerFullscreenExit && !isNavigationExit;
+    set(scrollBarStyleFactorAtom, {
+      fullscreenElement: element,
+      isImmersive: shouldExitImmersive ? false : void 0
+    });
+  }
+);
+var fullscreenSyncWithWindowScrollAtom = (0, import_jotai.atom)(
+  (get) => get(fullscreenSynchronizationAtom),
+  (_get, set, element) => {
+    set(fullscreenSynchronizationAtom, element);
+  }
+);
+fullscreenSyncWithWindowScrollAtom.onMount = (set) => {
+  const notify = () => set(document.fullscreenElement ?? null);
+  document.addEventListener("fullscreenchange", notify);
+  return () => document.removeEventListener("fullscreenchange", notify);
+};
+var setViewerElementAtom = (0, import_jotai.atom)(
+  null,
   async (get, set, element) => {
-    set(viewerElementAtom, element);
+    set(scrollBarStyleFactorAtom, { viewerElement: element });
     const isViewerFullscreen = get(viewerFullscreenAtom);
     const isFullscreenPreferred = get(isFullscreenPreferredAtom);
-    const isImmersive = get(cssImmersiveAtom);
+    const isImmersive = get(isViewerImmersiveAtom);
     const shouldEnterFullscreen = isFullscreenPreferred && isImmersive;
     if (isViewerFullscreen === shouldEnterFullscreen || !element) {
       return;
@@ -612,11 +776,11 @@ var settableViewerElementAtom = (0, import_jotai.atom)(
         await set(viewerFullscreenAtom, true);
       }
     } catch (error) {
-      if (error?.message === "Permissions check failed") {
+      if (isUserGesturePermissionError(error)) {
         if (get(fullscreenNoticeCountAtom) >= 3) {
           return;
         }
-        (0, import_react_toastify.toast)(get(i18nAtom).fullScreenRestorationGuide);
+        (0, import_react_toastify.toast)(get(i18nAtom).fullScreenRestorationGuide, { type: "info" });
         await timeout(5e3);
         set(fullscreenNoticeCountAtom, (count) => count + 1);
         return;
@@ -627,17 +791,9 @@ var settableViewerElementAtom = (0, import_jotai.atom)(
 );
 var viewerModeAtom = (0, import_jotai.atom)((get) => {
   const isFullscreen = get(viewerFullscreenAtom);
-  const isImmersive = get(cssImmersiveAtom);
+  const isImmersive = get(isViewerImmersiveAtom);
   return isFullscreen ? "fullscreen" : isImmersive ? "window" : "normal";
 });
-var viewerStateAtom = (0, import_jotai.atom)({
-  options: {},
-  status: "loading"
-});
-var pagesAtom = (0, import_utils2.selectAtom)(
-  viewerStateAtom,
-  (state) => state.pages
-);
 var setViewerOptionsAtom = (0, import_jotai.atom)(
   null,
   async (get, set, options) => {
@@ -678,13 +834,17 @@ var reloadErroredAtom = (0, import_jotai.atom)(null, (get, set) => {
   const pages = get(pagesAtom);
   for (const atom2 of pages ?? []) {
     const page = get(atom2);
-    if (page.state.state !== "complete") {
+    if (page.state.status !== "complete") {
       set(page.reloadAtom);
     }
   }
 });
 var toggleImmersiveAtom = (0, import_jotai.atom)(null, async (get, set) => {
-  await set(cssImmersiveAtom, !get(cssImmersiveAtom));
+  if (get(viewerModeAtom) === "window" && get(isFullscreenPreferredAtom)) {
+    await set(viewerFullscreenAtom, true);
+    return;
+  }
+  await set(isViewerImmersiveAtom, !get(isViewerImmersiveAtom));
 });
 var blockSelectionAtom = (0, import_jotai.atom)(null, (_get, set, event) => {
   if (event.detail >= 2) {
@@ -792,7 +952,7 @@ var Container = styled("div", {
   overflow: "hidden",
   userSelect: "none",
   fontFamily: "Pretendard, NanumGothic, sans-serif",
-  fontSize: "1vmin",
+  fontSize: "16px",
   color: "black",
   "&:focus-visible": {
     outline: "none"
@@ -820,7 +980,6 @@ var ScrollableLayout = styled("div", {
   alignItems: "center",
   flexFlow: "row-reverse wrap",
   overflowY: "auto",
-  gap: "1px",
   ...defaultScrollbar,
   variants: {
     fullscreen: {
@@ -855,10 +1014,12 @@ function useDefault({ enable, controller }) {
       case "j":
       case "ArrowDown":
         controller.goNext();
+        event.preventDefault();
         break;
       case "k":
       case "ArrowUp":
         controller.goPrevious();
+        event.preventDefault();
         break;
       case ";":
         await controller.downloader?.downloadAndSave();
@@ -882,15 +1043,19 @@ function useDefault({ enable, controller }) {
       return;
     }
     if (["KeyI", "Numpad0", "Enter"].includes(event.code)) {
-      controller.toggleFullscreen();
+      if (event.shiftKey) {
+        controller.toggleWithFullscreenPreferred();
+      } else {
+        controller.toggleFullscreen();
+      }
     }
   };
-  (0, import_react2.useEffect)(() => {
+  (0, import_react3.useEffect)(() => {
     if (!controller || !enable) {
       return;
     }
-    controller.container?.addEventListener("keydown", defaultKeyHandler);
     addEventListener("keydown", defaultGlobalKeyHandler);
+    controller.container?.addEventListener("keydown", defaultKeyHandler);
     return () => {
       controller.container?.removeEventListener("keydown", defaultKeyHandler);
       removeEventListener("keydown", defaultGlobalKeyHandler);
@@ -901,6 +1066,15 @@ function maybeNotHotkey(event) {
   const { ctrlKey, altKey, metaKey } = event;
   return ctrlKey || altKey || metaKey || isTyping(event);
 }
+function DownloadCancel({ onClick }) {
+  const strings = (0, import_jotai.useAtomValue)(i18nAtom);
+  return  React.createElement(SpaceBetween, null,  React.createElement("p", null, strings.downloading),  React.createElement("button", { onClick }, strings.cancel));
+}
+var SpaceBetween = styled("div", {
+  display: "flex",
+  flexFlow: "row nowrap",
+  justifyContent: "space-between"
+});
 async function fetchBlob(url, init) {
   try {
     const response = await fetch(url, init);
@@ -1001,23 +1175,20 @@ var download = (images, options) => {
   let startedCount = 0;
   let resolvedCount = 0;
   let rejectedCount = 0;
-  let hasCancelled = false;
-  const reportProgress = ({ isCancelled, isComplete } = {}) => {
-    if (hasCancelled) {
+  let status = "ongoing";
+  const reportProgress = ({ transition } = {}) => {
+    if (status !== "ongoing") {
       return;
     }
-    if (isCancelled) {
-      hasCancelled = true;
+    if (transition) {
+      status = transition;
     }
-    const total = images.length;
-    const settled = resolvedCount + rejectedCount;
     onProgress?.({
-      total,
+      total: images.length,
       started: startedCount,
-      settled,
+      settled: resolvedCount + rejectedCount,
       rejected: rejectedCount,
-      isCancelled: hasCancelled,
-      isComplete
+      status
     });
   };
   const downloadWithReport = async (source) => {
@@ -1053,17 +1224,18 @@ var download = (images, options) => {
   const archiveWithReport = async (sources) => {
     const result = await Promise.all(sources.map(downloadWithReport));
     if (signal?.aborted) {
-      reportProgress({ isCancelled: true });
-      throw new Error("aborted");
+      reportProgress({ transition: "cancelled" });
+      signal.throwIfAborted();
     }
     const pairs = await Promise.all(result.map(toPair));
     const data = Object.assign({}, ...pairs);
     const value = deferred();
     const abort = (0, deps_exports.zip)(data, { level: 0 }, (error, array) => {
       if (error) {
+        reportProgress({ transition: "error" });
         value.reject(error);
       } else {
-        reportProgress({ isComplete: true });
+        reportProgress({ transition: "complete" });
         value.resolve(array);
       }
     });
@@ -1076,11 +1248,6 @@ var aborterAtom = (0, import_jotai.atom)(null);
 var cancelDownloadAtom = (0, import_jotai.atom)(null, (get) => {
   get(aborterAtom)?.abort();
 });
-var downloadProgressAtom = (0, import_jotai.atom)({
-  value: 0,
-  text: "",
-  error: false
-});
 var startDownloadAtom = (0, import_jotai.atom)(null, async (get, set, options) => {
   const viewerState = get(viewerStateAtom);
   if (viewerState.status !== "complete") {
@@ -1091,8 +1258,10 @@ var startDownloadAtom = (0, import_jotai.atom)(null, async (get, set, options) =
     previous?.abort();
     return aborter;
   });
+  let toastId = null;
   addEventListener("beforeunload", confirmDownloadAbort);
   try {
+    toastId = (0, import_react_toastify.toast)( React.createElement(DownloadCancel, { onClick: aborter.abort }), { autoClose: false, progress: 0 });
     return await download(options?.images ?? viewerState.images, {
       onProgress: reportProgress,
       onError: logIfNotAborted,
@@ -1101,20 +1270,35 @@ var startDownloadAtom = (0, import_jotai.atom)(null, async (get, set, options) =
   } finally {
     removeEventListener("beforeunload", confirmDownloadAbort);
   }
-  function reportProgress(event) {
-    const { total, started, settled, rejected, isCancelled, isComplete } = event;
+  async function reportProgress(event) {
+    if (!toastId) {
+      return;
+    }
+    const { total, started, settled, rejected, status } = event;
     const value = started / total * 0.1 + settled / total * 0.89;
-    const text = `${(value * 100).toFixed(1)}%`;
-    const error = !!rejected;
-    if (isComplete || isCancelled) {
-      set(downloadProgressAtom, { value: 0, text: "", error: false });
-    } else {
-      set(downloadProgressAtom, (previous) => {
-        if (text !== previous.text) {
-          return { value, text, error };
-        }
-        return previous;
-      });
+    switch (status) {
+      case "ongoing":
+        import_react_toastify.toast.update(toastId, { type: rejected > 0 ? "warning" : "default", progress: value });
+        break;
+      case "complete":
+        import_react_toastify.toast.update(toastId, {
+          type: "success",
+          render: get(i18nAtom).downloadComplete,
+          progress: 0.9999
+        });
+        await timeout(1e3);
+        import_react_toastify.toast.done(toastId);
+        break;
+      case "error":
+        import_react_toastify.toast.update(toastId, {
+          type: "error",
+          render: get(i18nAtom).errorOccurredWhileDownloading,
+          progress: 0
+        });
+        break;
+      case "cancelled":
+        import_react_toastify.toast.done(toastId);
+        break;
     }
   }
 });
@@ -1138,13 +1322,10 @@ function confirmDownloadAbort(event) {
 }
 function useViewerController() {
   const store = (0, import_jotai.useStore)();
-  return (0, import_react2.useMemo)(() => createViewerController(store), [store]);
+  return (0, import_react3.useMemo)(() => createViewerController(store), [store]);
 }
 function createViewerController(store) {
   const downloader = {
-    get progress() {
-      return store.get(downloadProgressAtom);
-    },
     download: (options) => store.set(startDownloadAtom, options),
     downloadAndSave: (options) => store.set(downloadAndSaveAtom, options),
     cancel: () => store.set(cancelDownloadAtom)
@@ -1157,83 +1338,44 @@ function createViewerController(store) {
       return store.get(viewerStateAtom).status;
     },
     get container() {
-      return store.get(viewerElementAtom);
+      return store.get(scrollBarStyleFactorAtom).viewerElement;
     },
     get compactWidthIndex() {
-      return store.get(compactWidthIndexAtom);
+      return store.get(singlePageCountAtom);
     },
     downloader,
     get pages() {
       return store.get(pagesAtom);
     },
     set compactWidthIndex(value) {
-      store.set(compactWidthIndexAtom, Math.max(0, value));
+      store.set(singlePageCountAtom, Math.max(0, value));
     },
     setOptions: (value) => store.set(setViewerOptionsAtom, value),
     goPrevious: () => store.set(goPreviousAtom),
     goNext: () => store.set(goNextAtom),
     toggleFullscreen: () => store.set(toggleImmersiveAtom),
+    toggleWithFullscreenPreferred: async () => {
+      if (store.get(isViewerImmersiveAtom)) {
+        await store.set(toggleImmersiveAtom);
+        store.set(isFullscreenPreferredAtom, !store.get(isFullscreenPreferredAtom));
+      } else {
+        store.set(isFullscreenPreferredAtom, !store.get(isFullscreenPreferredAtom));
+        await store.set(toggleImmersiveAtom);
+      }
+    },
     reloadErrored: () => store.set(reloadErroredAtom),
-    unmount: () => (0, deps_exports.unmountComponentAtNode)(store.get(viewerElementAtom))
+    unmount: () => store.get(rootAtom)?.unmount()
   };
 }
-var Svg2 = styled("svg", {
-  position: "absolute",
-  bottom: "8px",
-  left: "8px",
-  cursor: "pointer",
-  "&:hover": {
-    filter: "hue-rotate(-145deg)"
-  },
-  variants: {
-    error: {
-      true: {
-        filter: "hue-rotate(140deg)"
-      }
-    }
-  }
-});
-var Circle = styled("circle", {
-  transform: "rotate(-90deg)",
-  transformOrigin: "50% 50%",
-  stroke: "url(#aEObn)",
-  fill: "#fff8"
-});
-var GradientDef =  React.createElement("defs", null,  React.createElement("linearGradient", { id: "aEObn", x1: "100%", y1: "0%", x2: "0%", y2: "100%" },  React.createElement("stop", { offset: "0%", style: { stopColor: "#53baff", stopOpacity: 1 } }),  React.createElement("stop", { offset: "100%", style: { stopColor: "#0067bb", stopOpacity: 1 } })));
-var CenterText = styled("text", {
-  dominantBaseline: "middle",
-  textAnchor: "middle",
-  fontSize: "30px",
-  fontWeight: "bold",
-  fill: "#004b9e"
-});
-var CircularProgress = (props) => {
-  const { radius, strokeWidth, value, text, ...otherProps } = props;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - value * circumference;
-  const center = radius + strokeWidth / 2;
-  const side = center * 2;
-  return  React.createElement(Svg2, { height: side, width: side, ...otherProps }, GradientDef,  React.createElement(
-    Circle,
-    {
-      ...{
-        strokeWidth,
-        strokeDasharray: `${circumference} ${circumference}`,
-        strokeDashoffset,
-        r: radius,
-        cx: center,
-        cy: center
-      }
-    }
-  ),  React.createElement(CenterText, { x: "50%", y: "50%" }, text || ""));
-};
-var import_jotai2 = require("jotai");
 var Backdrop = styled("div", {
   position: "absolute",
   top: 0,
   left: 0,
   width: "100%",
   height: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
   background: "rgba(0, 0, 0, 0.5)",
   transition: "0.2s",
   variants: {
@@ -1250,14 +1392,8 @@ var Backdrop = styled("div", {
   }
 });
 var CenterDialog = styled("div", {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  display: "flex",
-  flexFlow: "column nowrap",
-  alignItems: "stretch",
-  justifyContent: "center",
+  minWidth: "20em",
+  minHeight: "20em",
   transition: "0.2s",
   background: "white",
   padding: "20px",
@@ -1265,7 +1401,7 @@ var CenterDialog = styled("div", {
   boxShadow: "0 0 10px 0 rgba(0, 0, 0, 0.2)"
 });
 function BackdropDialog({ onClose, ...props }) {
-  const [isOpen, setIsOpen] = (0, import_react2.useState)(false);
+  const [isOpen, setIsOpen] = (0, import_react3.useState)(false);
   const close = async () => {
     setIsOpen(false);
     await timeout(200);
@@ -1277,7 +1413,7 @@ function BackdropDialog({ onClose, ...props }) {
       event.stopPropagation();
     }
   };
-  (0, import_react2.useEffect)(() => {
+  (0, import_react3.useEffect)(() => {
     setIsOpen(true);
   }, []);
   return  React.createElement(Backdrop, { isOpen, onClick: close, onKeyDown: closeIfEnter },  React.createElement(
@@ -1288,6 +1424,123 @@ function BackdropDialog({ onClose, ...props }) {
     }
   ));
 }
+function HelpTab() {
+  const keyBindings = (0, import_jotai.useAtomValue)(keyBindingsAtom);
+  const strings = (0, import_jotai.useAtomValue)(i18nAtom);
+  return  React.createElement(React.Fragment, null,  React.createElement("p", null, strings.keyBindings),  React.createElement("table", null, keyBindings.map(([action, keyBinding]) =>  React.createElement("tr", null,  React.createElement(ActionName, null, action),  React.createElement("td", null, keyBinding)))));
+}
+var keyBindingsAtom = (0, import_jotai.atom)((get) => {
+  const strings = get(i18nAtom);
+  return [
+    [
+      strings.toggleViewer,
+       React.createElement(React.Fragment, null,  React.createElement("kbd", null, "i"), ", ",  React.createElement("kbd", null, "Enter⏎"), ", ",  React.createElement("kbd", null, "NumPad0"))
+    ],
+    [
+      strings.toggleViewerWithTogglingFullscreenSetting,
+       React.createElement(React.Fragment, null,  React.createElement("kbd", null, "⇧Shift"), "+",  React.createElement("kbd", null, "i"))
+    ],
+    [strings.nextPage,  React.createElement("kbd", null, "j")],
+    [strings.previousPage,  React.createElement("kbd", null, "k")],
+    [strings.download,  React.createElement("kbd", null, ";")],
+    [strings.refresh,  React.createElement("kbd", null, "'")],
+    [strings.increaseSinglePageCount,  React.createElement("kbd", null, "/")],
+    [strings.decreaseSinglePageCount,  React.createElement("kbd", null, "?")]
+  ];
+});
+var ActionName = styled("td", {
+  width: "50%"
+});
+var import_jotai2 = require("jotai");
+function SettingsTab() {
+  const [maxZoomOutExponent, setMaxZoomOutExponent] = (0, import_jotai.useAtom)(maxZoomOutExponentAtom);
+  const [maxZoomInExponent, setMaxZoomInExponent] = (0, import_jotai.useAtom)(maxZoomInExponentAtom);
+  const [singlePageCount, setSinglePageCount] = (0, import_jotai.useAtom)(singlePageCountAtom);
+  const [backgroundColor, setBackgroundColor] = (0, import_jotai.useAtom)(backgroundColorAtom);
+  const [pageDirection, setPageDirection] = (0, import_jotai.useAtom)(pageDirectionAtom);
+  const [isFullscreenPreferred, setIsFullscreenPreferred] = (0, import_jotai.useAtom)(
+    isFullscreenPreferredSettingsAtom
+  );
+  const zoomOutExponentInputId = (0, import_react3.useId)();
+  const zoomInExponentInputId = (0, import_react3.useId)();
+  const singlePageCountInputId = (0, import_react3.useId)();
+  const colorInputId = (0, import_react3.useId)();
+  const pageDirectionInputId = (0, import_react3.useId)();
+  const fullscreenInputId = (0, import_react3.useId)();
+  const strings = (0, import_jotai2.useAtomValue)(i18nAtom);
+  const maxZoomOut = formatMultiplier(maxZoomOutExponent);
+  const maxZoomIn = formatMultiplier(maxZoomInExponent);
+  return  React.createElement(ConfigSheet, null,  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: zoomOutExponentInputId }, strings.maxZoomOut, ": ", maxZoomOut),  React.createElement(
+    "input",
+    {
+      type: "number",
+      min: 0,
+      step: 0.1,
+      id: zoomOutExponentInputId,
+      value: maxZoomOutExponent,
+      onChange: (event) => {
+        setMaxZoomOutExponent(event.currentTarget.valueAsNumber || 0);
+      }
+    }
+  )),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: zoomInExponentInputId }, strings.maxZoomIn, ": ", maxZoomIn),  React.createElement(
+    "input",
+    {
+      type: "number",
+      min: 0,
+      step: 0.1,
+      id: zoomInExponentInputId,
+      value: maxZoomInExponent,
+      onChange: (event) => {
+        setMaxZoomInExponent(event.currentTarget.valueAsNumber || 0);
+      }
+    }
+  )),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: singlePageCountInputId }, strings.singlePageCount),  React.createElement(
+    "input",
+    {
+      type: "number",
+      min: 0,
+      step: 1,
+      id: singlePageCountInputId,
+      value: singlePageCount,
+      onChange: (event) => {
+        setSinglePageCount(event.currentTarget.valueAsNumber || 0);
+      }
+    }
+  )),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: colorInputId }, strings.backgroundColor),  React.createElement(
+    ColorInput,
+    {
+      type: "color",
+      id: colorInputId,
+      value: backgroundColor,
+      onChange: (event) => {
+        setBackgroundColor(event.currentTarget.value);
+      }
+    }
+  )),  React.createElement(ConfigRow, null,  React.createElement("p", null, strings.useFullScreen),  React.createElement(Toggle, null,  React.createElement(
+    HiddenInput,
+    {
+      type: "checkbox",
+      id: fullscreenInputId,
+      checked: isFullscreenPreferred,
+      onChange: (event) => {
+        setIsFullscreenPreferred(event.currentTarget.checked);
+      }
+    }
+  ),  React.createElement("label", { htmlFor: fullscreenInputId }, strings.useFullScreen))),  React.createElement(ConfigRow, null,  React.createElement("p", null, strings.leftToRight),  React.createElement(Toggle, null,  React.createElement(
+    HiddenInput,
+    {
+      type: "checkbox",
+      id: pageDirectionInputId,
+      checked: pageDirection === "leftToRight",
+      onChange: (event) => {
+        setPageDirection(event.currentTarget.checked ? "leftToRight" : "rightToLeft");
+      }
+    }
+  ),  React.createElement("label", { htmlFor: pageDirectionInputId }, strings.leftToRight))));
+}
+function formatMultiplier(maxZoomOutExponent) {
+  return Math.sqrt(2) ** maxZoomOutExponent === Infinity ? "∞" : `${(Math.sqrt(2) ** maxZoomOutExponent).toPrecision(2)}x`;
+}
 var ColorInput = styled("input", {
   height: "1.5em"
 });
@@ -1297,7 +1550,7 @@ var ConfigRow = styled("div", {
   justifyContent: "space-between",
   gap: "10%",
   "&& > *": {
-    fontSize: "1.3em",
+    fontSize: "1em",
     fontWeight: "medium",
     minWidth: "0",
     margin: 0,
@@ -1356,86 +1609,42 @@ var Toggle = styled("span", {
     width: "calc(var(--width) * 0.65)"
   }
 });
-var Title = styled("h3", {
-  fontSize: "2em",
-  fontWeight: "bold",
-  lineHeight: 1.5
+var ConfigSheet = styled("div", {
+  display: "flex",
+  flexFlow: "column nowrap",
+  gap: "0.8em"
 });
-function SettingsDialog({ onClose }) {
-  const [maxZoomOutExponent, setMaxZoomOutExponent] = (0, import_jotai.useAtom)(maxZoomOutExponentAtom);
-  const [maxZoomInExponent, setMaxZoomInExponent] = (0, import_jotai.useAtom)(maxZoomInExponentAtom);
-  const [backgroundColor, setBackgroundColor] = (0, import_jotai.useAtom)(backgroundColorAtom);
-  const [pageDirection, setPageDirection] = (0, import_jotai.useAtom)(pageDirectionAtom);
-  const [isFullscreenPreferred, setIsFullscreenPreferred] = (0, import_jotai.useAtom)(
-    isFullscreenPreferredSettingsAtom
-  );
-  const zoomOutExponentInputId = (0, import_react2.useId)();
-  const zoomInExponentInputId = (0, import_react2.useId)();
-  const colorInputId = (0, import_react2.useId)();
-  const pageDirectionInputId = (0, import_react2.useId)();
-  const fullscreenInputId = (0, import_react2.useId)();
-  const strings = (0, import_jotai2.useAtomValue)(i18nAtom);
-  const maxZoomOut = formatMultiplier(maxZoomOutExponent);
-  const maxZoomIn = formatMultiplier(maxZoomInExponent);
-  return  React.createElement(BackdropDialog, { css: { gap: "1.3em" }, onClose },  React.createElement(Title, null, strings.settings),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: zoomOutExponentInputId }, strings.maxZoomOut, ": ", maxZoomOut),  React.createElement(
-    "input",
-    {
-      type: "number",
-      min: 0,
-      step: 0.1,
-      id: zoomOutExponentInputId,
-      value: maxZoomOutExponent,
-      onChange: (event) => {
-        setMaxZoomOutExponent(event.currentTarget.valueAsNumber || 0);
-      }
-    }
-  )),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: zoomInExponentInputId }, strings.maxZoomIn, ": ", maxZoomIn),  React.createElement(
-    "input",
-    {
-      type: "number",
-      min: 0,
-      step: 0.1,
-      id: zoomInExponentInputId,
-      value: maxZoomInExponent,
-      onChange: (event) => {
-        setMaxZoomInExponent(event.currentTarget.valueAsNumber || 0);
-      }
-    }
-  )),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: colorInputId }, strings.backgroundColor),  React.createElement(
-    ColorInput,
-    {
-      type: "color",
-      id: colorInputId,
-      value: backgroundColor,
-      onChange: (event) => {
-        setBackgroundColor(event.currentTarget.value);
-      }
-    }
-  )),  React.createElement(ConfigRow, null,  React.createElement("p", null, strings.useFullScreen),  React.createElement(Toggle, null,  React.createElement(
-    HiddenInput,
-    {
-      type: "checkbox",
-      id: fullscreenInputId,
-      checked: isFullscreenPreferred,
-      onChange: (event) => {
-        setIsFullscreenPreferred(event.currentTarget.checked);
-      }
-    }
-  ),  React.createElement("label", { htmlFor: fullscreenInputId }, strings.useFullScreen))),  React.createElement(ConfigRow, null,  React.createElement("p", null, strings.leftToRight),  React.createElement(Toggle, null,  React.createElement(
-    HiddenInput,
-    {
-      type: "checkbox",
-      id: pageDirectionInputId,
-      checked: pageDirection === "leftToRight",
-      onChange: (event) => {
-        setPageDirection(event.currentTarget.checked ? "leftToRight" : "rightToLeft");
-      }
-    }
-  ),  React.createElement("label", { htmlFor: pageDirectionInputId }, strings.leftToRight))));
+function ViewerDialog({ onClose }) {
+  const strings = (0, import_jotai.useAtomValue)(i18nAtom);
+  return  React.createElement(BackdropDialog, { onClose },  React.createElement(import_react2.Tab.Group, null,  React.createElement(import_react2.Tab.List, { as: TabList },  React.createElement(import_react2.Tab, { as: PlainTab }, strings.settings),  React.createElement(import_react2.Tab, { as: PlainTab }, strings.help)),  React.createElement(import_react2.Tab.Panels, { as: TabPanels },  React.createElement(import_react2.Tab.Panel, null,  React.createElement(SettingsTab, null)),  React.createElement(import_react2.Tab.Panel, null,  React.createElement(HelpTab, null)))));
 }
-function formatMultiplier(maxZoomOutExponent) {
-  return Math.sqrt(2) ** maxZoomOutExponent === Infinity ? "\u221E" : `${(Math.sqrt(2) ** maxZoomOutExponent).toPrecision(2)}x`;
-}
+var PlainTab = styled("button", {
+  flex: 1,
+  padding: "0.5em 1em",
+  background: "transparent",
+  border: "none",
+  borderRadius: "0.5em",
+  color: "#888",
+  cursor: "pointer",
+  fontSize: "1.2em",
+  fontWeight: "bold",
+  textAlign: "center",
+  '&[data-headlessui-state="selected"]': {
+    border: "1px solid black",
+    color: "black"
+  },
+  "&:hover": {
+    color: "black"
+  }
+});
+var TabList = styled("div", {
+  display: "flex",
+  flexFlow: "row nowrap",
+  gap: "0.5em"
+});
+var TabPanels = styled("div", {
+  marginTop: "1em"
+});
 var LeftBottomFloat = styled("div", {
   position: "absolute",
   bottom: "1%",
@@ -1450,28 +1659,16 @@ var MenuActions = styled("div", {
   gap: "16px"
 });
 function LeftBottomControl() {
-  const { value, text, error } = (0, import_jotai.useAtomValue)(downloadProgressAtom);
-  const cancelDownload = (0, import_jotai.useSetAtom)(downloadProgressAtom);
   const downloadAndSave = (0, import_jotai.useSetAtom)(downloadAndSaveAtom);
-  const [isOpen, setIsOpen] = (0, import_react2.useState)(false);
-  return  React.createElement(React.Fragment, null,  React.createElement(LeftBottomFloat, null, !!text &&  React.createElement(
-    CircularProgress,
-    {
-      radius: 50,
-      strokeWidth: 10,
-      value: value ?? 0,
-      text,
-      error,
-      onClick: cancelDownload
-    }
-  ),  React.createElement(MenuActions, null,  React.createElement(
+  const [isOpen, setIsOpen] = (0, import_react3.useState)(false);
+  return  React.createElement(React.Fragment, null,  React.createElement(LeftBottomFloat, null,  React.createElement(MenuActions, null,  React.createElement(
     IconSettings,
     {
       onClick: () => {
-        setIsOpen((value2) => !value2);
+        setIsOpen((value) => !value);
       }
     }
-  ),  React.createElement(DownloadIcon, { onClick: () => downloadAndSave() }))), isOpen &&  React.createElement(SettingsDialog, { onClose: () => setIsOpen(false) }));
+  ),  React.createElement(DownloadIcon, { onClick: () => downloadAndSave() }))), isOpen &&  React.createElement(ViewerDialog, { onClose: () => setIsOpen(false) }));
 }
 var stretch = keyframes({
   "0%": {
@@ -1568,10 +1765,10 @@ var Image = styled("img", {
   }
 });
 var Page = ({ atom: atom2, ...props }) => {
-  const { imageProps, fullWidth, reloadAtom, shouldBeOriginalSize, state: pageState } = (0, import_jotai.useAtomValue)(atom2);
+  const { imageProps, fullWidth, reloadAtom, shouldBeOriginalSize, state: pageState, setDiv } = (0, import_jotai.useAtomValue)(atom2);
   const strings = (0, import_jotai.useAtomValue)(i18nAtom);
   const reload = (0, import_jotai.useSetAtom)(reloadAtom);
-  const { state } = pageState;
+  const { status } = pageState;
   const reloadErrored = async (event) => {
     event.stopPropagation();
     await reload();
@@ -1579,18 +1776,19 @@ var Page = ({ atom: atom2, ...props }) => {
   return  React.createElement(
     Overlay,
     {
-      placeholder: state !== "complete",
+      ref: setDiv,
+      placeholder: status !== "complete",
       originalSize: shouldBeOriginalSize,
       fullWidth
     },
-    state === "loading" &&  React.createElement(Spinner, null),
-    state === "error" &&  React.createElement(LinkColumn, { onClick: reloadErrored },  React.createElement(CircledX, null),  React.createElement("p", null, strings.failedToLoadImage),  React.createElement("p", null, pageState.urls?.join("\n"))),
+    status === "loading" &&  React.createElement(Spinner, null),
+    status === "error" &&  React.createElement(LinkColumn, { onClick: reloadErrored },  React.createElement(CircledX, null),  React.createElement("p", null, strings.failedToLoadImage),  React.createElement("p", null, pageState.urls?.join("\n"))),
      React.createElement(Image, { ...imageProps, originalSize: shouldBeOriginalSize, ...props })
   );
 };
-var InnerViewer = (0, import_react2.forwardRef)((props, refHandle) => {
-  const { useDefault: enableDefault, options: viewerOptions, ...otherProps } = props;
-  const setViewerElement = (0, import_jotai.useSetAtom)(settableViewerElementAtom);
+function InnerViewer(props) {
+  const { useDefault: enableDefault, options: viewerOptions, onInitialized, ...otherProps } = props;
+  const setViewerElement = (0, import_jotai.useSetAtom)(setViewerElementAtom);
   const setScrollElement = (0, import_jotai.useSetAtom)(scrollElementAtom);
   const isFullscreen = (0, import_jotai.useAtomValue)(viewerFullscreenAtom);
   const backgroundColor = (0, import_jotai.useAtomValue)(backgroundColorAtom);
@@ -1602,25 +1800,28 @@ var InnerViewer = (0, import_react2.forwardRef)((props, refHandle) => {
   const pageDirection = (0, import_jotai.useAtomValue)(pageDirectionAtom);
   const strings = (0, import_jotai.useAtomValue)(i18nAtom);
   const mode = (0, import_jotai.useAtomValue)(viewerModeAtom);
+  (0, import_jotai.useAtomValue)(fullscreenSyncWithWindowScrollAtom);
   const { status } = viewer;
   const controller = useViewerController();
   const { options, toggleFullscreen } = controller;
   useDefault({ enable: props.useDefault, controller });
-  (0, import_react2.useImperativeHandle)(refHandle, () => controller, [controller]);
-  (0, import_react2.useEffect)(() => {
+  (0, import_react3.useEffect)(() => {
+    onInitialized?.(controller);
+  }, [controller]);
+  (0, import_react3.useEffect)(() => {
     setViewerOptions(viewerOptions);
   }, [viewerOptions]);
   return  React.createElement(
     Container,
     {
       ref: setViewerElement,
-      tabIndex: -1,
       css: { backgroundColor },
       immersive: mode === "window"
     },
      React.createElement(
       ScrollableLayout,
       {
+        tabIndex: 0,
         ref: setScrollElement,
         dark: isDarkColor(backgroundColor),
         fullscreen: isFullscreen,
@@ -1643,7 +1844,7 @@ var InnerViewer = (0, import_react2.forwardRef)((props, refHandle) => {
     status === "complete" ?  React.createElement(LeftBottomControl, null) : false,
      React.createElement(import_react_toastify.ToastContainer, null)
   );
-});
+}
 function isDarkColor(rgbColor) {
   const match = rgbColor.match(/#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/);
   if (!match) {
@@ -1656,16 +1857,17 @@ function isDarkColor(rgbColor) {
 var types_exports = {};
 function initialize(options) {
   const store = (0, import_jotai.createStore)();
-  const ref = (0, import_react2.createRef)();
-  (0, deps_exports.render)(
-     React.createElement(import_jotai.Provider, { store },  React.createElement(InnerViewer, { ref, options, useDefault: true })),
-    getDefaultRoot()
+  const root = (0, import_react_dom.createRoot)(getDefaultRoot());
+  const deferredController = deferred();
+  root.render(
+     React.createElement(import_jotai.Provider, { store },  React.createElement(InnerViewer, { onInitialized: deferredController.resolve, options, useDefault: true }))
   );
-  return Promise.resolve(ref.current);
+  store.set(rootAtom, root);
+  return deferredController;
 }
-var Viewer = (0, import_react2.forwardRef)(({ options, useDefault: useDefault2 }, ref) => {
-  const store = (0, import_react2.useMemo)(import_jotai.createStore, []);
-  return  React.createElement(import_jotai.Provider, { store },  React.createElement(InnerViewer, { ...{ options, ref, useDefault: useDefault2 } }));
+var Viewer = (0, import_react3.forwardRef)(({ options, useDefault: useDefault2, onInitialized }) => {
+  const store = (0, import_react3.useMemo)(import_jotai.createStore, []);
+  return  React.createElement(import_jotai.Provider, { store },  React.createElement(InnerViewer, { ...{ options, onInitialized, useDefault: useDefault2 } }));
 });
 function getDefaultRoot() {
   const div = document.createElement("div");
