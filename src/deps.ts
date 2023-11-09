@@ -17,8 +17,11 @@ export { type Id, toast, ToastContainer } from "react-toastify";
 
 import "./vendors/toastify_css.ts";
 
+export { Dialog, Tab } from "@headlessui/react";
+
 // @deno-types="npm:@types/react"
 export {
+  createContext,
   createRef,
   forwardRef,
   Fragment,
@@ -39,6 +42,8 @@ export type {
   HTMLProps,
   MouseEventHandler,
   MutableRefObject,
+  PropsWithChildren,
+  ReactNode,
   Ref,
   RefObject,
   SVGProps,

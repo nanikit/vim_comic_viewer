@@ -1,8 +1,10 @@
 {
   "@@locale": "en",
   "settings": "Settings",
+  "help": "Help",
   "maxZoomOut": "Maximum zoom out",
   "maxZoomIn": "Maximum zoom in",
+  "singlePageCount": "single page count",
   "backgroundColor": "Background color",
   "leftToRight": "Left to right",
   "errorIsOccurred": "Error is occurred.",
@@ -13,5 +15,13 @@
   "downloading": "Downloading...",
   "cancel": "CANCEL",
   "downloadComplete": "Download complete.",
-  "errorOccurredWhileDownloading": "Error occurred while downloading."
+  "errorOccurredWhileDownloading": "Error occurred while downloading.",
+  "keyBindings": "Key bindings",
+  "toggleViewer": "Toggle viewer",
+  "nextPage": "Next page",
+  "previousPage": "Previous page",
+  "download": "Download",
+  "refresh": "Refresh",
+  "increaseSinglePageCount": "Increase single page count",
+  "decreaseSinglePageCount": "Decrease single page count"
 }
