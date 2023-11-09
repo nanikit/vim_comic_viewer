@@ -60,7 +60,7 @@ export const scrollElementAtom = atom(
       set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
       const resizeObserver = new ResizeObserver(() => {
         set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
-        set(synchronizeScrollAtom);
+        set(restoreScrollAtom);
       });
       resizeObserver.observe(div);
       return { div, resizeObserver };

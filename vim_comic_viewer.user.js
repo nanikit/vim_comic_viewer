@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        12.1.0
+// @version        12.1.1
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -295,7 +295,7 @@ var scrollElementAtom = (0, import_jotai.atom)(
       set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
       const resizeObserver = new ResizeObserver(() => {
         set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
-        set(synchronizeScrollAtom);
+        set(restoreScrollAtom);
       });
       resizeObserver.observe(div);
       return { div, resizeObserver };
@@ -703,12 +703,13 @@ var isViewerImmersiveAtom = (0, import_jotai.atom)(
     try {
       if (get(isFullscreenPreferredAtom)) {
         await set(viewerFullscreenAtom, value);
+        if (value) {
+          await timeout(1);
+          set(restoreScrollAtom);
+        }
       }
     } finally {
-      if (value) {
-        await timeout(1);
-        set(restoreScrollAtom);
-      } else if (!get(viewerStateAtom).options.noSyncScroll) {
+      if (!value && !get(viewerStateAtom).options.noSyncScroll) {
         set(transferViewerScrollToWindowAtom);
       }
     }
