@@ -3,9 +3,9 @@ import { imageSourceToIterable } from "../services/image_source_to_iterable.ts";
 import { ImageSource } from "../types.ts";
 import { scrollElementSizeAtom } from "./navigation_atoms.ts";
 import {
-  compactWidthIndexAtom,
   maxZoomInExponentAtom,
   maxZoomOutExponentAtom,
+  singlePageCountAtom,
 } from "./persistent_atoms.ts";
 
 type PageState = {
@@ -86,7 +86,7 @@ export function createPageAtom({ index, source }: { index: number; source: Image
     get(loadAtom);
 
     const state = get(stateAtom);
-    const compactWidthIndex = get(compactWidthIndexAtom);
+    const compactWidthIndex = get(singlePageCountAtom);
     const shouldBeOriginalSize = get(shouldBeOriginalSizeAtom);
     const ratio = get(imageToViewerSizeRatioAtom);
     const isLarge = ratio > 1;

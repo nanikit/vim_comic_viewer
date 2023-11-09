@@ -6,7 +6,7 @@ import {
 } from "../atoms/downloader_atoms.tsx";
 import { scrollBarStyleFactorAtom } from "../atoms/fullscreen_atom.ts";
 import { goNextAtom, goPreviousAtom } from "../atoms/navigation_atoms.ts";
-import { compactWidthIndexAtom, isFullscreenPreferredAtom } from "../atoms/persistent_atoms.ts";
+import { isFullscreenPreferredAtom, singlePageCountAtom } from "../atoms/persistent_atoms.ts";
 import {
   isViewerImmersiveAtom,
   pagesAtom,
@@ -44,14 +44,14 @@ function createViewerController(store: ReturnType<typeof useStore>) {
       return store.get(scrollBarStyleFactorAtom).viewerElement;
     },
     get compactWidthIndex() {
-      return store.get(compactWidthIndexAtom);
+      return store.get(singlePageCountAtom);
     },
     downloader,
     get pages() {
       return store.get(pagesAtom);
     },
     set compactWidthIndex(value: number) {
-      store.set(compactWidthIndexAtom, Math.max(0, value));
+      store.set(singlePageCountAtom, Math.max(0, value));
     },
 
     setOptions: (value: ViewerOptions) => store.set(setViewerOptionsAtom, value),
