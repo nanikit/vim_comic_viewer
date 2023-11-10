@@ -92,6 +92,7 @@ const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   });
 });
 
+console.log("asf");
 export const isViewerImmersiveAtom = atom(
   (get) => get(scrollBarStyleFactorAtom).isImmersive,
   async (get, set, value: boolean | typeof RESET) => {
@@ -226,17 +227,9 @@ export const setViewerOptionsAtom = atom(
   async (get, set, options: ViewerOptions) => {
     try {
       const { source } = options;
-      if (source === get(viewerStateAtom).options.source) {
-        return;
-      }
-
-      if (!source) {
-        set(viewerStateAtom, (state) => ({
-          ...state,
-          status: "complete",
-          images: [],
-          pages: [],
-        }));
+      const previousOptions = get(viewerStateAtom).options;
+      set(viewerStateAtom, (state) => ({ ...state, options }));
+      if (!source || source === previousOptions.source) {
         return;
       }
 

@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        12.1.1
+// @version        12.1.2
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -681,6 +681,7 @@ var transferWindowScrollToViewerAtom = (0, import_jotai.atom)(null, (get, set) =
     fullyVisiblePages
   });
 });
+console.log("asf");
 var isViewerImmersiveAtom = (0, import_jotai.atom)(
   (get) => get(scrollBarStyleFactorAtom).isImmersive,
   async (get, set, value) => {
@@ -800,16 +801,9 @@ var setViewerOptionsAtom = (0, import_jotai.atom)(
   async (get, set, options) => {
     try {
       const { source } = options;
-      if (source === get(viewerStateAtom).options.source) {
-        return;
-      }
-      if (!source) {
-        set(viewerStateAtom, (state) => ({
-          ...state,
-          status: "complete",
-          images: [],
-          pages: []
-        }));
+      const previousOptions = get(viewerStateAtom).options;
+      set(viewerStateAtom, (state) => ({ ...state, options }));
+      if (!source || source === previousOptions.source) {
         return;
       }
       set(viewerStateAtom, (state) => ({ ...state, status: "loading" }));
@@ -1747,6 +1741,7 @@ var LinkColumn = styled("div", {
   boxShadow: "1px 1px 3px",
   padding: "1rem 1.5rem",
   transition: "box-shadow 1s easeOutExpo",
+  lineBreak: "anywhere",
   "&:hover": {
     boxShadow: "2px 2px 5px"
   },
