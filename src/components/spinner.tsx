@@ -91,6 +91,7 @@ export const LinkColumn = styled("div", {
   boxShadow: "1px 1px 3px",
   padding: "1rem 1.5rem",
   transition: "box-shadow 1s easeOutExpo",
+  lineBreak: "anywhere",
 
   "&:hover": {
     boxShadow: "2px 2px 5px",
