@@ -11,6 +11,7 @@ import {
   fullscreenSyncWithWindowScrollAtom,
   setViewerElementAtom,
   setViewerOptionsAtom,
+  toggleImmersiveAtom,
   viewerModeAtom,
   viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
@@ -47,7 +48,7 @@ export function InnerViewer(
   const { status } = viewer;
 
   const controller = useViewerController();
-  const { options, toggleFullscreen } = controller;
+  const { options } = controller;
 
   useDefault({ enable: props.useDefault, controller });
 
@@ -86,7 +87,7 @@ export function InnerViewer(
           : <p>{status === "error" ? strings.errorIsOccurred : strings.loading}</p>}
         {...otherProps}
       />
-      <FullscreenIcon onClick={toggleFullscreen} />
+      <FullscreenIcon onClick={useSetAtom(toggleImmersiveAtom)} />
       {status === "complete" ? <LeftBottomControl /> : false}
       <ToastContainer />
     </Container>

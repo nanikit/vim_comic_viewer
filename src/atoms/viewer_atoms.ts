@@ -92,7 +92,6 @@ const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   });
 });
 
-console.log("asf");
 export const isViewerImmersiveAtom = atom(
   (get) => get(scrollBarStyleFactorAtom).isImmersive,
   async (get, set, value: boolean | typeof RESET) => {
@@ -267,11 +266,24 @@ export const reloadErroredAtom = atom(null, (get, set) => {
 });
 
 export const toggleImmersiveAtom = atom(null, async (get, set) => {
-  if (get(viewerModeAtom) === "window" && get(isFullscreenPreferredAtom)) {
+  const hasPermissionIssue = get(viewerModeAtom) === "window" &&
+    get(isFullscreenPreferredAtom);
+  if (hasPermissionIssue) {
     await set(viewerFullscreenAtom, true);
     return;
   }
+
   await set(isViewerImmersiveAtom, !get(isViewerImmersiveAtom));
+});
+
+export const setImmersiveWithFullscreenToggleAtom = atom(null, async (get, set, value: boolean) => {
+  if (value) {
+    await set(toggleImmersiveAtom);
+    set(isFullscreenPreferredAtom, !get(isFullscreenPreferredAtom));
+  } else {
+    set(isFullscreenPreferredAtom, !get(isFullscreenPreferredAtom));
+    await set(toggleImmersiveAtom);
+  }
 });
 
 export const blockSelectionAtom = atom(null, (_get, set, event: React.MouseEvent) => {

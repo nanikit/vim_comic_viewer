@@ -4,7 +4,10 @@ import {
   startDownloadAtom,
   UserDownloadOptions,
 } from "../atoms/downloader_atoms.tsx";
-import { scrollBarStyleFactorAtom } from "../atoms/fullscreen_atom.ts";
+import {
+  isFullscreenPreferredSettingsAtom,
+  scrollBarStyleFactorAtom,
+} from "../atoms/fullscreen_atom.ts";
 import { goNextAtom, goPreviousAtom } from "../atoms/navigation_atoms.ts";
 import { isFullscreenPreferredAtom, singlePageCountAtom } from "../atoms/persistent_atoms.ts";
 import {
@@ -13,7 +16,7 @@ import {
   reloadErroredAtom,
   rootAtom,
   setViewerOptionsAtom,
-  toggleImmersiveAtom,
+  viewerModeAtom,
   viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
 import { useMemo, useStore } from "../deps.ts";
@@ -50,6 +53,12 @@ function createViewerController(store: ReturnType<typeof useStore>) {
     get pages() {
       return store.get(pagesAtom);
     },
+    get viewerMode() {
+      return store.get(viewerModeAtom);
+    },
+    get isFullscreenPreferred() {
+      return store.get(isFullscreenPreferredAtom);
+    },
     set compactWidthIndex(value: number) {
       store.set(singlePageCountAtom, Math.max(0, value));
     },
@@ -57,15 +66,11 @@ function createViewerController(store: ReturnType<typeof useStore>) {
     setOptions: (value: ViewerOptions) => store.set(setViewerOptionsAtom, value),
     goPrevious: () => store.set(goPreviousAtom),
     goNext: () => store.set(goNextAtom),
-    toggleFullscreen: () => store.set(toggleImmersiveAtom),
-    toggleWithFullscreenPreferred: async () => {
-      if (store.get(isViewerImmersiveAtom)) {
-        await store.set(toggleImmersiveAtom);
-        store.set(isFullscreenPreferredAtom, !store.get(isFullscreenPreferredAtom));
-      } else {
-        store.set(isFullscreenPreferredAtom, !store.get(isFullscreenPreferredAtom));
-        await store.set(toggleImmersiveAtom);
-      }
+    setImmersive: (value: boolean) => {
+      return store.set(isViewerImmersiveAtom, value);
+    },
+    setIsFullscreenPreferred: (value: boolean) => {
+      return store.set(isFullscreenPreferredSettingsAtom, value);
     },
     reloadErrored: () => store.set(reloadErroredAtom),
     unmount: () => store.get(rootAtom)?.unmount(),
