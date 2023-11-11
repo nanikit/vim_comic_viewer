@@ -4,6 +4,12 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+# 13.0.0
+
+- **Replace `toggleFullscreen`, `toggleWithFullscreenPreferred` with `setImmersive`,
+  `setIsFullscreenPreferred`**.
+- Add `viewerMode`, `isFullscreenPreferred`.
+
 ### 12.1.2
 
 - Fix noSyncScroll option.

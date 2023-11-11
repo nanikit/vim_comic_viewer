@@ -1,6 +1,11 @@
 export type ViewerOptions = {
   source?: ComicSource;
   imageProps?: Record<string, string>;
+  /**
+   * false(default): synchronize scroll position with image out of viewer.
+   *
+   * true: do not synchronize scroll position.
+   */
   noSyncScroll?: boolean;
 };
 

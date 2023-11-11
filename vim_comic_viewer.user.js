@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        12.1.2
+// @version        13.0.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -563,7 +563,7 @@ var en_default = {
   errorOccurredWhileDownloading: "Error occurred while downloading.",
   keyBindings: "Key bindings",
   toggleViewer: "Toggle viewer",
-  toggleViewerWithTogglingFullscreenSetting: "Toggle viewer with toggling fullscreen setting",
+  toggleFullscreenSetting: "Toggle fullscreen setting",
   nextPage: "Next page",
   previousPage: "Previous page",
   download: "Download",
@@ -591,7 +591,7 @@ var ko_default = {
   errorOccurredWhileDownloading: "다운로드 도중 오류가 발생했습니다",
   keyBindings: "단축키",
   toggleViewer: "뷰어 전환",
-  toggleViewerWithTogglingFullscreenSetting: "전체화면 설정을 바꾸면서 전환",
+  toggleFullscreenSetting: "전체화면 설정 전환",
   nextPage: "다음 페이지",
   previousPage: "이전 페이지",
   download: "다운로드",
@@ -681,7 +681,6 @@ var transferWindowScrollToViewerAtom = (0, import_jotai.atom)(null, (get, set) =
     fullyVisiblePages
   });
 });
-console.log("asf");
 var isViewerImmersiveAtom = (0, import_jotai.atom)(
   (get) => get(scrollBarStyleFactorAtom).isImmersive,
   async (get, set, value) => {
@@ -835,11 +834,21 @@ var reloadErroredAtom = (0, import_jotai.atom)(null, (get, set) => {
   }
 });
 var toggleImmersiveAtom = (0, import_jotai.atom)(null, async (get, set) => {
-  if (get(viewerModeAtom) === "window" && get(isFullscreenPreferredAtom)) {
+  const hasPermissionIssue = get(viewerModeAtom) === "window" && get(isFullscreenPreferredAtom);
+  if (hasPermissionIssue) {
     await set(viewerFullscreenAtom, true);
     return;
   }
   await set(isViewerImmersiveAtom, !get(isViewerImmersiveAtom));
+});
+var setImmersiveWithFullscreenToggleAtom = (0, import_jotai.atom)(null, async (get, set, value) => {
+  if (value) {
+    await set(toggleImmersiveAtom);
+    set(isFullscreenPreferredAtom, !get(isFullscreenPreferredAtom));
+  } else {
+    set(isFullscreenPreferredAtom, !get(isFullscreenPreferredAtom));
+    await set(toggleImmersiveAtom);
+  }
 });
 var blockSelectionAtom = (0, import_jotai.atom)(null, (_get, set, event) => {
   if (event.detail >= 2) {
@@ -1038,10 +1047,15 @@ function useDefault({ enable, controller }) {
       return;
     }
     if (["KeyI", "Numpad0", "Enter"].includes(event.code)) {
+      const isImmersive = controller.viewerMode !== "normal";
       if (event.shiftKey) {
-        controller.toggleWithFullscreenPreferred();
+        controller.setIsFullscreenPreferred(!controller.isFullscreenPreferred);
+        if (!isImmersive) {
+          controller.setImmersive(true);
+        }
       } else {
-        controller.toggleFullscreen();
+        const hasPermissionIssue = controller.viewerMode === "window" && controller.isFullscreenPreferred;
+        controller.setImmersive(hasPermissionIssue ? true : !isImmersive);
       }
     }
   };
@@ -1342,21 +1356,23 @@ function createViewerController(store) {
     get pages() {
       return store.get(pagesAtom);
     },
+    get viewerMode() {
+      return store.get(viewerModeAtom);
+    },
+    get isFullscreenPreferred() {
+      return store.get(isFullscreenPreferredAtom);
+    },
     set compactWidthIndex(value) {
       store.set(singlePageCountAtom, Math.max(0, value));
     },
     setOptions: (value) => store.set(setViewerOptionsAtom, value),
     goPrevious: () => store.set(goPreviousAtom),
     goNext: () => store.set(goNextAtom),
-    toggleFullscreen: () => store.set(toggleImmersiveAtom),
-    toggleWithFullscreenPreferred: async () => {
-      if (store.get(isViewerImmersiveAtom)) {
-        await store.set(toggleImmersiveAtom);
-        store.set(isFullscreenPreferredAtom, !store.get(isFullscreenPreferredAtom));
-      } else {
-        store.set(isFullscreenPreferredAtom, !store.get(isFullscreenPreferredAtom));
-        await store.set(toggleImmersiveAtom);
-      }
+    setImmersive: (value) => {
+      return store.set(isViewerImmersiveAtom, value);
+    },
+    setIsFullscreenPreferred: (value) => {
+      return store.set(isFullscreenPreferredSettingsAtom, value);
     },
     reloadErrored: () => store.set(reloadErroredAtom),
     unmount: () => store.get(rootAtom)?.unmount()
@@ -1432,8 +1448,8 @@ var keyBindingsAtom = (0, import_jotai.atom)((get) => {
        React.createElement(React.Fragment, null,  React.createElement("kbd", null, "i"), ", ",  React.createElement("kbd", null, "Enter⏎"), ", ",  React.createElement("kbd", null, "NumPad0"))
     ],
     [
-      strings.toggleViewerWithTogglingFullscreenSetting,
-       React.createElement(React.Fragment, null,  React.createElement("kbd", null, "⇧Shift"), "+",  React.createElement("kbd", null, "i"))
+      strings.toggleFullscreenSetting,
+       React.createElement(React.Fragment, null,  React.createElement("kbd", null, "⇧Shift"), "+(",  React.createElement("kbd", null, "i"), ", ",  React.createElement("kbd", null, "Enter⏎"), ", ",  React.createElement("kbd", null, "NumPad0"), ")")
     ],
     [strings.nextPage,  React.createElement("kbd", null, "j")],
     [strings.previousPage,  React.createElement("kbd", null, "k")],
@@ -1799,7 +1815,7 @@ function InnerViewer(props) {
   (0, import_jotai.useAtomValue)(fullscreenSyncWithWindowScrollAtom);
   const { status } = viewer;
   const controller = useViewerController();
-  const { options, toggleFullscreen } = controller;
+  const { options } = controller;
   useDefault({ enable: props.useDefault, controller });
   (0, import_react3.useEffect)(() => {
     onInitialized?.(controller);
@@ -1836,7 +1852,7 @@ function InnerViewer(props) {
         ...otherProps
       }
     ),
-     React.createElement(FullscreenIcon, { onClick: toggleFullscreen }),
+     React.createElement(FullscreenIcon, { onClick: (0, import_jotai.useSetAtom)(toggleImmersiveAtom) }),
     status === "complete" ?  React.createElement(LeftBottomControl, null) : false,
      React.createElement(import_react_toastify.ToastContainer, null)
   );

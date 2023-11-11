@@ -47,10 +47,16 @@ export function useDefault({ enable, controller }: {
     }
 
     if (["KeyI", "Numpad0", "Enter"].includes(event.code)) {
+      const isImmersive = controller.viewerMode !== "normal";
       if (event.shiftKey) {
-        controller.toggleWithFullscreenPreferred();
+        controller.setIsFullscreenPreferred(!controller.isFullscreenPreferred);
+        if (!isImmersive) {
+          controller.setImmersive(true);
+        }
       } else {
-        controller.toggleFullscreen();
+        const hasPermissionIssue = controller.viewerMode === "window" &&
+          controller.isFullscreenPreferred;
+        controller.setImmersive(hasPermissionIssue ? true : !isImmersive);
       }
     }
   };
