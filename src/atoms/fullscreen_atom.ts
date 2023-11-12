@@ -5,9 +5,10 @@ import { isFullscreenPreferredAtom, wasImmersiveAtom } from "./persistent_atoms.
 const fullscreenElementAtom = atom<Element | null>(null);
 const viewerElementAtom = atom<HTMLDivElement | null>(null);
 
-export const isViewerFullscreenAtom = atom((get) =>
-  get(fullscreenElementAtom) === get(viewerElementAtom)
-);
+export const isViewerFullscreenAtom = atom((get) => {
+  const viewerElement = get(viewerElementAtom);
+  return !!viewerElement && viewerElement === get(fullscreenElementAtom);
+});
 
 type ScrollBarFactors = {
   fullscreenElement?: ExtractAtomValue<typeof fullscreenElementAtom>;
