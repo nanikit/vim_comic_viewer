@@ -1,4 +1,4 @@
-import { atom, ExtractAtomValue, RESET, Root, selectAtom, toast } from "../deps.ts";
+import { atom, ExtractAtomValue, Root, selectAtom, toast } from "../deps.ts";
 import { ImageSource, ViewerOptions } from "../types.ts";
 import { timeout } from "../utils.ts";
 import { createPageAtom, PageAtom } from "./create_page_atom.ts";
@@ -83,43 +83,38 @@ const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
 
 export const isViewerImmersiveAtom = atom(
   (get) => get(scrollBarStyleFactorAtom).isImmersive,
-  async (get, set, value: boolean | typeof RESET) => {
-    if (value !== RESET) {
-      if (!get(viewerStateAtom).options.noSyncScroll && value) {
-        set(transferWindowScrollToViewerAtom);
-      }
-      set(scrollBarStyleFactorAtom, { isImmersive: value });
+  async (get, set, value: boolean) => {
+    if (!get(viewerStateAtom).options.noSyncScroll && value) {
+      set(transferWindowScrollToViewerAtom);
     }
+    set(scrollBarStyleFactorAtom, { isImmersive: value });
 
     const scrollable = get(scrollElementAtom);
     if (!scrollable) {
       return;
     }
 
-    if (value !== false) {
+    if (value) {
       focusWithoutScroll(scrollable);
     }
-    if (value === RESET) {
-      return;
-    }
 
-    if (get(isFullscreenPreferredAtom)) {
-      try {
+    try {
+      if (get(isFullscreenPreferredAtom)) {
         await set(viewerFullscreenAtom, value);
         if (value) {
           // HACK: have to wait reflow uncertain times.
           await timeout(1);
-          set(restoreScrollAtom);
         }
-      } finally {
-        if (!value && !get(viewerStateAtom).options.noSyncScroll) {
-          set(transferViewerScrollToWindowAtom);
-        }
+      }
+    } finally {
+      if (value) {
+        set(restoreScrollAtom);
+      } else if (!get(viewerStateAtom).options.noSyncScroll) {
+        set(transferViewerScrollToWindowAtom);
       }
     }
   },
 );
-isViewerImmersiveAtom.onMount = (set) => void set(RESET);
 
 const isBeforeUnloadAtom = atom(false);
 const beforeUnloadAtom = atom(null, async (_get, set) => {
@@ -163,6 +158,11 @@ export const setViewerElementAtom = atom(
   null,
   async (get, set, element: HTMLDivElement | null) => {
     set(scrollBarStyleFactorAtom, { viewerElement: element });
+
+    const scrollable = get(scrollElementAtom);
+    if (scrollable) {
+      focusWithoutScroll(scrollable);
+    }
 
     const isViewerFullscreen = get(viewerFullscreenAtom);
     const isFullscreenPreferred = get(isFullscreenPreferredAtom);
