@@ -37,6 +37,7 @@ export {
 } from "react";
 // @deno-types="npm:@types/react"
 export type {
+  ButtonHTMLAttributes,
   ComponentProps,
   HTMLAttributes,
   HTMLProps,

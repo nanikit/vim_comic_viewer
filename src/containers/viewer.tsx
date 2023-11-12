@@ -15,7 +15,7 @@ import {
   viewerModeAtom,
   viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
-import { FullscreenIcon } from "../components/icons.tsx";
+import { FullscreenButton } from "../components/icons.tsx";
 import { Container, ScrollableLayout } from "../components/scrollable_layout.ts";
 import { HTMLProps, ToastContainer, useAtomValue, useEffect, useSetAtom } from "../deps.ts";
 import { useDefault } from "../hooks/use_default.ts";
@@ -87,8 +87,8 @@ export function InnerViewer(
           : <p>{status === "error" ? strings.errorIsOccurred : strings.loading}</p>}
         {...otherProps}
       />
-      <FullscreenIcon onClick={useSetAtom(toggleImmersiveAtom)} />
       {status === "complete" ? <LeftBottomControl /> : false}
+      <FullscreenButton onClick={useSetAtom(toggleImmersiveAtom)} />
       <ToastContainer />
     </Container>
   );

@@ -1,7 +1,7 @@
 import { useAtomValue } from "jotai";
 import { downloadAndSaveAtom } from "../atoms/downloader_atoms.tsx";
 import { scrollElementAtom } from "../atoms/navigation_atoms.ts";
-import { DownloadIcon, IconSettings } from "../components/icons.tsx";
+import { DownloadButton, SettingsButton } from "../components/icons.tsx";
 import { useSetAtom, useState } from "../deps.ts";
 import { styled } from "../vendors/stitches.ts";
 import { ViewerDialog } from "./viewer_dialog.tsx";
@@ -35,12 +35,8 @@ export function LeftBottomControl() {
     <>
       <LeftBottomFloat>
         <MenuActions>
-          <IconSettings
-            onClick={() => {
-              setIsOpen((value) => !value);
-            }}
-          />
-          <DownloadIcon onClick={() => downloadAndSave()} />
+          <SettingsButton onClick={() => setIsOpen((value) => !value)} />
+          <DownloadButton onClick={() => downloadAndSave()} />
         </MenuActions>
       </LeftBottomFloat>
       {isOpen && <ViewerDialog onClose={closeDialog} />}
