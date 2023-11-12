@@ -1,4 +1,6 @@
+import { useAtomValue } from "jotai";
 import { downloadAndSaveAtom } from "../atoms/downloader_atoms.tsx";
+import { scrollElementAtom } from "../atoms/navigation_atoms.ts";
 import { DownloadIcon, IconSettings } from "../components/icons.tsx";
 import { useSetAtom, useState } from "../deps.ts";
 import { styled } from "../vendors/stitches.ts";
@@ -22,6 +24,12 @@ const MenuActions = styled("div", {
 export function LeftBottomControl() {
   const downloadAndSave = useSetAtom(downloadAndSaveAtom);
   const [isOpen, setIsOpen] = useState(false);
+  const scrollable = useAtomValue(scrollElementAtom);
+
+  const closeDialog = () => {
+    setIsOpen(false);
+    scrollable?.focus();
+  };
 
   return (
     <>
@@ -35,7 +43,7 @@ export function LeftBottomControl() {
           <DownloadIcon onClick={() => downloadAndSave()} />
         </MenuActions>
       </LeftBottomFloat>
-      {isOpen && <ViewerDialog onClose={() => setIsOpen(false)} />}
+      {isOpen && <ViewerDialog onClose={closeDialog} />}
     </>
   );
 }
