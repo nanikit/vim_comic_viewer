@@ -8,7 +8,7 @@ import {
 import { backgroundColorAtom, pageDirectionAtom } from "../atoms/persistent_atoms.ts";
 import {
   blockSelectionAtom,
-  fullscreenSyncWithWindowScrollAtom,
+  fullscreenSynchronizationAtom,
   setViewerElementAtom,
   setViewerOptionsAtom,
   toggleImmersiveAtom,
@@ -44,7 +44,7 @@ export function InnerViewer(
   const pageDirection = useAtomValue(pageDirectionAtom);
   const strings = useAtomValue(i18nAtom);
   const mode = useAtomValue(viewerModeAtom);
-  useAtomValue(fullscreenSyncWithWindowScrollAtom);
+  useAtomValue(fullscreenSynchronizationAtom);
   const { status } = viewer;
 
   const controller = useViewerController();

@@ -145,7 +145,7 @@ beforeUnloadAtom.onMount = (set) => {
   return () => removeEventListener("beforeunload", set);
 };
 
-const fullscreenSynchronizationAtom = atom(
+export const fullscreenSynchronizationAtom = atom(
   (get) => {
     get(beforeUnloadAtom);
     return get(scrollBarStyleFactorAtom).fullscreenElement;
@@ -164,14 +164,7 @@ const fullscreenSynchronizationAtom = atom(
     });
   },
 );
-
-export const fullscreenSyncWithWindowScrollAtom = atom(
-  (get) => get(fullscreenSynchronizationAtom),
-  (_get, set, element: Element | null) => {
-    set(fullscreenSynchronizationAtom, element);
-  },
-);
-fullscreenSyncWithWindowScrollAtom.onMount = (set) => {
+fullscreenSynchronizationAtom.onMount = (set) => {
   const notify = () => set(document.fullscreenElement ?? null);
   document.addEventListener("fullscreenchange", notify);
   return () => document.removeEventListener("fullscreenchange", notify);
