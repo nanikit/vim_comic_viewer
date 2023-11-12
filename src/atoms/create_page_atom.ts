@@ -28,6 +28,8 @@ export function createPageAtom({ index, source }: { index: number; source: Image
 
   const stateAtom = atom<PageState>({ status: "loading" });
   const loadAtom = atom(null, async (_get, set) => {
+    imageLoad.resolve(null);
+
     const urls = [];
     for await (const url of imageSourceToIterable(source)) {
       urls.push(url);
@@ -53,42 +55,17 @@ export function createPageAtom({ index, source }: { index: number; source: Image
     set();
   };
 
-  const reloadAtom = atom(null, async (_get, set) => {
-    imageLoad.resolve(null);
-    await set(loadAtom);
-  });
-
-  const imageToViewerSizeRatioAtom = atom((get) => {
-    const viewerSize = get(scrollElementSizeAtom);
-    if (!viewerSize) {
-      return 1;
-    }
-
-    const state = get(stateAtom);
-    if (state.status !== "complete") {
-      return 1;
-    }
-
-    return state.naturalHeight / viewerSize.height;
-  });
-
-  const shouldBeOriginalSizeAtom = atom((get) => {
-    const maxZoomInExponent = get(maxZoomInExponentAtom);
-    const maxZoomOutExponent = get(maxZoomOutExponentAtom);
-    const imageRatio = get(imageToViewerSizeRatioAtom);
-    const minZoomRatio = Math.sqrt(2) ** maxZoomOutExponent;
-    const maxZoomRatio = Math.sqrt(2) ** maxZoomInExponent;
-    const isOver = minZoomRatio < imageRatio || imageRatio < 1 / maxZoomRatio;
-    return isOver;
-  });
-
   const aggregateAtom = atom((get) => {
     get(loadAtom);
 
     const state = get(stateAtom);
     const compactWidthIndex = get(singlePageCountAtom);
-    const shouldBeOriginalSize = get(shouldBeOriginalSizeAtom);
-    const ratio = get(imageToViewerSizeRatioAtom);
+    const ratio = getImageToViewerSizeRatio({ viewerSize: get(scrollElementSizeAtom), state });
+    const shouldBeOriginalSize = shouldPageBeOriginalSize({
+      maxZoomInExponent: get(maxZoomInExponentAtom),
+      maxZoomOutExponent: get(maxZoomOutExponentAtom),
+      imageRatio: ratio,
+    });
     const isLarge = ratio > 1;
     const canMessUpRow = shouldBeOriginalSize && isLarge;
 
@@ -98,7 +75,7 @@ export function createPageAtom({ index, source }: { index: number; source: Image
       setDiv: (newDiv: HTMLDivElement | null) => {
         div = newDiv;
       },
-      reloadAtom,
+      reloadAtom: loadAtom,
       fullWidth: index < compactWidthIndex || canMessUpRow,
       shouldBeOriginalSize,
       imageProps: {
@@ -112,4 +89,31 @@ export function createPageAtom({ index, source }: { index: number; source: Image
   });
 
   return aggregateAtom;
+}
+
+function getImageToViewerSizeRatio(
+  { viewerSize, state }: { viewerSize: { width: number; height: number }; state: PageState },
+) {
+  if (!viewerSize) {
+    return 1;
+  }
+
+  if (state.status !== "complete") {
+    return 1;
+  }
+
+  return state.naturalHeight / viewerSize.height;
+}
+
+function shouldPageBeOriginalSize(
+  { maxZoomOutExponent, maxZoomInExponent, imageRatio }: {
+    maxZoomOutExponent: number;
+    maxZoomInExponent: number;
+    imageRatio: number;
+  },
+) {
+  const minZoomRatio = Math.sqrt(2) ** maxZoomOutExponent;
+  const maxZoomRatio = Math.sqrt(2) ** maxZoomInExponent;
+  const isOver = minZoomRatio < imageRatio || imageRatio < 1 / maxZoomRatio;
+  return isOver;
 }
