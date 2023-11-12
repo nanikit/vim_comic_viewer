@@ -7,15 +7,15 @@ const gmStorage = {
 };
 
 export function atomWithGmValue<T>(key: string, defaultValue: T) {
-  return atomWithStorage<T>(key, GM_getValue(key, defaultValue), gmStorage);
+  return atomWithStorage<T>(key, defaultValue, gmStorage, { unstable_getOnInit: true });
 }
 
 const jsonSessionStorage = createJSONStorage(() => sessionStorage);
 export function atomWithSession<T>(key: string, defaultValue: T) {
-  const atom = atomWithStorage<T>(
+  return atomWithStorage<T>(
     key,
-    jsonSessionStorage.getItem(key, defaultValue) as T,
-    jsonSessionStorage as unknown as ReturnType<typeof createJSONStorage<T>>,
+    defaultValue,
+    jsonSessionStorage as ReturnType<typeof createJSONStorage<T>>,
+    { unstable_getOnInit: true },
   );
-  return atom;
 }
