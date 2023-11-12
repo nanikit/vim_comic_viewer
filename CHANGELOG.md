@@ -4,6 +4,10 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+# 13.1.0
+
+- _Sync scroll to window always for lazy loaded page._
+
 # 13.0.0
 
 - **Replace `toggleFullscreen`, `toggleWithFullscreenPreferred` with `setImmersive`,

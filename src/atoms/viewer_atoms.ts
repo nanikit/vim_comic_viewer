@@ -10,7 +10,12 @@ import {
 } from "./dom/dom_helpers.ts";
 import { scrollBarStyleFactorAtom, viewerFullscreenAtom } from "./fullscreen_atom.ts";
 import { i18nAtom } from "./i18n_atom.ts";
-import { pageScrollStateAtom, restoreScrollAtom, scrollElementAtom } from "./navigation_atoms.ts";
+import {
+  pageScrollStateAtom,
+  restoreScrollAtom,
+  scrollElementAtom,
+  transferViewerScrollToWindowAtom,
+} from "./navigation_atoms.ts";
 import { fullscreenNoticeCountAtom, isFullscreenPreferredAtom } from "./persistent_atoms.ts";
 
 type ViewerState =
@@ -31,26 +36,6 @@ export const pagesAtom = selectAtom(
   (state) => (state as { pages?: PageAtom[] }).pages,
 );
 export const rootAtom = atom<Root | null>(null);
-
-const transferViewerScrollToWindowAtom = atom(null, (get) => {
-  const { page, ratio } = get(pageScrollStateAtom);
-  const src = page?.querySelector("img")?.src;
-  if (!src) {
-    return;
-  }
-
-  const fileName = src.split("/").pop()?.split("?")[0];
-  const candidates = document.querySelectorAll<HTMLImageElement>(`img[src*="${fileName}"]`);
-  const original = [...candidates].find((img) => img.src === src);
-  const isViewerImage = original?.parentElement === page;
-  if (!original || isViewerImage) {
-    return;
-  }
-
-  const rect = original.getBoundingClientRect();
-  const top = window.scrollY + rect.y + rect.height * ratio - window.innerHeight / 2;
-  scroll({ behavior: "instant", top });
-});
 
 const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   const viewerPages = get(pagesAtom)?.map(get);
@@ -114,18 +99,18 @@ export const isViewerImmersiveAtom = atom(
       return;
     }
 
-    try {
-      if (get(isFullscreenPreferredAtom)) {
+    if (get(isFullscreenPreferredAtom)) {
+      try {
         await set(viewerFullscreenAtom, value);
         if (value) {
           // HACK: have to wait reflow uncertain times.
           await timeout(1);
           set(restoreScrollAtom);
         }
-      }
-    } finally {
-      if (!value && !get(viewerStateAtom).options.noSyncScroll) {
-        set(transferViewerScrollToWindowAtom);
+      } finally {
+        if (!value && !get(viewerStateAtom).options.noSyncScroll) {
+          set(transferViewerScrollToWindowAtom);
+        }
       }
     }
   },

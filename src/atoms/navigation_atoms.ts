@@ -11,6 +11,27 @@ const scrollElementStateAtom = atom<
 export const scrollElementSizeAtom = atom({ width: 0, height: 0 });
 export const pageScrollStateAtom = atom<PageScrollState<HTMLDivElement>>(getCurrentViewerScroll());
 
+export const transferViewerScrollToWindowAtom = atom(null, (get) => {
+  const { page, ratio } = get(pageScrollStateAtom);
+  const src = page?.querySelector("img")?.src;
+  if (!src) {
+    return false;
+  }
+
+  const fileName = src.split("/").pop()?.split("?")[0];
+  const candidates = document.querySelectorAll<HTMLImageElement>(`img[src*="${fileName}"]`);
+  const original = [...candidates].find((img) => img.src === src);
+  const isViewerImage = original?.parentElement === page;
+  if (!original || isViewerImage) {
+    return false;
+  }
+
+  const rect = original.getBoundingClientRect();
+  const top = window.scrollY + rect.y + rect.height * ratio - window.innerHeight / 2;
+  scroll({ behavior: "instant", top });
+  return true;
+});
+
 const previousSizeAtom = atom({ width: 0, height: 0 });
 export const synchronizeScrollAtom = atom(null, (get, set) => {
   const scrollElement = get(scrollElementAtom);
@@ -28,6 +49,7 @@ export const synchronizeScrollAtom = atom(null, (get, set) => {
     set(previousSizeAtom, { width, height });
   } else {
     set(pageScrollStateAtom, current);
+    set(transferViewerScrollToWindowAtom);
   }
 });
 
