@@ -8,7 +8,11 @@ import {
   getUrlImgs,
   isUserGesturePermissionError,
 } from "./dom/dom_helpers.ts";
-import { scrollBarStyleFactorAtom, viewerFullscreenAtom } from "./fullscreen_atom.ts";
+import {
+  isFullscreenPreferredSettingsAtom,
+  scrollBarStyleFactorAtom,
+  viewerFullscreenAtom,
+} from "./fullscreen_atom.ts";
 import { i18nAtom } from "./i18n_atom.ts";
 import {
   pageScrollStateAtom,
@@ -254,13 +258,11 @@ export const toggleImmersiveAtom = atom(null, async (get, set) => {
   await set(isViewerImmersiveAtom, !get(isViewerImmersiveAtom));
 });
 
-export const setImmersiveWithFullscreenToggleAtom = atom(null, async (get, set, value: boolean) => {
-  if (value) {
-    await set(toggleImmersiveAtom);
-    set(isFullscreenPreferredAtom, !get(isFullscreenPreferredAtom));
-  } else {
-    set(isFullscreenPreferredAtom, !get(isFullscreenPreferredAtom));
-    await set(toggleImmersiveAtom);
+export const toggleFullscreenAtom = atom(null, async (get, set) => {
+  set(isFullscreenPreferredSettingsAtom, !get(isFullscreenPreferredSettingsAtom));
+
+  if (get(viewerModeAtom) === "normal") {
+    await set(isViewerImmersiveAtom, true);
   }
 });
 

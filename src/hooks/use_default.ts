@@ -41,22 +41,16 @@ export function useDefault({ enable, controller }: {
     event.stopPropagation();
   };
 
-  const defaultGlobalKeyHandler = (event: KeyboardEvent) => {
+  const defaultGlobalKeyHandler = async (event: KeyboardEvent) => {
     if (maybeNotHotkey(event)) {
       return;
     }
 
     if (["KeyI", "Numpad0", "Enter"].includes(event.code)) {
-      const isImmersive = controller.viewerMode !== "normal";
       if (event.shiftKey) {
-        controller.setIsFullscreenPreferred(!controller.isFullscreenPreferred);
-        if (!isImmersive) {
-          controller.setImmersive(true);
-        }
+        await controller.toggleFullscreen();
       } else {
-        const hasPermissionIssue = controller.viewerMode === "window" &&
-          controller.isFullscreenPreferred;
-        controller.setImmersive(hasPermissionIssue ? true : !isImmersive);
+        await controller.toggleImmersive();
       }
     }
   };

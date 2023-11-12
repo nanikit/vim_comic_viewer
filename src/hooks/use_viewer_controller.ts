@@ -16,6 +16,8 @@ import {
   reloadErroredAtom,
   rootAtom,
   setViewerOptionsAtom,
+  toggleFullscreenAtom,
+  toggleImmersiveAtom,
   viewerModeAtom,
   viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
@@ -72,6 +74,8 @@ function createViewerController(store: ReturnType<typeof useStore>) {
     setIsFullscreenPreferred: (value: boolean) => {
       return store.set(isFullscreenPreferredSettingsAtom, value);
     },
+    toggleImmersive: () => store.set(toggleImmersiveAtom),
+    toggleFullscreen: () => store.set(toggleFullscreenAtom),
     reloadErrored: () => store.set(reloadErroredAtom),
     unmount: () => store.get(rootAtom)?.unmount(),
   };
