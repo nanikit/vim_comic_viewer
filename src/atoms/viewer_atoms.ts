@@ -41,13 +41,22 @@ export const pagesAtom = selectAtom(
 );
 export const rootAtom = atom<Root | null>(null);
 
-const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
-  const viewerPages = get(pagesAtom)?.map(get);
+const transferWindowScrollToViewerAtom = atom(null, async (get, set) => {
+  const urlToViewerPages = new Map<string, ExtractAtomValue<PageAtom>>();
+
+  let viewerPages = get(pagesAtom)?.map(get);
+  if (!viewerPages || viewerPages?.some((page) => !page.imageProps.src)) {
+    await timeout(1);
+    viewerPages = get(pagesAtom)?.map(get);
+    // TODO: monkey patch. Change to synchronous way.
+    (async () => {
+      await timeout(1);
+      set(restoreScrollAtom);
+    })();
+  }
   if (!viewerPages || !viewerPages.length) {
     return;
   }
-
-  const urlToViewerPages = new Map<string, ExtractAtomValue<PageAtom>>();
   for (const viewerPage of viewerPages) {
     if (viewerPage.imageProps.src) {
       urlToViewerPages.set(viewerPage.imageProps.src, viewerPage);
