@@ -7,6 +7,7 @@ const scrollElementStateAtom = atom<
     resizeObserver: ResizeObserver;
   } | null
 >(null);
+export const scrollElementAtom = atom((get) => get(scrollElementStateAtom)?.div ?? null);
 
 export const scrollElementSizeAtom = atom({ width: 0, height: 0 });
 export const pageScrollStateAtom = atom<PageScrollState<HTMLDivElement>>(getCurrentViewerScroll());
@@ -53,7 +54,14 @@ export const synchronizeScrollAtom = atom(null, (get, set) => {
   }
 });
 
-export const restoreScrollAtom = atom(null, (get) => {
+const viewerScrollAtom = atom(
+  (get) => get(scrollElementAtom)?.scrollTop,
+  (get, _set, top: number) => {
+    get(scrollElementAtom)?.scroll({ top });
+  },
+);
+
+export const restoreScrollAtom = atom(null, (get, set) => {
   const { page, ratio } = get(pageScrollStateAtom);
   const scrollable = get(scrollElementAtom);
   if (!scrollable || !page) {
@@ -62,11 +70,11 @@ export const restoreScrollAtom = atom(null, (get) => {
 
   const { offsetTop, clientHeight } = page;
   const restoredY = Math.floor(offsetTop + clientHeight * ratio - scrollable.clientHeight / 2);
-  scrollable.scroll({ top: restoredY });
+  set(viewerScrollAtom, restoredY);
 });
 
-export const scrollElementAtom = atom(
-  (get) => get(scrollElementStateAtom)?.div ?? null,
+export const setScrollElementAtom = atom(
+  null,
   (_get, set, div: HTMLDivElement | null) => {
     set(scrollElementStateAtom, (previous) => {
       if (previous?.div === div) {
@@ -89,46 +97,18 @@ export const scrollElementAtom = atom(
     });
   },
 );
-scrollElementAtom.onMount = (set) => () => set(null);
 
-export const goNextAtom = atom(null, (get) => {
-  const scrollElement = get(scrollElementAtom)!;
-  const { page } = getCurrentViewerScroll(scrollElement);
-  if (!page) {
-    return;
-  }
-
-  const viewerHeight = scrollElement.clientHeight;
-  const ignorableHeight = viewerHeight * 0.05;
-  const scrollBottom = scrollElement.scrollTop + viewerHeight;
-  // HACK: scrollTop has fractional px for unknown reason, -1 is monkey patching for it.
-  const remainingHeight = page.offsetTop + page.clientHeight - Math.ceil(scrollBottom) - 1;
-  if (remainingHeight > ignorableHeight) {
-    const divisor = Math.ceil(remainingHeight / viewerHeight);
-    const delta = Math.ceil(remainingHeight / divisor);
-    scrollElement.scroll({ top: Math.floor(scrollElement.scrollTop + delta) });
-  } else {
-    scrollToNextPageTopOrEnd(page);
+export const goNextAtom = atom(null, (get, set) => {
+  const top = getNextScroll(get(scrollElementAtom));
+  if (top != null) {
+    set(viewerScrollAtom, top);
   }
 });
 
-export const goPreviousAtom = atom(null, (get) => {
-  const scrollElement = get(scrollElementAtom)!;
-  const { page } = getCurrentViewerScroll(scrollElement);
-  if (!page) {
-    return;
-  }
-
-  const viewerHeight = scrollElement.clientHeight;
-  const ignorableHeight = viewerHeight * 0.05;
-  // HACK: scrollTop has fractional px for unknown reason, -1 is monkey patching for it.
-  const remainingHeight = scrollElement.scrollTop - Math.ceil(page.offsetTop) - 1;
-  if (remainingHeight > ignorableHeight) {
-    const divisor = Math.ceil(remainingHeight / viewerHeight);
-    const delta = -Math.ceil(remainingHeight / divisor);
-    scrollElement.scroll({ top: Math.floor(scrollElement.scrollTop + delta) });
-  } else {
-    scrollToPreviousPageBottomOrStart(page);
+export const goPreviousAtom = atom(null, (get, set) => {
+  const top = getPreviousScroll(get(scrollElementAtom));
+  if (top != null) {
+    set(viewerScrollAtom, top);
   }
 });
 
@@ -147,7 +127,46 @@ export const navigateAtom = atom(null, (get, set, event: React.MouseEvent) => {
   }
 });
 
-function scrollToNextPageTopOrEnd(page: HTMLElement) {
+function getPreviousScroll(scrollElement: HTMLDivElement | null) {
+  const { page } = getCurrentViewerScroll(scrollElement);
+  if (!page || !scrollElement) {
+    return;
+  }
+
+  const viewerHeight = scrollElement.clientHeight;
+  const ignorableHeight = viewerHeight * 0.05;
+  // HACK: scrollTop has fractional px for unknown reason, -1 is monkey patching for it.
+  const remainingHeight = scrollElement.scrollTop - Math.ceil(page.offsetTop) - 1;
+  if (remainingHeight > ignorableHeight) {
+    const divisor = Math.ceil(remainingHeight / viewerHeight);
+    const delta = -Math.ceil(remainingHeight / divisor);
+    return Math.floor(scrollElement.scrollTop + delta);
+  } else {
+    return getPreviousPageBottomOrStart(page);
+  }
+}
+
+function getNextScroll(scrollElement: HTMLDivElement | null) {
+  const { page } = getCurrentViewerScroll(scrollElement);
+  if (!page || !scrollElement) {
+    return;
+  }
+
+  const viewerHeight = scrollElement.clientHeight;
+  const ignorableHeight = viewerHeight * 0.05;
+  const scrollBottom = scrollElement.scrollTop + viewerHeight;
+  // HACK: scrollTop has fractional px for unknown reason, -1 is monkey patching for it.
+  const remainingHeight = page.offsetTop + page.clientHeight - Math.ceil(scrollBottom) - 1;
+  if (remainingHeight > ignorableHeight) {
+    const divisor = Math.ceil(remainingHeight / viewerHeight);
+    const delta = Math.ceil(remainingHeight / divisor);
+    return Math.floor(scrollElement.scrollTop + delta);
+  } else {
+    return getNextPageTopOrEnd(page);
+  }
+}
+
+function getNextPageTopOrEnd(page: HTMLElement) {
   const scrollable = page.offsetParent;
   if (!scrollable) {
     return;
@@ -158,16 +177,15 @@ function scrollToNextPageTopOrEnd(page: HTMLElement) {
   while (cursor.nextElementSibling) {
     const next = cursor.nextElementSibling as HTMLElement;
     if (pageBottom <= next.offsetTop) {
-      scrollable.scroll({ top: next.offsetTop });
-      return;
+      return next.offsetTop;
     }
     cursor = next;
   }
 
-  scrollable.scroll({ top: cursor.offsetTop + cursor.clientHeight });
+  return cursor.offsetTop + cursor.clientHeight;
 }
 
-function scrollToPreviousPageBottomOrStart(page: HTMLElement) {
+function getPreviousPageBottomOrStart(page: HTMLElement) {
   const scrollable = page.offsetParent;
   if (!scrollable) {
     return;
@@ -179,13 +197,10 @@ function scrollToPreviousPageBottomOrStart(page: HTMLElement) {
     const previous = cursor.previousElementSibling as HTMLElement;
     const previousBottom = previous.offsetTop + previous.clientHeight;
     if (previousBottom <= pageTop) {
-      scrollable.scroll({
-        top: previous.offsetTop + previous.clientHeight - scrollable.clientHeight,
-      });
-      return;
+      return previous.offsetTop + previous.clientHeight - scrollable.clientHeight;
     }
     cursor = previous;
   }
 
-  scrollable.scroll({ top: cursor.offsetTop });
+  return cursor.offsetTop;
 }
