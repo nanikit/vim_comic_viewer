@@ -26,12 +26,11 @@ import { Page } from "./page.tsx";
 
 export function InnerViewer(
   props: HTMLProps<HTMLDivElement> & {
-    useDefault?: boolean;
     options: ViewerOptions;
     onInitialized?: (controller: ViewerController) => void;
   },
 ) {
-  const { useDefault: enableDefault, options: viewerOptions, onInitialized, ...otherProps } = props;
+  const { options: viewerOptions, onInitialized, ...otherProps } = props;
   const setViewerElement = useSetAtom(setViewerElementAtom);
   const setScrollElement = useSetAtom(scrollElementAtom);
   const isFullscreen = useAtomValue(viewerFullscreenAtom);
@@ -50,7 +49,7 @@ export function InnerViewer(
   const controller = useViewerController();
   const { options } = controller;
 
-  useDefault({ enable: props.useDefault, controller });
+  useDefault({ enable: !options.noDefaultBinding, controller });
 
   useEffect(() => {
     onInitialized?.(controller);

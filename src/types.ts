@@ -1,12 +1,10 @@
 export type ViewerOptions = {
   source?: ComicSource;
   imageProps?: Record<string, string>;
-  /**
-   * false(default): synchronize scroll position with image out of viewer.
-   *
-   * true: do not synchronize scroll position.
-   */
+  /** do not synchronize scroll position if true. */
   noSyncScroll?: boolean;
+  /** do not bind predefined keyboard shortcut if true. */
+  noDefaultBinding?: boolean;
 };
 
 export type ComicSource = () => ImageSource[] | Promise<ImageSource[]>;

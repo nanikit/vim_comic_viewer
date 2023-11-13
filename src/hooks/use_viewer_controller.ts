@@ -23,6 +23,7 @@ import {
 } from "../atoms/viewer_atoms.ts";
 import { useMemo, useStore } from "../deps.ts";
 import { ViewerOptions } from "../types.ts";
+import { isTyping } from "../utils.ts";
 
 export type ViewerController = ReturnType<typeof createViewerController>;
 
@@ -38,7 +39,59 @@ function createViewerController(store: ReturnType<typeof useStore>) {
     cancel: () => store.set(cancelDownloadAtom),
   };
 
-  return {
+  const elementKeyHandler = (event: KeyboardEvent): boolean => {
+    if (maybeNotHotkey(event)) {
+      return false;
+    }
+
+    switch (event.key) {
+      case "j":
+      case "ArrowDown":
+        controller.goNext();
+        event.preventDefault();
+        break;
+      case "k":
+      case "ArrowUp":
+        controller.goPrevious();
+        event.preventDefault();
+        break;
+      case ";":
+        controller.downloader?.downloadAndSave();
+        break;
+      case "/":
+        controller.compactWidthIndex++;
+        break;
+      case "?":
+        controller.compactWidthIndex--;
+        break;
+      case "'":
+        controller.reloadErrored();
+        break;
+      default:
+        return false;
+    }
+
+    event.stopPropagation();
+    return true;
+  };
+
+  const globalKeyHandler = (event: KeyboardEvent): boolean => {
+    if (maybeNotHotkey(event)) {
+      return false;
+    }
+
+    if (["KeyI", "Numpad0", "Enter"].includes(event.code)) {
+      if (event.shiftKey) {
+        controller.toggleFullscreen();
+      } else {
+        controller.toggleImmersive();
+      }
+      return true;
+    }
+    return false;
+  };
+
+  const controller = {
     get options() {
       return store.get(viewerStateAtom).options;
     },
@@ -77,6 +130,15 @@ function createViewerController(store: ReturnType<typeof useStore>) {
     toggleImmersive: () => store.set(toggleImmersiveAtom),
     toggleFullscreen: () => store.set(toggleFullscreenAtom),
     reloadErrored: () => store.set(reloadErroredAtom),
+    elementKeyHandler,
+    globalKeyHandler,
     unmount: () => store.get(rootAtom)?.unmount(),
   };
+
+  return controller;
+}
+
+function maybeNotHotkey(event: KeyboardEvent) {
+  const { ctrlKey, altKey, metaKey } = event;
+  return ctrlKey || altKey || metaKey || isTyping(event);
 }
