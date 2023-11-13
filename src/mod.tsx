@@ -66,7 +66,8 @@ export const Viewer = forwardRef(({ options, onInitialized }: {
 
 function getDefaultRoot() {
   const div = document.createElement("div");
-  div.setAttribute("style", "width: 0; height: 0;");
+  // if not fixed, scroll go to end when press tab.
+  div.setAttribute("style", "width: 0; height: 0; position: fixed;");
   document.body.append(div);
   return div;
 }
