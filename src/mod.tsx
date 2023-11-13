@@ -45,22 +45,21 @@ export function initialize(options: ViewerOptions): Promise<ViewerController> {
   const deferredController = deferred<ViewerController>();
   root.render(
     <Provider store={store}>
-      <InnerViewer onInitialized={deferredController.resolve} options={options} useDefault />
+      <InnerViewer onInitialized={deferredController.resolve} options={options} />
     </Provider>,
   );
   store.set(rootAtom, root);
   return deferredController;
 }
 
-export const Viewer = forwardRef(({ options, useDefault, onInitialized }: {
+export const Viewer = forwardRef(({ options, onInitialized }: {
   options: ViewerOptions;
-  useDefault?: boolean;
   onInitialized?: (controller: ViewerController) => void;
 }) => {
   const store = useMemo(createStore, []);
   return (
     <Provider store={store}>
-      <InnerViewer {...{ options, onInitialized, useDefault }} />
+      <InnerViewer options={options} onInitialized={onInitialized} />
     </Provider>
   );
 });
