@@ -30,10 +30,10 @@
 // @resource       link:vcv-inject-node-env data:,unsafeWindow.process=%7Benv:%7BNODE_ENV:%22production%22%7D%7D
 // @resource       react-toastify-css       https://cdn.jsdelivr.net/npm/react-toastify@9.1.3/dist/ReactToastify.css
 // ==/UserScript==
+import { ViewerController } from "./atoms/controller_atom.ts";
 import { rootAtom } from "./atoms/viewer_atoms.ts";
 import { InnerViewer } from "./containers/viewer.tsx";
 import { createRoot, createStore, deferred, forwardRef, Provider, useMemo } from "./deps.ts";
-import { ViewerController } from "./hooks/use_viewer_controller.ts";
 import { ViewerOptions } from "./types.ts";
 export { download } from "./services/downloader.ts";
 export * as types from "./types.ts";

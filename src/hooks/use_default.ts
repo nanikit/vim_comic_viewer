@@ -1,9 +1,9 @@
+import { ViewerController } from "../atoms/controller_atom.ts";
 import { useEffect } from "../deps.ts";
-import { useViewerController } from "./use_viewer_controller.ts";
 
 export function useDefault({ enable, controller }: {
   enable?: boolean;
-  controller: ReturnType<typeof useViewerController>;
+  controller: ViewerController | null;
 }) {
   useEffect(() => {
     if (!controller || !enable) {
