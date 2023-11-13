@@ -21,22 +21,28 @@ import {
   viewerModeAtom,
   viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
-import { useMemo, useStore } from "../deps.ts";
+import { atom, Getter, Setter } from "../deps.ts";
 import { ViewerOptions } from "../types.ts";
 import { isTyping } from "../utils.ts";
 
 export type ViewerController = ReturnType<typeof createViewerController>;
 
-export function useViewerController() {
-  const store = useStore();
-  return useMemo(() => createViewerController(store), [store]);
-}
+const controllerAtom = atom<ViewerController | null>(null);
+export const controllerCreationAtom = atom((get) => get(controllerAtom), (get, set) => {
+  if (!get(controllerAtom)) {
+    set(controllerAtom, createViewerController(get, set));
+  }
+  return get(controllerAtom);
+});
+controllerCreationAtom.onMount = (set) => {
+  set();
+};
 
-function createViewerController(store: ReturnType<typeof useStore>) {
+function createViewerController(get: Getter, set: Setter) {
   const downloader = {
-    download: (options?: UserDownloadOptions) => store.set(startDownloadAtom, options),
-    downloadAndSave: (options?: UserDownloadOptions) => store.set(downloadAndSaveAtom, options),
-    cancel: () => store.set(cancelDownloadAtom),
+    download: (options?: UserDownloadOptions) => set(startDownloadAtom, options),
+    downloadAndSave: (options?: UserDownloadOptions) => set(downloadAndSaveAtom, options),
+    cancel: () => set(cancelDownloadAtom),
   };
 
   const elementKeyHandler = (event: KeyboardEvent): boolean => {
@@ -93,46 +99,46 @@ function createViewerController(store: ReturnType<typeof useStore>) {
 
   const controller = {
     get options() {
-      return store.get(viewerStateAtom).options;
+      return get(viewerStateAtom).options;
     },
     get status() {
-      return store.get(viewerStateAtom).status;
+      return get(viewerStateAtom).status;
     },
     get container() {
-      return store.get(scrollBarStyleFactorAtom).viewerElement;
+      return get(scrollBarStyleFactorAtom).viewerElement;
     },
     get compactWidthIndex() {
-      return store.get(singlePageCountAtom);
+      return get(singlePageCountAtom);
     },
     downloader,
     get pages() {
-      return store.get(pagesAtom);
+      return get(pagesAtom);
     },
     get viewerMode() {
-      return store.get(viewerModeAtom);
+      return get(viewerModeAtom);
     },
     get isFullscreenPreferred() {
-      return store.get(isFullscreenPreferredAtom);
+      return get(isFullscreenPreferredAtom);
     },
     set compactWidthIndex(value: number) {
-      store.set(singlePageCountAtom, Math.max(0, value));
+      set(singlePageCountAtom, Math.max(0, value));
     },
 
-    setOptions: (value: ViewerOptions) => store.set(setViewerOptionsAtom, value),
-    goPrevious: () => store.set(goPreviousAtom),
-    goNext: () => store.set(goNextAtom),
+    setOptions: (value: ViewerOptions) => set(setViewerOptionsAtom, value),
+    goPrevious: () => set(goPreviousAtom),
+    goNext: () => set(goNextAtom),
     setImmersive: (value: boolean) => {
-      return store.set(isViewerImmersiveAtom, value);
+      return set(isViewerImmersiveAtom, value);
     },
     setIsFullscreenPreferred: (value: boolean) => {
-      return store.set(isFullscreenPreferredSettingsAtom, value);
+      return set(isFullscreenPreferredSettingsAtom, value);
     },
-    toggleImmersive: () => store.set(toggleImmersiveAtom),
-    toggleFullscreen: () => store.set(toggleFullscreenAtom),
-    reloadErrored: () => store.set(reloadErroredAtom),
+    toggleImmersive: () => set(toggleImmersiveAtom),
+    toggleFullscreen: () => set(toggleFullscreenAtom),
+    reloadErrored: () => set(reloadErroredAtom),
     elementKeyHandler,
     globalKeyHandler,
-    unmount: () => store.get(rootAtom)?.unmount(),
+    unmount: () => get(rootAtom)?.unmount(),
   };
 
   return controller;
