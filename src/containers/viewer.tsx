@@ -3,7 +3,7 @@ import { viewerFullscreenAtom } from "../atoms/fullscreen_atom.ts";
 import { i18nAtom } from "../atoms/i18n_atom.ts";
 import {
   navigateAtom,
-  scrollElementAtom,
+  setScrollElementAtom,
   synchronizeScrollAtom,
 } from "../atoms/navigation_atoms.ts";
 import { backgroundColorAtom, pageDirectionAtom } from "../atoms/persistent_atoms.ts";
@@ -65,7 +65,7 @@ export function InnerViewer(
       <ScrollableLayout
         tabIndex={0}
         // deno-lint-ignore no-explicit-any
-        ref={useSetAtom(scrollElementAtom) as any}
+        ref={useSetAtom(setScrollElementAtom) as any}
         dark={isDarkColor(backgroundColor)}
         fullscreen={isFullscreen}
         ltr={pageDirection === "leftToRight"}
