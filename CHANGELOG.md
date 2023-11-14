@@ -4,9 +4,13 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
-# 13.1.0
+# 14.0.0
 
+- **Replace `useDefault` prop with `noDefaultBinding` option.**
 - _Sync scroll to window always for lazy loaded page._
+- _Support tab button focusing._
+- Re-add `toggleFullscreen`, and add `toggleImmersive`.
+- Expose `elementKeyHandler`, `globalKeyHandler` in controller.
 
 # 13.0.0
 
