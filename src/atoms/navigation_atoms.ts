@@ -44,7 +44,8 @@ export const synchronizeScrollAtom = atom(null, (get, set) => {
   const height = scrollElement?.clientHeight ?? 0;
   const width = scrollElement?.clientWidth ?? 0;
   const previous = get(previousSizeAtom);
-  const isResizing = height !== previous.height || width !== previous.width;
+  const isResizing = width === 0 || height === 0 || height !== previous.height ||
+    width !== previous.width;
   if (isResizing) {
     set(restoreScrollAtom);
     set(previousSizeAtom, { width, height });

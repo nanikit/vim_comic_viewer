@@ -1,4 +1,4 @@
-import { atom, ExtractAtomValue } from "../deps.ts";
+import { atom, Deferred, deferred, ExtractAtomValue } from "../deps.ts";
 import { hideBodyScrollBar, setFullscreenElement } from "./dom/dom_helpers.ts";
 import { isFullscreenPreferredAtom, wasImmersiveAtom } from "./persistent_atoms.ts";
 
@@ -10,6 +10,9 @@ export const isViewerFullscreenAtom = atom((get) => {
   return !!viewerElement && viewerElement === get(fullscreenElementAtom);
 });
 
+const isImmersiveAtom = atom(false);
+export const isViewerImmersiveAtom = atom((get) => get(isImmersiveAtom));
+
 type ScrollBarFactors = {
   fullscreenElement?: ExtractAtomValue<typeof fullscreenElementAtom>;
   viewerElement?: ExtractAtomValue<typeof viewerElementAtom>;
@@ -19,7 +22,6 @@ export const scrollBarStyleFactorAtom = atom(
   (get) => ({
     fullscreenElement: get(fullscreenElementAtom),
     viewerElement: get(viewerElementAtom),
-    isImmersive: get(wasImmersiveAtom),
   }),
   (get, set, factors: ScrollBarFactors) => {
     const { fullscreenElement, viewerElement, isImmersive } = factors;
@@ -31,6 +33,7 @@ export const scrollBarStyleFactorAtom = atom(
     }
     if (isImmersive !== undefined) {
       set(wasImmersiveAtom, isImmersive);
+      set(isImmersiveAtom, isImmersive);
     }
 
     const canScrollBarDuplicate = !get(isViewerFullscreenAtom) && get(wasImmersiveAtom);
@@ -48,7 +51,20 @@ export const viewerFullscreenAtom = atom((get) => {
     return;
   }
 
+  const fullscreenChange = new Promise((resolve) => {
+    addEventListener("fullscreenchange", resolve, { once: true });
+  });
   await setFullscreenElement(element);
+  await fullscreenChange;
+});
+
+const transitionDeferredAtom = atom<{ deferred?: Deferred<void> }>({});
+export const transitionLockAtom = atom(null, async (get, set) => {
+  const { deferred: previousLock } = get(transitionDeferredAtom);
+  const lock = deferred<void>();
+  set(transitionDeferredAtom, { deferred: lock });
+  await previousLock;
+  return { deferred: lock };
 });
 
 export const isFullscreenPreferredSettingsAtom = atom(
@@ -56,8 +72,13 @@ export const isFullscreenPreferredSettingsAtom = atom(
   async (get, set, value: boolean) => {
     set(isFullscreenPreferredAtom, value);
 
-    const isImmersive = get(wasImmersiveAtom);
-    const shouldEnterFullscreen = value && isImmersive;
-    await set(viewerFullscreenAtom, shouldEnterFullscreen);
+    const lock = await set(transitionLockAtom);
+    try {
+      const wasImmersive = get(wasImmersiveAtom);
+      const shouldEnterFullscreen = value && wasImmersive;
+      await set(viewerFullscreenAtom, shouldEnterFullscreen);
+    } finally {
+      lock.deferred.resolve();
+    }
   },
 );
