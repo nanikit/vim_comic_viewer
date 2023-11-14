@@ -11,10 +11,10 @@ import {
 import { goNextAtom, goPreviousAtom } from "../atoms/navigation_atoms.ts";
 import { isFullscreenPreferredAtom, singlePageCountAtom } from "../atoms/persistent_atoms.ts";
 import {
-  isViewerImmersiveAtom,
   pagesAtom,
   reloadErroredAtom,
   rootAtom,
+  setViewerImmersiveAtom,
   setViewerOptionsAtom,
   toggleFullscreenAtom,
   toggleImmersiveAtom,
@@ -128,7 +128,7 @@ function createViewerController(get: Getter, set: Setter) {
     goPrevious: () => set(goPreviousAtom),
     goNext: () => set(goNextAtom),
     setImmersive: (value: boolean) => {
-      return set(isViewerImmersiveAtom, value);
+      return set(setViewerImmersiveAtom, value);
     },
     setIsFullscreenPreferred: (value: boolean) => {
       return set(isFullscreenPreferredSettingsAtom, value);

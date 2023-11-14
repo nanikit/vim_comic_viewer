@@ -1,4 +1,4 @@
-import { atom, ExtractAtomValue, Root, selectAtom, toast } from "../deps.ts";
+import { atom, ExtractAtomValue, Getter, Root, selectAtom, Setter, toast } from "../deps.ts";
 import { ImageSource, ViewerOptions } from "../types.ts";
 import { timeout } from "../utils.ts";
 import { createPageAtom, PageAtom } from "./create_page_atom.ts";
@@ -10,7 +10,9 @@ import {
 } from "./dom/dom_helpers.ts";
 import {
   isFullscreenPreferredSettingsAtom,
+  isViewerImmersiveAtom,
   scrollBarStyleFactorAtom,
+  transitionLockAtom,
   viewerFullscreenAtom,
 } from "./fullscreen_atom.ts";
 import { i18nAtom } from "./i18n_atom.ts";
@@ -20,7 +22,11 @@ import {
   scrollElementAtom,
   transferViewerScrollToWindowAtom,
 } from "./navigation_atoms.ts";
-import { fullscreenNoticeCountAtom, isFullscreenPreferredAtom } from "./persistent_atoms.ts";
+import {
+  fullscreenNoticeCountAtom,
+  isFullscreenPreferredAtom,
+  wasImmersiveAtom,
+} from "./persistent_atoms.ts";
 
 type ViewerState =
   & { options: ViewerOptions }
@@ -90,46 +96,76 @@ const transferWindowScrollToViewerAtom = atom(null, async (get, set) => {
   });
 });
 
-const previousActiveElementAtom = atom<Element | null>(null);
-export const isViewerImmersiveAtom = atom(
-  (get) => get(scrollBarStyleFactorAtom).isImmersive,
+const externalFocusElementAtom = atom<Element | null>(null);
+export const setViewerImmersiveAtom = atom(
+  null,
   async (get, set, value: boolean) => {
-    if (value) {
-      set(previousActiveElementAtom, document.activeElement);
-      if (!get(viewerStateAtom).options.noSyncScroll) {
-        set(transferWindowScrollToViewerAtom);
-      }
-    }
-
-    set(scrollBarStyleFactorAtom, { isImmersive: value });
-
-    const scrollable = get(scrollElementAtom);
-    if (!scrollable) {
-      return;
-    }
-
-    if (value) {
-      focusWithoutScroll(scrollable);
-    }
-
+    const lock = await set(transitionLockAtom);
     try {
-      if (get(isFullscreenPreferredAtom)) {
-        await set(viewerFullscreenAtom, value);
-        if (value) {
-          // HACK: have to wait reflow uncertain times.
-          await timeout(1);
-        }
-      }
+      await transactImmersive(get, set, value);
     } finally {
-      if (!value) {
-        if (!get(viewerStateAtom).options.noSyncScroll) {
-          set(transferViewerScrollToWindowAtom);
-        }
-        focusWithoutScroll(get(previousActiveElementAtom) as HTMLElement);
-      }
+      lock.deferred.resolve();
     }
   },
 );
+
+async function transactImmersive(get: Getter, set: Setter, value: boolean) {
+  if (get(isViewerImmersiveAtom) === value) {
+    return;
+  }
+
+  if (value) {
+    set(externalFocusElementAtom, (previous) => previous ? previous : document.activeElement);
+    if (!get(viewerStateAtom).options.noSyncScroll) {
+      set(transferWindowScrollToViewerAtom);
+    }
+  }
+
+  const scrollable = get(scrollElementAtom);
+  if (!scrollable) {
+    return;
+  }
+
+  try {
+    if (get(isFullscreenPreferredAtom)) {
+      await set(viewerFullscreenAtom, value);
+    }
+  } catch (error) {
+    if (isUserGesturePermissionError(error)) {
+      showF11GuideGently();
+      return;
+    }
+    throw error;
+  } finally {
+    set(scrollBarStyleFactorAtom, { isImmersive: value });
+
+    if (value) {
+      focusWithoutScroll(scrollable);
+    } else {
+      if (!get(viewerStateAtom).options.noSyncScroll) {
+        set(transferViewerScrollToWindowAtom);
+      }
+      const externalFocusElement = get(externalFocusElementAtom) as HTMLElement;
+      focusWithoutScroll(externalFocusElement);
+    }
+  }
+
+  async function showF11GuideGently() {
+    if (get(fullscreenNoticeCountAtom) >= 3) {
+      return;
+    }
+
+    const isUserFullscreen = window.innerHeight === screen.height ||
+      window.innerWidth === screen.width;
+    if (isUserFullscreen) {
+      return;
+    }
+
+    toast(get(i18nAtom).fullScreenRestorationGuide, { type: "info" });
+    await timeout(5000);
+    set(fullscreenNoticeCountAtom, (count) => count + 1);
+  }
+}
 
 const isBeforeUnloadAtom = atom(false);
 const beforeUnloadAtom = atom(null, async (_get, set) => {
@@ -173,37 +209,7 @@ export const setViewerElementAtom = atom(
   null,
   async (get, set, element: HTMLDivElement | null) => {
     set(scrollBarStyleFactorAtom, { viewerElement: element });
-
-    const isViewerFullscreen = get(viewerFullscreenAtom);
-    const isFullscreenPreferred = get(isFullscreenPreferredAtom);
-    const isImmersive = get(isViewerImmersiveAtom);
-    const shouldEnterFullscreen = isFullscreenPreferred && isImmersive;
-    if (isViewerFullscreen === shouldEnterFullscreen || !element) {
-      return;
-    }
-
-    const isUserFullscreen = window.innerHeight === screen.height ||
-      window.innerWidth === screen.width;
-    if (isUserFullscreen) {
-      return;
-    }
-
-    try {
-      if (shouldEnterFullscreen) {
-        await set(viewerFullscreenAtom, true);
-      }
-    } catch (error) {
-      if (isUserGesturePermissionError(error)) {
-        if (get(fullscreenNoticeCountAtom) >= 3) {
-          return;
-        }
-        toast(get(i18nAtom).fullScreenRestorationGuide, { type: "info" });
-        await timeout(5000);
-        set(fullscreenNoticeCountAtom, (count) => count + 1);
-        return;
-      }
-      throw error;
-    }
+    await set(setViewerImmersiveAtom, get(wasImmersiveAtom));
   },
 );
 
@@ -265,14 +271,14 @@ export const toggleImmersiveAtom = atom(null, async (get, set) => {
     return;
   }
 
-  await set(isViewerImmersiveAtom, !get(isViewerImmersiveAtom));
+  await set(setViewerImmersiveAtom, !get(isViewerImmersiveAtom));
 });
 
 export const toggleFullscreenAtom = atom(null, async (get, set) => {
   set(isFullscreenPreferredSettingsAtom, !get(isFullscreenPreferredSettingsAtom));
 
   if (get(viewerModeAtom) === "normal") {
-    await set(isViewerImmersiveAtom, true);
+    await set(setViewerImmersiveAtom, true);
   }
 });
 

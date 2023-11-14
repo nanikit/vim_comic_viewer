@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        13.0.0
+// @version        14.0.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -196,7 +196,7 @@ async function setFullscreenElement(element) {
   }
 }
 function focusWithoutScroll(element) {
-  element.focus({ preventScroll: true });
+  element?.focus({ preventScroll: true });
 }
 var emptyScroll = { page: null, ratio: 0, fullyVisiblePages: [] };
 function getCurrentViewerScroll(container) {
@@ -251,8 +251,27 @@ function isUserGesturePermissionError(error) {
   return error?.message === "Permissions check failed";
 }
 var scrollElementStateAtom = (0, import_jotai.atom)(null);
+var scrollElementAtom = (0, import_jotai.atom)((get) => get(scrollElementStateAtom)?.div ?? null);
 var scrollElementSizeAtom = (0, import_jotai.atom)({ width: 0, height: 0 });
 var pageScrollStateAtom = (0, import_jotai.atom)(getCurrentViewerScroll());
+var transferViewerScrollToWindowAtom = (0, import_jotai.atom)(null, (get) => {
+  const { page, ratio } = get(pageScrollStateAtom);
+  const src = page?.querySelector("img")?.src;
+  if (!src) {
+    return false;
+  }
+  const fileName = src.split("/").pop()?.split("?")[0];
+  const candidates = document.querySelectorAll(`img[src*="${fileName}"]`);
+  const original = [...candidates].find((img) => img.src === src);
+  const isViewerImage = original?.parentElement === page;
+  if (!original || isViewerImage) {
+    return false;
+  }
+  const rect = original.getBoundingClientRect();
+  const top = window.scrollY + rect.y + rect.height * ratio - window.innerHeight / 2;
+  scroll({ behavior: "instant", top });
+  return true;
+});
 var previousSizeAtom = (0, import_jotai.atom)({ width: 0, height: 0 });
 var synchronizeScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
   const scrollElement = get(scrollElementAtom);
@@ -263,15 +282,22 @@ var synchronizeScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
   const height = scrollElement?.clientHeight ?? 0;
   const width = scrollElement?.clientWidth ?? 0;
   const previous = get(previousSizeAtom);
-  const isResizing = height !== previous.height || width !== previous.width;
+  const isResizing = width === 0 || height === 0 || height !== previous.height || width !== previous.width;
   if (isResizing) {
     set(restoreScrollAtom);
     set(previousSizeAtom, { width, height });
   } else {
     set(pageScrollStateAtom, current);
+    set(transferViewerScrollToWindowAtom);
   }
 });
-var restoreScrollAtom = (0, import_jotai.atom)(null, (get) => {
+var viewerScrollAtom = (0, import_jotai.atom)(
+  (get) => get(scrollElementAtom)?.scrollTop,
+  (get, _set, top) => {
+    get(scrollElementAtom)?.scroll({ top });
+  }
+);
+var restoreScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
   const { page, ratio } = get(pageScrollStateAtom);
   const scrollable = get(scrollElementAtom);
   if (!scrollable || !page) {
@@ -279,10 +305,10 @@ var restoreScrollAtom = (0, import_jotai.atom)(null, (get) => {
   }
   const { offsetTop, clientHeight } = page;
   const restoredY = Math.floor(offsetTop + clientHeight * ratio - scrollable.clientHeight / 2);
-  scrollable.scroll({ top: restoredY });
+  set(viewerScrollAtom, restoredY);
 });
-var scrollElementAtom = (0, import_jotai.atom)(
-  (get) => get(scrollElementStateAtom)?.div ?? null,
+var setScrollElementAtom = (0, import_jotai.atom)(
+  null,
   (_get, set, div) => {
     set(scrollElementStateAtom, (previous) => {
       if (previous?.div === div) {
@@ -302,40 +328,16 @@ var scrollElementAtom = (0, import_jotai.atom)(
     });
   }
 );
-scrollElementAtom.onMount = (set) => () => set(null);
-var goNextAtom = (0, import_jotai.atom)(null, (get) => {
-  const scrollElement = get(scrollElementAtom);
-  const { page } = getCurrentViewerScroll(scrollElement);
-  if (!page) {
-    return;
-  }
-  const viewerHeight = scrollElement.clientHeight;
-  const ignorableHeight = viewerHeight * 0.05;
-  const scrollBottom = scrollElement.scrollTop + viewerHeight;
-  const remainingHeight = page.offsetTop + page.clientHeight - Math.ceil(scrollBottom) - 1;
-  if (remainingHeight > ignorableHeight) {
-    const divisor = Math.ceil(remainingHeight / viewerHeight);
-    const delta = Math.ceil(remainingHeight / divisor);
-    scrollElement.scroll({ top: Math.floor(scrollElement.scrollTop + delta) });
-  } else {
-    scrollToNextPageTopOrEnd(page);
+var goNextAtom = (0, import_jotai.atom)(null, (get, set) => {
+  const top = getNextScroll(get(scrollElementAtom));
+  if (top != null) {
+    set(viewerScrollAtom, top);
   }
 });
-var goPreviousAtom = (0, import_jotai.atom)(null, (get) => {
-  const scrollElement = get(scrollElementAtom);
-  const { page } = getCurrentViewerScroll(scrollElement);
-  if (!page) {
-    return;
-  }
-  const viewerHeight = scrollElement.clientHeight;
-  const ignorableHeight = viewerHeight * 0.05;
-  const remainingHeight = scrollElement.scrollTop - Math.ceil(page.offsetTop) - 1;
-  if (remainingHeight > ignorableHeight) {
-    const divisor = Math.ceil(remainingHeight / viewerHeight);
-    const delta = -Math.ceil(remainingHeight / divisor);
-    scrollElement.scroll({ top: Math.floor(scrollElement.scrollTop + delta) });
-  } else {
-    scrollToPreviousPageBottomOrStart(page);
+var goPreviousAtom = (0, import_jotai.atom)(null, (get, set) => {
+  const top = getPreviousScroll(get(scrollElementAtom));
+  if (top != null) {
+    set(viewerScrollAtom, top);
   }
 });
 var navigateAtom = (0, import_jotai.atom)(null, (get, set, event) => {
@@ -351,7 +353,40 @@ var navigateAtom = (0, import_jotai.atom)(null, (get, set, event) => {
     set(goNextAtom);
   }
 });
-function scrollToNextPageTopOrEnd(page) {
+function getPreviousScroll(scrollElement) {
+  const { page } = getCurrentViewerScroll(scrollElement);
+  if (!page || !scrollElement) {
+    return;
+  }
+  const viewerHeight = scrollElement.clientHeight;
+  const ignorableHeight = viewerHeight * 0.05;
+  const remainingHeight = scrollElement.scrollTop - Math.ceil(page.offsetTop) - 1;
+  if (remainingHeight > ignorableHeight) {
+    const divisor = Math.ceil(remainingHeight / viewerHeight);
+    const delta = -Math.ceil(remainingHeight / divisor);
+    return Math.floor(scrollElement.scrollTop + delta);
+  } else {
+    return getPreviousPageBottomOrStart(page);
+  }
+}
+function getNextScroll(scrollElement) {
+  const { page } = getCurrentViewerScroll(scrollElement);
+  if (!page || !scrollElement) {
+    return;
+  }
+  const viewerHeight = scrollElement.clientHeight;
+  const ignorableHeight = viewerHeight * 0.05;
+  const scrollBottom = scrollElement.scrollTop + viewerHeight;
+  const remainingHeight = page.offsetTop + page.clientHeight - Math.ceil(scrollBottom) - 1;
+  if (remainingHeight > ignorableHeight) {
+    const divisor = Math.ceil(remainingHeight / viewerHeight);
+    const delta = Math.ceil(remainingHeight / divisor);
+    return Math.floor(scrollElement.scrollTop + delta);
+  } else {
+    return getNextPageTopOrEnd(page);
+  }
+}
+function getNextPageTopOrEnd(page) {
   const scrollable = page.offsetParent;
   if (!scrollable) {
     return;
@@ -361,14 +396,13 @@ function scrollToNextPageTopOrEnd(page) {
   while (cursor.nextElementSibling) {
     const next = cursor.nextElementSibling;
     if (pageBottom <= next.offsetTop) {
-      scrollable.scroll({ top: next.offsetTop });
-      return;
+      return next.offsetTop;
     }
     cursor = next;
   }
-  scrollable.scroll({ top: cursor.offsetTop + cursor.clientHeight });
+  return cursor.offsetTop + cursor.clientHeight;
 }
-function scrollToPreviousPageBottomOrStart(page) {
+function getPreviousPageBottomOrStart(page) {
   const scrollable = page.offsetParent;
   if (!scrollable) {
     return;
@@ -379,14 +413,11 @@ function scrollToPreviousPageBottomOrStart(page) {
     const previous = cursor.previousElementSibling;
     const previousBottom = previous.offsetTop + previous.clientHeight;
     if (previousBottom <= pageTop) {
-      scrollable.scroll({
-        top: previous.offsetTop + previous.clientHeight - scrollable.clientHeight
-      });
-      return;
+      return previous.offsetTop + previous.clientHeight - scrollable.clientHeight;
     }
     cursor = previous;
   }
-  scrollable.scroll({ top: cursor.offsetTop });
+  return cursor.offsetTop;
 }
 var gmStorage = {
   getItem: GM_getValue,
@@ -394,16 +425,16 @@ var gmStorage = {
   removeItem: (key) => GM_deleteValue(key)
 };
 function atomWithGmValue(key, defaultValue) {
-  return (0, import_utils2.atomWithStorage)(key, GM_getValue(key, defaultValue), gmStorage);
+  return (0, import_utils2.atomWithStorage)(key, defaultValue, gmStorage, { unstable_getOnInit: true });
 }
 var jsonSessionStorage = (0, import_utils2.createJSONStorage)(() => sessionStorage);
 function atomWithSession(key, defaultValue) {
-  const atom2 = (0, import_utils2.atomWithStorage)(
+  return (0, import_utils2.atomWithStorage)(
     key,
-    jsonSessionStorage.getItem(key, defaultValue),
-    jsonSessionStorage
+    defaultValue,
+    jsonSessionStorage,
+    { unstable_getOnInit: true }
   );
-  return atom2;
 }
 var backgroundColorAtom = atomWithGmValue("vim_comic_viewer.background_color", "#eeeeee");
 var singlePageCountAtom = atomWithGmValue("vim_comic_viewer.single_page_count", 1);
@@ -424,6 +455,7 @@ function createPageAtom({ index, source }) {
   let div = null;
   const stateAtom = (0, import_jotai.atom)({ status: "loading" });
   const loadAtom = (0, import_jotai.atom)(null, async (_get, set) => {
+    imageLoad.resolve(null);
     const urls = [];
     for await (const url of imageSourceToIterable(source)) {
       urls.push(url);
@@ -447,36 +479,16 @@ function createPageAtom({ index, source }) {
   loadAtom.onMount = (set) => {
     set();
   };
-  const reloadAtom = (0, import_jotai.atom)(null, async (_get, set) => {
-    imageLoad.resolve(null);
-    await set(loadAtom);
-  });
-  const imageToViewerSizeRatioAtom = (0, import_jotai.atom)((get) => {
-    const viewerSize = get(scrollElementSizeAtom);
-    if (!viewerSize) {
-      return 1;
-    }
-    const state = get(stateAtom);
-    if (state.status !== "complete") {
-      return 1;
-    }
-    return state.naturalHeight / viewerSize.height;
-  });
-  const shouldBeOriginalSizeAtom = (0, import_jotai.atom)((get) => {
-    const maxZoomInExponent = get(maxZoomInExponentAtom);
-    const maxZoomOutExponent = get(maxZoomOutExponentAtom);
-    const imageRatio = get(imageToViewerSizeRatioAtom);
-    const minZoomRatio = Math.sqrt(2) ** maxZoomOutExponent;
-    const maxZoomRatio = Math.sqrt(2) ** maxZoomInExponent;
-    const isOver = minZoomRatio < imageRatio || imageRatio < 1 / maxZoomRatio;
-    return isOver;
-  });
   const aggregateAtom = (0, import_jotai.atom)((get) => {
     get(loadAtom);
     const state = get(stateAtom);
     const compactWidthIndex = get(singlePageCountAtom);
-    const shouldBeOriginalSize = get(shouldBeOriginalSizeAtom);
-    const ratio = get(imageToViewerSizeRatioAtom);
+    const ratio = getImageToViewerSizeRatio({ viewerSize: get(scrollElementSizeAtom), state });
+    const shouldBeOriginalSize = shouldPageBeOriginalSize({
+      maxZoomInExponent: get(maxZoomInExponentAtom),
+      maxZoomOutExponent: get(maxZoomOutExponentAtom),
+      imageRatio: ratio
+    });
     const isLarge = ratio > 1;
     const canMessUpRow = shouldBeOriginalSize && isLarge;
     return {
@@ -485,7 +497,7 @@ function createPageAtom({ index, source }) {
       setDiv: (newDiv) => {
         div = newDiv;
       },
-      reloadAtom,
+      reloadAtom: loadAtom,
       fullWidth: index < compactWidthIndex || canMessUpRow,
       shouldBeOriginalSize,
       imageProps: {
@@ -497,16 +509,33 @@ function createPageAtom({ index, source }) {
   });
   return aggregateAtom;
 }
+function getImageToViewerSizeRatio({ viewerSize, state }) {
+  if (!viewerSize) {
+    return 1;
+  }
+  if (state.status !== "complete") {
+    return 1;
+  }
+  return state.naturalHeight / viewerSize.height;
+}
+function shouldPageBeOriginalSize({ maxZoomOutExponent, maxZoomInExponent, imageRatio }) {
+  const minZoomRatio = Math.sqrt(2) ** maxZoomOutExponent;
+  const maxZoomRatio = Math.sqrt(2) ** maxZoomInExponent;
+  const isOver = minZoomRatio < imageRatio || imageRatio < 1 / maxZoomRatio;
+  return isOver;
+}
 var fullscreenElementAtom = (0, import_jotai.atom)(null);
 var viewerElementAtom = (0, import_jotai.atom)(null);
-var isViewerFullscreenAtom = (0, import_jotai.atom)(
-  (get) => get(fullscreenElementAtom) === get(viewerElementAtom)
-);
+var isViewerFullscreenAtom = (0, import_jotai.atom)((get) => {
+  const viewerElement = get(viewerElementAtom);
+  return !!viewerElement && viewerElement === get(fullscreenElementAtom);
+});
+var isImmersiveAtom = (0, import_jotai.atom)(false);
+var isViewerImmersiveAtom = (0, import_jotai.atom)((get) => get(isImmersiveAtom));
 var scrollBarStyleFactorAtom = (0, import_jotai.atom)(
   (get) => ({
     fullscreenElement: get(fullscreenElementAtom),
-    viewerElement: get(viewerElementAtom),
-    isImmersive: get(wasImmersiveAtom)
+    viewerElement: get(viewerElementAtom)
   }),
   (get, set, factors) => {
     const { fullscreenElement, viewerElement, isImmersive } = factors;
@@ -518,6 +547,7 @@ var scrollBarStyleFactorAtom = (0, import_jotai.atom)(
     }
     if (isImmersive !== void 0) {
       set(wasImmersiveAtom, isImmersive);
+      set(isImmersiveAtom, isImmersive);
     }
     const canScrollBarDuplicate = !get(isViewerFullscreenAtom) && get(wasImmersiveAtom);
     hideBodyScrollBar(canScrollBarDuplicate);
@@ -532,15 +562,32 @@ var viewerFullscreenAtom = (0, import_jotai.atom)((get) => {
   if (element === fullscreenElement) {
     return;
   }
+  const fullscreenChange = new Promise((resolve) => {
+    addEventListener("fullscreenchange", resolve, { once: true });
+  });
   await setFullscreenElement(element);
+  await fullscreenChange;
+});
+var transitionDeferredAtom = (0, import_jotai.atom)({});
+var transitionLockAtom = (0, import_jotai.atom)(null, async (get, set) => {
+  const { deferred: previousLock } = get(transitionDeferredAtom);
+  const lock = deferred();
+  set(transitionDeferredAtom, { deferred: lock });
+  await previousLock;
+  return { deferred: lock };
 });
 var isFullscreenPreferredSettingsAtom = (0, import_jotai.atom)(
   (get) => get(isFullscreenPreferredAtom),
   async (get, set, value) => {
     set(isFullscreenPreferredAtom, value);
-    const isImmersive = get(wasImmersiveAtom);
-    const shouldEnterFullscreen = value && isImmersive;
-    await set(viewerFullscreenAtom, shouldEnterFullscreen);
+    const lock = await set(transitionLockAtom);
+    try {
+      const wasImmersive = get(wasImmersiveAtom);
+      const shouldEnterFullscreen = value && wasImmersive;
+      await set(viewerFullscreenAtom, shouldEnterFullscreen);
+    } finally {
+      lock.deferred.resolve();
+    }
   }
 );
 var en_default = {
@@ -629,29 +676,20 @@ var pagesAtom = (0, import_utils2.selectAtom)(
   (state) => state.pages
 );
 var rootAtom = (0, import_jotai.atom)(null);
-var transferViewerScrollToWindowAtom = (0, import_jotai.atom)(null, (get) => {
-  const { page, ratio } = get(pageScrollStateAtom);
-  const src = page?.querySelector("img")?.src;
-  if (!src) {
-    return;
+var transferWindowScrollToViewerAtom = (0, import_jotai.atom)(null, async (get, set) => {
+  const urlToViewerPages =  new Map();
+  let viewerPages = get(pagesAtom)?.map(get);
+  if (!viewerPages || viewerPages?.some((page2) => !page2.imageProps.src)) {
+    await timeout(1);
+    viewerPages = get(pagesAtom)?.map(get);
+    (async () => {
+      await timeout(1);
+      set(restoreScrollAtom);
+    })();
   }
-  const fileName = src.split("/").pop()?.split("?")[0];
-  const candidates = document.querySelectorAll(`img[src*="${fileName}"]`);
-  const original = [...candidates].find((img) => img.src === src);
-  const isViewerImage = original?.parentElement === page;
-  if (!original || isViewerImage) {
-    return;
-  }
-  const rect = original.getBoundingClientRect();
-  const top = window.scrollY + rect.y + rect.height * ratio - window.innerHeight / 2;
-  scroll({ behavior: "instant", top });
-});
-var transferWindowScrollToViewerAtom = (0, import_jotai.atom)(null, (get, set) => {
-  const viewerPages = get(pagesAtom)?.map(get);
   if (!viewerPages || !viewerPages.length) {
     return;
   }
-  const urlToViewerPages =  new Map();
   for (const viewerPage2 of viewerPages) {
     if (viewerPage2.imageProps.src) {
       urlToViewerPages.set(viewerPage2.imageProps.src, viewerPage2);
@@ -681,41 +719,67 @@ var transferWindowScrollToViewerAtom = (0, import_jotai.atom)(null, (get, set) =
     fullyVisiblePages
   });
 });
-var isViewerImmersiveAtom = (0, import_jotai.atom)(
-  (get) => get(scrollBarStyleFactorAtom).isImmersive,
+var externalFocusElementAtom = (0, import_jotai.atom)(null);
+var setViewerImmersiveAtom = (0, import_jotai.atom)(
+  null,
   async (get, set, value) => {
-    if (value !== import_utils2.RESET) {
-      if (!get(viewerStateAtom).options.noSyncScroll && value) {
-        set(transferWindowScrollToViewerAtom);
-      }
-      set(scrollBarStyleFactorAtom, { isImmersive: value });
-    }
-    const scrollable = get(scrollElementAtom);
-    if (!scrollable) {
-      return;
-    }
-    if (value !== false) {
-      focusWithoutScroll(scrollable);
-    }
-    if (value === import_utils2.RESET) {
-      return;
-    }
+    const lock = await set(transitionLockAtom);
     try {
-      if (get(isFullscreenPreferredAtom)) {
-        await set(viewerFullscreenAtom, value);
-        if (value) {
-          await timeout(1);
-          set(restoreScrollAtom);
-        }
-      }
+      await transactImmersive(get, set, value);
     } finally {
-      if (!value && !get(viewerStateAtom).options.noSyncScroll) {
-        set(transferViewerScrollToWindowAtom);
-      }
+      lock.deferred.resolve();
     }
   }
 );
-isViewerImmersiveAtom.onMount = (set) => void set(import_utils2.RESET);
+async function transactImmersive(get, set, value) {
+  if (get(isViewerImmersiveAtom) === value) {
+    return;
+  }
+  if (value) {
+    set(externalFocusElementAtom, (previous) => previous ? previous : document.activeElement);
+    if (!get(viewerStateAtom).options.noSyncScroll) {
+      set(transferWindowScrollToViewerAtom);
+    }
+  }
+  const scrollable = get(scrollElementAtom);
+  if (!scrollable) {
+    return;
+  }
+  try {
+    if (get(isFullscreenPreferredAtom)) {
+      await set(viewerFullscreenAtom, value);
+    }
+  } catch (error) {
+    if (isUserGesturePermissionError(error)) {
+      showF11GuideGently();
+      return;
+    }
+    throw error;
+  } finally {
+    set(scrollBarStyleFactorAtom, { isImmersive: value });
+    if (value) {
+      focusWithoutScroll(scrollable);
+    } else {
+      if (!get(viewerStateAtom).options.noSyncScroll) {
+        set(transferViewerScrollToWindowAtom);
+      }
+      const externalFocusElement = get(externalFocusElementAtom);
+      focusWithoutScroll(externalFocusElement);
+    }
+  }
+  async function showF11GuideGently() {
+    if (get(fullscreenNoticeCountAtom) >= 3) {
+      return;
+    }
+    const isUserFullscreen = window.innerHeight === screen.height || window.innerWidth === screen.width;
+    if (isUserFullscreen) {
+      return;
+    }
+    (0, import_react_toastify.toast)(get(i18nAtom).fullScreenRestorationGuide, { type: "info" });
+    await timeout(5e3);
+    set(fullscreenNoticeCountAtom, (count) => count + 1);
+  }
+}
 var isBeforeUnloadAtom = (0, import_jotai.atom)(false);
 var beforeUnloadAtom = (0, import_jotai.atom)(null, async (_get, set) => {
   set(isBeforeUnloadAtom, true);
@@ -746,13 +810,7 @@ var fullscreenSynchronizationAtom = (0, import_jotai.atom)(
     });
   }
 );
-var fullscreenSyncWithWindowScrollAtom = (0, import_jotai.atom)(
-  (get) => get(fullscreenSynchronizationAtom),
-  (_get, set, element) => {
-    set(fullscreenSynchronizationAtom, element);
-  }
-);
-fullscreenSyncWithWindowScrollAtom.onMount = (set) => {
+fullscreenSynchronizationAtom.onMount = (set) => {
   const notify = () => set(document.fullscreenElement ?? null);
   document.addEventListener("fullscreenchange", notify);
   return () => document.removeEventListener("fullscreenchange", notify);
@@ -761,33 +819,7 @@ var setViewerElementAtom = (0, import_jotai.atom)(
   null,
   async (get, set, element) => {
     set(scrollBarStyleFactorAtom, { viewerElement: element });
-    const isViewerFullscreen = get(viewerFullscreenAtom);
-    const isFullscreenPreferred = get(isFullscreenPreferredAtom);
-    const isImmersive = get(isViewerImmersiveAtom);
-    const shouldEnterFullscreen = isFullscreenPreferred && isImmersive;
-    if (isViewerFullscreen === shouldEnterFullscreen || !element) {
-      return;
-    }
-    const isUserFullscreen = window.innerHeight === screen.height || window.innerWidth === screen.width;
-    if (isUserFullscreen) {
-      return;
-    }
-    try {
-      if (shouldEnterFullscreen) {
-        await set(viewerFullscreenAtom, true);
-      }
-    } catch (error) {
-      if (isUserGesturePermissionError(error)) {
-        if (get(fullscreenNoticeCountAtom) >= 3) {
-          return;
-        }
-        (0, import_react_toastify.toast)(get(i18nAtom).fullScreenRestorationGuide, { type: "info" });
-        await timeout(5e3);
-        set(fullscreenNoticeCountAtom, (count) => count + 1);
-        return;
-      }
-      throw error;
-    }
+    await set(setViewerImmersiveAtom, get(wasImmersiveAtom));
   }
 );
 var viewerModeAtom = (0, import_jotai.atom)((get) => {
@@ -839,15 +871,12 @@ var toggleImmersiveAtom = (0, import_jotai.atom)(null, async (get, set) => {
     await set(viewerFullscreenAtom, true);
     return;
   }
-  await set(isViewerImmersiveAtom, !get(isViewerImmersiveAtom));
+  await set(setViewerImmersiveAtom, !get(isViewerImmersiveAtom));
 });
-var setImmersiveWithFullscreenToggleAtom = (0, import_jotai.atom)(null, async (get, set, value) => {
-  if (value) {
-    await set(toggleImmersiveAtom);
-    set(isFullscreenPreferredAtom, !get(isFullscreenPreferredAtom));
-  } else {
-    set(isFullscreenPreferredAtom, !get(isFullscreenPreferredAtom));
-    await set(toggleImmersiveAtom);
+var toggleFullscreenAtom = (0, import_jotai.atom)(null, async (get, set) => {
+  set(isFullscreenPreferredSettingsAtom, !get(isFullscreenPreferredSettingsAtom));
+  if (get(viewerModeAtom) === "normal") {
+    await set(setViewerImmersiveAtom, true);
   }
 });
 var blockSelectionAtom = (0, import_jotai.atom)(null, (_get, set, event) => {
@@ -860,221 +889,6 @@ var blockSelectionAtom = (0, import_jotai.atom)(null, (_get, set, event) => {
   }
 });
 var { styled, css, keyframes } = (0, import_react.createStitches)({});
-var Svg = styled("svg", {
-  opacity: "50%",
-  filter: "drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)",
-  color: "black",
-  cursor: "pointer",
-  "&:hover": {
-    opacity: "100%",
-    transform: "scale(1.1)"
-  }
-});
-var downloadCss = { width: "40px" };
-var fullscreenCss = {
-  position: "absolute",
-  right: "1%",
-  bottom: "1%",
-  width: "40px"
-};
-var DownloadIcon = (props) =>  React.createElement(
-  Svg,
-  {
-    version: "1.1",
-    xmlns: "http://www.w3.org/2000/svg",
-    x: "0px",
-    y: "0px",
-    viewBox: "0 -34.51 122.88 122.87",
-    css: downloadCss,
-    ...props
-  },
-   React.createElement("g", null,  React.createElement("path", { d: "M58.29,42.08V3.12C58.29,1.4,59.7,0,61.44,0s3.15,1.4,3.15,3.12v38.96L79.1,29.4c1.3-1.14,3.28-1.02,4.43,0.27 s1.03,3.25-0.27,4.39L63.52,51.3c-1.21,1.06-3.01,1.03-4.18-0.02L39.62,34.06c-1.3-1.14-1.42-3.1-0.27-4.39 c1.15-1.28,3.13-1.4,4.43-0.27L58.29,42.08L58.29,42.08L58.29,42.08z M0.09,47.43c-0.43-1.77,0.66-3.55,2.43-3.98 c1.77-0.43,3.55,0.66,3.98,2.43c1.03,4.26,1.76,7.93,2.43,11.3c3.17,15.99,4.87,24.57,27.15,24.57h52.55 c20.82,0,22.51-9.07,25.32-24.09c0.67-3.6,1.4-7.5,2.44-11.78c0.43-1.77,2.21-2.86,3.98-2.43c1.77,0.43,2.85,2.21,2.43,3.98 c-0.98,4.02-1.7,7.88-2.36,11.45c-3.44,18.38-5.51,29.48-31.8,29.48H36.07C8.37,88.36,6.3,77.92,2.44,58.45 C1.71,54.77,0.98,51.08,0.09,47.43L0.09,47.43z" }))
-);
-var FullscreenIcon = (props) =>  React.createElement(
-  Svg,
-  {
-    version: "1.1",
-    xmlns: "http://www.w3.org/2000/svg",
-    x: "0px",
-    y: "0px",
-    viewBox: "0 0 122.88 122.87",
-    css: fullscreenCss,
-    ...props
-  },
-   React.createElement("g", null,  React.createElement("path", { d: "M122.88,77.63v41.12c0,2.28-1.85,4.12-4.12,4.12H77.33v-9.62h35.95c0-12.34,0-23.27,0-35.62H122.88L122.88,77.63z M77.39,9.53V0h41.37c2.28,0,4.12,1.85,4.12,4.12v41.18h-9.63V9.53H77.39L77.39,9.53z M9.63,45.24H0V4.12C0,1.85,1.85,0,4.12,0h41 v9.64H9.63V45.24L9.63,45.24z M45.07,113.27v9.6H4.12c-2.28,0-4.12-1.85-4.12-4.13V77.57h9.63v35.71H45.07L45.07,113.27z" }))
-);
-var ErrorIcon = styled("svg", {
-  width: "10vmin",
-  height: "10vmin",
-  fill: "hsl(0, 50%, 20%)",
-  margin: "2rem"
-});
-var CircledX = (props) => {
-  return  React.createElement(
-    ErrorIcon,
-    {
-      x: "0px",
-      y: "0px",
-      viewBox: "0 0 122.881 122.88",
-      "enable-background": "new 0 0 122.881 122.88",
-      ...props
-    },
-     React.createElement("g", null,  React.createElement("path", { d: "M61.44,0c16.966,0,32.326,6.877,43.445,17.996c11.119,11.118,17.996,26.479,17.996,43.444 c0,16.967-6.877,32.326-17.996,43.444C93.766,116.003,78.406,122.88,61.44,122.88c-16.966,0-32.326-6.877-43.444-17.996 C6.877,93.766,0,78.406,0,61.439c0-16.965,6.877-32.326,17.996-43.444C29.114,6.877,44.474,0,61.44,0L61.44,0z M80.16,37.369 c1.301-1.302,3.412-1.302,4.713,0c1.301,1.301,1.301,3.411,0,4.713L65.512,61.444l19.361,19.362c1.301,1.301,1.301,3.411,0,4.713 c-1.301,1.301-3.412,1.301-4.713,0L60.798,66.157L41.436,85.52c-1.301,1.301-3.412,1.301-4.713,0c-1.301-1.302-1.301-3.412,0-4.713 l19.363-19.362L36.723,42.082c-1.301-1.302-1.301-3.412,0-4.713c1.301-1.302,3.412-1.302,4.713,0l19.363,19.362L80.16,37.369 L80.16,37.369z M100.172,22.708C90.26,12.796,76.566,6.666,61.44,6.666c-15.126,0-28.819,6.13-38.731,16.042 C12.797,32.62,6.666,46.314,6.666,61.439c0,15.126,6.131,28.82,16.042,38.732c9.912,9.911,23.605,16.042,38.731,16.042 c15.126,0,28.82-6.131,38.732-16.042c9.912-9.912,16.043-23.606,16.043-38.732C116.215,46.314,110.084,32.62,100.172,22.708 L100.172,22.708z" }))
-  );
-};
-var IconSettings = (props) => {
-  return  React.createElement(
-    Svg,
-    {
-      fill: "none",
-      stroke: "currentColor",
-      strokeLinecap: "round",
-      strokeLinejoin: "round",
-      strokeWidth: 2,
-      viewBox: "0 0 24 24",
-      height: "40px",
-      width: "40px",
-      ...props
-    },
-     React.createElement("path", { d: "M15 12 A3 3 0 0 1 12 15 A3 3 0 0 1 9 12 A3 3 0 0 1 15 12 z" }),
-     React.createElement("path", { d: "M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" })
-  );
-};
-var defaultScrollbar = {
-  "scrollbarWidth": "initial",
-  "scrollbarColor": "initial",
-  "&::-webkit-scrollbar": { all: "initial" },
-  "&::-webkit-scrollbar-thumb": {
-    all: "initial",
-    background: "#00000088"
-  },
-  "&::-webkit-scrollbar-track": { all: "initial" }
-};
-var Container = styled("div", {
-  position: "relative",
-  height: "100%",
-  overflow: "hidden",
-  userSelect: "none",
-  fontFamily: "Pretendard, NanumGothic, sans-serif",
-  fontSize: "16px",
-  color: "black",
-  "&:focus-visible": {
-    outline: "none"
-  },
-  variants: {
-    immersive: {
-      true: {
-        position: "fixed",
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 9999999
-      }
-    }
-  }
-});
-var ScrollableLayout = styled("div", {
-  outline: 0,
-  position: "relative",
-  width: "100%",
-  height: "100%",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  flexFlow: "row-reverse wrap",
-  overflowY: "auto",
-  ...defaultScrollbar,
-  variants: {
-    fullscreen: {
-      true: {
-        position: "fixed",
-        top: 0,
-        bottom: 0,
-        overflow: "auto"
-      }
-    },
-    ltr: {
-      true: {
-        flexFlow: "row wrap"
-      }
-    },
-    dark: {
-      true: {
-        "&::-webkit-scrollbar-thumb": {
-          all: "initial",
-          background: "#ffffff88"
-        }
-      }
-    }
-  }
-});
-function useDefault({ enable, controller }) {
-  const defaultKeyHandler = async (event) => {
-    if (maybeNotHotkey(event)) {
-      return;
-    }
-    switch (event.key) {
-      case "j":
-      case "ArrowDown":
-        controller.goNext();
-        event.preventDefault();
-        break;
-      case "k":
-      case "ArrowUp":
-        controller.goPrevious();
-        event.preventDefault();
-        break;
-      case ";":
-        await controller.downloader?.downloadAndSave();
-        break;
-      case "/":
-        controller.compactWidthIndex++;
-        break;
-      case "?":
-        controller.compactWidthIndex--;
-        break;
-      case "'":
-        controller.reloadErrored();
-        break;
-      default:
-        return;
-    }
-    event.stopPropagation();
-  };
-  const defaultGlobalKeyHandler = (event) => {
-    if (maybeNotHotkey(event)) {
-      return;
-    }
-    if (["KeyI", "Numpad0", "Enter"].includes(event.code)) {
-      const isImmersive = controller.viewerMode !== "normal";
-      if (event.shiftKey) {
-        controller.setIsFullscreenPreferred(!controller.isFullscreenPreferred);
-        if (!isImmersive) {
-          controller.setImmersive(true);
-        }
-      } else {
-        const hasPermissionIssue = controller.viewerMode === "window" && controller.isFullscreenPreferred;
-        controller.setImmersive(hasPermissionIssue ? true : !isImmersive);
-      }
-    }
-  };
-  (0, import_react3.useEffect)(() => {
-    if (!controller || !enable) {
-      return;
-    }
-    addEventListener("keydown", defaultGlobalKeyHandler);
-    controller.container?.addEventListener("keydown", defaultKeyHandler);
-    return () => {
-      controller.container?.removeEventListener("keydown", defaultKeyHandler);
-      removeEventListener("keydown", defaultGlobalKeyHandler);
-    };
-  }, [controller, enable]);
-}
-function maybeNotHotkey(event) {
-  const { ctrlKey, altKey, metaKey } = event;
-  return ctrlKey || altKey || metaKey || isTyping(event);
-}
 function DownloadCancel({ onClick }) {
   const strings = (0, import_jotai.useAtomValue)(i18nAtom);
   return  React.createElement(SpaceBetween, null,  React.createElement("p", null, strings.downloading),  React.createElement("button", { onClick }, strings.cancel));
@@ -1329,55 +1143,291 @@ function confirmDownloadAbort(event) {
   event.preventDefault();
   event.returnValue = "";
 }
-function useViewerController() {
-  const store = (0, import_jotai.useStore)();
-  return (0, import_react3.useMemo)(() => createViewerController(store), [store]);
-}
-function createViewerController(store) {
+var controllerAtom = (0, import_jotai.atom)(null);
+var controllerCreationAtom = (0, import_jotai.atom)((get) => get(controllerAtom), (get, set) => {
+  if (!get(controllerAtom)) {
+    set(controllerAtom, createViewerController(get, set));
+  }
+  return get(controllerAtom);
+});
+controllerCreationAtom.onMount = (set) => {
+  set();
+};
+function createViewerController(get, set) {
   const downloader = {
-    download: (options) => store.set(startDownloadAtom, options),
-    downloadAndSave: (options) => store.set(downloadAndSaveAtom, options),
-    cancel: () => store.set(cancelDownloadAtom)
+    download: (options) => set(startDownloadAtom, options),
+    downloadAndSave: (options) => set(downloadAndSaveAtom, options),
+    cancel: () => set(cancelDownloadAtom)
   };
-  return {
+  const elementKeyHandler = (event) => {
+    if (maybeNotHotkey(event)) {
+      return false;
+    }
+    switch (event.key) {
+      case "j":
+      case "ArrowDown":
+        controller.goNext();
+        event.preventDefault();
+        break;
+      case "k":
+      case "ArrowUp":
+        controller.goPrevious();
+        event.preventDefault();
+        break;
+      case ";":
+        controller.downloader?.downloadAndSave();
+        break;
+      case "/":
+        controller.compactWidthIndex++;
+        break;
+      case "?":
+        controller.compactWidthIndex--;
+        break;
+      case "'":
+        controller.reloadErrored();
+        break;
+      default:
+        return false;
+    }
+    event.stopPropagation();
+    return true;
+  };
+  const globalKeyHandler = (event) => {
+    if (maybeNotHotkey(event)) {
+      return false;
+    }
+    if (["KeyI", "Numpad0", "Enter"].includes(event.code)) {
+      if (event.shiftKey) {
+        controller.toggleFullscreen();
+      } else {
+        controller.toggleImmersive();
+      }
+      return true;
+    }
+    return false;
+  };
+  const controller = {
     get options() {
-      return store.get(viewerStateAtom).options;
+      return get(viewerStateAtom).options;
     },
     get status() {
-      return store.get(viewerStateAtom).status;
+      return get(viewerStateAtom).status;
     },
     get container() {
-      return store.get(scrollBarStyleFactorAtom).viewerElement;
+      return get(scrollBarStyleFactorAtom).viewerElement;
     },
     get compactWidthIndex() {
-      return store.get(singlePageCountAtom);
+      return get(singlePageCountAtom);
     },
     downloader,
     get pages() {
-      return store.get(pagesAtom);
+      return get(pagesAtom);
     },
     get viewerMode() {
-      return store.get(viewerModeAtom);
+      return get(viewerModeAtom);
     },
     get isFullscreenPreferred() {
-      return store.get(isFullscreenPreferredAtom);
+      return get(isFullscreenPreferredAtom);
     },
     set compactWidthIndex(value) {
-      store.set(singlePageCountAtom, Math.max(0, value));
+      set(singlePageCountAtom, Math.max(0, value));
     },
-    setOptions: (value) => store.set(setViewerOptionsAtom, value),
-    goPrevious: () => store.set(goPreviousAtom),
-    goNext: () => store.set(goNextAtom),
+    setOptions: (value) => set(setViewerOptionsAtom, value),
+    goPrevious: () => set(goPreviousAtom),
+    goNext: () => set(goNextAtom),
     setImmersive: (value) => {
-      return store.set(isViewerImmersiveAtom, value);
+      return set(setViewerImmersiveAtom, value);
     },
     setIsFullscreenPreferred: (value) => {
-      return store.set(isFullscreenPreferredSettingsAtom, value);
+      return set(isFullscreenPreferredSettingsAtom, value);
     },
-    reloadErrored: () => store.set(reloadErroredAtom),
-    unmount: () => store.get(rootAtom)?.unmount()
+    toggleImmersive: () => set(toggleImmersiveAtom),
+    toggleFullscreen: () => set(toggleFullscreenAtom),
+    reloadErrored: () => set(reloadErroredAtom),
+    elementKeyHandler,
+    globalKeyHandler,
+    unmount: () => get(rootAtom)?.unmount()
   };
+  return controller;
 }
+function maybeNotHotkey(event) {
+  const { ctrlKey, altKey, metaKey } = event;
+  return ctrlKey || altKey || metaKey || isTyping(event);
+}
+var Svg = styled("svg", {
+  opacity: "50%",
+  filter: "drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)",
+  color: "black"
+});
+var downloadCss = { width: "40px" };
+var fullscreenCss = {
+  position: "absolute",
+  right: "1%",
+  bottom: "1%"
+};
+var IconButton = styled("button", {
+  background: "transparent",
+  border: "none",
+  cursor: "pointer",
+  padding: 0,
+  "& > svg": {
+    pointerEvents: "none"
+  },
+  "&:hover > svg": {
+    opacity: "100%",
+    transform: "scale(1.1)"
+  },
+  "&:focus > svg": {
+    opacity: "100%"
+  }
+});
+var DownloadButton = (props) =>  React.createElement(IconButton, { ...props },  React.createElement(
+  Svg,
+  {
+    version: "1.1",
+    xmlns: "http://www.w3.org/2000/svg",
+    x: "0px",
+    y: "0px",
+    viewBox: "0 -34.51 122.88 122.87",
+    css: downloadCss
+  },
+   React.createElement("g", null,  React.createElement("path", { d: "M58.29,42.08V3.12C58.29,1.4,59.7,0,61.44,0s3.15,1.4,3.15,3.12v38.96L79.1,29.4c1.3-1.14,3.28-1.02,4.43,0.27 s1.03,3.25-0.27,4.39L63.52,51.3c-1.21,1.06-3.01,1.03-4.18-0.02L39.62,34.06c-1.3-1.14-1.42-3.1-0.27-4.39 c1.15-1.28,3.13-1.4,4.43-0.27L58.29,42.08L58.29,42.08L58.29,42.08z M0.09,47.43c-0.43-1.77,0.66-3.55,2.43-3.98 c1.77-0.43,3.55,0.66,3.98,2.43c1.03,4.26,1.76,7.93,2.43,11.3c3.17,15.99,4.87,24.57,27.15,24.57h52.55 c20.82,0,22.51-9.07,25.32-24.09c0.67-3.6,1.4-7.5,2.44-11.78c0.43-1.77,2.21-2.86,3.98-2.43c1.77,0.43,2.85,2.21,2.43,3.98 c-0.98,4.02-1.7,7.88-2.36,11.45c-3.44,18.38-5.51,29.48-31.8,29.48H36.07C8.37,88.36,6.3,77.92,2.44,58.45 C1.71,54.77,0.98,51.08,0.09,47.43L0.09,47.43z" }))
+));
+var FullscreenButton = (props) =>  React.createElement(IconButton, { css: fullscreenCss, ...props },  React.createElement(
+  Svg,
+  {
+    version: "1.1",
+    xmlns: "http://www.w3.org/2000/svg",
+    x: "0px",
+    y: "0px",
+    viewBox: "0 0 122.88 122.87",
+    width: "40px",
+    ...props
+  },
+   React.createElement("g", null,  React.createElement("path", { d: "M122.88,77.63v41.12c0,2.28-1.85,4.12-4.12,4.12H77.33v-9.62h35.95c0-12.34,0-23.27,0-35.62H122.88L122.88,77.63z M77.39,9.53V0h41.37c2.28,0,4.12,1.85,4.12,4.12v41.18h-9.63V9.53H77.39L77.39,9.53z M9.63,45.24H0V4.12C0,1.85,1.85,0,4.12,0h41 v9.64H9.63V45.24L9.63,45.24z M45.07,113.27v9.6H4.12c-2.28,0-4.12-1.85-4.12-4.13V77.57h9.63v35.71H45.07L45.07,113.27z" }))
+));
+var ErrorIcon = styled("svg", {
+  width: "10vmin",
+  height: "10vmin",
+  fill: "hsl(0, 50%, 20%)",
+  margin: "2rem"
+});
+var CircledX = (props) => {
+  return  React.createElement(
+    ErrorIcon,
+    {
+      x: "0px",
+      y: "0px",
+      viewBox: "0 0 122.881 122.88",
+      "enable-background": "new 0 0 122.881 122.88",
+      ...props
+    },
+     React.createElement("g", null,  React.createElement("path", { d: "M61.44,0c16.966,0,32.326,6.877,43.445,17.996c11.119,11.118,17.996,26.479,17.996,43.444 c0,16.967-6.877,32.326-17.996,43.444C93.766,116.003,78.406,122.88,61.44,122.88c-16.966,0-32.326-6.877-43.444-17.996 C6.877,93.766,0,78.406,0,61.439c0-16.965,6.877-32.326,17.996-43.444C29.114,6.877,44.474,0,61.44,0L61.44,0z M80.16,37.369 c1.301-1.302,3.412-1.302,4.713,0c1.301,1.301,1.301,3.411,0,4.713L65.512,61.444l19.361,19.362c1.301,1.301,1.301,3.411,0,4.713 c-1.301,1.301-3.412,1.301-4.713,0L60.798,66.157L41.436,85.52c-1.301,1.301-3.412,1.301-4.713,0c-1.301-1.302-1.301-3.412,0-4.713 l19.363-19.362L36.723,42.082c-1.301-1.302-1.301-3.412,0-4.713c1.301-1.302,3.412-1.302,4.713,0l19.363,19.362L80.16,37.369 L80.16,37.369z M100.172,22.708C90.26,12.796,76.566,6.666,61.44,6.666c-15.126,0-28.819,6.13-38.731,16.042 C12.797,32.62,6.666,46.314,6.666,61.439c0,15.126,6.131,28.82,16.042,38.732c9.912,9.911,23.605,16.042,38.731,16.042 c15.126,0,28.82-6.131,38.732-16.042c9.912-9.912,16.043-23.606,16.043-38.732C116.215,46.314,110.084,32.62,100.172,22.708 L100.172,22.708z" }))
+  );
+};
+var SettingsButton = (props) => {
+  return  React.createElement(IconButton, { ...props },  React.createElement(
+    Svg,
+    {
+      fill: "none",
+      stroke: "currentColor",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      strokeWidth: 2,
+      viewBox: "0 0 24 24",
+      height: "40px",
+      width: "40px"
+    },
+     React.createElement("path", { d: "M15 12 A3 3 0 0 1 12 15 A3 3 0 0 1 9 12 A3 3 0 0 1 15 12 z" }),
+     React.createElement("path", { d: "M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" })
+  ));
+};
+var defaultScrollbar = {
+  "scrollbarWidth": "initial",
+  "scrollbarColor": "initial",
+  "&::-webkit-scrollbar": { all: "initial" },
+  "&::-webkit-scrollbar-thumb": {
+    all: "initial",
+    background: "#00000088"
+  },
+  "&::-webkit-scrollbar-track": { all: "initial" }
+};
+var Container = styled("div", {
+  position: "relative",
+  height: "100%",
+  overflow: "hidden",
+  userSelect: "none",
+  fontFamily: "Pretendard, NanumGothic, sans-serif",
+  fontSize: "16px",
+  color: "black",
+  "&:focus-visible": {
+    outline: "none"
+  },
+  variants: {
+    immersive: {
+      true: {
+        position: "fixed",
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0
+      }
+    }
+  }
+});
+var ScrollableLayout = styled("div", {
+  outline: 0,
+  position: "relative",
+  width: "100%",
+  height: "100%",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  flexFlow: "row-reverse wrap",
+  overflowY: "auto",
+  ...defaultScrollbar,
+  variants: {
+    fullscreen: {
+      true: {
+        position: "fixed",
+        top: 0,
+        bottom: 0,
+        overflow: "auto"
+      }
+    },
+    ltr: {
+      true: {
+        flexFlow: "row wrap"
+      }
+    },
+    dark: {
+      true: {
+        "&::-webkit-scrollbar-thumb": {
+          all: "initial",
+          background: "#ffffff88"
+        }
+      }
+    }
+  }
+});
+function useDefault({ enable, controller }) {
+  (0, import_react3.useEffect)(() => {
+    if (!controller || !enable) {
+      return;
+    }
+    const { container, elementKeyHandler, globalKeyHandler } = controller;
+    const scrollable = container?.firstElementChild;
+    addEventListener("keydown", globalKeyHandler);
+    container?.addEventListener("keydown", elementKeyHandler);
+    scrollable?.addEventListener("keydown", elementKeyHandler);
+    return () => {
+      scrollable?.removeEventListener("keydown", elementKeyHandler);
+      container?.removeEventListener("keydown", elementKeyHandler);
+      removeEventListener("keydown", globalKeyHandler);
+    };
+  }, [controller, enable]);
+}
+var import_jotai3 = require("jotai");
 var Backdrop = styled("div", {
   position: "absolute",
   top: 0,
@@ -1672,14 +1722,12 @@ var MenuActions = styled("div", {
 function LeftBottomControl() {
   const downloadAndSave = (0, import_jotai.useSetAtom)(downloadAndSaveAtom);
   const [isOpen, setIsOpen] = (0, import_react3.useState)(false);
-  return  React.createElement(React.Fragment, null,  React.createElement(LeftBottomFloat, null,  React.createElement(MenuActions, null,  React.createElement(
-    IconSettings,
-    {
-      onClick: () => {
-        setIsOpen((value) => !value);
-      }
-    }
-  ),  React.createElement(DownloadIcon, { onClick: () => downloadAndSave() }))), isOpen &&  React.createElement(ViewerDialog, { onClose: () => setIsOpen(false) }));
+  const scrollable = (0, import_jotai3.useAtomValue)(scrollElementAtom);
+  const closeDialog = () => {
+    setIsOpen(false);
+    scrollable?.focus();
+  };
+  return  React.createElement(React.Fragment, null,  React.createElement(LeftBottomFloat, null,  React.createElement(MenuActions, null,  React.createElement(SettingsButton, { onClick: () => setIsOpen((value) => !value) }),  React.createElement(DownloadButton, { onClick: () => downloadAndSave() }))), isOpen &&  React.createElement(ViewerDialog, { onClose: closeDialog }));
 }
 var stretch = keyframes({
   "0%": {
@@ -1799,34 +1847,31 @@ var Page = ({ atom: atom2, ...props }) => {
   );
 };
 function InnerViewer(props) {
-  const { useDefault: enableDefault, options: viewerOptions, onInitialized, ...otherProps } = props;
-  const setViewerElement = (0, import_jotai.useSetAtom)(setViewerElementAtom);
-  const setScrollElement = (0, import_jotai.useSetAtom)(scrollElementAtom);
+  const { options: viewerOptions, onInitialized, ...otherProps } = props;
   const isFullscreen = (0, import_jotai.useAtomValue)(viewerFullscreenAtom);
   const backgroundColor = (0, import_jotai.useAtomValue)(backgroundColorAtom);
   const viewer = (0, import_jotai.useAtomValue)(viewerStateAtom);
   const setViewerOptions = (0, import_jotai.useSetAtom)(setViewerOptionsAtom);
-  const navigate = (0, import_jotai.useSetAtom)(navigateAtom);
-  const blockSelection = (0, import_jotai.useSetAtom)(blockSelectionAtom);
-  const synchronizeScroll = (0, import_jotai.useSetAtom)(synchronizeScrollAtom);
   const pageDirection = (0, import_jotai.useAtomValue)(pageDirectionAtom);
   const strings = (0, import_jotai.useAtomValue)(i18nAtom);
   const mode = (0, import_jotai.useAtomValue)(viewerModeAtom);
-  (0, import_jotai.useAtomValue)(fullscreenSyncWithWindowScrollAtom);
+  (0, import_jotai.useAtomValue)(fullscreenSynchronizationAtom);
   const { status } = viewer;
-  const controller = useViewerController();
-  const { options } = controller;
-  useDefault({ enable: props.useDefault, controller });
+  const controller = (0, import_jotai.useAtomValue)(controllerCreationAtom);
+  const options = controller?.options;
+  useDefault({ enable: !options?.noDefaultBinding, controller });
   (0, import_react3.useEffect)(() => {
-    onInitialized?.(controller);
-  }, [controller]);
+    if (controller) {
+      onInitialized?.(controller);
+    }
+  }, [controller, onInitialized]);
   (0, import_react3.useEffect)(() => {
     setViewerOptions(viewerOptions);
   }, [viewerOptions]);
   return  React.createElement(
     Container,
     {
-      ref: setViewerElement,
+      ref: (0, import_jotai.useSetAtom)(setViewerElementAtom),
       css: { backgroundColor },
       immersive: mode === "window"
     },
@@ -1834,13 +1879,13 @@ function InnerViewer(props) {
       ScrollableLayout,
       {
         tabIndex: 0,
-        ref: setScrollElement,
+        ref: (0, import_jotai.useSetAtom)(setScrollElementAtom),
         dark: isDarkColor(backgroundColor),
         fullscreen: isFullscreen,
         ltr: pageDirection === "leftToRight",
-        onScroll: synchronizeScroll,
-        onClick: navigate,
-        onMouseDown: blockSelection,
+        onScroll: (0, import_jotai.useSetAtom)(synchronizeScrollAtom),
+        onClick: (0, import_jotai.useSetAtom)(navigateAtom),
+        onMouseDown: (0, import_jotai.useSetAtom)(blockSelectionAtom),
         children: status === "complete" ? viewer.pages.map((atom2) =>  React.createElement(
           Page,
           {
@@ -1852,8 +1897,8 @@ function InnerViewer(props) {
         ...otherProps
       }
     ),
-     React.createElement(FullscreenIcon, { onClick: (0, import_jotai.useSetAtom)(toggleImmersiveAtom) }),
     status === "complete" ?  React.createElement(LeftBottomControl, null) : false,
+     React.createElement(FullscreenButton, { onClick: (0, import_jotai.useSetAtom)(toggleImmersiveAtom) }),
      React.createElement(import_react_toastify.ToastContainer, null)
   );
 }
@@ -1872,18 +1917,18 @@ function initialize(options) {
   const root = (0, import_react_dom.createRoot)(getDefaultRoot());
   const deferredController = deferred();
   root.render(
-     React.createElement(import_jotai.Provider, { store },  React.createElement(InnerViewer, { onInitialized: deferredController.resolve, options, useDefault: true }))
+     React.createElement(import_jotai.Provider, { store },  React.createElement(InnerViewer, { onInitialized: deferredController.resolve, options }))
   );
   store.set(rootAtom, root);
   return deferredController;
 }
-var Viewer = (0, import_react3.forwardRef)(({ options, useDefault: useDefault2, onInitialized }) => {
+var Viewer = (0, import_react3.forwardRef)(({ options, onInitialized }) => {
   const store = (0, import_react3.useMemo)(import_jotai.createStore, []);
-  return  React.createElement(import_jotai.Provider, { store },  React.createElement(InnerViewer, { ...{ options, onInitialized, useDefault: useDefault2 } }));
+  return  React.createElement(import_jotai.Provider, { store },  React.createElement(InnerViewer, { options, onInitialized }));
 });
 function getDefaultRoot() {
   const div = document.createElement("div");
-  div.setAttribute("style", "width: 0; height: 0;");
+  div.setAttribute("style", "width: 0; height: 0; z-index: 9999999; position: fixed;");
   document.body.append(div);
   return div;
 }
