@@ -9,6 +9,7 @@
 - **Replace `useDefault` prop with `noDefaultBinding` option.**
 - _Sync scroll to window always for lazy loaded page._
 - _Support tab button focusing._
+- Restore focus when viewer exit.
 - Re-add `toggleFullscreen`, and add `toggleImmersive`.
 - Expose `elementKeyHandler`, `globalKeyHandler` in controller.
 
