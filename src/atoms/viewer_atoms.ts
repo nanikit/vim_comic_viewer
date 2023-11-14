@@ -90,12 +90,17 @@ const transferWindowScrollToViewerAtom = atom(null, async (get, set) => {
   });
 });
 
+const previousActiveElementAtom = atom<Element | null>(null);
 export const isViewerImmersiveAtom = atom(
   (get) => get(scrollBarStyleFactorAtom).isImmersive,
   async (get, set, value: boolean) => {
-    if (!get(viewerStateAtom).options.noSyncScroll && value) {
-      set(transferWindowScrollToViewerAtom);
+    if (value) {
+      set(previousActiveElementAtom, document.activeElement);
+      if (!get(viewerStateAtom).options.noSyncScroll) {
+        set(transferWindowScrollToViewerAtom);
+      }
     }
+
     set(scrollBarStyleFactorAtom, { isImmersive: value });
 
     const scrollable = get(scrollElementAtom);
@@ -116,10 +121,11 @@ export const isViewerImmersiveAtom = atom(
         }
       }
     } finally {
-      if (value) {
-        set(restoreScrollAtom);
-      } else if (!get(viewerStateAtom).options.noSyncScroll) {
-        set(transferViewerScrollToWindowAtom);
+      if (!value) {
+        if (!get(viewerStateAtom).options.noSyncScroll) {
+          set(transferViewerScrollToWindowAtom);
+        }
+        focusWithoutScroll(get(previousActiveElementAtom) as HTMLElement);
       }
     }
   },
@@ -167,11 +173,6 @@ export const setViewerElementAtom = atom(
   null,
   async (get, set, element: HTMLDivElement | null) => {
     set(scrollBarStyleFactorAtom, { viewerElement: element });
-
-    const scrollable = get(scrollElementAtom);
-    if (scrollable) {
-      focusWithoutScroll(scrollable);
-    }
 
     const isViewerFullscreen = get(viewerFullscreenAtom);
     const isFullscreenPreferred = get(isFullscreenPreferredAtom);
