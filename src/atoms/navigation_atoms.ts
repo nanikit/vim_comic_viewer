@@ -55,6 +55,7 @@ export const synchronizeScrollAtom = atom(null, (get, set) => {
   }
 });
 
+console.log("scroll");
 const viewerScrollAtom = atom(
   (get) => get(scrollElementAtom)?.scrollTop,
   (get, _set, top: number) => {

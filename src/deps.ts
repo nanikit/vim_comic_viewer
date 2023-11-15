@@ -4,9 +4,10 @@ export * from "https://deno.land/std@0.204.0/async/deferred.ts";
 export { atom, createStore, Provider, useAtom, useAtomValue, useSetAtom, useStore } from "jotai";
 export type { Atom, ExtractAtomValue, Getter, Setter } from "jotai";
 export { atomWithStorage, createJSONStorage, RESET, selectAtom } from "jotai/utils";
+export { useOverlayScrollbars } from "overlayscrollbars-react";
 export { type Id, toast, ToastContainer } from "react-toastify";
 
-import "./vendors/toastify_css.ts";
+import "./vendors/external_css.ts";
 
 export { Dialog, Tab } from "@headlessui/react";
 

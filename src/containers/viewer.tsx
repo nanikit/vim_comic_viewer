@@ -18,7 +18,15 @@ import {
 } from "../atoms/viewer_atoms.ts";
 import { FullscreenButton } from "../components/icons.tsx";
 import { Container, ScrollableLayout } from "../components/scrollable_layout.ts";
-import { HTMLProps, ToastContainer, useAtomValue, useEffect, useSetAtom } from "../deps.ts";
+import {
+  HTMLProps,
+  ToastContainer,
+  useAtomValue,
+  useEffect,
+  useOverlayScrollbars,
+  useRef,
+  useSetAtom,
+} from "../deps.ts";
 import { useDefault } from "../hooks/use_default.ts";
 import { ViewerOptions } from "../types.ts";
 import { LeftBottomControl } from "./left_bottom_control.tsx";
@@ -38,11 +46,25 @@ export function InnerViewer(
   const pageDirection = useAtomValue(pageDirectionAtom);
   const strings = useAtomValue(i18nAtom);
   const mode = useAtomValue(viewerModeAtom);
-  useAtomValue(fullscreenSynchronizationAtom);
+  const controller = useAtomValue(controllerCreationAtom);
+  const virtualContainerRef = useRef<HTMLDivElement | null>(null);
+  const virtualContainer = virtualContainerRef.current;
+  const setScrollElement = useSetAtom(setScrollElementAtom);
+
+  const options = controller?.options;
   const { status } = viewer;
 
-  const controller = useAtomValue(controllerCreationAtom);
-  const options = controller?.options;
+  const setupScroll = () => {
+    const selector = "div[data-overlayscrollbars-viewport]";
+    setScrollElement(virtualContainerRef.current?.querySelector(selector)!);
+  };
+
+  const [initialize] = useOverlayScrollbars({
+    defer: true,
+    events: { scroll: useSetAtom(synchronizeScrollAtom), initialized: setupScroll },
+  });
+
+  useAtomValue(fullscreenSynchronizationAtom);
 
   useDefault({ enable: !options?.noDefaultBinding, controller });
 
@@ -56,6 +78,12 @@ export function InnerViewer(
     setViewerOptions(viewerOptions);
   }, [viewerOptions]);
 
+  useEffect(() => {
+    if (virtualContainer) {
+      initialize(virtualContainer);
+    }
+  }, [initialize, virtualContainer]);
+
   return (
     <Container
       ref={useSetAtom(setViewerElementAtom)}
@@ -65,11 +93,10 @@ export function InnerViewer(
       <ScrollableLayout
         tabIndex={0}
         // deno-lint-ignore no-explicit-any
-        ref={useSetAtom(setScrollElementAtom) as any}
+        ref={virtualContainerRef as any}
         dark={isDarkColor(backgroundColor)}
         fullscreen={isFullscreen}
         ltr={pageDirection === "leftToRight"}
-        onScroll={useSetAtom(synchronizeScrollAtom)}
         onClick={useSetAtom(navigateAtom)}
         onMouseDown={useSetAtom(blockSelectionAtom)}
         children={status === "complete"

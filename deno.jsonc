@@ -26,6 +26,7 @@
     "fflate": "npm:fflate@0.8.1",
     "jotai": "npm:jotai@2.4.2",
     "jotai/utils": "npm:jotai@2.4.2/utils",
+    "overlayscrollbars-react": "npm:overlayscrollbars-react",
     "react-dom": "npm:react-dom",
     "react": "npm:react",
     "react/jsx-runtime": "npm:@types/react/jsx-runtime",
