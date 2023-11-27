@@ -22,12 +22,6 @@ export const Container = styled("div", {
   fontSize: "16px",
   color: "black",
 
-  "&:focus-visible": {
-    // For overriding Chrome 118.0.5993.118 UA style sheet
-    // :focus-visible { outline: -webkit-focus-ring-color auto 1px; }
-    outline: "none",
-  },
-
   variants: {
     immersive: {
       true: {
@@ -42,16 +36,19 @@ export const Container = styled("div", {
 });
 
 export const ScrollableLayout = styled("div", {
-  // chrome user-agent style override
-  outline: 0,
   position: "relative",
+
   width: "100%",
   height: "100%",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
   flexFlow: "row-reverse wrap",
+
   overflowY: "auto",
+  // For overriding Chrome 118.0.5993.118 UA style sheet
+  // :focus-visible { outline: -webkit-focus-ring-color auto 1px; }
+  outline: "none",
   ...defaultScrollbar,
 
   variants: {
