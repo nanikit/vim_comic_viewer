@@ -9,7 +9,9 @@
 // @match          http://unused-field.space/
 // @author         nanikit
 // @license        MIT
+// @grant          GM_addValueChangeListener
 // @grant          GM_getValue
+// @grant          GM_removeValueChangeListener
 // @grant          GM_setValue
 // @grant          GM_xmlhttpRequest
 // @grant          unsafeWindow
