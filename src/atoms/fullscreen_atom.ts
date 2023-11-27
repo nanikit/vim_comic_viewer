@@ -43,6 +43,8 @@ export const scrollBarStyleFactorAtom = atom(
 scrollBarStyleFactorAtom.onMount = (set) => set({});
 
 export const viewerFullscreenAtom = atom((get) => {
+  // For detecting other tab configuration change
+  get(isFullscreenPreferredAtom);
   return get(isViewerFullscreenAtom);
 }, async (get, _set, value: boolean) => {
   const element = value ? get(viewerElementAtom) : null;
