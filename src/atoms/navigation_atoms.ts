@@ -28,7 +28,7 @@ export const transferViewerScrollToWindowAtom = atom(null, (get) => {
   }
 
   const rect = original.getBoundingClientRect();
-  const top = window.scrollY + rect.y + rect.height * ratio - window.innerHeight / 2;
+  const top = scrollY + rect.y + rect.height * ratio - innerHeight / 2;
   scroll({ behavior: "instant", top });
   return true;
 });
