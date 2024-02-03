@@ -155,8 +155,7 @@ async function transactImmersive(get: Getter, set: Setter, value: boolean) {
       return;
     }
 
-    const isUserFullscreen = window.innerHeight === screen.height ||
-      window.innerWidth === screen.width;
+    const isUserFullscreen = innerHeight === screen.height || innerWidth === screen.width;
     if (isUserFullscreen) {
       return;
     }
@@ -252,7 +251,7 @@ export const setViewerOptionsAtom = atom(
 );
 
 export const reloadErroredAtom = atom(null, (get, set) => {
-  window.stop();
+  stop();
 
   const pages = get(pagesAtom);
   for (const atom of pages ?? []) {
