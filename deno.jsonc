@@ -16,8 +16,8 @@
     "jsxImportSource": "react"
   },
   "tasks": {
-    "build": "deno run --allow-all https://raw.githubusercontent.com/nanikit/deno_userscript_linker/eabb9e5d7ed4e6c6c32cd49efeb89f220cc714ec/mod.ts --inject src/react_shim.ts -o vim_comic_viewer.user.js src/mod.tsx",
-    "watch": "deno run --allow-all https://raw.githubusercontent.com/nanikit/deno_userscript_linker/eabb9e5d7ed4e6c6c32cd49efeb89f220cc714ec/mod.ts --inject src/react_shim.ts -o vim_comic_viewer.user.js src/mod.tsx --watch"
+    "build": "deno run --allow-all https://raw.githubusercontent.com/nanikit/deno_userscript_linker/d84482723e6077f6f5d2c20b44e78c21ccb467a3/mod.ts --inject src/react_shim.ts -o vim_comic_viewer.user.js src/mod.tsx",
+    "watch": "deno run --allow-all https://raw.githubusercontent.com/nanikit/deno_userscript_linker/d84482723e6077f6f5d2c20b44e78c21ccb467a3/mod.ts --inject src/react_shim.ts -o vim_comic_viewer.user.js src/mod.tsx --watch"
   },
   "exclude": ["vim_comic_viewer.user.js"],
   "imports": {
