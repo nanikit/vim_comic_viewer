@@ -9,7 +9,9 @@
 // @match          http://unused-field.space/
 // @author         nanikit
 // @license        MIT
+// @grant          GM_addValueChangeListener
 // @grant          GM_getValue
+// @grant          GM_removeValueChangeListener
 // @grant          GM_setValue
 // @grant          GM_xmlhttpRequest
 // @grant          unsafeWindow
@@ -268,7 +270,7 @@ var transferViewerScrollToWindowAtom = (0, import_jotai.atom)(null, (get) => {
     return false;
   }
   const rect = original.getBoundingClientRect();
-  const top = window.scrollY + rect.y + rect.height * ratio - window.innerHeight / 2;
+  const top = scrollY + rect.y + rect.height * ratio - innerHeight / 2;
   scroll({ behavior: "instant", top });
   return true;
 });
@@ -422,7 +424,11 @@ function getPreviousPageBottomOrStart(page) {
 var gmStorage = {
   getItem: GM_getValue,
   setItem: GM_setValue,
-  removeItem: (key) => GM_deleteValue(key)
+  removeItem: (key) => GM_deleteValue(key),
+  subscribe: (key, callback) => {
+    const id = GM_addValueChangeListener(key, (_key, _oldValue, newValue) => callback(newValue));
+    return () => GM_removeValueChangeListener(id);
+  }
 };
 function atomWithGmValue(key, defaultValue) {
   return (0, import_utils2.atomWithStorage)(key, defaultValue, gmStorage, { unstable_getOnInit: true });
@@ -555,6 +561,7 @@ var scrollBarStyleFactorAtom = (0, import_jotai.atom)(
 );
 scrollBarStyleFactorAtom.onMount = (set) => set({});
 var viewerFullscreenAtom = (0, import_jotai.atom)((get) => {
+  get(isFullscreenPreferredAtom);
   return get(isViewerFullscreenAtom);
 }, async (get, _set, value) => {
   const element = value ? get(viewerElementAtom) : null;
@@ -771,7 +778,7 @@ async function transactImmersive(get, set, value) {
     if (get(fullscreenNoticeCountAtom) >= 3) {
       return;
     }
-    const isUserFullscreen = window.innerHeight === screen.height || window.innerWidth === screen.width;
+    const isUserFullscreen = innerHeight === screen.height || innerWidth === screen.width;
     if (isUserFullscreen) {
       return;
     }
@@ -856,7 +863,7 @@ var setViewerOptionsAtom = (0, import_jotai.atom)(
   }
 );
 var reloadErroredAtom = (0, import_jotai.atom)(null, (get, set) => {
-  window.stop();
+  stop();
   const pages = get(pagesAtom);
   for (const atom2 of pages ?? []) {
     const page = get(atom2);
@@ -898,24 +905,7 @@ var SpaceBetween = styled("div", {
   flexFlow: "row nowrap",
   justifyContent: "space-between"
 });
-async function fetchBlob(url, init) {
-  try {
-    const response = await fetch(url, init);
-    return await response.blob();
-  } catch (error) {
-    if (init?.signal?.aborted) {
-      throw error;
-    }
-    const isOriginDifferent = new URL(url).origin !== location.origin;
-    if (isOriginDifferent) {
-      return await gmFetch(url, init).blob();
-    } else {
-      throw new Error("CORS blocked and cannot use GM_xmlhttpRequest", {
-        cause: error
-      });
-    }
-  }
-}
+var isGmFetchAvailable = typeof GM_xmlhttpRequest === "function";
 function gmFetch(resource, init) {
   const method = init?.body ? "POST" : "GET";
   const xhr = (type) => {
@@ -923,7 +913,10 @@ function gmFetch(resource, init) {
       const request = GM_xmlhttpRequest({
         method,
         url: resource,
-        headers: init?.headers,
+        headers: {
+          referer: `${location.origin}/`,
+          ...init?.headers
+        },
         responseType: type === "text" ? void 0 : type,
         data: init?.body,
         onload: (response) => {
@@ -951,49 +944,7 @@ function gmFetch(resource, init) {
     text: () => xhr("text")
   };
 }
-var isGmCancelled = (error) => {
-  return error instanceof Function;
-};
-async function* downloadImage({ source, signal }) {
-  for await (const url of imageSourceToIterable(source)) {
-    if (signal?.aborted) {
-      break;
-    }
-    try {
-      const blob = await fetchBlob(url, { signal });
-      yield { url, blob };
-    } catch (error) {
-      if (isGmCancelled(error)) {
-        yield { error: new Error("download aborted") };
-      } else {
-        yield { error };
-      }
-    }
-  }
-}
-var getExtension = (url) => {
-  if (!url) {
-    return ".txt";
-  }
-  const extension = url.match(/\.[^/?#]{3,4}?(?=[?#]|$)/);
-  return extension?.[0] || ".jpg";
-};
-var guessExtension = (array) => {
-  const { 0: a, 1: b, 2: c, 3: d } = array;
-  if (a === 255 && b === 216 && c === 255) {
-    return ".jpg";
-  }
-  if (a === 137 && b === 80 && c === 78 && d === 71) {
-    return ".png";
-  }
-  if (a === 82 && b === 73 && c === 70 && d === 70) {
-    return ".webp";
-  }
-  if (a === 71 && b === 73 && c === 70 && d === 56) {
-    return ".gif";
-  }
-};
-var download = (images, options) => {
+function download(images, options) {
   const { onError, onProgress, signal } = options || {};
   let startedCount = 0;
   let resolvedCount = 0;
@@ -1066,7 +1017,72 @@ var download = (images, options) => {
     return value;
   };
   return archiveWithReport(images);
-};
+}
+function getExtension(url) {
+  if (!url) {
+    return ".txt";
+  }
+  const extension = url.match(/\.[^/?#]{3,4}?(?=[?#]|$)/);
+  return extension?.[0] || ".jpg";
+}
+function guessExtension(array) {
+  const { 0: a, 1: b, 2: c, 3: d } = array;
+  if (a === 255 && b === 216 && c === 255) {
+    return ".jpg";
+  }
+  if (a === 137 && b === 80 && c === 78 && d === 71) {
+    return ".png";
+  }
+  if (a === 82 && b === 73 && c === 70 && d === 70) {
+    return ".webp";
+  }
+  if (a === 71 && b === 73 && c === 70 && d === 56) {
+    return ".gif";
+  }
+}
+async function* downloadImage({ source, signal }) {
+  for await (const url of imageSourceToIterable(source)) {
+    if (signal?.aborted) {
+      break;
+    }
+    try {
+      const blob = await fetchBlobWithCacheIfPossible(url, signal);
+      yield { url, blob };
+    } catch (error) {
+      yield await fetchBlobIgnoringCors(url, { signal, fetchError: error });
+    }
+  }
+}
+async function fetchBlobWithCacheIfPossible(url, signal) {
+  const response = await fetch(url, { signal });
+  return await response.blob();
+}
+async function fetchBlobIgnoringCors(url, { signal, fetchError }) {
+  if (isCrossOrigin(url) && !isGmFetchAvailable) {
+    return {
+      error: new Error(
+        "It could be a CORS issue but cannot use GM_xmlhttpRequest",
+        { cause: fetchError }
+      )
+    };
+  }
+  try {
+    const blob = await gmFetch(url, { signal }).blob();
+    return { url, blob };
+  } catch (error) {
+    if (isGmCancelled(error)) {
+      return { error: new Error("download aborted") };
+    } else {
+      return { error: fetchError };
+    }
+  }
+}
+function isCrossOrigin(url) {
+  return new URL(url).origin !== location.origin;
+}
+function isGmCancelled(error) {
+  return error instanceof Function;
+}
 var aborterAtom = (0, import_jotai.atom)(null);
 var cancelDownloadAtom = (0, import_jotai.atom)(null, (get) => {
   get(aborterAtom)?.abort();
@@ -1360,9 +1376,6 @@ var Container = styled("div", {
   fontFamily: "Pretendard, NanumGothic, sans-serif",
   fontSize: "16px",
   color: "black",
-  "&:focus-visible": {
-    outline: "none"
-  },
   variants: {
     immersive: {
       true: {
@@ -1376,7 +1389,6 @@ var Container = styled("div", {
   }
 });
 var ScrollableLayout = styled("div", {
-  outline: 0,
   position: "relative",
   width: "100%",
   height: "100%",
@@ -1385,6 +1397,7 @@ var ScrollableLayout = styled("div", {
   alignItems: "center",
   flexFlow: "row-reverse wrap",
   overflowY: "auto",
+  outline: "none",
   ...defaultScrollbar,
   variants: {
     fullscreen: {

@@ -1,26 +1,8 @@
 import type {} from "tampermonkey";
 
-export async function fetchBlob(url: string, init?: RequestInit) {
-  try {
-    const response = await fetch(url, init);
-    return await response.blob();
-  } catch (error) {
-    if (init?.signal?.aborted) {
-      throw error;
-    }
+export const isGmFetchAvailable = typeof GM_xmlhttpRequest === "function";
 
-    const isOriginDifferent = new URL(url).origin !== location.origin;
-    if (isOriginDifferent) {
-      return await gmFetch(url, init).blob();
-    } else {
-      throw new Error("CORS blocked and cannot use GM_xmlhttpRequest", {
-        cause: error,
-      });
-    }
-  }
-}
-
-function gmFetch(resource: string, init?: RequestInit) {
+export function gmFetch(resource: string, init?: RequestInit) {
   const method = init?.body ? "POST" : "GET";
   const xhr = (type: "blob" | "json" | "text") => {
     return new Promise<unknown>((resolve, reject) => {
