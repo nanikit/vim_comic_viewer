@@ -27,7 +27,11 @@ function gmFetch(resource: string, init?: RequestInit) {
       const request = GM_xmlhttpRequest({
         method,
         url: resource,
-        headers: init?.headers as Record<string, string>,
+        headers: {
+          // Assume cross-origin request and default referrer policy.
+          referer: `${location.origin}/`,
+          ...init?.headers as Record<string, string>,
+        },
         responseType: type === "text" ? undefined : type,
         data: init?.body as string,
         onload: (response) => {
