@@ -1,20 +1,33 @@
+import { atom, SetStateAction } from "jotai";
 import { atomWithGmValue, atomWithSession } from "./helpers/atoms_with_storage.ts";
+import { getEffectivePreferences, PersistentPreferences } from "./models.ts";
 
-type PageDirection = "leftToRight" | "rightToLeft";
+export const scriptPreferencesAtom = atom<Partial<PersistentPreferences>>({});
+export const manualPreferencesAtom = atomWithGmValue<Partial<PersistentPreferences>>(
+  "vim_comic_viewer.preferences",
+  {},
+);
+export const preferencesAtom = atom((get) => {
+  return getEffectivePreferences(get(scriptPreferencesAtom), get(manualPreferencesAtom));
+});
 
-export const backgroundColorAtom = atomWithGmValue("vim_comic_viewer.background_color", "#eeeeee");
-export const singlePageCountAtom = atomWithGmValue("vim_comic_viewer.single_page_count", 1);
-// maxZoomOutRatio = Math.sqrt(2) ** maxZoomOutExponent
-export const maxZoomOutExponentAtom = atomWithGmValue("vim_comic_viewer.max_zoom_out_exponent", 3);
-export const maxZoomInExponentAtom = atomWithGmValue("vim_comic_viewer.max_zoom_in_exponent", 3);
-export const pageDirectionAtom = atomWithGmValue<PageDirection>(
-  "vim_comic_viewer.page_direction",
-  "rightToLeft",
-);
-export const isFullscreenPreferredAtom = atomWithGmValue("vim_comic_viewer.use_full_screen", false);
-export const fullscreenNoticeCountAtom = atomWithGmValue(
-  "vim_comic_viewer.full_screen_notice_count",
-  0,
-);
+export const backgroundColorAtom = atomWithPreferences("backgroundColor");
+export const singlePageCountAtom = atomWithPreferences("singlePageCount");
+/** maxZoomOutRatio = Math.sqrt(2) ** maxZoomOutExponent */
+export const maxZoomOutExponentAtom = atomWithPreferences("maxZoomOutExponent");
+export const maxZoomInExponentAtom = atomWithPreferences("maxZoomInExponent");
+export const pageDirectionAtom = atomWithPreferences("pageDirection");
+export const isFullscreenPreferredAtom = atomWithPreferences("isFullscreenPreferred");
+export const fullscreenNoticeCountAtom = atomWithPreferences("fullscreenNoticeCount");
 
 export const wasImmersiveAtom = atomWithSession("vim_comic_viewer.was_immersive", false);
+
+function atomWithPreferences<T extends keyof PersistentPreferences>(key: T) {
+  return atom(
+    (get) => get(preferencesAtom)[key],
+    (get, set, update: SetStateAction<PersistentPreferences[T]>) => {
+      const effective = typeof update === "function" ? update(get(preferencesAtom)[key]) : update;
+      set(manualPreferencesAtom, (preferences) => ({ ...preferences, [key]: effective }));
+    },
+  );
+}
