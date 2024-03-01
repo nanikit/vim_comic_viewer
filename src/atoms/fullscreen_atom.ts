@@ -1,6 +1,6 @@
 import { atom, Deferred, deferred, ExtractAtomValue } from "../deps.ts";
+import { isFullscreenPreferredAtom, wasImmersiveAtom } from "../features/preferences/atoms.ts";
 import { hideBodyScrollBar, setFullscreenElement } from "./dom/dom_helpers.ts";
-import { isFullscreenPreferredAtom, wasImmersiveAtom } from "./persistent_atoms.ts";
 
 const fullscreenElementAtom = atom<Element | null>(null);
 const viewerElementAtom = atom<HTMLDivElement | null>(null);

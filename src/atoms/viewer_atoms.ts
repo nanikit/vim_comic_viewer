@@ -1,4 +1,9 @@
 import { atom, ExtractAtomValue, Getter, Root, selectAtom, Setter, toast } from "../deps.ts";
+import {
+  fullscreenNoticeCountAtom,
+  isFullscreenPreferredAtom,
+  wasImmersiveAtom,
+} from "../features/preferences/atoms.ts";
 import { ImageSource, ViewerOptions } from "../types.ts";
 import { timeout } from "../utils.ts";
 import { createPageAtom, PageAtom } from "./create_page_atom.ts";
@@ -22,11 +27,6 @@ import {
   scrollElementAtom,
   transferViewerScrollToWindowAtom,
 } from "./navigation_atoms.ts";
-import {
-  fullscreenNoticeCountAtom,
-  isFullscreenPreferredAtom,
-  wasImmersiveAtom,
-} from "./persistent_atoms.ts";
 
 type ViewerState =
   & { options: ViewerOptions }
