@@ -7,6 +7,8 @@
   "singlePageCount": "한쪽 페이지 수",
   "backgroundColor": "배경색",
   "leftToRight": "왼쪽부터 보기",
+  "reset": "초기화",
+  "doYouReallyWantToReset": "정말 초기화하시겠어요?",
   "errorIsOccurred": "에러가 발생했습니다.",
   "failedToLoadImage": "이미지를 불러오지 못했습니다.",
   "loading": "로딩 중...",
