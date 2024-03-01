@@ -21,7 +21,13 @@ import {
   viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
 import { atom, Getter, Setter } from "../deps.ts";
-import { isFullscreenPreferredAtom, singlePageCountAtom } from "../features/preferences/atoms.ts";
+import {
+  manualPreferencesAtom,
+  preferencesAtom,
+  preferencesPresetAtom,
+  scriptPreferencesAtom,
+} from "../features/preferences/atoms.ts";
+import { PersistentPreferences } from "../features/preferences/models.ts";
 import { ViewerOptions } from "../types.ts";
 import { isTyping } from "../utils.ts";
 
@@ -65,10 +71,16 @@ function createViewerController(get: Getter, set: Setter) {
         controller.downloader?.downloadAndSave();
         break;
       case "/":
-        controller.compactWidthIndex++;
+        controller.setManualPreferences({
+          ...controller.manualPreferences,
+          singlePageCount: controller.effectivePreferences.singlePageCount + 1,
+        });
         break;
       case "?":
-        controller.compactWidthIndex--;
+        controller.setManualPreferences({
+          ...controller.manualPreferences,
+          singlePageCount: Math.max(0, controller.effectivePreferences.singlePageCount - 1),
+        });
         break;
       case "'":
         controller.reloadErrored();
@@ -107,9 +119,6 @@ function createViewerController(get: Getter, set: Setter) {
     get container() {
       return get(scrollBarStyleFactorAtom).viewerElement;
     },
-    get compactWidthIndex() {
-      return get(singlePageCountAtom);
-    },
     downloader,
     get pages() {
       return get(pagesAtom);
@@ -117,16 +126,34 @@ function createViewerController(get: Getter, set: Setter) {
     get viewerMode() {
       return get(viewerModeAtom);
     },
-    get isFullscreenPreferred() {
-      return get(isFullscreenPreferredAtom);
+    get effectivePreferences() {
+      return get(preferencesAtom);
     },
-    set compactWidthIndex(value: number) {
-      set(singlePageCountAtom, Math.max(0, value));
+    get manualPreferences() {
+      return get(manualPreferencesAtom);
     },
 
     setOptions: (value: ViewerOptions) => set(setViewerOptionsAtom, value),
     goPrevious: () => set(goPreviousAtom),
     goNext: () => set(goNextAtom),
+    setManualPreferences: (
+      value: Partial<Omit<PersistentPreferences, "isFullscreenPreferred">>,
+    ) => {
+      return set(manualPreferencesAtom, value);
+    },
+    setScriptPreferences: (
+      { manualPreset, preferences }: {
+        manualPreset?: string;
+        preferences?: Partial<PersistentPreferences>;
+      },
+    ) => {
+      if (manualPreset) {
+        set(preferencesPresetAtom, manualPreset);
+      }
+      if (preferences) {
+        set(scriptPreferencesAtom, preferences);
+      }
+    },
     setImmersive: (value: boolean) => {
       return set(setViewerImmersiveAtom, value);
     },

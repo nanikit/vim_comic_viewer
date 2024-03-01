@@ -9,7 +9,7 @@ const manualPreferencesAtomAtom = atom((get) => {
   const key = `vim_comic_viewer.preferences.${preset}`;
   return atomWithGmValue<Partial<PersistentPreferences>>(key, {});
 });
-const manualPreferencesAtom = atom(
+export const manualPreferencesAtom = atom(
   (get) => get(get(manualPreferencesAtomAtom)),
   (get, set, update: SetStateAction<Partial<PersistentPreferences>>) => {
     set(get(manualPreferencesAtomAtom), update);
