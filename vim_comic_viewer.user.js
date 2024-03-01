@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        14.0.0
+// @version        15.0.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -638,6 +638,8 @@ var en_default = {
   singlePageCount: "single page count",
   backgroundColor: "Background color",
   leftToRight: "Left to right",
+  reset: "Reset",
+  doYouReallyWantToReset: "Do you really want to reset?",
   errorIsOccurred: "Error is occurred.",
   failedToLoadImage: "Failed to load image.",
   loading: "Loading...",
@@ -666,6 +668,8 @@ var ko_default = {
   singlePageCount: "한쪽 페이지 수",
   backgroundColor: "배경색",
   leftToRight: "왼쪽부터 보기",
+  reset: "초기화",
+  doYouReallyWantToReset: "정말 초기화하시겠어요?",
   errorIsOccurred: "에러가 발생했습니다.",
   failedToLoadImage: "이미지를 불러오지 못했습니다.",
   loading: "로딩 중...",
@@ -1226,10 +1230,16 @@ function createViewerController(get, set) {
         controller.downloader?.downloadAndSave();
         break;
       case "/":
-        controller.compactWidthIndex++;
+        controller.setManualPreferences({
+          ...controller.manualPreferences,
+          singlePageCount: controller.effectivePreferences.singlePageCount + 1
+        });
         break;
       case "?":
-        controller.compactWidthIndex--;
+        controller.setManualPreferences({
+          ...controller.manualPreferences,
+          singlePageCount: Math.max(0, controller.effectivePreferences.singlePageCount - 1)
+        });
         break;
       case "'":
         controller.reloadErrored();
@@ -1264,9 +1274,6 @@ function createViewerController(get, set) {
     get container() {
       return get(scrollBarStyleFactorAtom).viewerElement;
     },
-    get compactWidthIndex() {
-      return get(singlePageCountAtom);
-    },
     downloader,
     get pages() {
       return get(pagesAtom);
@@ -1274,15 +1281,26 @@ function createViewerController(get, set) {
     get viewerMode() {
       return get(viewerModeAtom);
     },
-    get isFullscreenPreferred() {
-      return get(isFullscreenPreferredAtom);
+    get effectivePreferences() {
+      return get(preferencesAtom);
     },
-    set compactWidthIndex(value) {
-      set(singlePageCountAtom, Math.max(0, value));
+    get manualPreferences() {
+      return get(manualPreferencesAtom);
     },
     setOptions: (value) => set(setViewerOptionsAtom, value),
     goPrevious: () => set(goPreviousAtom),
     goNext: () => set(goNextAtom),
+    setManualPreferences: (value) => {
+      return set(manualPreferencesAtom, value);
+    },
+    setScriptPreferences: ({ manualPreset, preferences }) => {
+      if (manualPreset) {
+        set(preferencesPresetAtom, manualPreset);
+      }
+      if (preferences) {
+        set(scriptPreferencesAtom, preferences);
+      }
+    },
     setImmersive: (value) => {
       return set(setViewerImmersiveAtom, value);
     },
@@ -1472,7 +1490,7 @@ function useDefault({ enable, controller }) {
     };
   }, [controller, enable]);
 }
-var import_jotai4 = require("jotai");
+var import_jotai3 = require("jotai");
 var Backdrop = styled("div", {
   position: "absolute",
   top: 0,
@@ -1557,7 +1575,6 @@ var keyBindingsAtom = (0, import_jotai.atom)((get) => {
 var ActionName = styled("td", {
   width: "50%"
 });
-var import_jotai3 = require("jotai");
 function SettingsTab() {
   const [maxZoomOutExponent, setMaxZoomOutExponent] = (0, import_jotai.useAtom)(maxZoomOutExponentAtom);
   const [maxZoomInExponent, setMaxZoomInExponent] = (0, import_jotai.useAtom)(maxZoomInExponentAtom);
@@ -1567,16 +1584,26 @@ function SettingsTab() {
   const [isFullscreenPreferred, setIsFullscreenPreferred] = (0, import_jotai.useAtom)(
     isFullscreenPreferredSettingsAtom
   );
+  const setManualPreferences = (0, import_jotai.useSetAtom)(manualPreferencesAtom);
   const zoomOutExponentInputId = (0, import_react3.useId)();
   const zoomInExponentInputId = (0, import_react3.useId)();
   const singlePageCountInputId = (0, import_react3.useId)();
   const colorInputId = (0, import_react3.useId)();
   const pageDirectionInputId = (0, import_react3.useId)();
   const fullscreenInputId = (0, import_react3.useId)();
-  const strings = (0, import_jotai3.useAtomValue)(i18nAtom);
+  const strings = (0, import_jotai.useAtomValue)(i18nAtom);
+  const [isResetConfirming, setResetConfirming] = (0, import_react3.useState)(false);
   const maxZoomOut = formatMultiplier(maxZoomOutExponent);
   const maxZoomIn = formatMultiplier(maxZoomInExponent);
-  return  React.createElement(ConfigSheet, null,  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: zoomOutExponentInputId }, strings.maxZoomOut, ": ", maxZoomOut),  React.createElement(
+  function tryReset() {
+    if (isResetConfirming) {
+      setManualPreferences({});
+      setResetConfirming(false);
+    } else {
+      setResetConfirming(true);
+    }
+  }
+  return  React.createElement(ConfigSheet, null,  React.createElement(ConfigRow, null,  React.createElement(ConfigLabel, { htmlFor: zoomOutExponentInputId }, strings.maxZoomOut, ": ", maxZoomOut),  React.createElement(
     "input",
     {
       type: "number",
@@ -1588,7 +1615,7 @@ function SettingsTab() {
         setMaxZoomOutExponent(event.currentTarget.valueAsNumber || 0);
       }
     }
-  )),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: zoomInExponentInputId }, strings.maxZoomIn, ": ", maxZoomIn),  React.createElement(
+  )),  React.createElement(ConfigRow, null,  React.createElement(ConfigLabel, { htmlFor: zoomInExponentInputId }, strings.maxZoomIn, ": ", maxZoomIn),  React.createElement(
     "input",
     {
       type: "number",
@@ -1600,7 +1627,7 @@ function SettingsTab() {
         setMaxZoomInExponent(event.currentTarget.valueAsNumber || 0);
       }
     }
-  )),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: singlePageCountInputId }, strings.singlePageCount),  React.createElement(
+  )),  React.createElement(ConfigRow, null,  React.createElement(ConfigLabel, { htmlFor: singlePageCountInputId }, strings.singlePageCount),  React.createElement(
     "input",
     {
       type: "number",
@@ -1612,7 +1639,7 @@ function SettingsTab() {
         setSinglePageCount(event.currentTarget.valueAsNumber || 0);
       }
     }
-  )),  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: colorInputId }, strings.backgroundColor),  React.createElement(
+  )),  React.createElement(ConfigRow, null,  React.createElement(ConfigLabel, { htmlFor: colorInputId }, strings.backgroundColor),  React.createElement(
     ColorInput,
     {
       type: "color",
@@ -1642,11 +1669,26 @@ function SettingsTab() {
         setPageDirection(event.currentTarget.checked ? "leftToRight" : "rightToLeft");
       }
     }
-  ),  React.createElement("label", { htmlFor: pageDirectionInputId }, strings.leftToRight))));
+  ),  React.createElement("label", { htmlFor: pageDirectionInputId }, strings.leftToRight))),  React.createElement(ResetButton, { onClick: tryReset }, isResetConfirming ? strings.doYouReallyWantToReset : strings.reset));
 }
 function formatMultiplier(maxZoomOutExponent) {
   return Math.sqrt(2) ** maxZoomOutExponent === Infinity ? "∞" : `${(Math.sqrt(2) ** maxZoomOutExponent).toPrecision(2)}x`;
 }
+var ConfigLabel = styled("label", {
+  margin: 0
+});
+var ResetButton = styled("button", {
+  padding: "0.2em 0.5em",
+  background: "none",
+  border: "red 1px solid",
+  borderRadius: "0.2em",
+  color: "red",
+  cursor: "pointer",
+  transition: "0.3s",
+  "&:hover": {
+    background: "#ffe0e0"
+  }
+});
 var ColorInput = styled("input", {
   height: "1.5em"
 });
@@ -1658,9 +1700,7 @@ var ConfigRow = styled("div", {
   "&& > *": {
     fontSize: "1em",
     fontWeight: "medium",
-    minWidth: "0",
-    margin: 0,
-    padding: 0
+    minWidth: 0
   },
   "& > input": {
     appearance: "meter",
@@ -1718,6 +1758,7 @@ var Toggle = styled("span", {
 var ConfigSheet = styled("div", {
   display: "flex",
   flexFlow: "column nowrap",
+  alignItems: "stretch",
   gap: "0.8em"
 });
 function ViewerDialog({ onClose }) {
@@ -1767,7 +1808,7 @@ var MenuActions = styled("div", {
 function LeftBottomControl() {
   const downloadAndSave = (0, import_jotai.useSetAtom)(downloadAndSaveAtom);
   const [isOpen, setIsOpen] = (0, import_react3.useState)(false);
-  const scrollable = (0, import_jotai4.useAtomValue)(scrollElementAtom);
+  const scrollable = (0, import_jotai3.useAtomValue)(scrollElementAtom);
   const closeDialog = () => {
     setIsOpen(false);
     scrollable?.focus();

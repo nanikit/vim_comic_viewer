@@ -4,6 +4,13 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+# 15.0.0
+
+- **Remove `compactWidthIndex`. Use `effectivePreferences`, `setManualPreferences` instead.**
+- **Remove `isFullscreenPreferred`. Use `effectivePreferences` instead.**
+- **Add setScriptPreferences for modifying settings default.**
+- _Previous settings will be cleared due to GM storage key change._
+
 # 14.0.0
 
 - **Replace `useDefault` prop with `noDefaultBinding` option.**
