@@ -164,6 +164,73 @@ insertCss(GM_getResourceText("react-toastify-css"));
 var import_react2 = require("@headlessui/react");
 var import_react3 = require("react");
 var import_react_dom = require("react-dom");
+var import_jotai2 = require("jotai");
+var gmStorage = {
+  getItem: GM_getValue,
+  setItem: GM_setValue,
+  removeItem: (key) => GM_deleteValue(key),
+  subscribe: (key, callback) => {
+    const id = GM_addValueChangeListener(key, (_key, _oldValue, newValue) => callback(newValue));
+    return () => GM_removeValueChangeListener(id);
+  }
+};
+function atomWithGmValue(key, defaultValue) {
+  return (0, import_utils2.atomWithStorage)(key, defaultValue, gmStorage, { unstable_getOnInit: true });
+}
+var jsonSessionStorage = (0, import_utils2.createJSONStorage)(() => sessionStorage);
+function atomWithSession(key, defaultValue) {
+  return (0, import_utils2.atomWithStorage)(
+    key,
+    defaultValue,
+    jsonSessionStorage,
+    { unstable_getOnInit: true }
+  );
+}
+var defaultPreferences = {
+  backgroundColor: "#eeeeee",
+  singlePageCount: 1,
+  maxZoomOutExponent: 3,
+  maxZoomInExponent: 3,
+  pageDirection: "rightToLeft",
+  isFullscreenPreferred: false,
+  fullscreenNoticeCount: 0
+};
+function getEffectivePreferences(scriptPreferences, manualPreferences) {
+  return { ...defaultPreferences, ...scriptPreferences, ...manualPreferences };
+}
+var scriptPreferencesAtom = (0, import_jotai2.atom)({});
+var preferencesPresetAtom = (0, import_jotai2.atom)("default");
+var manualPreferencesAtomAtom = (0, import_jotai2.atom)((get) => {
+  const preset = get(preferencesPresetAtom);
+  const key = `vim_comic_viewer.preferences.${preset}`;
+  return atomWithGmValue(key, {});
+});
+var manualPreferencesAtom = (0, import_jotai2.atom)(
+  (get) => get(get(manualPreferencesAtomAtom)),
+  (get, set, update) => {
+    set(get(manualPreferencesAtomAtom), update);
+  }
+);
+var preferencesAtom = (0, import_jotai2.atom)((get) => {
+  return getEffectivePreferences(get(scriptPreferencesAtom), get(manualPreferencesAtom));
+});
+var backgroundColorAtom = atomWithPreferences("backgroundColor");
+var singlePageCountAtom = atomWithPreferences("singlePageCount");
+var maxZoomOutExponentAtom = atomWithPreferences("maxZoomOutExponent");
+var maxZoomInExponentAtom = atomWithPreferences("maxZoomInExponent");
+var pageDirectionAtom = atomWithPreferences("pageDirection");
+var isFullscreenPreferredAtom = atomWithPreferences("isFullscreenPreferred");
+var fullscreenNoticeCountAtom = atomWithPreferences("fullscreenNoticeCount");
+var wasImmersiveAtom = atomWithSession("vim_comic_viewer.was_immersive", false);
+function atomWithPreferences(key) {
+  return (0, import_jotai2.atom)(
+    (get) => get(preferencesAtom)[key],
+    (get, set, update) => {
+      const effective = typeof update === "function" ? update(get(preferencesAtom)[key]) : update;
+      set(manualPreferencesAtom, (preferences) => ({ ...preferences, [key]: effective }));
+    }
+  );
+}
 function imageSourceToIterable(source) {
   if (typeof source === "string") {
     return async function* () {
@@ -421,41 +488,6 @@ function getPreviousPageBottomOrStart(page) {
   }
   return cursor.offsetTop;
 }
-var gmStorage = {
-  getItem: GM_getValue,
-  setItem: GM_setValue,
-  removeItem: (key) => GM_deleteValue(key),
-  subscribe: (key, callback) => {
-    const id = GM_addValueChangeListener(key, (_key, _oldValue, newValue) => callback(newValue));
-    return () => GM_removeValueChangeListener(id);
-  }
-};
-function atomWithGmValue(key, defaultValue) {
-  return (0, import_utils2.atomWithStorage)(key, defaultValue, gmStorage, { unstable_getOnInit: true });
-}
-var jsonSessionStorage = (0, import_utils2.createJSONStorage)(() => sessionStorage);
-function atomWithSession(key, defaultValue) {
-  return (0, import_utils2.atomWithStorage)(
-    key,
-    defaultValue,
-    jsonSessionStorage,
-    { unstable_getOnInit: true }
-  );
-}
-var backgroundColorAtom = atomWithGmValue("vim_comic_viewer.background_color", "#eeeeee");
-var singlePageCountAtom = atomWithGmValue("vim_comic_viewer.single_page_count", 1);
-var maxZoomOutExponentAtom = atomWithGmValue("vim_comic_viewer.max_zoom_out_exponent", 3);
-var maxZoomInExponentAtom = atomWithGmValue("vim_comic_viewer.max_zoom_in_exponent", 3);
-var pageDirectionAtom = atomWithGmValue(
-  "vim_comic_viewer.page_direction",
-  "rightToLeft"
-);
-var isFullscreenPreferredAtom = atomWithGmValue("vim_comic_viewer.use_full_screen", false);
-var fullscreenNoticeCountAtom = atomWithGmValue(
-  "vim_comic_viewer.full_screen_notice_count",
-  0
-);
-var wasImmersiveAtom = atomWithSession("vim_comic_viewer.was_immersive", false);
 function createPageAtom({ index, source }) {
   let imageLoad = deferred();
   let div = null;
@@ -865,8 +897,8 @@ var setViewerOptionsAtom = (0, import_jotai.atom)(
 var reloadErroredAtom = (0, import_jotai.atom)(null, (get, set) => {
   stop();
   const pages = get(pagesAtom);
-  for (const atom2 of pages ?? []) {
-    const page = get(atom2);
+  for (const atom3 of pages ?? []) {
+    const page = get(atom3);
     if (page.state.status !== "complete") {
       set(page.reloadAtom);
     }
@@ -1440,7 +1472,7 @@ function useDefault({ enable, controller }) {
     };
   }, [controller, enable]);
 }
-var import_jotai3 = require("jotai");
+var import_jotai4 = require("jotai");
 var Backdrop = styled("div", {
   position: "absolute",
   top: 0,
@@ -1525,7 +1557,7 @@ var keyBindingsAtom = (0, import_jotai.atom)((get) => {
 var ActionName = styled("td", {
   width: "50%"
 });
-var import_jotai2 = require("jotai");
+var import_jotai3 = require("jotai");
 function SettingsTab() {
   const [maxZoomOutExponent, setMaxZoomOutExponent] = (0, import_jotai.useAtom)(maxZoomOutExponentAtom);
   const [maxZoomInExponent, setMaxZoomInExponent] = (0, import_jotai.useAtom)(maxZoomInExponentAtom);
@@ -1541,7 +1573,7 @@ function SettingsTab() {
   const colorInputId = (0, import_react3.useId)();
   const pageDirectionInputId = (0, import_react3.useId)();
   const fullscreenInputId = (0, import_react3.useId)();
-  const strings = (0, import_jotai2.useAtomValue)(i18nAtom);
+  const strings = (0, import_jotai3.useAtomValue)(i18nAtom);
   const maxZoomOut = formatMultiplier(maxZoomOutExponent);
   const maxZoomIn = formatMultiplier(maxZoomInExponent);
   return  React.createElement(ConfigSheet, null,  React.createElement(ConfigRow, null,  React.createElement("label", { htmlFor: zoomOutExponentInputId }, strings.maxZoomOut, ": ", maxZoomOut),  React.createElement(
@@ -1735,7 +1767,7 @@ var MenuActions = styled("div", {
 function LeftBottomControl() {
   const downloadAndSave = (0, import_jotai.useSetAtom)(downloadAndSaveAtom);
   const [isOpen, setIsOpen] = (0, import_react3.useState)(false);
-  const scrollable = (0, import_jotai3.useAtomValue)(scrollElementAtom);
+  const scrollable = (0, import_jotai4.useAtomValue)(scrollElementAtom);
   const closeDialog = () => {
     setIsOpen(false);
     scrollable?.focus();
@@ -1837,8 +1869,8 @@ var Image = styled("img", {
     }
   }
 });
-var Page = ({ atom: atom2, ...props }) => {
-  const { imageProps, fullWidth, reloadAtom, shouldBeOriginalSize, state: pageState, setDiv } = (0, import_jotai.useAtomValue)(atom2);
+var Page = ({ atom: atom3, ...props }) => {
+  const { imageProps, fullWidth, reloadAtom, shouldBeOriginalSize, state: pageState, setDiv } = (0, import_jotai.useAtomValue)(atom3);
   const strings = (0, import_jotai.useAtomValue)(i18nAtom);
   const reload = (0, import_jotai.useSetAtom)(reloadAtom);
   const { status } = pageState;
@@ -1899,11 +1931,11 @@ function InnerViewer(props) {
         onScroll: (0, import_jotai.useSetAtom)(synchronizeScrollAtom),
         onClick: (0, import_jotai.useSetAtom)(navigateAtom),
         onMouseDown: (0, import_jotai.useSetAtom)(blockSelectionAtom),
-        children: status === "complete" ? viewer.pages.map((atom2) =>  React.createElement(
+        children: status === "complete" ? viewer.pages.map((atom3) =>  React.createElement(
           Page,
           {
-            key: `${atom2}`,
-            atom: atom2,
+            key: `${atom3}`,
+            atom: atom3,
             ...options?.imageProps
           }
         )) :  React.createElement("p", null, status === "error" ? strings.errorIsOccurred : strings.loading),

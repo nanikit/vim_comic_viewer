@@ -3,9 +3,17 @@ import { atomWithGmValue, atomWithSession } from "./helpers/atoms_with_storage.t
 import { getEffectivePreferences, PersistentPreferences } from "./models.ts";
 
 export const scriptPreferencesAtom = atom<Partial<PersistentPreferences>>({});
-export const manualPreferencesAtom = atomWithGmValue<Partial<PersistentPreferences>>(
-  "vim_comic_viewer.preferences",
-  {},
+export const preferencesPresetAtom = atom("default");
+const manualPreferencesAtomAtom = atom((get) => {
+  const preset = get(preferencesPresetAtom);
+  const key = `vim_comic_viewer.preferences.${preset}`;
+  return atomWithGmValue<Partial<PersistentPreferences>>(key, {});
+});
+const manualPreferencesAtom = atom(
+  (get) => get(get(manualPreferencesAtomAtom)),
+  (get, set, update: SetStateAction<Partial<PersistentPreferences>>) => {
+    set(get(manualPreferencesAtomAtom), update);
+  },
 );
 export const preferencesAtom = atom((get) => {
   return getEffectivePreferences(get(scriptPreferencesAtom), get(manualPreferencesAtom));
