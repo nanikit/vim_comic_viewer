@@ -1,10 +1,10 @@
-import { useAtomValue } from "jotai";
 import { isFullscreenPreferredSettingsAtom } from "../../../../atoms/fullscreen_atom.ts";
 import { i18nAtom } from "../../../../atoms/i18n_atom.ts";
-import { useAtom, useId } from "../../../../deps.ts";
+import { useAtom, useAtomValue, useId, useSetAtom, useState } from "../../../../deps.ts";
 import { styled } from "../../../../vendors/stitches.ts";
 import {
   backgroundColorAtom,
+  manualPreferencesAtom,
   maxZoomInExponentAtom,
   maxZoomOutExponentAtom,
   pageDirectionAtom,
@@ -20,6 +20,8 @@ export function SettingsTab() {
   const [isFullscreenPreferred, setIsFullscreenPreferred] = useAtom(
     isFullscreenPreferredSettingsAtom,
   );
+  const setManualPreferences = useSetAtom(manualPreferencesAtom);
+
   const zoomOutExponentInputId = useId();
   const zoomInExponentInputId = useId();
   const singlePageCountInputId = useId();
@@ -27,13 +29,26 @@ export function SettingsTab() {
   const pageDirectionInputId = useId();
   const fullscreenInputId = useId();
   const strings = useAtomValue(i18nAtom);
+  const [isResetConfirming, setResetConfirming] = useState(false);
+
   const maxZoomOut = formatMultiplier(maxZoomOutExponent);
   const maxZoomIn = formatMultiplier(maxZoomInExponent);
+
+  function tryReset() {
+    if (isResetConfirming) {
+      setManualPreferences({});
+      setResetConfirming(false);
+    } else {
+      setResetConfirming(true);
+    }
+  }
 
   return (
     <ConfigSheet>
       <ConfigRow>
-        <label htmlFor={zoomOutExponentInputId}>{strings.maxZoomOut}: {maxZoomOut}</label>
+        <ConfigLabel htmlFor={zoomOutExponentInputId}>
+          {strings.maxZoomOut}: {maxZoomOut}
+        </ConfigLabel>
         <input
           type="number"
           min={0}
@@ -46,7 +61,7 @@ export function SettingsTab() {
         />
       </ConfigRow>
       <ConfigRow>
-        <label htmlFor={zoomInExponentInputId}>{strings.maxZoomIn}: {maxZoomIn}</label>
+        <ConfigLabel htmlFor={zoomInExponentInputId}>{strings.maxZoomIn}: {maxZoomIn}</ConfigLabel>
         <input
           type="number"
           min={0}
@@ -59,7 +74,7 @@ export function SettingsTab() {
         />
       </ConfigRow>
       <ConfigRow>
-        <label htmlFor={singlePageCountInputId}>{strings.singlePageCount}</label>
+        <ConfigLabel htmlFor={singlePageCountInputId}>{strings.singlePageCount}</ConfigLabel>
         <input
           type="number"
           min={0}
@@ -72,7 +87,7 @@ export function SettingsTab() {
         />
       </ConfigRow>
       <ConfigRow>
-        <label htmlFor={colorInputId}>{strings.backgroundColor}</label>
+        <ConfigLabel htmlFor={colorInputId}>{strings.backgroundColor}</ConfigLabel>
         <ColorInput
           type="color"
           id={colorInputId}
@@ -110,6 +125,9 @@ export function SettingsTab() {
           <label htmlFor={pageDirectionInputId}>{strings.leftToRight}</label>
         </Toggle>
       </ConfigRow>
+      <ResetButton onClick={tryReset}>
+        {isResetConfirming ? strings.doYouReallyWantToReset : strings.reset}
+      </ResetButton>
     </ConfigSheet>
   );
 }
@@ -119,6 +137,25 @@ function formatMultiplier(maxZoomOutExponent: number) {
     ? "∞"
     : `${(Math.sqrt(2) ** maxZoomOutExponent).toPrecision(2)}x`;
 }
+
+const ConfigLabel = styled("label", {
+  margin: 0,
+});
+
+const ResetButton = styled("button", {
+  padding: "0.2em 0.5em",
+
+  background: "none",
+  border: "red 1px solid",
+  borderRadius: "0.2em",
+  color: "red",
+  cursor: "pointer",
+  transition: "0.3s",
+
+  "&:hover": {
+    background: "#ffe0e0",
+  },
+});
 
 const ColorInput = styled("input", {
   height: "1.5em",
@@ -134,10 +171,7 @@ const ConfigRow = styled("div", {
   "&& > *": {
     fontSize: "1em",
     fontWeight: "medium",
-    minWidth: "0",
-
-    margin: 0,
-    padding: 0,
+    minWidth: 0,
   },
 
   "& > input": {
@@ -208,6 +242,6 @@ const Toggle = styled("span", {
 const ConfigSheet = styled("div", {
   display: "flex",
   flexFlow: "column nowrap",
-
+  alignItems: "stretch",
   gap: "0.8em",
 });

@@ -7,6 +7,8 @@
   "singlePageCount": "single page count",
   "backgroundColor": "Background color",
   "leftToRight": "Left to right",
+  "reset": "Reset",
+  "doYouReallyWantToReset": "Do you really want to reset?",
   "errorIsOccurred": "Error is occurred.",
   "failedToLoadImage": "Failed to load image.",
   "loading": "Loading...",
