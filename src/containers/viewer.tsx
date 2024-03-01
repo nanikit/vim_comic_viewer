@@ -6,7 +6,6 @@ import {
   setScrollElementAtom,
   synchronizeScrollAtom,
 } from "../atoms/navigation_atoms.ts";
-import { backgroundColorAtom, pageDirectionAtom } from "../atoms/persistent_atoms.ts";
 import {
   blockSelectionAtom,
   fullscreenSynchronizationAtom,
@@ -19,6 +18,7 @@ import {
 import { FullscreenButton } from "../components/icons.tsx";
 import { Container, ScrollableLayout } from "../components/scrollable_layout.ts";
 import { HTMLProps, ToastContainer, useAtomValue, useEffect, useSetAtom } from "../deps.ts";
+import { backgroundColorAtom, pageDirectionAtom } from "../features/preferences/atoms.ts";
 import { useDefault } from "../hooks/use_default.ts";
 import { ViewerOptions } from "../types.ts";
 import { LeftBottomControl } from "./left_bottom_control.tsx";

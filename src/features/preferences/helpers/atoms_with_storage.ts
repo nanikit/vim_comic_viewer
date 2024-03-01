@@ -1,4 +1,4 @@
-import { atomWithStorage, createJSONStorage } from "../../deps.ts";
+import { atomWithStorage, createJSONStorage } from "../../../deps.ts";
 
 const gmStorage = {
   getItem: GM_getValue,

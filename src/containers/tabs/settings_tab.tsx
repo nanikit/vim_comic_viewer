@@ -1,14 +1,14 @@
 import { useAtomValue } from "jotai";
 import { isFullscreenPreferredSettingsAtom } from "../../atoms/fullscreen_atom.ts";
 import { i18nAtom } from "../../atoms/i18n_atom.ts";
+import { useAtom, useId } from "../../deps.ts";
 import {
   backgroundColorAtom,
   maxZoomInExponentAtom,
   maxZoomOutExponentAtom,
   pageDirectionAtom,
   singlePageCountAtom,
-} from "../../atoms/persistent_atoms.ts";
-import { useAtom, useId } from "../../deps.ts";
+} from "../../features/preferences/atoms.ts";
 import { styled } from "../../vendors/stitches.ts";
 
 export function SettingsTab() {

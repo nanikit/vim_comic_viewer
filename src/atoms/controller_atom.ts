@@ -9,7 +9,6 @@ import {
   scrollBarStyleFactorAtom,
 } from "../atoms/fullscreen_atom.ts";
 import { goNextAtom, goPreviousAtom } from "../atoms/navigation_atoms.ts";
-import { isFullscreenPreferredAtom, singlePageCountAtom } from "../atoms/persistent_atoms.ts";
 import {
   pagesAtom,
   reloadErroredAtom,
@@ -22,6 +21,7 @@ import {
   viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
 import { atom, Getter, Setter } from "../deps.ts";
+import { isFullscreenPreferredAtom, singlePageCountAtom } from "../features/preferences/atoms.ts";
 import { ViewerOptions } from "../types.ts";
 import { isTyping } from "../utils.ts";
 

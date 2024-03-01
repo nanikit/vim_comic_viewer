@@ -1,4 +1,4 @@
-import { atomWithGmValue, atomWithSession } from "./helper/atoms_with_storage.ts";
+import { atomWithGmValue, atomWithSession } from "./helpers/atoms_with_storage.ts";
 
 type PageDirection = "leftToRight" | "rightToLeft";
 
