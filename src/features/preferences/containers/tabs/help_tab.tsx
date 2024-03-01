@@ -1,6 +1,6 @@
-import { i18nAtom } from "../../atoms/i18n_atom.ts";
-import { atom, ReactNode, useAtomValue } from "../../deps.ts";
-import { styled } from "../../vendors/stitches.ts";
+import { i18nAtom } from "../../../../atoms/i18n_atom.ts";
+import { atom, ReactNode, useAtomValue } from "../../../../deps.ts";
+import { styled } from "../../../../vendors/stitches.ts";
 
 export function HelpTab() {
   const keyBindings = useAtomValue(keyBindingsAtom);
