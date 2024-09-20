@@ -97,17 +97,14 @@ const transferWindowScrollToViewerAtom = atom(null, async (get, set) => {
 });
 
 const externalFocusElementAtom = atom<Element | null>(null);
-export const setViewerImmersiveAtom = atom(
-  null,
-  async (get, set, value: boolean) => {
-    const lock = await set(transitionLockAtom);
-    try {
-      await transactImmersive(get, set, value);
-    } finally {
-      lock.deferred.resolve();
-    }
-  },
-);
+export const setViewerImmersiveAtom = atom(null, async (get, set, value: boolean) => {
+  const lock = await set(transitionLockAtom);
+  try {
+    await transactImmersive(get, set, value);
+  } finally {
+    lock.deferred.resolve();
+  }
+});
 
 async function transactImmersive(get: Getter, set: Setter, value: boolean) {
   if (get(isViewerImmersiveAtom) === value) {
@@ -204,13 +201,10 @@ fullscreenSynchronizationAtom.onMount = (set) => {
   return () => document.removeEventListener("fullscreenchange", notify);
 };
 
-export const setViewerElementAtom = atom(
-  null,
-  async (get, set, element: HTMLDivElement | null) => {
-    set(scrollBarStyleFactorAtom, { viewerElement: element });
-    await set(setViewerImmersiveAtom, get(wasImmersiveAtom));
-  },
-);
+export const setViewerElementAtom = atom(null, async (get, set, element: HTMLDivElement | null) => {
+  set(scrollBarStyleFactorAtom, { viewerElement: element });
+  await set(setViewerImmersiveAtom, get(wasImmersiveAtom));
+});
 
 export const viewerModeAtom = atom((get) => {
   const isFullscreen = get(viewerFullscreenAtom);
@@ -218,37 +212,34 @@ export const viewerModeAtom = atom((get) => {
   return isFullscreen ? "fullscreen" : isImmersive ? "window" : "normal";
 });
 
-export const setViewerOptionsAtom = atom(
-  null,
-  async (get, set, options: ViewerOptions) => {
-    try {
-      const { source } = options;
-      const previousOptions = get(viewerStateAtom).options;
-      set(viewerStateAtom, (state) => ({ ...state, options }));
-      if (!source || source === previousOptions.source) {
-        return;
-      }
-
-      set(viewerStateAtom, (state) => ({ ...state, status: "loading" }));
-      const images = await source();
-
-      if (!Array.isArray(images)) {
-        throw new Error(`Invalid comic source type: ${typeof images}`);
-      }
-
-      set(viewerStateAtom, (state) => ({
-        ...state,
-        status: "complete",
-        images,
-        pages: images.map((source, index) => createPageAtom({ source, index })),
-      }));
-    } catch (error) {
-      set(viewerStateAtom, (state) => ({ ...state, status: "error" }));
-      console.error(error);
-      throw error;
+export const setViewerOptionsAtom = atom(null, async (get, set, options: ViewerOptions) => {
+  try {
+    const { source } = options;
+    const previousOptions = get(viewerStateAtom).options;
+    set(viewerStateAtom, (state) => ({ ...state, options }));
+    if (!source || source === previousOptions.source) {
+      return;
     }
-  },
-);
+
+    set(viewerStateAtom, (state) => ({ ...state, status: "loading" }));
+    const images = await source();
+
+    if (!Array.isArray(images)) {
+      throw new Error(`Invalid comic source type: ${typeof images}`);
+    }
+
+    set(viewerStateAtom, (state) => ({
+      ...state,
+      status: "complete",
+      images,
+      pages: images.map((source, index) => createPageAtom({ source, index })),
+    }));
+  } catch (error) {
+    set(viewerStateAtom, (state) => ({ ...state, status: "error" }));
+    console.error(error);
+    throw error;
+  }
+});
 
 export const reloadErroredAtom = atom(null, (get, set) => {
   stop();

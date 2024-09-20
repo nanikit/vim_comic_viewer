@@ -74,30 +74,27 @@ export const restoreScrollAtom = atom(null, (get, set) => {
   set(viewerScrollAtom, restoredY);
 });
 
-export const setScrollElementAtom = atom(
-  null,
-  (_get, set, div: HTMLDivElement | null) => {
-    set(scrollElementStateAtom, (previous) => {
-      if (previous?.div === div) {
-        return previous;
-      }
+export const setScrollElementAtom = atom(null, (_get, set, div: HTMLDivElement | null) => {
+  set(scrollElementStateAtom, (previous) => {
+    if (previous?.div === div) {
+      return previous;
+    }
 
-      previous?.resizeObserver.disconnect();
+    previous?.resizeObserver.disconnect();
 
-      if (div === null) {
-        return null;
-      }
+    if (div === null) {
+      return null;
+    }
 
+    set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
+    const resizeObserver = new ResizeObserver(() => {
       set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
-      const resizeObserver = new ResizeObserver(() => {
-        set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
-        set(restoreScrollAtom);
-      });
-      resizeObserver.observe(div);
-      return { div, resizeObserver };
+      set(restoreScrollAtom);
     });
-  },
-);
+    resizeObserver.observe(div);
+    return { div, resizeObserver };
+  });
+});
 
 export const goNextAtom = atom(null, (get, set) => {
   const top = getNextScroll(get(scrollElementAtom));
