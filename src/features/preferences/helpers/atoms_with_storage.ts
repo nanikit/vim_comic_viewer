@@ -11,7 +11,7 @@ const gmStorage = {
 };
 
 export function atomWithGmValue<T>(key: string, defaultValue: T) {
-  return atomWithStorage<T>(key, defaultValue, gmStorage, { unstable_getOnInit: true });
+  return atomWithStorage<T>(key, defaultValue, gmStorage, { getOnInit: true });
 }
 
 const jsonSessionStorage = createJSONStorage(() => sessionStorage);
@@ -20,6 +20,6 @@ export function atomWithSession<T>(key: string, defaultValue: T) {
     key,
     defaultValue,
     jsonSessionStorage as ReturnType<typeof createJSONStorage<T>>,
-    { unstable_getOnInit: true },
+    { getOnInit: true },
   );
 }
