@@ -18,6 +18,7 @@ import {
   toggleFullscreenAtom,
   toggleImmersiveAtom,
   viewerModeAtom,
+  type ViewerOptions,
   viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
 import { atom, Getter, Setter } from "../deps.ts";
@@ -28,7 +29,6 @@ import {
   scriptPreferencesAtom,
 } from "../features/preferences/atoms.ts";
 import { PersistentPreferences } from "../features/preferences/models.ts";
-import { ViewerOptions } from "../types.ts";
 import { isTyping } from "../utils.ts";
 
 export type ViewerController = ReturnType<typeof createViewerController>;

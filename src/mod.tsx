@@ -33,12 +33,13 @@
 // @resource       react-toastify-css       https://cdn.jsdelivr.net/npm/react-toastify@10.0.5/dist/ReactToastify.css
 // ==/UserScript==
 import { ViewerController } from "./atoms/controller_atom.ts";
-import { rootAtom } from "./atoms/viewer_atoms.ts";
+import { rootAtom, type ViewerOptions } from "./atoms/viewer_atoms.ts";
 import { InnerViewer } from "./containers/viewer.tsx";
 import { createRoot, createStore, deferred, forwardRef, Provider, useMemo } from "./deps.ts";
-import { ViewerOptions } from "./types.ts";
+
+export type { ViewerOptions } from "./atoms/viewer_atoms.ts";
+export type { ComicSource, ImageSource } from "./services/comic_source.ts";
 export { download } from "./services/downloader.ts";
-export * as types from "./types.ts";
 export * as utils from "./utils.ts";
 
 export function initialize(options: ViewerOptions): Promise<ViewerController> {
