@@ -15,6 +15,8 @@ export type ComicSource = (
  */
 export type ImageSource = string | { src: string; width: number; height: number };
 
+const maxRetryCount = 2;
+
 export function getUrl(source: ImageSource) {
   return typeof source === "string" ? source : source.src;
 }
@@ -28,12 +30,20 @@ export async function* getImageIterable(
     return;
   }
 
-  while (true) {
+  let previous: string | undefined;
+  let retryCount = 0;
+  while (retryCount >= maxRetryCount) {
     const [next] = await comic({ cause: "error", page: index });
     if (!next) {
       break;
     }
 
     yield next;
+
+    if (previous === next) {
+      retryCount++;
+      continue;
+    }
+    previous = getUrl(next);
   }
 }
