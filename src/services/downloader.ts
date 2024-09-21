@@ -1,7 +1,6 @@
 import { deferred, zip } from "../deps.ts";
-import { ImageSource } from "../types.ts";
+import { type ComicSource, getImageIterable, getUrl, type ImageSource } from "./comic_source.ts";
 import { gmFetch, isGmFetchAvailable } from "./gm_fetch.ts";
-import { imageSourceToIterable } from "./image_source_to_iterable.ts";
 
 export type DownloadStatus = "ongoing" | "complete" | "error" | "cancelled";
 export type DownloadProgress = {
@@ -18,78 +17,23 @@ export type DownloadOptions = {
   signal?: AbortSignal;
 };
 
-export function download(images: ImageSource[], options?: DownloadOptions): Promise<Uint8Array> {
+export async function download(
+  comic: ComicSource,
+  options?: DownloadOptions,
+): Promise<Uint8Array> {
   const { onError, onProgress, signal } = options || {};
   let startedCount = 0;
   let resolvedCount = 0;
   let rejectedCount = 0;
   let status: DownloadStatus = "ongoing";
 
-  const reportProgress = (
-    { transition }: { transition?: typeof status } = {},
-  ) => {
-    if (status !== "ongoing") {
-      return;
-    }
-    if (transition) {
-      status = transition;
-    }
+  const pages = await comic({ cause: "download" });
+  const digit = Math.floor(Math.log10(pages.length)) + 1;
 
-    onProgress?.({
-      total: images.length,
-      started: startedCount,
-      settled: resolvedCount + rejectedCount,
-      rejected: rejectedCount,
-      status,
-    });
-  };
+  return archiveWithReport();
 
-  const downloadWithReport = async (
-    source: ImageSource,
-  ): Promise<{ url: string; blob: Blob }> => {
-    const errors = [];
-
-    startedCount++;
-    reportProgress();
-
-    for await (const event of downloadImage({ source, signal })) {
-      if ("error" in event) {
-        errors.push(event.error);
-        onError?.(event.error);
-        continue;
-      }
-
-      if (event.url) {
-        resolvedCount++;
-      } else {
-        rejectedCount++;
-      }
-      reportProgress();
-      return event;
-    }
-
-    return {
-      url: "",
-      blob: new Blob([errors.map((x) => `${x}`).join("\n\n")]),
-    };
-  };
-
-  const cipher = Math.floor(Math.log10(images.length)) + 1;
-
-  const toPair = async (
-    { url, blob }: { url: string; blob: Blob },
-    index: number,
-  ) => {
-    const array = new Uint8Array(await blob.arrayBuffer());
-    const pad = `${index}`.padStart(cipher, "0");
-
-    const name = `${pad}${guessExtension(array) ?? getExtension(url)}`;
-
-    return { [name]: array };
-  };
-
-  const archiveWithReport = async (sources: ImageSource[]): Promise<Uint8Array> => {
-    const result = await Promise.all(sources.map(downloadWithReport));
+  async function archiveWithReport(): Promise<Uint8Array> {
+    const result = await Promise.all(pages.map(downloadWithReport));
 
     if (signal?.aborted) {
       reportProgress({ transition: "cancelled" });
@@ -112,9 +56,82 @@ export function download(images: ImageSource[], options?: DownloadOptions): Prom
     signal?.addEventListener("abort", abort, { once: true });
 
     return value;
-  };
+  }
 
-  return archiveWithReport(images);
+  async function downloadWithReport(
+    source: ImageSource,
+    pageIndex: number,
+  ): Promise<{ url: string; blob: Blob }> {
+    const errors = [];
+
+    startedCount++;
+    reportProgress();
+
+    for await (const event of downloadImage({ image: source, pageIndex })) {
+      if ("error" in event) {
+        errors.push(event.error);
+        onError?.(event.error);
+        continue;
+      }
+
+      if (event.url) {
+        resolvedCount++;
+      } else {
+        rejectedCount++;
+      }
+      reportProgress();
+      return event;
+    }
+
+    return {
+      url: "",
+      blob: new Blob([errors.map((x) => `${x}`).join("\n\n")]),
+    };
+  }
+
+  async function* downloadImage(
+    { image, pageIndex }: { image: ImageSource; pageIndex: number },
+  ): AsyncGenerator<{ error: unknown } | { url: string; blob: Blob }> {
+    for await (const src of getImageIterable({ image, index: pageIndex, comic })) {
+      if (signal?.aborted) {
+        break;
+      }
+
+      const url = getUrl(src);
+      try {
+        const blob = await fetchBlobWithCacheIfPossible(url, signal);
+        yield { url, blob };
+      } catch (error) {
+        yield await fetchBlobIgnoringCors(url, { signal, fetchError: error });
+      }
+    }
+  }
+
+  async function toPair({ url, blob }: { url: string; blob: Blob }, index: number) {
+    const array = new Uint8Array(await blob.arrayBuffer());
+    const pad = `${index}`.padStart(digit, "0");
+
+    const name = `${pad}${guessExtension(array) ?? getExtension(url)}`;
+
+    return { [name]: array };
+  }
+
+  function reportProgress({ transition }: { transition?: typeof status } = {}) {
+    if (status !== "ongoing") {
+      return;
+    }
+    if (transition) {
+      status = transition;
+    }
+
+    onProgress?.({
+      total: pages.length,
+      started: startedCount,
+      settled: resolvedCount + rejectedCount,
+      rejected: rejectedCount,
+      status,
+    });
+  }
 }
 
 function getExtension(url: string): string {
@@ -138,26 +155,6 @@ function guessExtension(array: Uint8Array): string | undefined {
   }
   if (a === 0x47 && b === 0x49 && c === 0x46 && d === 0x38) {
     return ".gif";
-  }
-}
-
-async function* downloadImage(
-  { source, signal }: {
-    source: ImageSource;
-    signal?: AbortSignal;
-  },
-): AsyncGenerator<{ error: unknown } | { url: string; blob: Blob }> {
-  for await (const url of imageSourceToIterable(source)) {
-    if (signal?.aborted) {
-      break;
-    }
-
-    try {
-      const blob = await fetchBlobWithCacheIfPossible(url, signal);
-      yield { url, blob };
-    } catch (error) {
-      yield await fetchBlobIgnoringCors(url, { signal, fetchError: error });
-    }
   }
 }
 

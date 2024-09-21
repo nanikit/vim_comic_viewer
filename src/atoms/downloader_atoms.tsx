@@ -1,7 +1,7 @@
 import { DownloadCancel } from "../components/download_cancel.tsx";
 import { atom, Id, toast } from "../deps.ts";
+import type { ComicSource } from "../services/comic_source.ts";
 import { download, DownloadProgress } from "../services/downloader.ts";
-import { ImageSource } from "../types.ts";
 import { save, timeout } from "../utils.ts";
 import { i18nAtom } from "./i18n_atom.ts";
 import { viewerStateAtom } from "./viewer_atoms.ts";
@@ -11,25 +11,26 @@ export const cancelDownloadAtom = atom(null, (get) => {
   get(aborterAtom)?.abort();
 });
 
-export type UserDownloadOptions = { images?: ImageSource[] };
+export type UserDownloadOptions = { source?: ComicSource };
 
 export const startDownloadAtom = atom(null, async (get, set, options?: UserDownloadOptions) => {
-  const viewerState = get(viewerStateAtom);
-  if (viewerState.status !== "complete") {
-    return;
-  }
-
   const aborter = new AbortController();
   set(aborterAtom, (previous) => {
     previous?.abort();
     return aborter;
   });
 
+  const viewerState = get(viewerStateAtom);
+  const source = options?.source ?? viewerState.options.source;
+  if (!source) {
+    return;
+  }
+
   let toastId: Id | null = null;
   addEventListener("beforeunload", confirmDownloadAbort);
   try {
     toastId = toast(<DownloadCancel onClick={aborter.abort} />, { autoClose: false, progress: 0 });
-    return await download(options?.images ?? viewerState.images, {
+    return await download(source, {
       onProgress: reportProgress,
       onError: logIfNotAborted,
       signal: aborter.signal,

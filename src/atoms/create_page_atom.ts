@@ -4,9 +4,9 @@ import {
   maxZoomOutExponentAtom,
   singlePageCountAtom,
 } from "../features/preferences/atoms.ts";
-import { imageSourceToIterable } from "../services/image_source_to_iterable.ts";
-import { ImageSource } from "../types.ts";
+import { getImageIterable, getUrl, type ImageSource } from "../services/comic_source.ts";
 import { scrollElementSizeAtom } from "./navigation_atoms.ts";
+import { viewerStateAtom } from "./viewer_atoms.ts";
 
 type PageState = {
   status: "loading";
@@ -23,33 +23,44 @@ type PageState = {
 export type PageAtom = ReturnType<typeof createPageAtom>;
 
 export function createPageAtom({ index, source }: { index: number; source: ImageSource }) {
-  let imageLoad = deferred<HTMLImageElement | false | null>();
+  const triedUrls = new Set<string>();
+
+  let imageLoad = deferred<HTMLImageElement | "error" | "cancelled">();
   let div: HTMLDivElement | null = null;
 
   const stateAtom = atom<PageState>({ status: "loading" });
-  const loadAtom = atom(null, async (_get, set) => {
-    imageLoad.resolve(null);
+  const loadAtom = atom(null, async (get, set) => {
+    imageLoad.resolve("cancelled");
 
-    const urls = [];
-    for await (const url of imageSourceToIterable(source)) {
-      urls.push(url);
+    const comic = get(viewerStateAtom).options.source;
+    try {
+      for await (const page of getImageIterable({ image: source, index, comic })) {
+        const url = getUrl(page);
+        triedUrls.add(url);
+
+        const result = await waitImageLoad(url);
+        switch (result) {
+          case "error":
+            continue;
+          case "cancelled":
+            return;
+          default: {
+            const img = result;
+            set(stateAtom, { src: url, naturalHeight: img.naturalHeight, status: "complete" });
+            return;
+          }
+        }
+      }
+    } catch (_error) {
+      set(stateAtom, { urls: Array.from(triedUrls), status: "error" });
+    }
+
+    async function waitImageLoad(url: string) {
       imageLoad = deferred();
       set(stateAtom, { src: url, status: "loading" });
 
-      const result = await imageLoad;
-      switch (result) {
-        case false:
-          continue;
-        case null:
-          return;
-        default: {
-          const img = result;
-          set(stateAtom, { src: url, naturalHeight: img.naturalHeight, status: "complete" });
-          return;
-        }
-      }
+      return await imageLoad;
     }
-    set(stateAtom, { urls, status: "error" });
   });
   loadAtom.onMount = (set) => {
     set();
@@ -80,7 +91,7 @@ export function createPageAtom({ index, source }: { index: number; source: Image
       shouldBeOriginalSize,
       imageProps: {
         ...("src" in state ? { src: state.src } : {}),
-        onError: () => imageLoad.resolve(false),
+        onError: () => imageLoad.resolve("error"),
         onLoad: ((event) => imageLoad.resolve(event.currentTarget)) as React.ReactEventHandler<
           HTMLImageElement
         >,

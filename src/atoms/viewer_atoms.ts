@@ -4,7 +4,8 @@ import {
   isFullscreenPreferredAtom,
   wasImmersiveAtom,
 } from "../features/preferences/atoms.ts";
-import { ImageSource, ViewerOptions } from "../types.ts";
+import { adaptComicSource, type ComicSource } from "../services/comic_source.ts";
+import { ViewerOptions } from "../types.ts";
 import { timeout } from "../utils.ts";
 import { createPageAtom, PageAtom } from "./create_page_atom.ts";
 import {
@@ -29,12 +30,11 @@ import {
 } from "./navigation_atoms.ts";
 
 type ViewerState =
-  & { options: ViewerOptions }
+  & { options: Omit<ViewerOptions, "source"> & { source?: ComicSource } }
   & ({
     status: "loading" | "error";
   } | {
     status: "complete";
-    images: ImageSource[];
     pages: PageAtom[];
   });
 export const viewerStateAtom = atom<ViewerState>({
@@ -216,13 +216,15 @@ export const setViewerOptionsAtom = atom(null, async (get, set, options: ViewerO
   try {
     const { source } = options;
     const previousOptions = get(viewerStateAtom).options;
-    set(viewerStateAtom, (state) => ({ ...state, options }));
-    if (!source || source === previousOptions.source) {
+    const newSource = source ? await adaptComicSource(source) : undefined;
+    const newOptions = { ...previousOptions, source: newSource };
+    set(viewerStateAtom, (state) => ({ ...state, options: newOptions }));
+    if (!source || !newSource || source === previousOptions.source) {
       return;
     }
 
     set(viewerStateAtom, (state) => ({ ...state, status: "loading" }));
-    const images = await source();
+    const images = await newSource({ cause: "load" });
 
     if (!Array.isArray(images)) {
       throw new Error(`Invalid comic source type: ${typeof images}`);
@@ -231,7 +233,6 @@ export const setViewerOptionsAtom = atom(null, async (get, set, options: ViewerO
     set(viewerStateAtom, (state) => ({
       ...state,
       status: "complete",
-      images,
       pages: images.map((source, index) => createPageAtom({ source, index })),
     }));
   } catch (error) {
