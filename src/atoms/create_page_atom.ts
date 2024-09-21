@@ -4,7 +4,7 @@ import {
   maxZoomOutExponentAtom,
   singlePageCountAtom,
 } from "../features/preferences/atoms.ts";
-import { getImageIterable, getUrl, type ImageSource } from "../services/comic_source.ts";
+import { getImageIterable, getUrl, type ImageSource } from "../helpers/comic_source.ts";
 import { scrollElementSizeAtom } from "./navigation_atoms.ts";
 import { viewerStateAtom } from "./viewer_atoms.ts";
 
