@@ -224,12 +224,13 @@ export const setViewerOptionsAtom = atom(null, async (get, set, options: ViewerO
   try {
     const { source } = options;
     const previousOptions = get(viewerStateAtom).options;
-    set(viewerStateAtom, (state) => ({ ...state, options }));
-    if (!source || source === previousOptions.source) {
+    const shouldLoadSource = source && source !== previousOptions.source;
+    const optionChanges = { options, ...(shouldLoadSource ? { status: "loading" as const } : {}) };
+    set(viewerStateAtom, (state) => ({ ...state, ...optionChanges }));
+    if (!shouldLoadSource) {
       return;
     }
 
-    set(viewerStateAtom, (state) => ({ ...state, status: "loading" }));
     const images = await source({ cause: "load" });
 
     if (!Array.isArray(images)) {
