@@ -9,5 +9,4 @@ export type ViewerOptions = {
 
 export type ComicSource = () => ImageSource[] | Promise<ImageSource[]>;
 
-// Can I really use AsyncIterable for throttling?
 export type ImageSource = string | string[] | (() => AsyncIterable<string>);
