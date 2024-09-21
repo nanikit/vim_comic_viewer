@@ -15,22 +15,22 @@
 // @grant          GM_setValue
 // @grant          GM_xmlhttpRequest
 // @grant          unsafeWindow
-// @resource       link:@headlessui/react   https://cdn.jsdelivr.net/npm/@headlessui/react@1.7.17/dist/headlessui.prod.cjs
+// @resource       link:@headlessui/react   https://cdn.jsdelivr.net/npm/@headlessui/react@2.1.8/dist/headlessui.prod.cjs
 // @resource       link:@stitches/react     https://cdn.jsdelivr.net/npm/@stitches/react@1.3.1-1/dist/index.cjs
-// @resource       link:clsx                https://cdn.jsdelivr.net/npm/clsx@2.0.0/dist/clsx.js
-// @resource       link:fflate              https://cdn.jsdelivr.net/npm/fflate@0.8.1/lib/browser.cjs
-// @resource       link:jotai               https://cdn.jsdelivr.net/npm/jotai@2.4.2/index.js
-// @resource       link:jotai/react         https://cdn.jsdelivr.net/npm/jotai@2.4.2/react.js
-// @resource       link:jotai/react/utils   https://cdn.jsdelivr.net/npm/jotai@2.4.2/react/utils.js
-// @resource       link:jotai/utils         https://cdn.jsdelivr.net/npm/jotai@2.4.2/utils.js
-// @resource       link:jotai/vanilla       https://cdn.jsdelivr.net/npm/jotai@2.4.2/vanilla.js
-// @resource       link:jotai/vanilla/utils https://cdn.jsdelivr.net/npm/jotai@2.4.2/vanilla/utils.js
-// @resource       link:react               https://cdn.jsdelivr.net/npm/react@18.2.0/cjs/react.production.min.js
-// @resource       link:react-dom           https://cdn.jsdelivr.net/npm/react-dom@18.2.0/cjs/react-dom.production.min.js
-// @resource       link:react-toastify      https://cdn.jsdelivr.net/npm/react-toastify@9.1.3/dist/react-toastify.js
-// @resource       link:scheduler           https://cdn.jsdelivr.net/npm/scheduler@0.23.0/cjs/scheduler.production.min.js
+// @resource       link:clsx                https://cdn.jsdelivr.net/npm/clsx@2.1.1/dist/clsx.js
+// @resource       link:fflate              https://cdn.jsdelivr.net/npm/fflate@0.8.2/lib/browser.cjs
+// @resource       link:jotai               https://cdn.jsdelivr.net/npm/jotai@2.10.0/index.js
+// @resource       link:jotai/react         https://cdn.jsdelivr.net/npm/jotai@2.10.0/react.js
+// @resource       link:jotai/react/utils   https://cdn.jsdelivr.net/npm/jotai@2.10.0/react/utils.js
+// @resource       link:jotai/utils         https://cdn.jsdelivr.net/npm/jotai@2.10.0/utils.js
+// @resource       link:jotai/vanilla       https://cdn.jsdelivr.net/npm/jotai@2.10.0/vanilla.js
+// @resource       link:jotai/vanilla/utils https://cdn.jsdelivr.net/npm/jotai@2.10.0/vanilla/utils.js
+// @resource       link:react               https://cdn.jsdelivr.net/npm/react@18.3.1/cjs/react.production.min.js
+// @resource       link:react-dom           https://cdn.jsdelivr.net/npm/react-dom@18.3.1/cjs/react-dom.production.min.js
+// @resource       link:react-toastify      https://cdn.jsdelivr.net/npm/react-toastify@10.0.5/dist/react-toastify.js
+// @resource       link:scheduler           https://cdn.jsdelivr.net/npm/scheduler@0.23.2/cjs/scheduler.production.min.js
 // @resource       link:vcv-inject-node-env data:,unsafeWindow.process=%7Benv:%7BNODE_ENV:%22production%22%7D%7D
-// @resource       react-toastify-css       https://cdn.jsdelivr.net/npm/react-toastify@9.1.3/dist/ReactToastify.css
+// @resource       react-toastify-css       https://cdn.jsdelivr.net/npm/react-toastify@10.0.5/dist/ReactToastify.css
 // ==/UserScript==
 "use strict";
 
@@ -63,7 +63,6 @@ __export(mod_exports, {
   Viewer: () => Viewer,
   download: () => download,
   initialize: () => initialize,
-  types: () => types_exports,
   utils: () => utils_exports
 });
 module.exports = __toCommonJS(mod_exports);
@@ -175,7 +174,7 @@ var gmStorage = {
   }
 };
 function atomWithGmValue(key, defaultValue) {
-  return (0, import_utils2.atomWithStorage)(key, defaultValue, gmStorage, { unstable_getOnInit: true });
+  return (0, import_utils2.atomWithStorage)(key, defaultValue, gmStorage, { getOnInit: true });
 }
 var jsonSessionStorage = (0, import_utils2.createJSONStorage)(() => sessionStorage);
 function atomWithSession(key, defaultValue) {
@@ -183,7 +182,7 @@ function atomWithSession(key, defaultValue) {
     key,
     defaultValue,
     jsonSessionStorage,
-    { unstable_getOnInit: true }
+    { getOnInit: true }
   );
 }
 var defaultPreferences = {
@@ -231,19 +230,28 @@ function atomWithPreferences(key) {
     }
   );
 }
-function imageSourceToIterable(source) {
-  if (typeof source === "string") {
-    return async function* () {
-      yield source;
-    }();
-  } else if (Array.isArray(source)) {
-    return async function* () {
-      for (const url of source) {
-        yield url;
-      }
-    }();
-  } else {
-    return source();
+var maxRetryCount = 2;
+function getUrl(source) {
+  return typeof source === "string" ? source : source.src;
+}
+async function* getImageIterable({ image, index, comic }) {
+  yield image;
+  if (!comic) {
+    return;
+  }
+  let previous;
+  let retryCount = 0;
+  while (retryCount >= maxRetryCount) {
+    const [next] = await comic({ cause: "error", page: index });
+    if (!next) {
+      break;
+    }
+    yield next;
+    if (previous === next) {
+      retryCount++;
+      continue;
+    }
+    previous = getUrl(next);
   }
 }
 var globalCss = document.createElement("style");
@@ -376,27 +384,24 @@ var restoreScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
   const restoredY = Math.floor(offsetTop + clientHeight * ratio - scrollable.clientHeight / 2);
   set(viewerScrollAtom, restoredY);
 });
-var setScrollElementAtom = (0, import_jotai.atom)(
-  null,
-  (_get, set, div) => {
-    set(scrollElementStateAtom, (previous) => {
-      if (previous?.div === div) {
-        return previous;
-      }
-      previous?.resizeObserver.disconnect();
-      if (div === null) {
-        return null;
-      }
+var setScrollElementAtom = (0, import_jotai.atom)(null, (_get, set, div) => {
+  set(scrollElementStateAtom, (previous) => {
+    if (previous?.div === div) {
+      return previous;
+    }
+    previous?.resizeObserver.disconnect();
+    if (div === null) {
+      return null;
+    }
+    set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
+    const resizeObserver = new ResizeObserver(() => {
       set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
-      const resizeObserver = new ResizeObserver(() => {
-        set(scrollElementSizeAtom, { width: div.clientWidth, height: div.clientHeight });
-        set(restoreScrollAtom);
-      });
-      resizeObserver.observe(div);
-      return { div, resizeObserver };
+      set(restoreScrollAtom);
     });
-  }
-);
+    resizeObserver.observe(div);
+    return { div, resizeObserver };
+  });
+});
 var goNextAtom = (0, import_jotai.atom)(null, (get, set) => {
   const top = getNextScroll(get(scrollElementAtom));
   if (top != null) {
@@ -489,30 +494,38 @@ function getPreviousPageBottomOrStart(page) {
   return cursor.offsetTop;
 }
 function createPageAtom({ index, source }) {
+  const triedUrls =  new Set();
   let imageLoad = deferred();
   let div = null;
   const stateAtom = (0, import_jotai.atom)({ status: "loading" });
-  const loadAtom = (0, import_jotai.atom)(null, async (_get, set) => {
-    imageLoad.resolve(null);
-    const urls = [];
-    for await (const url of imageSourceToIterable(source)) {
-      urls.push(url);
-      imageLoad = deferred();
-      set(stateAtom, { src: url, status: "loading" });
-      const result = await imageLoad;
-      switch (result) {
-        case false:
-          continue;
-        case null:
-          return;
-        default: {
-          const img = result;
-          set(stateAtom, { src: url, naturalHeight: img.naturalHeight, status: "complete" });
-          return;
+  const loadAtom = (0, import_jotai.atom)(null, async (get, set) => {
+    imageLoad.resolve("cancelled");
+    const comic = get(viewerStateAtom).options.source;
+    try {
+      for await (const page of getImageIterable({ image: source, index, comic })) {
+        const url = getUrl(page);
+        triedUrls.add(url);
+        const result = await waitImageLoad(url);
+        switch (result) {
+          case "error":
+            continue;
+          case "cancelled":
+            return;
+          default: {
+            const img = result;
+            set(stateAtom, { src: url, naturalHeight: img.naturalHeight, status: "complete" });
+            return;
+          }
         }
       }
+    } catch (_error) {
+      set(stateAtom, { urls: Array.from(triedUrls), status: "error" });
     }
-    set(stateAtom, { urls, status: "error" });
+    async function waitImageLoad(url) {
+      imageLoad = deferred();
+      set(stateAtom, { src: url, status: "loading" });
+      return await imageLoad;
+    }
   });
   loadAtom.onMount = (set) => {
     set();
@@ -540,7 +553,7 @@ function createPageAtom({ index, source }) {
       shouldBeOriginalSize,
       imageProps: {
         ..."src" in state ? { src: state.src } : {},
-        onError: () => imageLoad.resolve(false),
+        onError: () => imageLoad.resolve("error"),
         onLoad: (event) => imageLoad.resolve(event.currentTarget)
       }
     };
@@ -763,17 +776,14 @@ var transferWindowScrollToViewerAtom = (0, import_jotai.atom)(null, async (get, 
   });
 });
 var externalFocusElementAtom = (0, import_jotai.atom)(null);
-var setViewerImmersiveAtom = (0, import_jotai.atom)(
-  null,
-  async (get, set, value) => {
-    const lock = await set(transitionLockAtom);
-    try {
-      await transactImmersive(get, set, value);
-    } finally {
-      lock.deferred.resolve();
-    }
+var setViewerImmersiveAtom = (0, import_jotai.atom)(null, async (get, set, value) => {
+  const lock = await set(transitionLockAtom);
+  try {
+    await transactImmersive(get, set, value);
+  } finally {
+    lock.deferred.resolve();
   }
-);
+});
 async function transactImmersive(get, set, value) {
   if (get(isViewerImmersiveAtom) === value) {
     return;
@@ -858,46 +868,39 @@ fullscreenSynchronizationAtom.onMount = (set) => {
   document.addEventListener("fullscreenchange", notify);
   return () => document.removeEventListener("fullscreenchange", notify);
 };
-var setViewerElementAtom = (0, import_jotai.atom)(
-  null,
-  async (get, set, element) => {
-    set(scrollBarStyleFactorAtom, { viewerElement: element });
-    await set(setViewerImmersiveAtom, get(wasImmersiveAtom));
-  }
-);
+var setViewerElementAtom = (0, import_jotai.atom)(null, async (get, set, element) => {
+  set(scrollBarStyleFactorAtom, { viewerElement: element });
+  await set(setViewerImmersiveAtom, get(wasImmersiveAtom));
+});
 var viewerModeAtom = (0, import_jotai.atom)((get) => {
   const isFullscreen = get(viewerFullscreenAtom);
   const isImmersive = get(isViewerImmersiveAtom);
   return isFullscreen ? "fullscreen" : isImmersive ? "window" : "normal";
 });
-var setViewerOptionsAtom = (0, import_jotai.atom)(
-  null,
-  async (get, set, options) => {
-    try {
-      const { source } = options;
-      const previousOptions = get(viewerStateAtom).options;
-      set(viewerStateAtom, (state) => ({ ...state, options }));
-      if (!source || source === previousOptions.source) {
-        return;
-      }
-      set(viewerStateAtom, (state) => ({ ...state, status: "loading" }));
-      const images = await source();
-      if (!Array.isArray(images)) {
-        throw new Error(`Invalid comic source type: ${typeof images}`);
-      }
-      set(viewerStateAtom, (state) => ({
-        ...state,
-        status: "complete",
-        images,
-        pages: images.map((source2, index) => createPageAtom({ source: source2, index }))
-      }));
-    } catch (error) {
-      set(viewerStateAtom, (state) => ({ ...state, status: "error" }));
-      console.error(error);
-      throw error;
+var setViewerOptionsAtom = (0, import_jotai.atom)(null, async (get, set, options) => {
+  try {
+    const { source } = options;
+    const previousOptions = get(viewerStateAtom).options;
+    set(viewerStateAtom, (state) => ({ ...state, options }));
+    if (!source || source === previousOptions.source) {
+      return;
     }
+    set(viewerStateAtom, (state) => ({ ...state, status: "loading" }));
+    const images = await source({ cause: "load" });
+    if (!Array.isArray(images)) {
+      throw new Error(`Invalid comic source type: ${typeof images}`);
+    }
+    set(viewerStateAtom, (state) => ({
+      ...state,
+      status: "complete",
+      pages: images.map((source2, index) => createPageAtom({ source: source2, index }))
+    }));
+  } catch (error) {
+    set(viewerStateAtom, (state) => ({ ...state, status: "error" }));
+    console.error(error);
+    throw error;
   }
-);
+});
 var reloadErroredAtom = (0, import_jotai.atom)(null, (get, set) => {
   stop();
   const pages = get(pagesAtom);
@@ -980,59 +983,17 @@ function gmFetch(resource, init) {
     text: () => xhr("text")
   };
 }
-function download(images, options) {
+async function download(comic, options) {
   const { onError, onProgress, signal } = options || {};
   let startedCount = 0;
   let resolvedCount = 0;
   let rejectedCount = 0;
   let status = "ongoing";
-  const reportProgress = ({ transition } = {}) => {
-    if (status !== "ongoing") {
-      return;
-    }
-    if (transition) {
-      status = transition;
-    }
-    onProgress?.({
-      total: images.length,
-      started: startedCount,
-      settled: resolvedCount + rejectedCount,
-      rejected: rejectedCount,
-      status
-    });
-  };
-  const downloadWithReport = async (source) => {
-    const errors = [];
-    startedCount++;
-    reportProgress();
-    for await (const event of downloadImage({ source, signal })) {
-      if ("error" in event) {
-        errors.push(event.error);
-        onError?.(event.error);
-        continue;
-      }
-      if (event.url) {
-        resolvedCount++;
-      } else {
-        rejectedCount++;
-      }
-      reportProgress();
-      return event;
-    }
-    return {
-      url: "",
-      blob: new Blob([errors.map((x) => `${x}`).join("\n\n")])
-    };
-  };
-  const cipher = Math.floor(Math.log10(images.length)) + 1;
-  const toPair = async ({ url, blob }, index) => {
-    const array = new Uint8Array(await blob.arrayBuffer());
-    const pad = `${index}`.padStart(cipher, "0");
-    const name = `${pad}${guessExtension(array) ?? getExtension(url)}`;
-    return { [name]: array };
-  };
-  const archiveWithReport = async (sources) => {
-    const result = await Promise.all(sources.map(downloadWithReport));
+  const pages = await comic({ cause: "download" });
+  const digit = Math.floor(Math.log10(pages.length)) + 1;
+  return archiveWithReport();
+  async function archiveWithReport() {
+    const result = await Promise.all(pages.map(downloadWithReport));
     if (signal?.aborted) {
       reportProgress({ transition: "cancelled" });
       signal.throwIfAborted();
@@ -1051,8 +1012,65 @@ function download(images, options) {
     });
     signal?.addEventListener("abort", abort, { once: true });
     return value;
-  };
-  return archiveWithReport(images);
+  }
+  async function downloadWithReport(source) {
+    const errors = [];
+    startedCount++;
+    reportProgress();
+    for await (const event of downloadImage({ image: source })) {
+      if ("error" in event) {
+        errors.push(event.error);
+        onError?.(event.error);
+        continue;
+      }
+      if (event.url) {
+        resolvedCount++;
+      } else {
+        rejectedCount++;
+      }
+      reportProgress();
+      return event;
+    }
+    return {
+      url: "",
+      blob: new Blob([errors.map((x) => `${x}`).join("\n\n")])
+    };
+  }
+  async function* downloadImage({ image }) {
+    for await (const src of getImageIterable({ image, index: 0, comic })) {
+      if (signal?.aborted) {
+        break;
+      }
+      const url = getUrl(src);
+      try {
+        const blob = await fetchBlobWithCacheIfPossible(url, signal);
+        yield { url, blob };
+      } catch (error) {
+        yield await fetchBlobIgnoringCors(url, { signal, fetchError: error });
+      }
+    }
+  }
+  async function toPair({ url, blob }, index) {
+    const array = new Uint8Array(await blob.arrayBuffer());
+    const pad = `${index}`.padStart(digit, "0");
+    const name = `${pad}${guessExtension(array) ?? getExtension(url)}`;
+    return { [name]: array };
+  }
+  function reportProgress({ transition } = {}) {
+    if (status !== "ongoing") {
+      return;
+    }
+    if (transition) {
+      status = transition;
+    }
+    onProgress?.({
+      total: pages.length,
+      started: startedCount,
+      settled: resolvedCount + rejectedCount,
+      rejected: rejectedCount,
+      status
+    });
+  }
 }
 function getExtension(url) {
   if (!url) {
@@ -1074,19 +1092,6 @@ function guessExtension(array) {
   }
   if (a === 71 && b === 73 && c === 70 && d === 56) {
     return ".gif";
-  }
-}
-async function* downloadImage({ source, signal }) {
-  for await (const url of imageSourceToIterable(source)) {
-    if (signal?.aborted) {
-      break;
-    }
-    try {
-      const blob = await fetchBlobWithCacheIfPossible(url, signal);
-      yield { url, blob };
-    } catch (error) {
-      yield await fetchBlobIgnoringCors(url, { signal, fetchError: error });
-    }
   }
 }
 async function fetchBlobWithCacheIfPossible(url, signal) {
@@ -1124,20 +1129,21 @@ var cancelDownloadAtom = (0, import_jotai.atom)(null, (get) => {
   get(aborterAtom)?.abort();
 });
 var startDownloadAtom = (0, import_jotai.atom)(null, async (get, set, options) => {
-  const viewerState = get(viewerStateAtom);
-  if (viewerState.status !== "complete") {
-    return;
-  }
   const aborter = new AbortController();
   set(aborterAtom, (previous) => {
     previous?.abort();
     return aborter;
   });
+  const viewerState = get(viewerStateAtom);
+  const source = options?.source ?? viewerState.options.source;
+  if (!source) {
+    return;
+  }
   let toastId = null;
   addEventListener("beforeunload", confirmDownloadAbort);
   try {
     toastId = (0, import_react_toastify.toast)( React.createElement(DownloadCancel, { onClick: aborter.abort }), { autoClose: false, progress: 0 });
-    return await download(options?.images ?? viewerState.images, {
+    return await download(source, {
       onProgress: reportProgress,
       onError: logIfNotAborted,
       signal: aborter.signal
@@ -1997,7 +2003,6 @@ function isDarkColor(rgbColor) {
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance < 0.5;
 }
-var types_exports = {};
 function initialize(options) {
   const store = (0, import_jotai.createStore)();
   const root = (0, import_react_dom.createRoot)(getDefaultRoot());

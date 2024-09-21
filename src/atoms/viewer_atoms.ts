@@ -4,7 +4,7 @@ import {
   isFullscreenPreferredAtom,
   wasImmersiveAtom,
 } from "../features/preferences/atoms.ts";
-import { type ComicSource } from "../services/comic_source.ts";
+import { type ComicSource } from "../helpers/comic_source.ts";
 import { timeout } from "../utils.ts";
 import { createPageAtom, PageAtom } from "./create_page_atom.ts";
 import {
