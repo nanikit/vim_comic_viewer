@@ -4,8 +4,7 @@ import {
   isFullscreenPreferredAtom,
   wasImmersiveAtom,
 } from "../features/preferences/atoms.ts";
-import { adaptComicSource, type ComicSource } from "../services/comic_source.ts";
-import { ViewerOptions } from "../types.ts";
+import { type ComicSource } from "../services/comic_source.ts";
 import { timeout } from "../utils.ts";
 import { createPageAtom, PageAtom } from "./create_page_atom.ts";
 import {
@@ -29,8 +28,17 @@ import {
   transferViewerScrollToWindowAtom,
 } from "./navigation_atoms.ts";
 
+export type ViewerOptions = {
+  source?: ComicSource;
+  imageProps?: Record<string, string>;
+  /** do not synchronize scroll position if true. */
+  noSyncScroll?: boolean;
+  /** do not bind predefined keyboard shortcut if true. */
+  noDefaultBinding?: boolean;
+};
+
 type ViewerState =
-  & { options: Omit<ViewerOptions, "source"> & { source?: ComicSource } }
+  & { options: ViewerOptions }
   & ({
     status: "loading" | "error";
   } | {
@@ -216,15 +224,13 @@ export const setViewerOptionsAtom = atom(null, async (get, set, options: ViewerO
   try {
     const { source } = options;
     const previousOptions = get(viewerStateAtom).options;
-    const newSource = source ? await adaptComicSource(source) : undefined;
-    const newOptions = { ...previousOptions, source: newSource };
-    set(viewerStateAtom, (state) => ({ ...state, options: newOptions }));
-    if (!source || !newSource || source === previousOptions.source) {
+    set(viewerStateAtom, (state) => ({ ...state, options }));
+    if (!source || source === previousOptions.source) {
       return;
     }
 
     set(viewerStateAtom, (state) => ({ ...state, status: "loading" }));
-    const images = await newSource({ cause: "load" });
+    const images = await source({ cause: "load" });
 
     if (!Array.isArray(images)) {
       throw new Error(`Invalid comic source type: ${typeof images}`);
