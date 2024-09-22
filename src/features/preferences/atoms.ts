@@ -28,6 +28,7 @@ export const pageDirectionAtom = atomWithPreferences("pageDirection");
 export const isFullscreenPreferredAtom = atomWithPreferences("isFullscreenPreferred");
 export const fullscreenNoticeCountAtom = atomWithPreferences("fullscreenNoticeCount");
 
+/** Whether the viewer was in immersive mode when the page was unloaded. */
 export const wasImmersiveAtom = atomWithSession("vim_comic_viewer.was_immersive", false);
 
 function atomWithPreferences<T extends keyof PersistentPreferences>(key: T) {
