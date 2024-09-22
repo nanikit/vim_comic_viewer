@@ -174,9 +174,7 @@ async function transactImmersive(get: Getter, set: Setter, value: boolean) {
 const isBeforeUnloadAtom = atom(false);
 const beforeUnloadAtom = atom(null, async (_get, set) => {
   set(isBeforeUnloadAtom, true);
-  for (let i = 0; i < 5; i++) {
-    await timeout(100);
-  }
+  await waitUnloadFinishRoughly();
   set(isBeforeUnloadAtom, false);
 });
 beforeUnloadAtom.onMount = (set) => {
@@ -186,7 +184,7 @@ beforeUnloadAtom.onMount = (set) => {
 
 export const fullscreenSynchronizationAtom = atom(
   (get) => {
-    get(beforeUnloadAtom);
+    get(isBeforeUnloadAtom);
     return get(scrollBarStyleFactorAtom).fullscreenElement;
   },
   (get, set, element: Element | null) => {
@@ -290,3 +288,10 @@ export const blockSelectionAtom = atom(null, (_get, set, event: React.MouseEvent
     event.preventDefault();
   }
 });
+
+/** There is no cancelunload event. Wait for 500ms including debugger pause. */
+async function waitUnloadFinishRoughly() {
+  for (let i = 0; i < 5; i++) {
+    await timeout(100);
+  }
+}
