@@ -8,17 +8,20 @@ import { getImageIterable, getUrl, type ImageSource } from "../helpers/comic_sou
 import { scrollElementSizeAtom } from "./navigation_atoms.ts";
 import { viewerStateAtom } from "./viewer_atoms.ts";
 
-type PageState = {
-  status: "loading";
-  src?: string;
-} | {
-  status: "error";
-  urls: string[];
-} | {
-  status: "complete";
-  src: string;
-  naturalHeight: number;
-};
+type Size = { width: number; height: number };
+
+type PageState =
+  & Partial<Size>
+  & ({
+    status: "loading";
+    src?: string;
+  } | {
+    status: "error";
+    urls: string[];
+  } | {
+    status: "complete";
+    src: string;
+  });
 
 export type PageAtom = ReturnType<typeof createPageAtom>;
 
@@ -56,6 +59,8 @@ export function createPageAtom({ index, source }: { index: number; source: Image
         const url = getUrl(page);
         triedUrls.add(url);
 
+        reflectProvisionalSize(page);
+
         const result = await waitImageLoad(url);
         switch (result) {
           case "error":
@@ -63,14 +68,31 @@ export function createPageAtom({ index, source }: { index: number; source: Image
           case "cancelled":
             return;
           default: {
-            const img = result;
-            set(stateAtom, { src: url, naturalHeight: img.naturalHeight, status: "complete" });
+            set(stateAtom, {
+              src: url,
+              width: result.naturalWidth,
+              height: result.naturalHeight,
+              status: "complete",
+            });
             return;
           }
         }
       }
     } catch (_error) {
       set(stateAtom, { urls: Array.from(triedUrls), status: "error" });
+    }
+
+    function reflectProvisionalSize(page: ImageSource) {
+      if (typeof page === "object") {
+        const { width, height } = get(stateAtom);
+        if (width !== page.width || height !== page.height) {
+          set(stateAtom, (previous) => ({
+            ...previous,
+            width: page.width,
+            height: page.height,
+          }));
+        }
+      }
     }
 
     async function waitImageLoad(url: string) {
@@ -89,7 +111,10 @@ export function createPageAtom({ index, source }: { index: number; source: Image
 
     const state = get(stateAtom);
     const compactWidthIndex = get(singlePageCountAtom);
-    const ratio = getImageToViewerSizeRatio({ viewerSize: get(scrollElementSizeAtom), state });
+    const ratio = getImageToViewerSizeRatio({
+      viewerSize: get(scrollElementSizeAtom),
+      imgSize: state,
+    });
     const shouldBeOriginalSize = shouldPageBeOriginalSize({
       maxZoomInExponent: get(maxZoomInExponentAtom),
       maxZoomOutExponent: get(maxZoomOutExponentAtom),
@@ -98,6 +123,7 @@ export function createPageAtom({ index, source }: { index: number; source: Image
     const isLarge = ratio > 1;
     const canMessUpRow = shouldBeOriginalSize && isLarge;
 
+    const { width, height, status } = state;
     return {
       state,
       div,
@@ -108,6 +134,9 @@ export function createPageAtom({ index, source }: { index: number; source: Image
       fullWidth: index < compactWidthIndex || canMessUpRow,
       shouldBeOriginalSize,
       imageProps: {
+        ...(width && height && status !== "complete"
+          ? { style: { aspectRatio: width / height } }
+          : {}),
         ...("src" in state ? { src: state.src } : {}),
         onError: () => imageLoad.resolve("error"),
         onLoad: ((event) => imageLoad.resolve(event.currentTarget)) as React.ReactEventHandler<
@@ -121,17 +150,16 @@ export function createPageAtom({ index, source }: { index: number; source: Image
 }
 
 function getImageToViewerSizeRatio(
-  { viewerSize, state }: { viewerSize: { width: number; height: number }; state: PageState },
+  { viewerSize, imgSize }: { viewerSize: Size; imgSize: Partial<Size> },
 ) {
-  if (!viewerSize) {
+  if (!imgSize.height && !imgSize.width) {
     return 1;
   }
 
-  if (state.status !== "complete") {
-    return 1;
-  }
-
-  return state.naturalHeight / viewerSize.height;
+  return Math.max(
+    (imgSize.height ?? 0) / viewerSize.height,
+    (imgSize.width ?? 0) / viewerSize.width,
+  );
 }
 
 function shouldPageBeOriginalSize(
