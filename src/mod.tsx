@@ -38,7 +38,7 @@ import { InnerViewer } from "./containers/viewer.tsx";
 import { createRoot, createStore, deferred, forwardRef, Provider, useMemo } from "./deps.ts";
 
 export type { ViewerOptions } from "./atoms/viewer_atoms.ts";
-export type { ComicSource, ImageSource } from "./helpers/comic_source.ts";
+export type { ComicSource, ComicSourceParams, ImageSource } from "./helpers/comic_source.ts";
 export { download } from "./helpers/downloader.ts";
 export * as utils from "./utils.ts";
 

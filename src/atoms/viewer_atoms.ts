@@ -6,7 +6,7 @@ import {
 } from "../features/preferences/atoms.ts";
 import { type ComicSource } from "../helpers/comic_source.ts";
 import { timeout } from "../utils.ts";
-import { createPageAtom, PageAtom } from "./create_page_atom.ts";
+import { createPageAtom, maxSizeAtom, PageAtom } from "./create_page_atom.ts";
 import {
   focusWithoutScroll,
   getCurrentScroll,
@@ -229,7 +229,7 @@ export const setViewerOptionsAtom = atom(null, async (get, set, options: ViewerO
       return;
     }
 
-    const images = await source({ cause: "load" });
+    const images = await source({ cause: "load", maxSize: get(maxSizeAtom) });
 
     if (!Array.isArray(images)) {
       throw new Error(`Invalid comic source type: ${typeof images}`);
