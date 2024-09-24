@@ -1,11 +1,8 @@
 import { controllerCreationAtom, ViewerController } from "../atoms/controller_atom.ts";
 import { viewerFullscreenAtom } from "../atoms/fullscreen_atom.ts";
 import { i18nAtom } from "../atoms/i18n_atom.ts";
-import {
-  navigateAtom,
-  setScrollElementAtom,
-  synchronizeScrollAtom,
-} from "../atoms/navigation_atoms.ts";
+import { navigateAtom, synchronizeScrollAtom } from "../atoms/navigation_atoms.ts";
+import { setScrollElementAtom } from "../atoms/set_scroll_element_atom.ts";
 import {
   blockSelectionAtom,
   fullscreenSynchronizationAtom,

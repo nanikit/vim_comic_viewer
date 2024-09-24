@@ -27,7 +27,7 @@ export async function download(
   let rejectedCount = 0;
   let status: DownloadStatus = "ongoing";
 
-  const pages = await comic({ cause: "download" });
+  const pages = await comic({ cause: "download", maxSize: { width: Infinity, height: Infinity } });
   const digit = Math.floor(Math.log10(pages.length)) + 1;
 
   return archiveWithReport();
@@ -92,7 +92,9 @@ export async function download(
   async function* downloadImage(
     { image, pageIndex }: { image: ImageSource; pageIndex: number },
   ): AsyncGenerator<{ error: unknown } | { url: string; blob: Blob }> {
-    for await (const src of getImageIterable({ image, index: pageIndex, comic })) {
+    const maxSize = { width: Infinity, height: Infinity };
+    const imageParams = { image, index: pageIndex, comic, maxSize };
+    for await (const src of getImageIterable(imageParams)) {
       if (signal?.aborted) {
         break;
       }

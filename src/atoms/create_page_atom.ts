@@ -22,6 +22,23 @@ type PageState = {
 
 export type PageAtom = ReturnType<typeof createPageAtom>;
 
+/** max of current screen size or scroll element size */
+const maxSizeStateAtom = atom({ width: screen.width, height: screen.height });
+export const maxSizeAtom = atom(
+  (get) => get(maxSizeStateAtom),
+  (get, set, size: { width: number; height: number }) => {
+    const current = get(maxSizeStateAtom);
+    if (size.width <= current.width && size.height <= current.height) {
+      return;
+    }
+
+    set(maxSizeStateAtom, {
+      width: Math.max(size.width, current.width),
+      height: Math.max(size.height, current.height),
+    });
+  },
+);
+
 export function createPageAtom({ index, source }: { index: number; source: ImageSource }) {
   const triedUrls = new Set<string>();
 
@@ -33,8 +50,9 @@ export function createPageAtom({ index, source }: { index: number; source: Image
     imageLoad.resolve("cancelled");
 
     const comic = get(viewerStateAtom).options.source;
+    const imageParams = { index, image: source, comic, maxSize: get(maxSizeAtom) };
     try {
-      for await (const page of getImageIterable({ image: source, index, comic })) {
+      for await (const page of getImageIterable(imageParams)) {
         const url = getUrl(page);
         triedUrls.add(url);
 
