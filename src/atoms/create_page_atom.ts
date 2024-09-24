@@ -5,6 +5,7 @@ import {
   singlePageCountAtom,
 } from "../features/preferences/atoms.ts";
 import { getImageIterable, getUrl, type ImageSource } from "../helpers/comic_source.ts";
+import { timeout } from "../utils.ts";
 import { scrollElementSizeAtom } from "./navigation_atoms.ts";
 import { viewerStateAtom } from "./viewer_atoms.ts";
 
@@ -64,7 +65,15 @@ export function createPageAtom({ index, source }: { index: number; source: Image
         const result = await waitImageLoad(url);
         switch (result) {
           case "error":
-            continue;
+            set(stateAtom, (previous) => ({
+              ...previous,
+              src: "",
+              urls: Array.from(triedUrls),
+              status: "error",
+            }));
+            // Wait error rendering.
+            await timeout(0);
+            break;
           case "cancelled":
             return;
           default: {
@@ -97,7 +106,7 @@ export function createPageAtom({ index, source }: { index: number; source: Image
 
     async function waitImageLoad(url: string) {
       imageLoad = deferred();
-      set(stateAtom, { src: url, status: "loading" });
+      set(stateAtom, (previous) => ({ ...previous, src: url, status: "loading" }));
 
       return await imageLoad;
     }
@@ -125,6 +134,7 @@ export function createPageAtom({ index, source }: { index: number; source: Image
 
     const { width, height, status } = state;
     return {
+      index,
       state,
       div,
       setDiv: (newDiv: HTMLDivElement | null) => {
