@@ -42,18 +42,16 @@ export async function* getImageIterable(
 
   let previous: string | undefined;
   let retryCount = 0;
-  while (retryCount >= maxRetryCount) {
-    const [next] = await comic({ cause: "error", page: index, maxSize });
-    if (!next) {
-      break;
-    }
-
+  while (retryCount < maxRetryCount) {
+    const images = await comic({ cause: "error", page: index, maxSize });
+    const next = images[index];
     yield next;
 
-    if (previous === next) {
+    const url = getUrl(next);
+    if (previous === url) {
       retryCount++;
       continue;
     }
-    previous = getUrl(next);
+    previous = url;
   }
 }
