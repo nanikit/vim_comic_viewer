@@ -115,3 +115,18 @@ export const Image = styled("img", {
     },
   },
 });
+
+export const Video = styled("video", {
+  position: "relative",
+
+  height: "100%",
+  maxWidth: "100%",
+
+  objectFit: "contain",
+
+  variants: {
+    originalSize: {
+      true: { height: "auto" },
+    },
+  },
+});
