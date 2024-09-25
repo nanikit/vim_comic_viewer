@@ -4,15 +4,18 @@ import {
   maxZoomOutExponentAtom,
   singlePageCountAtom,
 } from "../features/preferences/atoms.ts";
-import { getImageIterable, getUrl, type ImageSource } from "../helpers/comic_source.ts";
+import { getImageIterable, getType, getUrl, type ImageSource } from "../helpers/comic_source.ts";
 import { timeout } from "../utils.ts";
 import { scrollElementSizeAtom } from "./navigation_atoms.ts";
 import { viewerStateAtom } from "./viewer_atoms.ts";
+
+export type PageAtom = ReturnType<typeof createPageAtom>;
 
 type Size = { width: number; height: number };
 
 type PageState =
   & Partial<Size>
+  & { type: "image" | "video" }
   & ({
     status: "loading";
     src?: string;
@@ -24,7 +27,15 @@ type PageState =
     src: string;
   });
 
-export type PageAtom = ReturnType<typeof createPageAtom>;
+type ImageProps = React.DetailedHTMLProps<
+  React.VideoHTMLAttributes<HTMLVideoElement>,
+  HTMLVideoElement
+>;
+
+type VideoProps = React.DetailedHTMLProps<
+  React.ImgHTMLAttributes<HTMLImageElement>,
+  HTMLImageElement
+>;
 
 /** max of current screen size or scroll element size */
 const maxSizeStateAtom = atom({ width: screen.width, height: screen.height });
@@ -46,12 +57,15 @@ export const maxSizeAtom = atom(
 export function createPageAtom({ index, source }: { index: number; source: ImageSource }) {
   const triedUrls = new Set<string>();
 
-  let imageLoad = deferred<HTMLImageElement | "error" | "cancelled">();
+  let mediaLoad = deferred<HTMLImageElement | HTMLVideoElement | "error" | "cancelled">();
   let div: HTMLDivElement | null = null;
 
-  const stateAtom = atom<PageState>({ status: "loading" });
+  const stateAtom = atom<PageState>({
+    status: "loading",
+    type: getType(source),
+  });
   const loadAtom = atom(null, async (get, set) => {
-    imageLoad.resolve("cancelled");
+    mediaLoad.resolve("cancelled");
 
     const comic = get(viewerStateAtom).options.source;
     const imageParams = { index, image: source, comic, maxSize: get(maxSizeAtom) };
@@ -67,9 +81,9 @@ export function createPageAtom({ index, source }: { index: number; source: Image
           case "error":
             set(stateAtom, (previous) => ({
               ...previous,
+              status: "error",
               src: "",
               urls: Array.from(triedUrls),
-              status: "error",
             }));
             // Wait error rendering.
             await timeout(0);
@@ -77,18 +91,26 @@ export function createPageAtom({ index, source }: { index: number; source: Image
           case "cancelled":
             return;
           default: {
-            set(stateAtom, {
-              src: url,
-              width: result.naturalWidth,
-              height: result.naturalHeight,
+            set(stateAtom, (previous) => ({
+              ...previous,
               status: "complete",
-            });
+              src: url,
+              ...(result instanceof HTMLImageElement
+                ? {
+                  width: result.naturalWidth,
+                  height: result.naturalHeight,
+                }
+                : {
+                  width: result.videoWidth,
+                  height: result.videoHeight,
+                }),
+            }));
             return;
           }
         }
       }
     } catch (_error) {
-      set(stateAtom, { urls: Array.from(triedUrls), status: "error" });
+      set(stateAtom, (previous) => ({ ...previous, urls: Array.from(triedUrls), status: "error" }));
     }
 
     function reflectProvisionalSize(page: ImageSource) {
@@ -97,6 +119,7 @@ export function createPageAtom({ index, source }: { index: number; source: Image
         if (width !== page.width || height !== page.height) {
           set(stateAtom, (previous) => ({
             ...previous,
+            type: getType(page),
             width: page.width,
             height: page.height,
           }));
@@ -105,10 +128,10 @@ export function createPageAtom({ index, source }: { index: number; source: Image
     }
 
     async function waitImageLoad(url: string) {
-      imageLoad = deferred();
+      mediaLoad = deferred();
       set(stateAtom, (previous) => ({ ...previous, src: url, status: "loading" }));
 
-      return await imageLoad;
+      return await mediaLoad;
     }
   });
   loadAtom.onMount = (set) => {
@@ -133,6 +156,14 @@ export function createPageAtom({ index, source }: { index: number; source: Image
     const canMessUpRow = shouldBeOriginalSize && isLarge;
 
     const { width, height, status } = state;
+    const mediaProps = {
+      ...(width && height && status !== "complete"
+        ? { style: { aspectRatio: width / height } }
+        : {}),
+      ...("src" in state ? { src: state.src } : {}),
+      onError: () => mediaLoad.resolve("error"),
+    };
+
     return {
       index,
       state,
@@ -143,16 +174,25 @@ export function createPageAtom({ index, source }: { index: number; source: Image
       reloadAtom: loadAtom,
       fullWidth: index < compactWidthIndex || canMessUpRow,
       shouldBeOriginalSize,
-      imageProps: {
-        ...(width && height && status !== "complete"
-          ? { style: { aspectRatio: width / height } }
-          : {}),
-        ...("src" in state ? { src: state.src } : {}),
-        onError: () => imageLoad.resolve("error"),
-        onLoad: ((event) => imageLoad.resolve(event.currentTarget)) as React.ReactEventHandler<
-          HTMLImageElement
-        >,
+      get src() {
+        return "src" in state ? state.src : undefined;
       },
+      videoProps: state.type === "video"
+        ? {
+          ...mediaProps,
+          controls: true,
+          autoPlay: true,
+          loop: true,
+          muted: true,
+          onLoadedMetadata: ((event) => mediaLoad.resolve(event.currentTarget)),
+        } satisfies ImageProps
+        : undefined,
+      imageProps: state.type === "image"
+        ? {
+          ...mediaProps,
+          onLoad: ((event) => mediaLoad.resolve(event.currentTarget)),
+        } satisfies VideoProps
+        : undefined,
     };
   });
 

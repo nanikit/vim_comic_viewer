@@ -59,7 +59,7 @@ const transferWindowScrollToViewerAtom = atom(null, async (get, set) => {
   const urlToViewerPages = new Map<string, ExtractAtomValue<PageAtom>>();
 
   let viewerPages = get(pagesAtom)?.map(get);
-  if (!viewerPages || viewerPages?.some((page) => !page.imageProps.src)) {
+  if (!viewerPages || viewerPages?.some((page) => !page.src)) {
     await timeout(1);
     viewerPages = get(pagesAtom)?.map(get);
     // TODO: monkey patch. Change to synchronous way.
@@ -72,8 +72,8 @@ const transferWindowScrollToViewerAtom = atom(null, async (get, set) => {
     return;
   }
   for (const viewerPage of viewerPages) {
-    if (viewerPage.imageProps.src) {
-      urlToViewerPages.set(viewerPage.imageProps.src, viewerPage);
+    if (viewerPage.src) {
+      urlToViewerPages.set(viewerPage.src, viewerPage);
     }
   }
   const urls = [...urlToViewerPages.keys()];

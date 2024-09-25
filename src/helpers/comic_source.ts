@@ -18,12 +18,26 @@ export type ComicSourceParams = {
 /**
  * Provided remote image. Width and height are planned to be used for CLS prevention.
  */
-export type ImageSource = string | { src: string; width: number; height: number };
+export type ImageSource = string | AdvancedSource;
+
+export type MediaType = "image" | "video";
+
+type AdvancedSource = {
+  src: string;
+  width?: number;
+  height?: number;
+  /** @default "image" */
+  type?: MediaType;
+};
 
 const maxRetryCount = 2;
 
 export function getUrl(source: ImageSource) {
   return typeof source === "string" ? source : source.src;
+}
+
+export function getType(source: ImageSource): MediaType {
+  return typeof source !== "string" && source.type === "video" ? "video" : "image";
 }
 
 export async function* getImageIterable(

@@ -1,12 +1,19 @@
 import { PageAtom } from "../atoms/create_page_atom.ts";
 import { i18nAtom } from "../atoms/i18n_atom.ts";
 import { CircledX } from "../components/icons.tsx";
-import { Image, LinkColumn, Overlay, Spinner } from "../components/spinner.tsx";
+import { Image, LinkColumn, Overlay, Spinner, Video } from "../components/spinner.tsx";
 import { MouseEventHandler, useAtomValue, useSetAtom } from "../deps.ts";
 
 export const Page = ({ atom, ...props }: { atom: PageAtom }) => {
-  const { imageProps, fullWidth, reloadAtom, shouldBeOriginalSize, state: pageState, setDiv } =
-    useAtomValue(atom);
+  const {
+    imageProps,
+    videoProps,
+    fullWidth,
+    reloadAtom,
+    shouldBeOriginalSize,
+    state: pageState,
+    setDiv,
+  } = useAtomValue(atom);
   const strings = useAtomValue(i18nAtom);
   const reload = useSetAtom(reloadAtom);
   const { status } = pageState;
@@ -31,7 +38,8 @@ export const Page = ({ atom, ...props }: { atom: PageAtom }) => {
           <p>{pageState.urls?.join("\n")}</p>
         </LinkColumn>
       )}
-      <Image {...imageProps} originalSize={shouldBeOriginalSize} {...props} />
+      {videoProps && <Video {...videoProps} originalSize={shouldBeOriginalSize} {...props} />}
+      {imageProps && <Image {...imageProps} originalSize={shouldBeOriginalSize} {...props} />}
     </Overlay>
   );
 };
