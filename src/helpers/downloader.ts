@@ -179,8 +179,15 @@ async function fetchBlobIgnoringCors(
   }
 
   try {
-    const blob = await gmFetch(url, { signal }).blob();
-    return { url, blob };
+    const response = await gmFetch(url, { signal, type: "blob" });
+    if (response.status >= 400) {
+      const body = await (response.response as Blob).text();
+      const message =
+        `failed to load ${url} with HTTP ${response.status} ${response.statusText}\n${body}`;
+      return { error: new Error(message) };
+    }
+
+    return { url, blob: response.response as Blob };
   } catch (error) {
     if (isGmCancelled(error)) {
       return { error: new Error("download aborted") };

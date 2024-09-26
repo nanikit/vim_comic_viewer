@@ -30,7 +30,7 @@ type AdvancedSource = {
   type?: MediaType;
 };
 
-const maxRetryCount = 2;
+const maxRetryCount = 3;
 
 export function getUrl(source: ImageSource) {
   return typeof source === "string" ? source : source.src;

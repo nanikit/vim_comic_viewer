@@ -4,6 +4,10 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+# 16.0.1
+
+- Check http response code when download.
+
 # 16.0.0
 
 - **Changed `ComicSource` type.**
