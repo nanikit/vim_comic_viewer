@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        16.0.0
+// @version        16.0.1
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -230,7 +230,7 @@ function atomWithPreferences(key) {
     }
   );
 }
-var maxRetryCount = 2;
+var maxRetryCount = 3;
 function getUrl(source) {
   return typeof source === "string" ? source : source.src;
 }
@@ -1002,43 +1002,30 @@ var SpaceBetween = styled("div", {
   justifyContent: "space-between"
 });
 var isGmFetchAvailable = typeof GM_xmlhttpRequest === "function";
-function gmFetch(resource, init) {
+function gmFetch(url, init) {
   const method = init?.body ? "POST" : "GET";
-  const xhr = (type) => {
-    return new Promise((resolve, reject) => {
-      const request = GM_xmlhttpRequest({
-        method,
-        url: resource,
-        headers: {
-          referer: `${location.origin}/`,
-          ...init?.headers
-        },
-        responseType: type === "text" ? void 0 : type,
-        data: init?.body,
-        onload: (response) => {
-          if (type === "text") {
-            resolve(response.responseText);
-          } else {
-            resolve(response.response);
-          }
-        },
-        onerror: reject,
-        onabort: reject
-      });
-      init?.signal?.addEventListener(
-        "abort",
-        () => {
-          request.abort();
-        },
-        { once: true }
-      );
+  return new Promise((resolve, reject) => {
+    const request = GM_xmlhttpRequest({
+      method,
+      url,
+      headers: {
+        referer: `${location.origin}/`,
+        ...init?.headers
+      },
+      responseType: init?.type === "text" ? void 0 : init?.type,
+      data: init?.body,
+      onload: resolve,
+      onerror: reject,
+      onabort: reject
     });
-  };
-  return {
-    blob: () => xhr("blob"),
-    json: () => xhr("json"),
-    text: () => xhr("text")
-  };
+    init?.signal?.addEventListener(
+      "abort",
+      () => {
+        request.abort();
+      },
+      { once: true }
+    );
+  });
 }
 async function download(comic, options) {
   const { onError, onProgress, signal } = options || {};
@@ -1167,8 +1154,14 @@ async function fetchBlobIgnoringCors(url, { signal, fetchError }) {
     };
   }
   try {
-    const blob = await gmFetch(url, { signal }).blob();
-    return { url, blob };
+    const response = await gmFetch(url, { signal, type: "blob" });
+    if (response.status >= 400) {
+      const body = await response.response.text();
+      const message = `failed to load ${url} with HTTP ${response.status} ${response.statusText}
+${body}`;
+      return { error: new Error(message) };
+    }
+    return { url, blob: response.response };
   } catch (error) {
     if (isGmCancelled(error)) {
       return { error: new Error("download aborted") };
