@@ -4,6 +4,12 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+# 16.0.0
+
+- **Changed `ComicSource` type.**
+  - _Video source is now supported._
+  - _Viewer will invoke source when maximum viewer size is changed._
+
 # 15.0.0
 
 - **Remove `compactWidthIndex`. Use `effectivePreferences`, `setManualPreferences` instead.**
