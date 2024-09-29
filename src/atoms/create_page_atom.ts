@@ -5,11 +5,11 @@ import {
   singlePageCountAtom,
 } from "../features/preferences/atoms.ts";
 import {
-  getImageIterable,
+  getMediaIterable,
   getType,
   getUrl,
-  type ImageSource,
-  type ImageSourceOrDelay,
+  type MediaSource,
+  type MediaSourceOrDelay,
   type MediaType,
 } from "../helpers/comic_source.ts";
 import { timeout } from "../utils.ts";
@@ -61,7 +61,7 @@ export const maxSizeAtom = atom(
   },
 );
 
-export function createPageAtom({ index, source }: { index: number; source: ImageSourceOrDelay }) {
+export function createPageAtom({ index, source }: { index: number; source: MediaSourceOrDelay }) {
   const triedUrls = new Set<string>();
 
   let mediaLoad = deferred<HTMLImageElement | HTMLVideoElement | "error" | "cancelled">();
@@ -80,9 +80,9 @@ export function createPageAtom({ index, source }: { index: number; source: Image
     set(stateAtom, (previous) => ({ ...previous, status: "loading" }));
 
     const comic = get(viewerStateAtom).options.source;
-    const imageParams = { index, image: source, comic, maxSize: get(maxSizeAtom) };
+    const mediaParams = { index, media: source, comic, maxSize: get(maxSizeAtom) };
     try {
-      for await (const page of getImageIterable(imageParams)) {
+      for await (const page of getMediaIterable(mediaParams)) {
         if (isComplete()) {
           return;
         }
@@ -92,7 +92,7 @@ export function createPageAtom({ index, source }: { index: number; source: Image
 
         reflectProvisionalSize(page);
 
-        const result = await waitImageLoad(url);
+        const result = await waitMediaLoad(url);
         switch (result) {
           case "error":
             set(stateAtom, (previous) => ({
@@ -135,7 +135,7 @@ export function createPageAtom({ index, source }: { index: number; source: Image
       return get(stateAtom).status === "complete";
     }
 
-    function reflectProvisionalSize(page: ImageSource) {
+    function reflectProvisionalSize(page: MediaSource) {
       if (typeof page === "object") {
         const { width, height } = get(stateAtom);
         if (width !== page.width || height !== page.height) {
@@ -149,7 +149,7 @@ export function createPageAtom({ index, source }: { index: number; source: Image
       }
     }
 
-    async function waitImageLoad(url: string) {
+    async function waitMediaLoad(url: string) {
       mediaLoad = deferred();
       set(stateAtom, (previous) => ({ ...previous, src: url, status: "loading" }));
 
@@ -169,10 +169,10 @@ export function createPageAtom({ index, source }: { index: number; source: Image
       viewerSize: get(scrollElementSizeAtom),
       imgSize: state,
     });
-    const shouldBeOriginalSize = shouldPageBeOriginalSize({
+    const shouldBeOriginalSize = shouldMediaBeOriginalSize({
       maxZoomInExponent: get(maxZoomInExponentAtom),
       maxZoomOutExponent: get(maxZoomOutExponentAtom),
-      imageRatio: ratio,
+      mediaRatio: ratio,
     });
     const isLarge = ratio > 1;
     const canMessUpRow = shouldBeOriginalSize && isLarge;
@@ -234,15 +234,15 @@ function getImageToViewerSizeRatio(
   );
 }
 
-function shouldPageBeOriginalSize(
-  { maxZoomOutExponent, maxZoomInExponent, imageRatio }: {
+function shouldMediaBeOriginalSize(
+  { maxZoomOutExponent, maxZoomInExponent, mediaRatio }: {
     maxZoomOutExponent: number;
     maxZoomInExponent: number;
-    imageRatio: number;
+    mediaRatio: number;
   },
 ) {
   const minZoomRatio = Math.sqrt(2) ** maxZoomOutExponent;
   const maxZoomRatio = Math.sqrt(2) ** maxZoomInExponent;
-  const isOver = minZoomRatio < imageRatio || imageRatio < 1 / maxZoomRatio;
+  const isOver = minZoomRatio < mediaRatio || mediaRatio < 1 / maxZoomRatio;
   return isOver;
 }

@@ -30,7 +30,7 @@ import {
 
 export type ViewerOptions = {
   source?: ComicSource;
-  imageProps?: Record<string, string>;
+  mediaProps?: Record<string, string>;
   /** do not synchronize scroll position if true. */
   noSyncScroll?: boolean;
   /** do not bind predefined keyboard shortcut if true. */
@@ -229,16 +229,16 @@ export const setViewerOptionsAtom = atom(null, async (get, set, options: ViewerO
       return;
     }
 
-    const images = await source({ cause: "load", maxSize: get(maxSizeAtom) });
+    const medias = await source({ cause: "load", maxSize: get(maxSizeAtom) });
 
-    if (!Array.isArray(images)) {
-      throw new Error(`Invalid comic source type: ${typeof images}`);
+    if (!Array.isArray(medias)) {
+      throw new Error(`Invalid comic source type: ${typeof medias}`);
     }
 
     set(viewerStateAtom, (state) => ({
       ...state,
       status: "complete",
-      pages: images.map((source, index) => createPageAtom({ source, index })),
+      pages: medias.map((source, index) => createPageAtom({ source, index })),
     }));
   } catch (error) {
     set(viewerStateAtom, (state) => ({ ...state, status: "error" }));

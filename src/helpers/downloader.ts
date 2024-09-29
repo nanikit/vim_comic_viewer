@@ -1,9 +1,9 @@
 import { deferred, zip } from "../deps.ts";
 import {
   type ComicSource,
-  getImageIterable,
+  getMediaIterable,
   getUrl,
-  type ImageSourceOrDelay,
+  type MediaSourceOrDelay,
 } from "./comic_source.ts";
 import { gmFetch, isGmFetchAvailable } from "./gm_fetch.ts";
 
@@ -64,7 +64,7 @@ export async function download(
   }
 
   async function downloadWithReport(
-    source: ImageSourceOrDelay,
+    source: MediaSourceOrDelay,
     pageIndex: number,
   ): Promise<{ url: string; blob: Blob }> {
     const errors = [];
@@ -72,7 +72,7 @@ export async function download(
     startedCount++;
     reportProgress();
 
-    for await (const event of downloadImage({ image: source, pageIndex })) {
+    for await (const event of downloadImage({ media: source, pageIndex })) {
       if ("error" in event) {
         errors.push(event.error);
         onError?.(event.error);
@@ -95,11 +95,11 @@ export async function download(
   }
 
   async function* downloadImage(
-    { image, pageIndex }: { image: ImageSourceOrDelay; pageIndex: number },
+    { media, pageIndex }: { media: MediaSourceOrDelay; pageIndex: number },
   ): AsyncGenerator<{ error: unknown } | { url: string; blob: Blob }> {
     const maxSize = { width: Infinity, height: Infinity };
-    const imageParams = { image, index: pageIndex, comic, maxSize };
-    for await (const src of getImageIterable(imageParams)) {
+    const mediaParams = { media, index: pageIndex, comic, maxSize };
+    for await (const src of getMediaIterable(mediaParams)) {
       if (signal?.aborted) {
         break;
       }

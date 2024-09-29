@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        16.0.1
+// @version        17.0.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -38,7 +38,7 @@ import { InnerViewer } from "./containers/viewer.tsx";
 import { createRoot, createStore, deferred, forwardRef, Provider, useMemo } from "./deps.ts";
 
 export type { ViewerOptions } from "./atoms/viewer_atoms.ts";
-export type { ComicSource, ComicSourceParams, ImageSource } from "./helpers/comic_source.ts";
+export type { ComicSource, ComicSourceParams, MediaSource } from "./helpers/comic_source.ts";
 export { download } from "./helpers/downloader.ts";
 export * as utils from "./utils.ts";
 

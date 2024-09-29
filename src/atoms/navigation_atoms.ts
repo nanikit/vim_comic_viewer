@@ -22,8 +22,8 @@ export const transferViewerScrollToWindowAtom = atom(null, (get) => {
   const fileName = src.split("/").pop()?.split("?")[0];
   const candidates = document.querySelectorAll<HTMLImageElement>(`img[src*="${fileName}"]`);
   const original = [...candidates].find((img) => img.src === src);
-  const isViewerImage = original?.parentElement === page;
-  if (!original || isViewerImage) {
+  const isViewerMedia = original?.parentElement === page;
+  if (!original || isViewerMedia) {
     return false;
   }
 
