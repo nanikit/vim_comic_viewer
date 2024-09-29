@@ -4,7 +4,7 @@
  *
  * @returns An array of whole page image sources.
  */
-export type ComicSource = (params: ComicSourceParams) => ImageSource[] | Promise<ImageSource[]>;
+export type ComicSource = (params: ComicSourceParams) => PromiseOrValue<ImageSourceOrDelay[]>;
 
 export type ComicSourceParams = {
   /** The cause of the comic source being loaded. */
@@ -15,13 +15,17 @@ export type ComicSourceParams = {
   maxSize: { width: number; height: number };
 };
 
-/**
- * Provided remote image. Width and height are planned to be used for CLS prevention.
- */
+/** undefined means delay the source loading. Viewer will request source again. */
+export type ImageSourceOrDelay = ImageSource | undefined;
+
+/** Provided remote image. */
 export type ImageSource = string | AdvancedSource;
 
 export type MediaType = "image" | "video";
 
+type PromiseOrValue<T> = T | Promise<T>;
+
+/** Width and height are planned to be used for CLS prevention. */
 type AdvancedSource = {
   src: string;
   width?: number;
@@ -42,13 +46,15 @@ export function getType(source: ImageSource): MediaType {
 
 export async function* getImageIterable(
   { image, index, comic, maxSize }: {
-    image: ImageSource;
+    image: ImageSourceOrDelay;
     index: number;
     comic?: ComicSource;
     maxSize: { width: number; height: number };
   },
 ) {
-  yield image;
+  if (image !== undefined) {
+    yield image;
+  }
 
   if (!comic) {
     return;
@@ -57,8 +63,13 @@ export async function* getImageIterable(
   let previous: string | undefined;
   let retryCount = 0;
   while (retryCount < maxRetryCount) {
-    const images = await comic({ cause: "error", page: index, maxSize });
+    const hadError = image !== undefined || retryCount > 0;
+    const images = await comic({ cause: hadError ? "error" : "load", page: index, maxSize });
     const next = images[index];
+    if (next === undefined) {
+      continue;
+    }
+
     yield next;
 
     const url = getUrl(next);

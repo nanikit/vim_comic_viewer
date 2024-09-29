@@ -4,7 +4,14 @@ import {
   maxZoomOutExponentAtom,
   singlePageCountAtom,
 } from "../features/preferences/atoms.ts";
-import { getImageIterable, getType, getUrl, type ImageSource } from "../helpers/comic_source.ts";
+import {
+  getImageIterable,
+  getType,
+  getUrl,
+  type ImageSource,
+  type ImageSourceOrDelay,
+  type MediaType,
+} from "../helpers/comic_source.ts";
 import { timeout } from "../utils.ts";
 import { scrollElementSizeAtom } from "./navigation_atoms.ts";
 import { viewerStateAtom } from "./viewer_atoms.ts";
@@ -15,7 +22,7 @@ type Size = { width: number; height: number };
 
 type PageState =
   & Partial<Size>
-  & { type: "image" | "video" }
+  & { type?: MediaType }
   & ({
     status: "loading";
     src?: string;
@@ -54,7 +61,7 @@ export const maxSizeAtom = atom(
   },
 );
 
-export function createPageAtom({ index, source }: { index: number; source: ImageSource }) {
+export function createPageAtom({ index, source }: { index: number; source: ImageSourceOrDelay }) {
   const triedUrls = new Set<string>();
 
   let mediaLoad = deferred<HTMLImageElement | HTMLVideoElement | "error" | "cancelled">();
@@ -62,15 +69,24 @@ export function createPageAtom({ index, source }: { index: number; source: Image
 
   const stateAtom = atom<PageState>({
     status: "loading",
-    type: getType(source),
+    type: source ? getType(source) : undefined,
   });
   const loadAtom = atom(null, async (get, set) => {
+    if (isComplete()) {
+      return;
+    }
+
     mediaLoad.resolve("cancelled");
+    set(stateAtom, (previous) => ({ ...previous, status: "loading" }));
 
     const comic = get(viewerStateAtom).options.source;
     const imageParams = { index, image: source, comic, maxSize: get(maxSizeAtom) };
     try {
       for await (const page of getImageIterable(imageParams)) {
+        if (isComplete()) {
+          return;
+        }
+
         const url = getUrl(page);
         triedUrls.add(url);
 
@@ -81,9 +97,7 @@ export function createPageAtom({ index, source }: { index: number; source: Image
           case "error":
             set(stateAtom, (previous) => ({
               ...previous,
-              status: "error",
               src: "",
-              urls: Array.from(triedUrls),
             }));
             // Wait error rendering.
             await timeout(0);
@@ -110,7 +124,15 @@ export function createPageAtom({ index, source }: { index: number; source: Image
         }
       }
     } catch (_error) {
-      set(stateAtom, (previous) => ({ ...previous, urls: Array.from(triedUrls), status: "error" }));
+      // Ignore error.
+    }
+
+    if (!isComplete()) {
+      set(stateAtom, (previous) => ({ ...previous, status: "error", urls: Array.from(triedUrls) }));
+    }
+
+    function isComplete() {
+      return get(stateAtom).status === "complete";
     }
 
     function reflectProvisionalSize(page: ImageSource) {
