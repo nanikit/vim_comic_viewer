@@ -1,5 +1,10 @@
 import { deferred, zip } from "../deps.ts";
-import { type ComicSource, getImageIterable, getUrl, type ImageSource } from "./comic_source.ts";
+import {
+  type ComicSource,
+  getImageIterable,
+  getUrl,
+  type ImageSourceOrDelay,
+} from "./comic_source.ts";
 import { gmFetch, isGmFetchAvailable } from "./gm_fetch.ts";
 
 export type DownloadStatus = "ongoing" | "complete" | "error" | "cancelled";
@@ -59,7 +64,7 @@ export async function download(
   }
 
   async function downloadWithReport(
-    source: ImageSource,
+    source: ImageSourceOrDelay,
     pageIndex: number,
   ): Promise<{ url: string; blob: Blob }> {
     const errors = [];
@@ -90,7 +95,7 @@ export async function download(
   }
 
   async function* downloadImage(
-    { image, pageIndex }: { image: ImageSource; pageIndex: number },
+    { image, pageIndex }: { image: ImageSourceOrDelay; pageIndex: number },
   ): AsyncGenerator<{ error: unknown } | { url: string; blob: Blob }> {
     const maxSize = { width: Infinity, height: Infinity };
     const imageParams = { image, index: pageIndex, comic, maxSize };
