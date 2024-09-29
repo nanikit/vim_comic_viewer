@@ -4,6 +4,11 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+# 17.0.0
+
+- **Change `ImageSource` type to `MediaSourceOrDelay`, `imageProps` in `ViewerOptions` to
+  `mediaProps`.**
+
 # 16.0.1
 
 - Check http response code when download.

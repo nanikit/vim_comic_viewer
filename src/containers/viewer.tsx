@@ -74,7 +74,7 @@ export function InnerViewer(
             <Page
               key={`${atom}`}
               atom={atom}
-              {...options?.imageProps}
+              {...options?.mediaProps}
             />
           ))
           : <p>{status === "error" ? strings.errorIsOccurred : strings.loading}</p>}

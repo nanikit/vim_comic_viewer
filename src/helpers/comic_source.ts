@@ -4,7 +4,7 @@
  *
  * @returns An array of whole page image sources.
  */
-export type ComicSource = (params: ComicSourceParams) => PromiseOrValue<ImageSourceOrDelay[]>;
+export type ComicSource = (params: ComicSourceParams) => PromiseOrValue<MediaSourceOrDelay[]>;
 
 export type ComicSourceParams = {
   /** The cause of the comic source being loaded. */
@@ -16,10 +16,10 @@ export type ComicSourceParams = {
 };
 
 /** undefined means delay the source loading. Viewer will request source again. */
-export type ImageSourceOrDelay = ImageSource | undefined;
+export type MediaSourceOrDelay = MediaSource | undefined;
 
 /** Provided remote image. */
-export type ImageSource = string | AdvancedSource;
+export type MediaSource = string | AdvancedSource;
 
 export type MediaType = "image" | "video";
 
@@ -36,24 +36,24 @@ type AdvancedSource = {
 
 const maxRetryCount = 3;
 
-export function getUrl(source: ImageSource) {
+export function getUrl(source: MediaSource) {
   return typeof source === "string" ? source : source.src;
 }
 
-export function getType(source: ImageSource): MediaType {
+export function getType(source: MediaSource): MediaType {
   return typeof source !== "string" && source.type === "video" ? "video" : "image";
 }
 
-export async function* getImageIterable(
-  { image, index, comic, maxSize }: {
-    image: ImageSourceOrDelay;
+export async function* getMediaIterable(
+  { media, index, comic, maxSize }: {
+    media: MediaSourceOrDelay;
     index: number;
     comic?: ComicSource;
     maxSize: { width: number; height: number };
   },
 ) {
-  if (image !== undefined) {
-    yield image;
+  if (media !== undefined) {
+    yield media;
   }
 
   if (!comic) {
@@ -63,9 +63,9 @@ export async function* getImageIterable(
   let previous: string | undefined;
   let retryCount = 0;
   while (retryCount < maxRetryCount) {
-    const hadError = image !== undefined || retryCount > 0;
-    const images = await comic({ cause: hadError ? "error" : "load", page: index, maxSize });
-    const next = images[index];
+    const hadError = media !== undefined || retryCount > 0;
+    const medias = await comic({ cause: hadError ? "error" : "load", page: index, maxSize });
+    const next = medias[index];
     if (next === undefined) {
       continue;
     }
