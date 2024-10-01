@@ -17,7 +17,6 @@ import { FullscreenButton } from "../components/icons.tsx";
 import { Container, ScrollableLayout } from "../components/scrollable_layout.ts";
 import { HTMLProps, ToastContainer, useAtomValue, useEffect, useSetAtom } from "../deps.ts";
 import { backgroundColorAtom, pageDirectionAtom } from "../features/preferences/atoms.ts";
-import { useDefault } from "../hooks/use_default.ts";
 import { LeftBottomControl } from "./left_bottom_control.tsx";
 import { Page } from "./page.tsx";
 
@@ -40,8 +39,6 @@ export function InnerViewer(
 
   const controller = useAtomValue(controllerCreationAtom);
   const options = controller?.options;
-
-  useDefault({ enable: !options?.noDefaultBinding, controller });
 
   useEffect(() => {
     if (controller) {

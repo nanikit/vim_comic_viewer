@@ -31,27 +31,136 @@ import {
 import { PersistentPreferences } from "../features/preferences/models.ts";
 import { isTyping } from "../utils.ts";
 
-export type ViewerController = ReturnType<typeof createViewerController>;
+export type ViewerController = InstanceType<typeof Controller>;
 
 const controllerAtom = atom<ViewerController | null>(null);
 export const controllerCreationAtom = atom((get) => get(controllerAtom), (get, set) => {
-  if (!get(controllerAtom)) {
-    set(controllerAtom, createViewerController(get, set));
+  const existing = get(controllerAtom);
+  if (existing) {
+    return existing;
   }
-  return get(controllerAtom);
-});
-controllerCreationAtom.onMount = (set) => {
-  set();
-};
 
-function createViewerController(get: Getter, set: Setter) {
-  const downloader = {
-    download: (options?: UserDownloadOptions) => set(startDownloadAtom, options),
-    downloadAndSave: (options?: UserDownloadOptions) => set(downloadAndSaveAtom, options),
-    cancel: () => set(cancelDownloadAtom),
+  const controller = new Controller(get, set);
+  set(controllerAtom, controller);
+  return controller;
+});
+controllerCreationAtom.onMount = (set) => void set();
+
+class Controller {
+  private currentElementKeyHandler: ((event: KeyboardEvent) => void) | null = null;
+
+  constructor(private get: Getter, private set: Setter) {
+    addEventListener("keydown", this.defaultGlobalKeyHandler);
+    this.elementKeyHandler = this.defaultElementKeyHandler;
+  }
+
+  get options() {
+    return this.get(viewerStateAtom).options;
+  }
+
+  get status() {
+    return this.get(viewerStateAtom).status;
+  }
+
+  get container() {
+    return this.get(scrollBarStyleFactorAtom).viewerElement;
+  }
+
+  downloader = {
+    download: (options?: UserDownloadOptions) => this.set(startDownloadAtom, options),
+    downloadAndSave: (options?: UserDownloadOptions) => this.set(downloadAndSaveAtom, options),
+    cancel: () => this.set(cancelDownloadAtom),
   };
 
-  const elementKeyHandler = (event: KeyboardEvent): boolean => {
+  get pages() {
+    return this.get(pagesAtom);
+  }
+
+  get viewerMode() {
+    return this.get(viewerModeAtom);
+  }
+
+  get effectivePreferences() {
+    return this.get(preferencesAtom);
+  }
+
+  get manualPreferences() {
+    return this.get(manualPreferencesAtom);
+  }
+
+  set elementKeyHandler(handler: ((event: KeyboardEvent) => void) | null) {
+    const { currentElementKeyHandler, container } = this;
+    const scrollable = this.container?.firstElementChild as HTMLDivElement | null;
+
+    if (currentElementKeyHandler) {
+      container?.removeEventListener("keydown", currentElementKeyHandler);
+      scrollable?.removeEventListener("keydown", currentElementKeyHandler);
+    }
+
+    if (handler) {
+      container?.addEventListener("keydown", handler);
+      scrollable?.addEventListener("keydown", handler);
+    }
+  }
+
+  setOptions = (value: ViewerOptions) => {
+    this.set(setViewerOptionsAtom, value);
+  };
+
+  goPrevious = () => {
+    this.set(goPreviousAtom);
+  };
+
+  goNext = () => {
+    this.set(goNextAtom);
+  };
+
+  setManualPreferences = (
+    value: Partial<Omit<PersistentPreferences, "isFullscreenPreferred">>,
+  ) => {
+    return this.set(manualPreferencesAtom, value);
+  };
+
+  setScriptPreferences = ({
+    manualPreset,
+    preferences,
+  }: {
+    manualPreset?: string;
+    preferences?: Partial<PersistentPreferences>;
+  }) => {
+    if (manualPreset) {
+      this.set(preferencesPresetAtom, manualPreset);
+    }
+    if (preferences) {
+      this.set(scriptPreferencesAtom, preferences);
+    }
+  };
+
+  setImmersive = (value: boolean) => {
+    return this.set(setViewerImmersiveAtom, value);
+  };
+
+  setIsFullscreenPreferred = (value: boolean) => {
+    return this.set(isFullscreenPreferredSettingsAtom, value);
+  };
+
+  toggleImmersive = () => {
+    this.set(toggleImmersiveAtom);
+  };
+
+  toggleFullscreen = () => {
+    this.set(toggleFullscreenAtom);
+  };
+
+  reloadErrored = () => {
+    this.set(reloadErroredAtom);
+  };
+
+  unmount = () => {
+    return this.get(rootAtom)?.unmount();
+  };
+
+  defaultElementKeyHandler = (event: KeyboardEvent): boolean => {
     if (maybeNotHotkey(event)) {
       return false;
     }
@@ -59,31 +168,31 @@ function createViewerController(get: Getter, set: Setter) {
     switch (event.key) {
       case "j":
       case "ArrowDown":
-        controller.goNext();
+        this.goNext();
         event.preventDefault();
         break;
       case "k":
       case "ArrowUp":
-        controller.goPrevious();
+        this.goPrevious();
         event.preventDefault();
         break;
       case ";":
-        controller.downloader?.downloadAndSave();
+        this.downloader?.downloadAndSave();
         break;
       case "/":
-        controller.setManualPreferences({
-          ...controller.manualPreferences,
-          singlePageCount: controller.effectivePreferences.singlePageCount + 1,
+        this.setManualPreferences({
+          ...this.manualPreferences,
+          singlePageCount: this.effectivePreferences.singlePageCount + 1,
         });
         break;
       case "?":
-        controller.setManualPreferences({
-          ...controller.manualPreferences,
-          singlePageCount: Math.max(0, controller.effectivePreferences.singlePageCount - 1),
+        this.setManualPreferences({
+          ...this.manualPreferences,
+          singlePageCount: Math.max(0, this.effectivePreferences.singlePageCount - 1),
         });
         break;
       case "'":
-        controller.reloadErrored();
+        this.reloadErrored();
         break;
       default:
         return false;
@@ -93,82 +202,21 @@ function createViewerController(get: Getter, set: Setter) {
     return true;
   };
 
-  const globalKeyHandler = (event: KeyboardEvent): boolean => {
+  defaultGlobalKeyHandler = (event: KeyboardEvent): boolean => {
     if (maybeNotHotkey(event)) {
       return false;
     }
 
     if (["KeyI", "Numpad0", "Enter"].includes(event.code)) {
       if (event.shiftKey) {
-        controller.toggleFullscreen();
+        this.toggleFullscreen();
       } else {
-        controller.toggleImmersive();
+        this.toggleImmersive();
       }
       return true;
     }
     return false;
   };
-
-  const controller = {
-    get options() {
-      return get(viewerStateAtom).options;
-    },
-    get status() {
-      return get(viewerStateAtom).status;
-    },
-    get container() {
-      return get(scrollBarStyleFactorAtom).viewerElement;
-    },
-    downloader,
-    get pages() {
-      return get(pagesAtom);
-    },
-    get viewerMode() {
-      return get(viewerModeAtom);
-    },
-    get effectivePreferences() {
-      return get(preferencesAtom);
-    },
-    get manualPreferences() {
-      return get(manualPreferencesAtom);
-    },
-
-    setOptions: (value: ViewerOptions) => set(setViewerOptionsAtom, value),
-    goPrevious: () => set(goPreviousAtom),
-    goNext: () => set(goNextAtom),
-    setManualPreferences: (
-      value: Partial<Omit<PersistentPreferences, "isFullscreenPreferred">>,
-    ) => {
-      return set(manualPreferencesAtom, value);
-    },
-    setScriptPreferences: (
-      { manualPreset, preferences }: {
-        manualPreset?: string;
-        preferences?: Partial<PersistentPreferences>;
-      },
-    ) => {
-      if (manualPreset) {
-        set(preferencesPresetAtom, manualPreset);
-      }
-      if (preferences) {
-        set(scriptPreferencesAtom, preferences);
-      }
-    },
-    setImmersive: (value: boolean) => {
-      return set(setViewerImmersiveAtom, value);
-    },
-    setIsFullscreenPreferred: (value: boolean) => {
-      return set(isFullscreenPreferredSettingsAtom, value);
-    },
-    toggleImmersive: () => set(toggleImmersiveAtom),
-    toggleFullscreen: () => set(toggleFullscreenAtom),
-    reloadErrored: () => set(reloadErroredAtom),
-    elementKeyHandler,
-    globalKeyHandler,
-    unmount: () => get(rootAtom)?.unmount(),
-  };
-
-  return controller;
 }
 
 function maybeNotHotkey(event: KeyboardEvent) {

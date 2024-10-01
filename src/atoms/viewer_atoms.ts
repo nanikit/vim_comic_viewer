@@ -33,8 +33,6 @@ export type ViewerOptions = {
   mediaProps?: Record<string, string>;
   /** do not synchronize scroll position if true. */
   noSyncScroll?: boolean;
-  /** do not bind predefined keyboard shortcut if true. */
-  noDefaultBinding?: boolean;
 };
 
 type ViewerState =
