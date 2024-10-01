@@ -8,6 +8,11 @@
 
 - **Change `ImageSource` type to `MediaSourceOrDelay`, `imageProps` in `ViewerOptions` to
   `mediaProps`.**
+- **Remove `noDefaultBinding` option. Use `viewer.elementKeyHandler = null` and
+  `removeEventListener(viewer.defaultGlobalKeyHandler)` instead.**
+- **`elementKeyHandler` and `globalKeyHandler` are now setter. Use `defaultElementKeyHandler` and
+  `defaultGlobalKeyHandler` instead.**
+- `initialize` now returns `ViewerController` immediately.
 
 # 16.0.1
 

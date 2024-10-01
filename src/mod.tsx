@@ -32,27 +32,26 @@
 // @resource       link:vcv-inject-node-env data:,unsafeWindow.process=%7Benv:%7BNODE_ENV:%22production%22%7D%7D
 // @resource       react-toastify-css       https://cdn.jsdelivr.net/npm/react-toastify@10.0.5/dist/ReactToastify.css
 // ==/UserScript==
-import { ViewerController } from "./atoms/controller_atom.ts";
+import { controllerCreationAtom, ViewerController } from "./atoms/controller_atom.ts";
 import { rootAtom, type ViewerOptions } from "./atoms/viewer_atoms.ts";
 import { InnerViewer } from "./containers/viewer.tsx";
-import { createRoot, createStore, deferred, forwardRef, Provider, useMemo } from "./deps.ts";
+import { createRoot, createStore, forwardRef, Provider, useMemo } from "./deps.ts";
 
 export type { ViewerOptions } from "./atoms/viewer_atoms.ts";
 export type { ComicSource, ComicSourceParams, MediaSource } from "./helpers/comic_source.ts";
 export { download } from "./helpers/downloader.ts";
 export * as utils from "./utils.ts";
 
-export function initialize(options: ViewerOptions): Promise<ViewerController> {
+export function initialize(options: ViewerOptions): ViewerController {
   const store = createStore();
   const root = createRoot(getDefaultRoot());
-  const deferredController = deferred<ViewerController>();
   root.render(
     <Provider store={store}>
-      <InnerViewer onInitialized={deferredController.resolve} options={options} />
+      <InnerViewer options={options} />
     </Provider>,
   );
   store.set(rootAtom, root);
-  return deferredController;
+  return store.set(controllerCreationAtom);
 }
 
 export const Viewer = forwardRef(({ options, onInitialized }: {
