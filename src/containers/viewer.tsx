@@ -20,6 +20,8 @@ import { backgroundColorAtom, pageDirectionAtom } from "../features/preferences/
 import { LeftBottomControl } from "./left_bottom_control.tsx";
 import { Page } from "./page.tsx";
 
+import "../vendors/toastify_css.ts";
+
 export function InnerViewer(
   props: HTMLProps<HTMLDivElement> & {
     options: ViewerOptions;
