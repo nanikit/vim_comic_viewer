@@ -177,7 +177,7 @@ async function fetchBlobIgnoringCors(
   if (isCrossOrigin(url) && !isGmFetchAvailable) {
     return {
       error: new Error(
-        "It could be a CORS issue but cannot use GM_xmlhttpRequest",
+        "It could be a CORS issue but cannot use GM.xmlhttpRequest",
         { cause: fetchError },
       ),
     };
