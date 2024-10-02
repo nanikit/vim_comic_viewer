@@ -13,7 +13,7 @@
 // @grant          GM_getValue
 // @grant          GM_removeValueChangeListener
 // @grant          GM_setValue
-// @grant          GM_xmlhttpRequest
+// @grant          GM.xmlHttpRequest
 // @grant          unsafeWindow
 // @resource       link:@headlessui/react   https://cdn.jsdelivr.net/npm/@headlessui/react@2.1.8/dist/headlessui.prod.cjs
 // @resource       link:@stitches/react     https://cdn.jsdelivr.net/npm/@stitches/react@1.3.1-1/dist/index.cjs
