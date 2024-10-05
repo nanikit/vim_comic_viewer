@@ -1,12 +1,19 @@
 import { atomWithStorage, createJSONStorage } from "../../../deps.ts";
 
 const gmStorage = {
-  getItem: GM_getValue,
-  setItem: GM_setValue,
-  removeItem: (key: string) => GM_deleteValue(key),
+  getItem: GM.getValue,
+  setItem: GM.setValue,
+  removeItem: (key: string) => GM.deleteValue(key),
   subscribe: <T>(key: string, callback: (value: T) => void) => {
-    const id = GM_addValueChangeListener(key, (_key, _oldValue, newValue) => callback(newValue));
-    return () => GM_removeValueChangeListener(id);
+    const idPromise = GM.addValueChangeListener(
+      key,
+      (_key, _oldValue, newValue) => callback(newValue),
+    );
+
+    return async () => {
+      const id = await idPromise;
+      await GM.removeValueChangeListener(id);
+    };
   },
 };
 

@@ -9,10 +9,10 @@
 // @match          http://unused-field.space/
 // @author         nanikit
 // @license        MIT
-// @grant          GM_addValueChangeListener
-// @grant          GM_getValue
-// @grant          GM_removeValueChangeListener
-// @grant          GM_setValue
+// @grant          GM.addValueChangeListener
+// @grant          GM.getValue
+// @grant          GM.removeValueChangeListener
+// @grant          GM.setValue
 // @grant          GM.xmlHttpRequest
 // @grant          unsafeWindow
 // @resource       link:@headlessui/react   https://cdn.jsdelivr.net/npm/@headlessui/react@2.1.8/dist/headlessui.prod.cjs
