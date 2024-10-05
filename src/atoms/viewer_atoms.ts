@@ -54,26 +54,31 @@ export const pagesAtom = selectAtom(
 export const rootAtom = atom<Root | null>(null);
 
 const transferWindowScrollToViewerAtom = atom(null, async (get, set) => {
-  const urlToViewerPages = new Map<string, ExtractAtomValue<PageAtom>>();
+  type Page = ExtractAtomValue<PageAtom>;
+  const urlToViewerPages = new Map<string, Page>();
 
-  let viewerPages = get(pagesAtom)?.map(get);
-  if (!viewerPages || viewerPages?.some((page) => !page.src)) {
-    await timeout(1);
-    viewerPages = get(pagesAtom)?.map(get);
-    // TODO: monkey patch. Change to synchronous way.
-    (async () => {
-      await timeout(1);
-      set(restoreScrollAtom);
-    })();
+  let viewerPages: Page[] | undefined;
+
+  const pageAtoms = get(pagesAtom);
+  if (!pageAtoms) {
+    viewerPages = await waitPages();
+  } else {
+    viewerPages = pageAtoms.map(get);
+    if (viewerPages?.some((page) => !page.src)) {
+      viewerPages = await waitPages();
+    }
   }
+
   if (!viewerPages || !viewerPages.length) {
     return;
   }
+
   for (const viewerPage of viewerPages) {
     if (viewerPage.src) {
       urlToViewerPages.set(viewerPage.src, viewerPage);
     }
   }
+
   const urls = [...urlToViewerPages.keys()];
   const imgs = getUrlImgs(urls);
   const viewerImgs = new Set(viewerPages.flatMap((page) => page.div?.querySelector("img") ?? []));
@@ -100,6 +105,18 @@ const transferWindowScrollToViewerAtom = atom(null, async (get, set) => {
     ratio: snappedRatio,
     fullyVisiblePages,
   });
+
+  async function waitPages() {
+    await timeout(1);
+    restoreScrollAfterTick();
+    return get(pagesAtom)?.map(get);
+  }
+
+  async function restoreScrollAfterTick() {
+    // TODO: monkey patch. Change to synchronous way.
+    await timeout(1);
+    set(restoreScrollAtom);
+  }
 });
 
 const externalFocusElementAtom = atom<Element | null>(null);
@@ -165,7 +182,7 @@ async function transactImmersive(get: Getter, set: Setter, value: boolean) {
 
     toast(get(i18nAtom).fullScreenRestorationGuide, { type: "info" });
     await timeout(5000);
-    set(fullscreenNoticeCountAtom, (count) => count + 1);
+    set(fullscreenNoticeCountAtom, (count) => (count ?? 0) + 1);
   }
 }
 

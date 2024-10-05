@@ -164,14 +164,19 @@ export function createPageAtom({ index, source }: { index: number; source: Media
     get(loadAtom);
 
     const state = get(stateAtom);
+    const scrollElementSize = get(scrollElementSizeAtom);
     const compactWidthIndex = get(singlePageCountAtom);
+    const maxZoomInExponent = get(maxZoomInExponentAtom);
+    const maxZoomOutExponent = get(maxZoomOutExponentAtom);
+
     const ratio = getImageToViewerSizeRatio({
-      viewerSize: get(scrollElementSizeAtom),
+      viewerSize: scrollElementSize,
       imgSize: state,
     });
+
     const shouldBeOriginalSize = shouldMediaBeOriginalSize({
-      maxZoomInExponent: get(maxZoomInExponentAtom),
-      maxZoomOutExponent: get(maxZoomOutExponentAtom),
+      maxZoomInExponent,
+      maxZoomOutExponent,
       mediaRatio: ratio,
     });
     const isLarge = ratio > 1;

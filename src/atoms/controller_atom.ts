@@ -1,3 +1,4 @@
+import type { SetStateAction } from "jotai";
 import {
   cancelDownloadAtom,
   downloadAndSaveAtom,
@@ -116,7 +117,7 @@ class Controller {
   };
 
   setManualPreferences = (
-    value: Partial<Omit<PersistentPreferences, "isFullscreenPreferred">>,
+    value: SetStateAction<Partial<Omit<PersistentPreferences, "isFullscreenPreferred">>>,
   ) => {
     return this.set(manualPreferencesAtom, value);
   };
@@ -160,7 +161,7 @@ class Controller {
     return this.get(rootAtom)?.unmount();
   };
 
-  defaultElementKeyHandler = (event: KeyboardEvent): boolean => {
+  defaultElementKeyHandler = (event: KeyboardEvent) => {
     if (maybeNotHotkey(event)) {
       return false;
     }
@@ -168,37 +169,48 @@ class Controller {
     switch (event.key) {
       case "j":
       case "ArrowDown":
-        this.goNext();
+        event.stopPropagation();
         event.preventDefault();
+        this.goNext();
         break;
       case "k":
       case "ArrowUp":
-        this.goPrevious();
+        event.stopPropagation();
         event.preventDefault();
+        this.goPrevious();
         break;
       case ";":
+        event.stopPropagation();
         this.downloader?.downloadAndSave();
         break;
       case "/":
-        this.setManualPreferences({
-          ...this.manualPreferences,
-          singlePageCount: this.effectivePreferences.singlePageCount + 1,
-        });
+        event.stopPropagation();
+        (async () => {
+          const effectivePreferences = await this.effectivePreferences;
+          await this.setManualPreferences((preferences) => ({
+            ...preferences,
+            singlePageCount: effectivePreferences.singlePageCount + 1,
+          }));
+        })();
         break;
       case "?":
-        this.setManualPreferences({
-          ...this.manualPreferences,
-          singlePageCount: Math.max(0, this.effectivePreferences.singlePageCount - 1),
-        });
+        event.stopPropagation();
+        (async () => {
+          const effectivePreferences = await this.effectivePreferences;
+          await this.setManualPreferences((preferences) => ({
+            ...preferences,
+            singlePageCount: Math.max(0, effectivePreferences.singlePageCount - 1),
+          }));
+        })();
         break;
       case "'":
+        event.stopPropagation();
         this.reloadErrored();
         break;
       default:
         return false;
     }
 
-    event.stopPropagation();
     return true;
   };
 
