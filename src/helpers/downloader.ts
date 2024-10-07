@@ -1,10 +1,5 @@
 import { deferred, zip } from "../deps.ts";
-import {
-  type ComicSource,
-  getMediaIterable,
-  getUrl,
-  type MediaSourceOrDelay,
-} from "./comic_source.ts";
+import { type ComicSource, getMediaIterable, type MediaSourceOrDelay } from "./comic_source.ts";
 import { gmFetch, isGmFetchAvailable } from "./gm_fetch.ts";
 
 export type DownloadStatus = "ongoing" | "complete" | "error" | "cancelled";
@@ -99,12 +94,11 @@ export async function download(
   ): AsyncGenerator<{ error: unknown } | { url: string; blob: Blob }> {
     const maxSize = { width: Infinity, height: Infinity };
     const mediaParams = { media, index: pageIndex, comic, maxSize };
-    for await (const src of getMediaIterable(mediaParams)) {
+    for await (const url of getMediaIterable(mediaParams)) {
       if (signal?.aborted) {
         break;
       }
 
-      const url = getUrl(src);
       try {
         const blob = await fetchBlobWithCacheIfPossible(url, signal);
         yield { url, blob };
