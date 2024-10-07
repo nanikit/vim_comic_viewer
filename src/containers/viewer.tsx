@@ -1,4 +1,5 @@
 import { controllerCreationAtom, ViewerController } from "../atoms/controller_atom.ts";
+import { pageAtomsAtom } from "../atoms/create_page_atom.ts";
 import { viewerFullscreenAtom } from "../atoms/fullscreen_atom.ts";
 import { i18nAtom } from "../atoms/i18n_atom.ts";
 import { navigateAtom, synchronizeScrollAtom } from "../atoms/navigation_atoms.ts";
@@ -13,14 +14,22 @@ import {
 } from "../atoms/viewer_atoms.ts";
 import { type ViewerOptions, viewerStateAtom } from "../atoms/viewer_base_atoms.ts";
 import { FullscreenButton } from "../components/icons.tsx";
-import { Container, ScrollableLayout } from "../components/scrollable_layout.ts";
-import { HTMLProps, ToastContainer, useAtomValue, useEffect, useSetAtom } from "../deps.ts";
+import { Container, OverlayScroller } from "../components/scrollable_layout.ts";
+import {
+  HTMLProps,
+  ToastContainer,
+  useAtomValue,
+  useEffect,
+  useOverlayScrollbars,
+  useRef,
+  useSetAtom,
+} from "../deps.ts";
 import { backgroundColorAtom, pageDirectionAtom } from "../features/preferences/atoms.ts";
+import { styled } from "../vendors/stitches.ts";
 import { LeftBottomControl } from "./left_bottom_control.tsx";
 import { Page } from "./page.tsx";
 
-import { pageAtomsAtom } from "../atoms/create_page_atom.ts";
-import "../vendors/toastify_css.ts";
+import "../vendors/external_css.ts";
 
 export function InnerViewer(
   props: HTMLProps<HTMLDivElement> & {
@@ -36,12 +45,27 @@ export function InnerViewer(
   const pageDirection = useAtomValue(pageDirectionAtom);
   const strings = useAtomValue(i18nAtom);
   const mode = useAtomValue(viewerModeAtom);
-  useAtomValue(fullscreenSynchronizationAtom);
+  const controller = useAtomValue(controllerCreationAtom);
+  const virtualContainerRef = useRef<HTMLDivElement | null>(null);
+  const virtualContainer = virtualContainerRef.current;
+  const setScrollElement = useSetAtom(setScrollElementAtom);
+
+  const options = controller?.options;
   const { status } = viewer;
 
-  const controller = useAtomValue(controllerCreationAtom);
   const pageAtoms = useAtomValue(pageAtomsAtom);
-  const options = controller?.options;
+
+  const [initialize] = useOverlayScrollbars({
+    defer: true,
+    events: { scroll: useSetAtom(synchronizeScrollAtom), initialized: setupScroll },
+  });
+
+  useAtomValue(fullscreenSynchronizationAtom);
+
+  function setupScroll() {
+    const selector = "div[data-overlayscrollbars-viewport]";
+    setScrollElement(virtualContainerRef.current?.querySelector(selector)!);
+  }
 
   useEffect(() => {
     if (controller) {
@@ -53,33 +77,40 @@ export function InnerViewer(
     setViewerOptions(viewerOptions);
   }, [viewerOptions]);
 
+  useEffect(() => {
+    if (virtualContainer) {
+      initialize(virtualContainer);
+    }
+  }, [initialize, virtualContainer]);
+
   return (
     <Container
       ref={useSetAtom(setViewerElementAtom)}
       css={{ backgroundColor }}
       immersive={mode === "window"}
     >
-      <ScrollableLayout
+      <OverlayScroller
         tabIndex={0}
         // deno-lint-ignore no-explicit-any
-        ref={useSetAtom(setScrollElementAtom) as any}
+        ref={virtualContainerRef as any}
         dark={isDarkColor(backgroundColor)}
         fullscreen={isFullscreen}
-        ltr={pageDirection === "leftToRight"}
-        onScroll={useSetAtom(synchronizeScrollAtom)}
         onClick={useSetAtom(navigateAtom)}
         onMouseDown={useSetAtom(blockSelectionAtom)}
-        children={status === "complete"
-          ? pageAtoms.map((atom) => (
-            <Page
-              key={`${atom}`}
-              atom={atom}
-              {...options?.mediaProps}
-            />
-          ))
-          : <p>{status === "error" ? strings.errorIsOccurred : strings.loading}</p>}
         {...otherProps}
-      />
+      >
+        <Pages ltr={pageDirection === "leftToRight"}>
+          {status === "complete"
+            ? pageAtoms.map((atom) => (
+              <Page
+                key={`${atom}`}
+                atom={atom}
+                {...options?.mediaProps}
+              />
+            ))
+            : <p>{status === "error" ? strings.errorIsOccurred : strings.loading}</p>}
+        </Pages>
+      </OverlayScroller>
       {status === "complete" ? <LeftBottomControl /> : false}
       <FullscreenButton onClick={useSetAtom(toggleImmersiveAtom)} />
       <ToastContainer />
@@ -98,3 +129,20 @@ function isDarkColor(rgbColor: string) {
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance < 0.5;
 }
+
+const Pages = styled("div", {
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  flexFlow: "row-reverse wrap",
+
+  overflowY: "auto",
+
+  variants: {
+    ltr: {
+      true: {
+        flexFlow: "row wrap",
+      },
+    },
+  },
+});

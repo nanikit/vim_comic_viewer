@@ -38,7 +38,7 @@ const emptyScroll = { page: null, ratio: 0, fullyVisiblePages: [] };
 export function getCurrentViewerScroll(
   container?: HTMLElement | null,
 ): PageScrollState<HTMLDivElement> {
-  const children = [...(container?.children ?? [])] as HTMLDivElement[];
+  const children = [...(container?.firstElementChild?.children ?? [])] as HTMLDivElement[];
   if (!container || !children.length) {
     return emptyScroll;
   }

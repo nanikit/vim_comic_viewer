@@ -55,7 +55,8 @@ export const Overlay = styled("div", {
   position: "relative",
 
   maxWidth: "100%",
-  height: "100%",
+  // height: "100%",
+  height: "100vh",
 
   display: "flex",
   alignItems: "center",
