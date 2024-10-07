@@ -15,7 +15,7 @@ export type ComicSourceParams = {
   maxSize: { width: number; height: number };
 };
 
-/** undefined means delay the source loading. Viewer will request source again. */
+/** `undefined` and `{ src: undefined }` means delay the source loading. Viewer will request source again. */
 export type MediaSourceOrDelay = MediaSource | undefined;
 
 /** Provided remote image. */
@@ -26,7 +26,7 @@ export type MediaType = "image" | "video";
 type PromiseOrValue<T> = T | Promise<T>;
 
 /** Width and height are planned to be used for CLS prevention. */
-type AdvancedSource = {
+export type AdvancedSource = {
   src: string;
   width?: number;
   height?: number;
@@ -34,7 +34,8 @@ type AdvancedSource = {
   type?: MediaType;
 };
 
-const maxRetryCount = 3;
+export const MAX_RETRY_COUNT = 6;
+export const MAX_SAME_URL_RETRY_COUNT = 2;
 
 export function getUrl(source: MediaSource) {
   return typeof source === "string" ? source : source.src;
@@ -62,7 +63,9 @@ export async function* getMediaIterable(
 
   let previous: string | undefined;
   let retryCount = 0;
-  while (retryCount < maxRetryCount) {
+  let sameUrlRetryCount = 0;
+
+  while (sameUrlRetryCount <= MAX_SAME_URL_RETRY_COUNT && retryCount <= MAX_RETRY_COUNT) {
     const hadError = media !== undefined || retryCount > 0;
     const medias = await comic({ cause: hadError ? "error" : "load", page: index, maxSize });
     const next = medias[index];
@@ -72,9 +75,10 @@ export async function* getMediaIterable(
 
     yield next;
 
+    retryCount++;
     const url = getUrl(next);
     if (previous === url) {
-      retryCount++;
+      sameUrlRetryCount++;
       continue;
     }
     previous = url;

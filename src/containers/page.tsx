@@ -20,7 +20,7 @@ export const Page = ({ atom, ...props }: { atom: PageAtom }) => {
 
   const reloadErrored: MouseEventHandler = async (event) => {
     event.stopPropagation();
-    await reload();
+    await reload("load");
   };
 
   return (

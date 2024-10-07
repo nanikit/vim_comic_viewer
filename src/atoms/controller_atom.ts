@@ -11,7 +11,6 @@ import {
 } from "../atoms/fullscreen_atom.ts";
 import { goNextAtom, goPreviousAtom } from "../atoms/navigation_atoms.ts";
 import {
-  pagesAtom,
   reloadErroredAtom,
   rootAtom,
   setViewerImmersiveAtom,
@@ -19,8 +18,6 @@ import {
   toggleFullscreenAtom,
   toggleImmersiveAtom,
   viewerModeAtom,
-  type ViewerOptions,
-  viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
 import { atom, Getter, Setter } from "../deps.ts";
 import {
@@ -31,6 +28,8 @@ import {
 } from "../features/preferences/atoms.ts";
 import { PersistentPreferences } from "../features/preferences/models.ts";
 import { isTyping } from "../utils.ts";
+import { pageAtomsAtom } from "./create_page_atom.ts";
+import { type ViewerOptions, viewerStateAtom } from "./viewer_base_atoms.ts";
 
 export type ViewerController = InstanceType<typeof Controller>;
 
@@ -74,7 +73,7 @@ class Controller {
   };
 
   get pages() {
-    return this.get(pagesAtom);
+    return this.get(pageAtomsAtom).map(this.get);
   }
 
   get viewerMode() {
