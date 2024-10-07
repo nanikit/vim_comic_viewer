@@ -183,7 +183,7 @@ export function createPageAtom(
       onError: reload,
     };
 
-    return {
+    const page = {
       index,
       state,
       div,
@@ -210,6 +210,7 @@ export function createPageAtom(
         } satisfies VideoProps
         : undefined,
     };
+    return page;
   });
 
   async function reload() {

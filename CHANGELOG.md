@@ -12,7 +12,7 @@
   `removeEventListener(viewer.defaultGlobalKeyHandler)` instead.**
 - **`elementKeyHandler` and `globalKeyHandler` are now setter. Use `defaultElementKeyHandler` and
   `defaultGlobalKeyHandler` instead.**
-- `initialize` now returns `ViewerController` immediately.
+- _Now it uses overlay scrollbar._
 
 # 16.0.1
 

@@ -90,7 +90,9 @@ class Controller {
 
   set elementKeyHandler(handler: ((event: KeyboardEvent) => void) | null) {
     const { currentElementKeyHandler, container } = this;
-    const scrollable = this.container?.firstElementChild as HTMLDivElement | null;
+    const scrollable = this.container?.querySelector("div[data-overlayscrollbars-viewport]") as
+      | HTMLDivElement
+      | null;
 
     if (currentElementKeyHandler) {
       container?.removeEventListener("keydown", currentElementKeyHandler);
