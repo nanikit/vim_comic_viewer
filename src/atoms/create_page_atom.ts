@@ -7,12 +7,15 @@ import {
   singlePageCountAtom,
 } from "../features/preferences/atoms.ts";
 import {
+  type AdvancedObject,
   type AdvancedSource,
   type ComicSourceParams,
+  isDelay,
   MAX_RETRY_COUNT,
   MAX_SAME_URL_RETRY_COUNT,
-  type MediaSource,
   type MediaSourceOrDelay,
+  toAdvancedObject,
+  toAdvancedSource,
 } from "../helpers/comic_source.ts";
 import { scrollElementSizeAtom } from "./navigation_atoms.ts";
 import { viewerOptionsAtom } from "./viewer_base_atoms.ts";
@@ -23,7 +26,7 @@ type Size = { width: number; height: number };
 
 type PageState =
   & {
-    source?: Partial<AdvancedSource>;
+    source: AdvancedObject;
   }
   & ({
     status: "loading";
@@ -104,7 +107,7 @@ export function createPageAtom(
 
   const stateAtom = atom<PageState>({
     status: "loading",
-    source: initialSource ? toAdvancedSource(initialSource) : undefined,
+    source: initialSource ? toAdvancedObject(initialSource) : { src: undefined },
   });
   const loadAtom = atom(null, async (get, set, cause: "load" | "error") => {
     switch (cause) {
@@ -115,10 +118,10 @@ export function createPageAtom(
         break;
     }
 
-    let newSource: MediaSourceOrDelay | undefined;
+    let newSource: MediaSourceOrDelay;
 
     try {
-      while (!newSource) {
+      while (!isDelay(newSource)) {
         if (isComplete()) {
           return;
         }
@@ -135,7 +138,7 @@ export function createPageAtom(
       return;
     }
 
-    if (isComplete()) {
+    if (isComplete() || isDelay(newSource)) {
       return;
     }
 
@@ -158,9 +161,10 @@ export function createPageAtom(
     const maxZoomInExponent = get(maxZoomInExponentAtom);
     const maxZoomOutExponent = get(maxZoomOutExponentAtom);
 
+    const { src, width, height } = state.source ?? {};
     const ratio = getImageToViewerSizeRatio({
       viewerSize: scrollElementSize,
-      imgSize: state.source ?? {},
+      imgSize: { width, height },
     });
 
     const shouldBeOriginalSize = shouldMediaBeOriginalSize({
@@ -171,7 +175,6 @@ export function createPageAtom(
     const isLarge = ratio > 1;
     const canMessUpRow = shouldBeOriginalSize && isLarge;
 
-    const { src, width, height } = state.source ?? {};
     const mediaProps = {
       src,
       ...(width && height && state.status !== "complete"
@@ -258,10 +261,6 @@ export function createPageAtom(
   }
 
   return aggregateAtom;
-}
-
-function toAdvancedSource(newSource: MediaSource): AdvancedSource {
-  return typeof newSource === "string" ? { type: "image", src: newSource } as const : newSource;
 }
 
 function getImageToViewerSizeRatio(

@@ -16,33 +16,44 @@ export type ComicSourceParams = {
 };
 
 /** `undefined` and `{ src: undefined }` means delay the source loading. Viewer will request source again. */
-export type MediaSourceOrDelay = MediaSource | undefined;
+export type MediaSourceOrDelay = MediaSource | Delay;
 
 /** Provided remote image. */
-export type MediaSource = string | AdvancedSource;
+export type MediaSource = SimpleSource | AdvancedSource;
+type Delay = SimpleDelay | AdvancedDelay;
+export type AdvancedObject = AdvancedSource | AdvancedDelay;
 
-export type MediaType = "image" | "video";
-
-type PromiseOrValue<T> = T | Promise<T>;
+type SimpleDelay = undefined;
+export type AdvancedDelay = { src: undefined } & SourceProps;
+type SimpleSource = string;
 
 /** Width and height are planned to be used for CLS prevention. */
-export type AdvancedSource = {
-  src: string;
+export type AdvancedSource = { src: string } & SourceProps;
+
+type SourceProps = {
   width?: number;
   height?: number;
   /** @default "image" */
   type?: MediaType;
 };
 
+export type MediaType = "image" | "video";
+
+type PromiseOrValue<T> = T | Promise<T>;
+
 export const MAX_RETRY_COUNT = 6;
 export const MAX_SAME_URL_RETRY_COUNT = 2;
 
-export function getUrl(source: MediaSource) {
-  return typeof source === "string" ? source : source.src;
+export function isDelay(sourceOrDelay: MediaSourceOrDelay): sourceOrDelay is Delay {
+  return sourceOrDelay === undefined || (typeof sourceOrDelay !== "string" && !sourceOrDelay.src);
 }
 
-export function getType(source: MediaSource): MediaType {
-  return typeof source !== "string" && source.type === "video" ? "video" : "image";
+export function toAdvancedObject(sourceOrDelay: MediaSourceOrDelay): AdvancedObject {
+  return isDelay(sourceOrDelay) ? { src: undefined } : toAdvancedSource(sourceOrDelay);
+}
+
+export function toAdvancedSource(source: MediaSource) {
+  return typeof source === "string" ? { type: "image", src: source } as const : source;
 }
 
 export async function* getMediaIterable(
@@ -53,8 +64,8 @@ export async function* getMediaIterable(
     maxSize: { width: number; height: number };
   },
 ) {
-  if (media !== undefined) {
-    yield media;
+  if (!isDelay(media)) {
+    yield getUrl(media);
   }
 
   if (!comic) {
@@ -69,18 +80,22 @@ export async function* getMediaIterable(
     const hadError = media !== undefined || retryCount > 0;
     const medias = await comic({ cause: hadError ? "error" : "load", page: index, maxSize });
     const next = medias[index];
-    if (next === undefined) {
+    if (isDelay(next)) {
       continue;
     }
 
-    yield next;
+    const url = getUrl(next);
+    yield url;
 
     retryCount++;
-    const url = getUrl(next);
     if (previous === url) {
       sameUrlRetryCount++;
       continue;
     }
     previous = url;
   }
+}
+
+function getUrl(source: MediaSource) {
+  return typeof source === "string" ? source : source.src;
 }
