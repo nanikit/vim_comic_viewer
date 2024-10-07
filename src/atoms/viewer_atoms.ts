@@ -1,12 +1,11 @@
-import { atom, ExtractAtomValue, Getter, Root, selectAtom, Setter, toast } from "../deps.ts";
+import { atom, ExtractAtomValue, Getter, Root, Setter, toast } from "../deps.ts";
 import {
   fullscreenNoticeCountAtom,
   isFullscreenPreferredAtom,
   wasImmersiveAtom,
 } from "../features/preferences/atoms.ts";
-import { type ComicSource } from "../helpers/comic_source.ts";
 import { timeout } from "../utils.ts";
-import { createPageAtom, maxSizeAtom, PageAtom } from "./create_page_atom.ts";
+import { PageAtom, pageAtomsAtom, refreshMediaSourceAtom } from "./create_page_atom.ts";
 import {
   focusWithoutScroll,
   getCurrentScroll,
@@ -23,65 +22,36 @@ import {
 import { i18nAtom } from "./i18n_atom.ts";
 import {
   pageScrollStateAtom,
-  restoreScrollAtom,
   scrollElementAtom,
   transferViewerScrollToWindowAtom,
 } from "./navigation_atoms.ts";
-
-export type ViewerOptions = {
-  source?: ComicSource;
-  mediaProps?: Record<string, string>;
-  /** do not synchronize scroll position if true. */
-  noSyncScroll?: boolean;
-};
-
-type ViewerState =
-  & { options: ViewerOptions }
-  & ({
-    status: "loading" | "error";
-  } | {
-    status: "complete";
-    pages: PageAtom[];
-  });
-export const viewerStateAtom = atom<ViewerState>({
-  options: {},
-  status: "loading",
-});
-export const pagesAtom = selectAtom(
+import {
+  type ViewerOptions,
+  viewerOptionsAtom,
   viewerStateAtom,
-  (state) => (state as { pages?: PageAtom[] }).pages,
-);
+  viewerStatusAtom,
+} from "./viewer_base_atoms.ts";
+
 export const rootAtom = atom<Root | null>(null);
 
-const transferWindowScrollToViewerAtom = atom(null, async (get, set) => {
+const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   type Page = ExtractAtomValue<PageAtom>;
-  const urlToViewerPages = new Map<string, Page>();
 
-  let viewerPages: Page[] | undefined;
-
-  const pageAtoms = get(pagesAtom);
-  if (!pageAtoms) {
-    viewerPages = await waitPages();
-  } else {
-    viewerPages = pageAtoms.map(get);
-    if (viewerPages?.some((page) => !page.src)) {
-      viewerPages = await waitPages();
-    }
-  }
-
-  if (!viewerPages || !viewerPages.length) {
+  const pages = get(pageAtomsAtom).map(get);
+  if (!pages.length) {
     return;
   }
 
-  for (const viewerPage of viewerPages) {
-    if (viewerPage.src) {
-      urlToViewerPages.set(viewerPage.src, viewerPage);
+  const urlToViewerPages = new Map<string, Page>();
+  for (const page of pages) {
+    if (page.state.source?.src) {
+      urlToViewerPages.set(page.state.source.src, page);
     }
   }
 
   const urls = [...urlToViewerPages.keys()];
   const imgs = getUrlImgs(urls);
-  const viewerImgs = new Set(viewerPages.flatMap((page) => page.div?.querySelector("img") ?? []));
+  const viewerImgs = new Set(pages.flatMap((page) => page.div?.querySelector("img") ?? []));
   const originalImgs = imgs.filter((img) => !viewerImgs.has(img));
   const { page, ratio, fullyVisiblePages: fullyVisibleWindowPages } = getCurrentScroll(
     originalImgs,
@@ -105,18 +75,6 @@ const transferWindowScrollToViewerAtom = atom(null, async (get, set) => {
     ratio: snappedRatio,
     fullyVisiblePages,
   });
-
-  async function waitPages() {
-    await timeout(1);
-    restoreScrollAfterTick();
-    return get(pagesAtom)?.map(get);
-  }
-
-  async function restoreScrollAfterTick() {
-    // TODO: monkey patch. Change to synchronous way.
-    await timeout(1);
-    set(restoreScrollAtom);
-  }
 });
 
 const externalFocusElementAtom = atom<Element | null>(null);
@@ -236,28 +194,20 @@ export const viewerModeAtom = atom((get) => {
 export const setViewerOptionsAtom = atom(null, async (get, set, options: ViewerOptions) => {
   try {
     const { source } = options;
-    const previousOptions = get(viewerStateAtom).options;
+    const previousOptions = get(viewerOptionsAtom);
     const shouldLoadSource = source && source !== previousOptions.source;
-    const optionChanges = { options, ...(shouldLoadSource ? { status: "loading" as const } : {}) };
-    set(viewerStateAtom, (state) => ({ ...state, ...optionChanges }));
     if (!shouldLoadSource) {
       return;
     }
 
-    const medias = await source({ cause: "load", maxSize: get(maxSizeAtom) });
+    set(viewerStatusAtom, (previous) => previous === "complete" ? "complete" : "loading");
+    set(viewerOptionsAtom, options);
 
-    if (!Array.isArray(medias)) {
-      throw new Error(`Invalid comic source type: ${typeof medias}`);
-    }
+    await set(refreshMediaSourceAtom, { cause: "load" });
 
-    set(viewerStateAtom, (state) => ({
-      ...state,
-      status: "complete",
-      pages: medias.map((source, index) => createPageAtom({ source, index })),
-    }));
+    set(viewerStatusAtom, "complete");
   } catch (error) {
-    set(viewerStateAtom, (state) => ({ ...state, status: "error" }));
-    console.error(error);
+    set(viewerStatusAtom, "error");
     throw error;
   }
 });
@@ -265,11 +215,9 @@ export const setViewerOptionsAtom = atom(null, async (get, set, options: ViewerO
 export const reloadErroredAtom = atom(null, (get, set) => {
   stop();
 
-  const pages = get(pagesAtom);
-  for (const atom of pages ?? []) {
-    const page = get(atom);
+  for (const page of get(pageAtomsAtom).map(get)) {
     if (page.state.status !== "complete") {
-      set(page.reloadAtom);
+      set(page.reloadAtom, "load");
     }
   }
 });

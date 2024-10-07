@@ -10,9 +10,8 @@ import {
   setViewerOptionsAtom,
   toggleImmersiveAtom,
   viewerModeAtom,
-  type ViewerOptions,
-  viewerStateAtom,
 } from "../atoms/viewer_atoms.ts";
+import { type ViewerOptions, viewerStateAtom } from "../atoms/viewer_base_atoms.ts";
 import { FullscreenButton } from "../components/icons.tsx";
 import { Container, ScrollableLayout } from "../components/scrollable_layout.ts";
 import { HTMLProps, ToastContainer, useAtomValue, useEffect, useSetAtom } from "../deps.ts";
@@ -20,6 +19,7 @@ import { backgroundColorAtom, pageDirectionAtom } from "../features/preferences/
 import { LeftBottomControl } from "./left_bottom_control.tsx";
 import { Page } from "./page.tsx";
 
+import { pageAtomsAtom } from "../atoms/create_page_atom.ts";
 import "../vendors/toastify_css.ts";
 
 export function InnerViewer(
@@ -40,6 +40,7 @@ export function InnerViewer(
   const { status } = viewer;
 
   const controller = useAtomValue(controllerCreationAtom);
+  const pageAtoms = useAtomValue(pageAtomsAtom);
   const options = controller?.options;
 
   useEffect(() => {
@@ -69,7 +70,7 @@ export function InnerViewer(
         onClick={useSetAtom(navigateAtom)}
         onMouseDown={useSetAtom(blockSelectionAtom)}
         children={status === "complete"
-          ? viewer.pages.map((atom) => (
+          ? pageAtoms.map((atom) => (
             <Page
               key={`${atom}`}
               atom={atom}

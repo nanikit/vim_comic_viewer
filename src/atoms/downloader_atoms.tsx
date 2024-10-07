@@ -4,7 +4,7 @@ import type { ComicSource } from "../helpers/comic_source.ts";
 import { download, DownloadProgress } from "../helpers/downloader.ts";
 import { save, timeout } from "../utils.ts";
 import { i18nAtom } from "./i18n_atom.ts";
-import { viewerStateAtom } from "./viewer_atoms.ts";
+import { viewerStateAtom } from "./viewer_base_atoms.ts";
 
 const aborterAtom = atom<AbortController | null>(null);
 export const cancelDownloadAtom = atom(null, (get) => {

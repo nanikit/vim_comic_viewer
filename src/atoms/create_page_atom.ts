@@ -1,38 +1,41 @@
-import { atom, deferred } from "../deps.ts";
+import type { Setter } from "jotai";
+import type React from "npm:@types/react";
+import { atom } from "../deps.ts";
 import {
   maxZoomInExponentAtom,
   maxZoomOutExponentAtom,
   singlePageCountAtom,
 } from "../features/preferences/atoms.ts";
 import {
-  getMediaIterable,
-  getType,
-  getUrl,
+  type AdvancedSource,
+  type ComicSourceParams,
+  MAX_RETRY_COUNT,
+  MAX_SAME_URL_RETRY_COUNT,
   type MediaSource,
   type MediaSourceOrDelay,
-  type MediaType,
 } from "../helpers/comic_source.ts";
-import { timeout } from "../utils.ts";
 import { scrollElementSizeAtom } from "./navigation_atoms.ts";
-import { viewerStateAtom } from "./viewer_atoms.ts";
+import { viewerOptionsAtom } from "./viewer_base_atoms.ts";
 
 export type PageAtom = ReturnType<typeof createPageAtom>;
 
 type Size = { width: number; height: number };
 
 type PageState =
-  & Partial<Size>
-  & { type?: MediaType }
+  & {
+    source?: Partial<AdvancedSource>;
+  }
   & ({
     status: "loading";
-    src?: string;
   } | {
     status: "error";
     urls: string[];
   } | {
     status: "complete";
-    src: string;
+    source: AdvancedSource;
   });
+
+type SourceRefreshParams = Omit<ComicSourceParams, "maxSize">;
 
 type ImageProps = React.DetailedHTMLProps<
   React.VideoHTMLAttributes<HTMLVideoElement>,
@@ -61,104 +64,90 @@ export const maxSizeAtom = atom(
   },
 );
 
-export function createPageAtom({ index, source }: { index: number; source: MediaSourceOrDelay }) {
-  const triedUrls = new Set<string>();
+export const mediaSourcesAtom = atom<MediaSourceOrDelay[]>([]);
+export const pageAtomsAtom = atom<PageAtom[]>([]);
 
-  let mediaLoad = deferred<HTMLImageElement | HTMLVideoElement | "error" | "cancelled">();
+export const refreshMediaSourceAtom = atom(null, async (get, set, params: SourceRefreshParams) => {
+  const { source } = get(viewerOptionsAtom);
+  if (!source) {
+    return;
+  }
+
+  const medias = await source({ ...params, maxSize: get(maxSizeAtom) });
+  if (source !== get(viewerOptionsAtom).source) {
+    return;
+  }
+
+  if (!Array.isArray(medias)) {
+    throw new Error(`Invalid comic source type: ${typeof medias}`);
+  }
+
+  set(mediaSourcesAtom, medias);
+  if (params.cause === "load" && params.page === undefined) {
+    set(
+      pageAtomsAtom,
+      medias.map((media, index) => createPageAtom({ initialSource: media, index, set })),
+    );
+  }
+
+  if (params.page !== undefined) {
+    return medias[params.page];
+  }
+});
+
+export function createPageAtom(
+  params: { initialSource: MediaSourceOrDelay; index: number; set: Setter },
+) {
+  const { initialSource, index, set } = params;
+  const triedUrls: string[] = [];
   let div: HTMLDivElement | null = null;
 
   const stateAtom = atom<PageState>({
     status: "loading",
-    type: source ? getType(source) : undefined,
+    source: initialSource ? toAdvancedSource(initialSource) : undefined,
   });
-  const loadAtom = atom(null, async (get, set) => {
-    if (isComplete()) {
-      return;
+  const loadAtom = atom(null, async (get, set, cause: "load" | "error") => {
+    switch (cause) {
+      case "load":
+        triedUrls.length = 0;
+        break;
+      case "error":
+        break;
     }
 
-    mediaLoad.resolve("cancelled");
-    set(stateAtom, (previous) => ({ ...previous, status: "loading" }));
+    let newSource: MediaSourceOrDelay | undefined;
 
-    const comic = get(viewerStateAtom).options.source;
-    const mediaParams = { index, media: source, comic, maxSize: get(maxSizeAtom) };
     try {
-      for await (const page of getMediaIterable(mediaParams)) {
+      while (!newSource) {
         if (isComplete()) {
           return;
         }
 
-        const url = getUrl(page);
-        triedUrls.add(url);
-
-        reflectProvisionalSize(page);
-
-        const result = await waitMediaLoad(url);
-        switch (result) {
-          case "error":
-            set(stateAtom, (previous) => ({
-              ...previous,
-              src: "",
-            }));
-            // Wait error rendering.
-            await timeout(0);
-            break;
-          case "cancelled":
-            return;
-          default: {
-            set(stateAtom, (previous) => ({
-              ...previous,
-              status: "complete",
-              src: url,
-              ...(result instanceof HTMLImageElement
-                ? {
-                  width: result.naturalWidth,
-                  height: result.naturalHeight,
-                }
-                : {
-                  width: result.videoWidth,
-                  height: result.videoHeight,
-                }),
-            }));
-            return;
-          }
-        }
+        newSource = await set(refreshMediaSourceAtom, { cause, page: index });
       }
-    } catch (_error) {
-      // Ignore error.
+    } catch (error) {
+      console.error(error);
+      set(stateAtom, (previous) => ({
+        ...previous,
+        status: "error",
+        urls: Array.from(triedUrls),
+      }));
+      return;
     }
 
-    if (!isComplete()) {
-      set(stateAtom, (previous) => ({ ...previous, status: "error", urls: Array.from(triedUrls) }));
+    if (isComplete()) {
+      return;
     }
+
+    const source = toAdvancedSource(newSource);
+    triedUrls.push(source.src);
+    set(stateAtom, { status: "loading", source });
 
     function isComplete() {
       return get(stateAtom).status === "complete";
     }
-
-    function reflectProvisionalSize(page: MediaSource) {
-      if (typeof page === "object") {
-        const { width, height } = get(stateAtom);
-        if (width !== page.width || height !== page.height) {
-          set(stateAtom, (previous) => ({
-            ...previous,
-            type: getType(page),
-            width: page.width,
-            height: page.height,
-          }));
-        }
-      }
-    }
-
-    async function waitMediaLoad(url: string) {
-      mediaLoad = deferred();
-      set(stateAtom, (previous) => ({ ...previous, src: url, status: "loading" }));
-
-      return await mediaLoad;
-    }
   });
-  loadAtom.onMount = (set) => {
-    set();
-  };
+  loadAtom.onMount = (set) => void set("load");
 
   const aggregateAtom = atom((get) => {
     get(loadAtom);
@@ -171,7 +160,7 @@ export function createPageAtom({ index, source }: { index: number; source: Media
 
     const ratio = getImageToViewerSizeRatio({
       viewerSize: scrollElementSize,
-      imgSize: state,
+      imgSize: state.source ?? {},
     });
 
     const shouldBeOriginalSize = shouldMediaBeOriginalSize({
@@ -182,13 +171,13 @@ export function createPageAtom({ index, source }: { index: number; source: Media
     const isLarge = ratio > 1;
     const canMessUpRow = shouldBeOriginalSize && isLarge;
 
-    const { width, height, status } = state;
+    const { src, width, height } = state.source ?? {};
     const mediaProps = {
-      ...(width && height && status !== "complete"
+      src,
+      ...(width && height && state.status !== "complete"
         ? { style: { aspectRatio: width / height } }
         : {}),
-      ...("src" in state ? { src: state.src } : {}),
-      onError: () => mediaLoad.resolve("error"),
+      onError: reload,
     };
 
     return {
@@ -201,29 +190,78 @@ export function createPageAtom({ index, source }: { index: number; source: Media
       reloadAtom: loadAtom,
       fullWidth: index < compactWidthIndex || canMessUpRow,
       shouldBeOriginalSize,
-      get src() {
-        return "src" in state ? state.src : undefined;
-      },
-      videoProps: state.type === "video"
+      videoProps: state.source?.type === "video"
         ? {
           ...mediaProps,
           controls: true,
           autoPlay: true,
           loop: true,
           muted: true,
-          onLoadedMetadata: ((event) => mediaLoad.resolve(event.currentTarget)),
+          onLoadedMetadata: setCompleteState,
         } satisfies ImageProps
         : undefined,
-      imageProps: state.type === "image"
+      imageProps: state.source?.type === "image"
         ? {
           ...mediaProps,
-          onLoad: ((event) => mediaLoad.resolve(event.currentTarget)),
+          onLoad: setCompleteState,
         } satisfies VideoProps
         : undefined,
     };
   });
 
+  async function reload() {
+    const isOverMaxRetry = triedUrls.length > MAX_RETRY_COUNT;
+
+    const urlCountMap = triedUrls.reduce((acc, url) => {
+      acc[url] = (acc[url] ?? 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    const isOverSameUrlRetry = Object.values(urlCountMap).some((count) =>
+      count > MAX_SAME_URL_RETRY_COUNT
+    );
+
+    if (isOverMaxRetry || isOverSameUrlRetry) {
+      set(stateAtom, (previous) => ({
+        ...previous,
+        status: "error",
+        urls: [...new Set(triedUrls)],
+      }));
+      return;
+    }
+
+    set(stateAtom, (previous) => ({
+      status: "loading",
+      source: { ...previous.source, src: undefined },
+    }));
+    await set(loadAtom, "error");
+  }
+
+  function setCompleteState(event: React.SyntheticEvent<HTMLImageElement | HTMLVideoElement>) {
+    const element = event.currentTarget;
+    set(stateAtom, {
+      status: "complete",
+      source: {
+        src: element.src,
+        ...(element instanceof HTMLImageElement
+          ? {
+            type: "image",
+            width: element.naturalWidth,
+            height: element.naturalHeight,
+          }
+          : {
+            type: "video",
+            width: element.videoWidth,
+            height: element.videoHeight,
+          }),
+      },
+    });
+  }
+
   return aggregateAtom;
+}
+
+function toAdvancedSource(newSource: MediaSource): AdvancedSource {
+  return typeof newSource === "string" ? { type: "image", src: newSource } as const : newSource;
 }
 
 function getImageToViewerSizeRatio(
