@@ -67,17 +67,8 @@ export const Overlay = styled("div", {
   },
 
   variants: {
-    placeholder: {
-      true: { width: "45%", height: "100%" },
-    },
     fullWidth: {
       true: { width: "100%" },
-    },
-    originalSize: {
-      true: {
-        minHeight: "100%",
-        height: "auto",
-      },
     },
   },
 });

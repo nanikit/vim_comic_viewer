@@ -11,6 +11,7 @@ export const Page = ({ atom, ...props }: { atom: PageAtom }) => {
     fullWidth,
     reloadAtom,
     shouldBeOriginalSize,
+    divCss,
     state: pageState,
     setDiv,
   } = useAtomValue(atom);
@@ -24,12 +25,7 @@ export const Page = ({ atom, ...props }: { atom: PageAtom }) => {
   };
 
   return (
-    <Overlay
-      ref={setDiv}
-      placeholder={status !== "complete"}
-      originalSize={shouldBeOriginalSize}
-      fullWidth={fullWidth}
-    >
+    <Overlay ref={setDiv} css={divCss} fullWidth={fullWidth}>
       {status === "loading" && <Spinner />}
       {status === "error" && (
         <LinkColumn onClick={reloadErrored}>
