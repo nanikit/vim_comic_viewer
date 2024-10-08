@@ -9,11 +9,11 @@ import {
 import {
   type AdvancedObject,
   type AdvancedSource,
-  type ComicSourceParams,
   isDelay,
   MAX_RETRY_COUNT,
   MAX_SAME_URL_RETRY_COUNT,
   type MediaSourceOrDelay,
+  type SourceRefreshParams,
   toAdvancedObject,
   toAdvancedSource,
 } from "../helpers/comic_source.ts";
@@ -37,8 +37,6 @@ type PageState =
     status: "complete";
     source: AdvancedSource;
   });
-
-type SourceRefreshParams = Omit<ComicSourceParams, "maxSize">;
 
 type ImageProps = React.DetailedHTMLProps<
   React.VideoHTMLAttributes<HTMLVideoElement>,

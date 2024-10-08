@@ -6,11 +6,19 @@
  */
 export type ComicSource = (params: ComicSourceParams) => PromiseOrValue<MediaSourceOrDelay[]>;
 
-export type ComicSourceParams = {
+export type SourceRefreshParams = {
   /** The cause of the comic source being loaded. */
-  cause: "load" | "download" | "resize" | "error";
+  cause: "load" | "download" | "resize";
   /** The page number to load. undefined for all pages. */
   page?: number;
+} | {
+  /** The cause of the comic source being loaded. */
+  cause: "error";
+  /** The page number to load. undefined for all pages. */
+  page: number;
+};
+
+export type ComicSourceParams = SourceRefreshParams & {
   /** Possible maximum viewer size until now. */
   maxSize: { width: number; height: number };
 };
