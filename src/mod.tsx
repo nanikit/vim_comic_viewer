@@ -41,6 +41,7 @@ import type { ViewerOptions } from "./atoms/viewer_base_atoms.ts";
 import { InnerViewer } from "./containers/viewer.tsx";
 import { createRoot, createStore, forwardRef, Provider, useMemo } from "./deps.ts";
 
+export type { ViewerController } from "./atoms/controller_atom.ts";
 export type { ViewerOptions } from "./atoms/viewer_base_atoms.ts";
 export type { ComicSource, ComicSourceParams, MediaSource } from "./helpers/comic_source.ts";
 export { download } from "./helpers/downloader.ts";
