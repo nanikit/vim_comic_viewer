@@ -1,3 +1,4 @@
+import type { CSS } from "@stitches/react";
 import type { Setter } from "jotai";
 import type React from "npm:@types/react";
 import { atom } from "../deps.ts";
@@ -119,7 +120,7 @@ export function createPageAtom(
     let newSource: MediaSourceOrDelay;
 
     try {
-      while (!isDelay(newSource)) {
+      while (isDelay(newSource)) {
         if (isComplete()) {
           return;
         }
@@ -173,13 +174,16 @@ export function createPageAtom(
     const isLarge = ratio > 1;
     const canMessUpRow = shouldBeOriginalSize && isLarge;
 
-    const mediaProps = {
-      src,
-      ...(width && height && state.status !== "complete"
-        ? { style: { aspectRatio: width / height } }
+    const mediaProps = { src, onError: reload };
+
+    const divCss = {
+      ...(shouldBeOriginalSize
+        ? { minHeight: scrollElementSize.height, height: "auto" }
+        : { height: scrollElementSize.height }),
+      ...(state.status !== "complete"
+        ? { aspectRatio: width && height ? `${width} / ${height}` : "3 / 4" }
         : {}),
-      onError: reload,
-    };
+    } satisfies CSS;
 
     const page = {
       index,
@@ -191,6 +195,7 @@ export function createPageAtom(
       reloadAtom: loadAtom,
       fullWidth: index < compactWidthIndex || canMessUpRow,
       shouldBeOriginalSize,
+      divCss,
       videoProps: state.source?.type === "video"
         ? {
           ...mediaProps,
