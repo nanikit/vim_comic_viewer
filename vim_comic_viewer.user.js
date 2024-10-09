@@ -3,34 +3,37 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        16.0.1
+// @version        17.0.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
 // @author         nanikit
 // @license        MIT
-// @grant          GM_addValueChangeListener
-// @grant          GM_getValue
-// @grant          GM_removeValueChangeListener
-// @grant          GM_setValue
-// @grant          GM_xmlhttpRequest
+// @grant          GM.addValueChangeListener
+// @grant          GM.getValue
+// @grant          GM.removeValueChangeListener
+// @grant          GM.setValue
+// @grant          GM.xmlHttpRequest
 // @grant          unsafeWindow
-// @resource       link:@headlessui/react   https://cdn.jsdelivr.net/npm/@headlessui/react@2.1.8/dist/headlessui.prod.cjs
-// @resource       link:@stitches/react     https://cdn.jsdelivr.net/npm/@stitches/react@1.3.1-1/dist/index.cjs
-// @resource       link:clsx                https://cdn.jsdelivr.net/npm/clsx@2.1.1/dist/clsx.js
-// @resource       link:fflate              https://cdn.jsdelivr.net/npm/fflate@0.8.2/lib/browser.cjs
-// @resource       link:jotai               https://cdn.jsdelivr.net/npm/jotai@2.10.0/index.js
-// @resource       link:jotai/react         https://cdn.jsdelivr.net/npm/jotai@2.10.0/react.js
-// @resource       link:jotai/react/utils   https://cdn.jsdelivr.net/npm/jotai@2.10.0/react/utils.js
-// @resource       link:jotai/utils         https://cdn.jsdelivr.net/npm/jotai@2.10.0/utils.js
-// @resource       link:jotai/vanilla       https://cdn.jsdelivr.net/npm/jotai@2.10.0/vanilla.js
-// @resource       link:jotai/vanilla/utils https://cdn.jsdelivr.net/npm/jotai@2.10.0/vanilla/utils.js
-// @resource       link:react               https://cdn.jsdelivr.net/npm/react@18.3.1/cjs/react.production.min.js
-// @resource       link:react-dom           https://cdn.jsdelivr.net/npm/react-dom@18.3.1/cjs/react-dom.production.min.js
-// @resource       link:react-toastify      https://cdn.jsdelivr.net/npm/react-toastify@10.0.5/dist/react-toastify.js
-// @resource       link:scheduler           https://cdn.jsdelivr.net/npm/scheduler@0.23.2/cjs/scheduler.production.min.js
-// @resource       link:vcv-inject-node-env data:,unsafeWindow.process=%7Benv:%7BNODE_ENV:%22production%22%7D%7D
-// @resource       react-toastify-css       https://cdn.jsdelivr.net/npm/react-toastify@10.0.5/dist/ReactToastify.css
+// @resource       link:@headlessui/react       https://cdn.jsdelivr.net/npm/@headlessui/react@2.1.8/dist/headlessui.prod.cjs
+// @resource       link:@stitches/react         https://cdn.jsdelivr.net/npm/@stitches/react@1.3.1-1/dist/index.cjs
+// @resource       link:clsx                    https://cdn.jsdelivr.net/npm/clsx@2.1.1/dist/clsx.js
+// @resource       link:fflate                  https://cdn.jsdelivr.net/npm/fflate@0.8.2/lib/browser.cjs
+// @resource       link:jotai                   https://cdn.jsdelivr.net/npm/jotai@2.10.0/index.js
+// @resource       link:jotai/react             https://cdn.jsdelivr.net/npm/jotai@2.10.0/react.js
+// @resource       link:jotai/react/utils       https://cdn.jsdelivr.net/npm/jotai@2.10.0/react/utils.js
+// @resource       link:jotai/utils             https://cdn.jsdelivr.net/npm/jotai@2.10.0/utils.js
+// @resource       link:jotai/vanilla           https://cdn.jsdelivr.net/npm/jotai@2.10.0/vanilla.js
+// @resource       link:jotai/vanilla/utils     https://cdn.jsdelivr.net/npm/jotai@2.10.0/vanilla/utils.js
+// @resource       link:overlayscrollbars       https://cdn.jsdelivr.net/npm/overlayscrollbars@2.10.0/overlayscrollbars.cjs
+// @resource       link:overlayscrollbars-react https://cdn.jsdelivr.net/npm/overlayscrollbars-react@0.5.6/overlayscrollbars-react.cjs.js
+// @resource       link:react                   https://cdn.jsdelivr.net/npm/react@18.3.1/cjs/react.production.min.js
+// @resource       link:react-dom               https://cdn.jsdelivr.net/npm/react-dom@18.3.1/cjs/react-dom.production.min.js
+// @resource       link:react-toastify          https://cdn.jsdelivr.net/npm/react-toastify@10.0.5/dist/react-toastify.js
+// @resource       link:scheduler               https://cdn.jsdelivr.net/npm/scheduler@0.23.2/cjs/scheduler.production.min.js
+// @resource       link:vcv-inject-node-env     data:,unsafeWindow.process=%7Benv:%7BNODE_ENV:%22production%22%7D%7D
+// @resource       overlayscrollbars-css        https://cdn.jsdelivr.net/npm/overlayscrollbars@2.10.0/styles/overlayscrollbars.min.css
+// @resource       react-toastify-css           https://cdn.jsdelivr.net/npm/react-toastify@10.0.5/dist/ReactToastify.css
 // ==/UserScript==
 "use strict";
 
@@ -66,27 +69,29 @@ __export(mod_exports, {
   utils: () => utils_exports
 });
 module.exports = __toCommonJS(mod_exports);
-var React = __toESM(require("react"));
 var import_vcv_inject_node_env = require("vcv-inject-node-env");
+var React = __toESM(require("react"));
 var deps_exports = {};
 __export(deps_exports, {
   Dialog: () => import_react2.Dialog,
   Fragment: () => import_react3.Fragment,
   Provider: () => import_jotai.Provider,
-  RESET: () => import_utils2.RESET,
+  RESET: () => import_utils.RESET,
   Tab: () => import_react2.Tab,
   ToastContainer: () => import_react_toastify.ToastContainer,
   atom: () => import_jotai.atom,
-  atomWithStorage: () => import_utils2.atomWithStorage,
+  atomWithStorage: () => import_utils.atomWithStorage,
   createContext: () => import_react3.createContext,
-  createJSONStorage: () => import_utils2.createJSONStorage,
+  createJSONStorage: () => import_utils.createJSONStorage,
   createRef: () => import_react3.createRef,
   createRoot: () => import_react_dom.createRoot,
   createStitches: () => import_react.createStitches,
   createStore: () => import_jotai.createStore,
   deferred: () => deferred,
   forwardRef: () => import_react3.forwardRef,
-  selectAtom: () => import_utils2.selectAtom,
+  loadable: () => import_utils.loadable,
+  selectAtom: () => import_utils.selectAtom,
+  splitAtom: () => import_utils.splitAtom,
   toast: () => import_react_toastify.toast,
   useAtom: () => import_jotai.useAtom,
   useAtomValue: () => import_jotai.useAtomValue,
@@ -96,6 +101,7 @@ __export(deps_exports, {
   useImperativeHandle: () => import_react3.useImperativeHandle,
   useLayoutEffect: () => import_react3.useLayoutEffect,
   useMemo: () => import_react3.useMemo,
+  useOverlayScrollbars: () => import_overlayscrollbars_react.useOverlayScrollbars,
   useReducer: () => import_react3.useReducer,
   useRef: () => import_react3.useRef,
   useSetAtom: () => import_jotai.useSetAtom,
@@ -124,8 +130,104 @@ function deferred() {
   return Object.assign(promise, methods);
 }
 var import_jotai = require("jotai");
-var import_utils2 = require("jotai/utils");
+var import_utils = require("jotai/utils");
+var import_overlayscrollbars_react = require("overlayscrollbars-react");
 var import_react_toastify = require("react-toastify");
+var import_react2 = require("@headlessui/react");
+var import_react3 = require("react");
+var import_react_dom = require("react-dom");
+var import_jotai2 = require("jotai");
+var gmStorage = {
+  getItem: GM.getValue,
+  setItem: GM.setValue,
+  removeItem: (key) => GM.deleteValue(key),
+  subscribe: (key, callback) => {
+    const idPromise = GM.addValueChangeListener(
+      key,
+      (_key, _oldValue, newValue) => callback(newValue)
+    );
+    return async () => {
+      const id = await idPromise;
+      await GM.removeValueChangeListener(id);
+    };
+  }
+};
+function atomWithGmValue(key, defaultValue) {
+  return (0, import_utils.atomWithStorage)(key, defaultValue, gmStorage, { getOnInit: true });
+}
+var jsonSessionStorage = (0, import_utils.createJSONStorage)(() => sessionStorage);
+function atomWithSession(key, defaultValue) {
+  return (0, import_utils.atomWithStorage)(
+    key,
+    defaultValue,
+    jsonSessionStorage,
+    { getOnInit: true }
+  );
+}
+var defaultPreferences = {
+  backgroundColor: "#eeeeee",
+  singlePageCount: 1,
+  maxZoomOutExponent: 3,
+  maxZoomInExponent: 3,
+  pageDirection: "rightToLeft",
+  isFullscreenPreferred: false,
+  fullscreenNoticeCount: 0
+};
+function getEffectivePreferences(scriptPreferences, manualPreferences) {
+  return { ...defaultPreferences, ...scriptPreferences, ...manualPreferences };
+}
+var scriptPreferencesAtom = (0, import_jotai2.atom)({});
+var preferencesPresetAtom = (0, import_jotai2.atom)("default");
+var manualPreferencesAtomAtom = (0, import_jotai2.atom)((get) => {
+  const preset = get(preferencesPresetAtom);
+  const key = `vim_comic_viewer.preferences.${preset}`;
+  return atomWithGmValue(key, {});
+});
+var manualPreferencesAtom = (0, import_jotai2.atom)(
+  (get) => get(get(manualPreferencesAtomAtom)),
+  (get, set, update) => {
+    const preferencesAtom2 = get(manualPreferencesAtomAtom);
+    if (typeof update !== "function") {
+      return set(preferencesAtom2, update);
+    }
+    return set(preferencesAtom2, async (preferencesPromise) => {
+      return update(await preferencesPromise);
+    });
+  }
+);
+var preferencesAtom = (0, import_jotai2.atom)((get) => {
+  const script = get(scriptPreferencesAtom);
+  const manual = get(manualPreferencesAtom);
+  if ("then" in manual) {
+    return new Promise((resolve) => {
+      manual.then((manual2) => resolve(getEffectivePreferences(script, manual2)));
+    });
+  }
+  return getEffectivePreferences(script, manual);
+});
+var backgroundColorAtom = atomWithPreferences("backgroundColor");
+var singlePageCountAtom = atomWithPreferences("singlePageCount");
+var maxZoomOutExponentAtom = atomWithPreferences("maxZoomOutExponent");
+var maxZoomInExponentAtom = atomWithPreferences("maxZoomInExponent");
+var pageDirectionAtom = atomWithPreferences("pageDirection");
+var isFullscreenPreferredAtom = atomWithPreferences("isFullscreenPreferred");
+var fullscreenNoticeCountAtom = atomWithPreferences("fullscreenNoticeCount");
+var wasImmersiveAtom = atomWithSession("vim_comic_viewer.was_immersive", false);
+function atomWithPreferences(key) {
+  const loadableAtom = (0, import_utils.loadable)(preferencesAtom);
+  return (0, import_jotai2.atom)(
+    (get) => {
+      const preferences = get(loadableAtom);
+      return preferences.state === "hasData" ? preferences.data[key] : defaultPreferences[key];
+    },
+    (_get, set, update) => {
+      return set(manualPreferencesAtom, (preferences) => ({
+        ...preferences,
+        [key]: typeof update === "function" ? update(preferences[key]) : update
+      }));
+    }
+  );
+}
 var utils_exports = {};
 __export(utils_exports, {
   getSafeFileName: () => getSafeFileName,
@@ -159,102 +261,46 @@ var getSafeFileName = (str) => {
 var save = (blob) => {
   return saveAs(blob, `${getSafeFileName(document.title)}.zip`);
 };
-insertCss(GM_getResourceText("react-toastify-css"));
-var import_react2 = require("@headlessui/react");
-var import_react3 = require("react");
-var import_react_dom = require("react-dom");
-var import_jotai2 = require("jotai");
-var gmStorage = {
-  getItem: GM_getValue,
-  setItem: GM_setValue,
-  removeItem: (key) => GM_deleteValue(key),
-  subscribe: (key, callback) => {
-    const id = GM_addValueChangeListener(key, (_key, _oldValue, newValue) => callback(newValue));
-    return () => GM_removeValueChangeListener(id);
+var MAX_RETRY_COUNT = 6;
+var MAX_SAME_URL_RETRY_COUNT = 2;
+function isDelay(sourceOrDelay) {
+  return sourceOrDelay === void 0 || typeof sourceOrDelay !== "string" && !sourceOrDelay.src;
+}
+function toAdvancedObject(sourceOrDelay) {
+  return isDelay(sourceOrDelay) ? { src: void 0 } : toAdvancedSource(sourceOrDelay);
+}
+function toAdvancedSource(source) {
+  return typeof source === "string" ? { type: "image", src: source } : source;
+}
+async function* getMediaIterable({ media, index, comic, maxSize }) {
+  if (!isDelay(media)) {
+    yield getUrl(media);
   }
-};
-function atomWithGmValue(key, defaultValue) {
-  return (0, import_utils2.atomWithStorage)(key, defaultValue, gmStorage, { getOnInit: true });
-}
-var jsonSessionStorage = (0, import_utils2.createJSONStorage)(() => sessionStorage);
-function atomWithSession(key, defaultValue) {
-  return (0, import_utils2.atomWithStorage)(
-    key,
-    defaultValue,
-    jsonSessionStorage,
-    { getOnInit: true }
-  );
-}
-var defaultPreferences = {
-  backgroundColor: "#eeeeee",
-  singlePageCount: 1,
-  maxZoomOutExponent: 3,
-  maxZoomInExponent: 3,
-  pageDirection: "rightToLeft",
-  isFullscreenPreferred: false,
-  fullscreenNoticeCount: 0
-};
-function getEffectivePreferences(scriptPreferences, manualPreferences) {
-  return { ...defaultPreferences, ...scriptPreferences, ...manualPreferences };
-}
-var scriptPreferencesAtom = (0, import_jotai2.atom)({});
-var preferencesPresetAtom = (0, import_jotai2.atom)("default");
-var manualPreferencesAtomAtom = (0, import_jotai2.atom)((get) => {
-  const preset = get(preferencesPresetAtom);
-  const key = `vim_comic_viewer.preferences.${preset}`;
-  return atomWithGmValue(key, {});
-});
-var manualPreferencesAtom = (0, import_jotai2.atom)(
-  (get) => get(get(manualPreferencesAtomAtom)),
-  (get, set, update) => {
-    set(get(manualPreferencesAtomAtom), update);
-  }
-);
-var preferencesAtom = (0, import_jotai2.atom)((get) => {
-  return getEffectivePreferences(get(scriptPreferencesAtom), get(manualPreferencesAtom));
-});
-var backgroundColorAtom = atomWithPreferences("backgroundColor");
-var singlePageCountAtom = atomWithPreferences("singlePageCount");
-var maxZoomOutExponentAtom = atomWithPreferences("maxZoomOutExponent");
-var maxZoomInExponentAtom = atomWithPreferences("maxZoomInExponent");
-var pageDirectionAtom = atomWithPreferences("pageDirection");
-var isFullscreenPreferredAtom = atomWithPreferences("isFullscreenPreferred");
-var fullscreenNoticeCountAtom = atomWithPreferences("fullscreenNoticeCount");
-var wasImmersiveAtom = atomWithSession("vim_comic_viewer.was_immersive", false);
-function atomWithPreferences(key) {
-  return (0, import_jotai2.atom)(
-    (get) => get(preferencesAtom)[key],
-    (get, set, update) => {
-      const effective = typeof update === "function" ? update(get(preferencesAtom)[key]) : update;
-      set(manualPreferencesAtom, (preferences) => ({ ...preferences, [key]: effective }));
-    }
-  );
-}
-var maxRetryCount = 3;
-function getUrl(source) {
-  return typeof source === "string" ? source : source.src;
-}
-function getType(source) {
-  return typeof source !== "string" && source.type === "video" ? "video" : "image";
-}
-async function* getImageIterable({ image, index, comic, maxSize }) {
-  yield image;
   if (!comic) {
     return;
   }
   let previous;
   let retryCount = 0;
-  while (retryCount < maxRetryCount) {
-    const images = await comic({ cause: "error", page: index, maxSize });
-    const next = images[index];
-    yield next;
+  let sameUrlRetryCount = 0;
+  while (sameUrlRetryCount <= MAX_SAME_URL_RETRY_COUNT && retryCount <= MAX_RETRY_COUNT) {
+    const hadError = media !== void 0 || retryCount > 0;
+    const medias = await comic({ cause: hadError ? "error" : "load", page: index, maxSize });
+    const next = medias[index];
+    if (isDelay(next)) {
+      continue;
+    }
     const url = getUrl(next);
+    yield url;
+    retryCount++;
     if (previous === url) {
-      retryCount++;
+      sameUrlRetryCount++;
       continue;
     }
     previous = url;
   }
+}
+function getUrl(source) {
+  return typeof source === "string" ? source : source.src;
 }
 var globalCss = document.createElement("style");
 globalCss.innerHTML = `html, body {
@@ -279,7 +325,7 @@ function focusWithoutScroll(element) {
 }
 var emptyScroll = { page: null, ratio: 0, fullyVisiblePages: [] };
 function getCurrentViewerScroll(container) {
-  const children = [...container?.children ?? []];
+  const children = [...container?.firstElementChild?.children ?? []];
   if (!container || !children.length) {
     return emptyScroll;
   }
@@ -342,8 +388,8 @@ var transferViewerScrollToWindowAtom = (0, import_jotai.atom)(null, (get) => {
   const fileName = src.split("/").pop()?.split("?")[0];
   const candidates = document.querySelectorAll(`img[src*="${fileName}"]`);
   const original = [...candidates].find((img) => img.src === src);
-  const isViewerImage = original?.parentElement === page;
-  if (!original || isViewerImage) {
+  const isViewerMedia = original?.parentElement === page;
+  if (!original || isViewerMedia) {
     return false;
   }
   const rect = original.getBoundingClientRect();
@@ -477,6 +523,12 @@ function getPreviousPageBottomOrStart(page) {
   }
   return cursor.offsetTop;
 }
+var viewerOptionsAtom = (0, import_jotai.atom)({});
+var viewerStatusAtom = (0, import_jotai.atom)("idle");
+var viewerStateAtom = (0, import_jotai.atom)((get) => ({
+  options: get(viewerOptionsAtom),
+  status: get(viewerStatusAtom)
+}));
 var maxSizeStateAtom = (0, import_jotai.atom)({ width: screen.width, height: screen.height });
 var maxSizeAtom = (0, import_jotai.atom)(
   (get) => get(maxSizeStateAtom),
@@ -491,100 +543,100 @@ var maxSizeAtom = (0, import_jotai.atom)(
     });
   }
 );
-function createPageAtom({ index, source }) {
-  const triedUrls =  new Set();
-  let mediaLoad = deferred();
+var mediaSourcesAtom = (0, import_jotai.atom)([]);
+var pageAtomsAtom = (0, import_jotai.atom)([]);
+var refreshMediaSourceAtom = (0, import_jotai.atom)(null, async (get, set, params) => {
+  const { source } = get(viewerOptionsAtom);
+  if (!source) {
+    return;
+  }
+  const medias = await source({ ...params, maxSize: get(maxSizeAtom) });
+  if (source !== get(viewerOptionsAtom).source) {
+    return;
+  }
+  if (!Array.isArray(medias)) {
+    throw new Error(`Invalid comic source type: ${typeof medias}`);
+  }
+  set(mediaSourcesAtom, medias);
+  if (params.cause === "load" && params.page === void 0) {
+    set(
+      pageAtomsAtom,
+      medias.map((media, index) => createPageAtom({ initialSource: media, index, set }))
+    );
+  }
+  if (params.page !== void 0) {
+    return medias[params.page];
+  }
+});
+function createPageAtom(params) {
+  const { initialSource, index, set } = params;
+  const triedUrls = [];
   let div = null;
   const stateAtom = (0, import_jotai.atom)({
     status: "loading",
-    type: getType(source)
+    source: initialSource ? toAdvancedObject(initialSource) : { src: void 0 }
   });
-  const loadAtom = (0, import_jotai.atom)(null, async (get, set) => {
-    mediaLoad.resolve("cancelled");
-    const comic = get(viewerStateAtom).options.source;
-    const imageParams = { index, image: source, comic, maxSize: get(maxSizeAtom) };
+  const loadAtom = (0, import_jotai.atom)(null, async (get, set2, cause) => {
+    switch (cause) {
+      case "load":
+        triedUrls.length = 0;
+        break;
+      case "error":
+        break;
+    }
+    let newSource;
     try {
-      for await (const page of getImageIterable(imageParams)) {
-        const url = getUrl(page);
-        triedUrls.add(url);
-        reflectProvisionalSize(page);
-        const result = await waitImageLoad(url);
-        switch (result) {
-          case "error":
-            set(stateAtom, (previous) => ({
-              ...previous,
-              status: "error",
-              src: "",
-              urls: Array.from(triedUrls)
-            }));
-            await timeout(0);
-            break;
-          case "cancelled":
-            return;
-          default: {
-            set(stateAtom, (previous) => ({
-              ...previous,
-              status: "complete",
-              src: url,
-              ...result instanceof HTMLImageElement ? {
-                width: result.naturalWidth,
-                height: result.naturalHeight
-              } : {
-                width: result.videoWidth,
-                height: result.videoHeight
-              }
-            }));
-            return;
-          }
+      while (isDelay(newSource)) {
+        if (isComplete()) {
+          return;
         }
+        newSource = await set2(refreshMediaSourceAtom, { cause, page: index });
       }
-    } catch (_error) {
-      set(stateAtom, (previous) => ({ ...previous, urls: Array.from(triedUrls), status: "error" }));
+    } catch (error) {
+      console.error(error);
+      set2(stateAtom, (previous) => ({
+        ...previous,
+        status: "error",
+        urls: Array.from(triedUrls)
+      }));
+      return;
     }
-    function reflectProvisionalSize(page) {
-      if (typeof page === "object") {
-        const { width, height } = get(stateAtom);
-        if (width !== page.width || height !== page.height) {
-          set(stateAtom, (previous) => ({
-            ...previous,
-            type: getType(page),
-            width: page.width,
-            height: page.height
-          }));
-        }
-      }
+    if (isComplete() || isDelay(newSource)) {
+      return;
     }
-    async function waitImageLoad(url) {
-      mediaLoad = deferred();
-      set(stateAtom, (previous) => ({ ...previous, src: url, status: "loading" }));
-      return await mediaLoad;
+    const source = toAdvancedSource(newSource);
+    triedUrls.push(source.src);
+    set2(stateAtom, { status: "loading", source });
+    function isComplete() {
+      return get(stateAtom).status === "complete";
     }
   });
-  loadAtom.onMount = (set) => {
-    set();
-  };
+  loadAtom.onMount = (set2) => void set2("load");
   const aggregateAtom = (0, import_jotai.atom)((get) => {
     get(loadAtom);
     const state = get(stateAtom);
+    const scrollElementSize = get(scrollElementSizeAtom);
     const compactWidthIndex = get(singlePageCountAtom);
+    const maxZoomInExponent = get(maxZoomInExponentAtom);
+    const maxZoomOutExponent = get(maxZoomOutExponentAtom);
+    const { src, width, height } = state.source ?? {};
     const ratio = getImageToViewerSizeRatio({
-      viewerSize: get(scrollElementSizeAtom),
-      imgSize: state
+      viewerSize: scrollElementSize,
+      imgSize: { width, height }
     });
-    const shouldBeOriginalSize = shouldPageBeOriginalSize({
-      maxZoomInExponent: get(maxZoomInExponentAtom),
-      maxZoomOutExponent: get(maxZoomOutExponentAtom),
-      imageRatio: ratio
+    const shouldBeOriginalSize = shouldMediaBeOriginalSize({
+      maxZoomInExponent,
+      maxZoomOutExponent,
+      mediaRatio: ratio
     });
     const isLarge = ratio > 1;
     const canMessUpRow = shouldBeOriginalSize && isLarge;
-    const { width, height, status } = state;
-    const mediaProps = {
-      ...width && height && status !== "complete" ? { style: { aspectRatio: width / height } } : {},
-      ..."src" in state ? { src: state.src } : {},
-      onError: () => mediaLoad.resolve("error")
+    const mediaProps = { src, onError: reload };
+    const divCss = {
+      ...shouldBeOriginalSize ? { minHeight: scrollElementSize.height, height: "auto" } : { height: scrollElementSize.height },
+      ...state.status !== "complete" ? { aspectRatio: width && height ? `${width} / ${height}` : "3 / 4" } : {}
     };
-    return {
+    const page = {
       index,
       state,
       div,
@@ -594,23 +646,63 @@ function createPageAtom({ index, source }) {
       reloadAtom: loadAtom,
       fullWidth: index < compactWidthIndex || canMessUpRow,
       shouldBeOriginalSize,
-      get src() {
-        return "src" in state ? state.src : void 0;
-      },
-      videoProps: state.type === "video" ? {
+      divCss,
+      videoProps: state.source?.type === "video" ? {
         ...mediaProps,
         controls: true,
         autoPlay: true,
         loop: true,
         muted: true,
-        onLoadedMetadata: (event) => mediaLoad.resolve(event.currentTarget)
+        onLoadedMetadata: setCompleteState
       } : void 0,
-      imageProps: state.type === "image" ? {
+      imageProps: state.source?.type === "image" ? {
         ...mediaProps,
-        onLoad: (event) => mediaLoad.resolve(event.currentTarget)
+        onLoad: setCompleteState
       } : void 0
     };
+    return page;
   });
+  async function reload() {
+    const isOverMaxRetry = triedUrls.length > MAX_RETRY_COUNT;
+    const urlCountMap = triedUrls.reduce((acc, url) => {
+      acc[url] = (acc[url] ?? 0) + 1;
+      return acc;
+    }, {});
+    const isOverSameUrlRetry = Object.values(urlCountMap).some(
+      (count) => count > MAX_SAME_URL_RETRY_COUNT
+    );
+    if (isOverMaxRetry || isOverSameUrlRetry) {
+      set(stateAtom, (previous) => ({
+        ...previous,
+        status: "error",
+        urls: [...new Set(triedUrls)]
+      }));
+      return;
+    }
+    set(stateAtom, (previous) => ({
+      status: "loading",
+      source: { ...previous.source, src: void 0 }
+    }));
+    await set(loadAtom, "error");
+  }
+  function setCompleteState(event) {
+    const element = event.currentTarget;
+    set(stateAtom, {
+      status: "complete",
+      source: {
+        src: element.src,
+        ...element instanceof HTMLImageElement ? {
+          type: "image",
+          width: element.naturalWidth,
+          height: element.naturalHeight
+        } : {
+          type: "video",
+          width: element.videoWidth,
+          height: element.videoHeight
+        }
+      }
+    });
+  }
   return aggregateAtom;
 }
 function getImageToViewerSizeRatio({ viewerSize, imgSize }) {
@@ -622,10 +714,10 @@ function getImageToViewerSizeRatio({ viewerSize, imgSize }) {
     (imgSize.width ?? 0) / viewerSize.width
   );
 }
-function shouldPageBeOriginalSize({ maxZoomOutExponent, maxZoomInExponent, imageRatio }) {
+function shouldMediaBeOriginalSize({ maxZoomOutExponent, maxZoomInExponent, mediaRatio }) {
   const minZoomRatio = Math.sqrt(2) ** maxZoomOutExponent;
   const maxZoomRatio = Math.sqrt(2) ** maxZoomInExponent;
-  const isOver = minZoomRatio < imageRatio || imageRatio < 1 / maxZoomRatio;
+  const isOver = minZoomRatio < mediaRatio || mediaRatio < 1 / maxZoomRatio;
   return isOver;
 }
 var fullscreenElementAtom = (0, import_jotai.atom)(null);
@@ -776,37 +868,21 @@ function getLanguage() {
   }
   return en_default;
 }
-var viewerStateAtom = (0, import_jotai.atom)({
-  options: {},
-  status: "loading"
-});
-var pagesAtom = (0, import_utils2.selectAtom)(
-  viewerStateAtom,
-  (state) => state.pages
-);
 var rootAtom = (0, import_jotai.atom)(null);
-var transferWindowScrollToViewerAtom = (0, import_jotai.atom)(null, async (get, set) => {
-  const urlToViewerPages =  new Map();
-  let viewerPages = get(pagesAtom)?.map(get);
-  if (!viewerPages || viewerPages?.some((page2) => !page2.src)) {
-    await timeout(1);
-    viewerPages = get(pagesAtom)?.map(get);
-    (async () => {
-      await timeout(1);
-      set(restoreScrollAtom);
-    })();
-  }
-  if (!viewerPages || !viewerPages.length) {
+var transferWindowScrollToViewerAtom = (0, import_jotai.atom)(null, (get, set) => {
+  const pages = get(pageAtomsAtom).map(get);
+  if (!pages.length) {
     return;
   }
-  for (const viewerPage2 of viewerPages) {
-    if (viewerPage2.src) {
-      urlToViewerPages.set(viewerPage2.src, viewerPage2);
+  const urlToViewerPages =  new Map();
+  for (const page2 of pages) {
+    if (page2.state.source?.src) {
+      urlToViewerPages.set(page2.state.source.src, page2);
     }
   }
   const urls = [...urlToViewerPages.keys()];
   const imgs = getUrlImgs(urls);
-  const viewerImgs = new Set(viewerPages.flatMap((page2) => page2.div?.querySelector("img") ?? []));
+  const viewerImgs = new Set(pages.flatMap((page2) => page2.div?.querySelector("img") ?? []));
   const originalImgs = imgs.filter((img) => !viewerImgs.has(img));
   const { page, ratio, fullyVisiblePages: fullyVisibleWindowPages } = getCurrentScroll(
     originalImgs
@@ -883,7 +959,7 @@ async function transactImmersive(get, set, value) {
     }
     (0, import_react_toastify.toast)(get(i18nAtom).fullScreenRestorationGuide, { type: "info" });
     await timeout(5e3);
-    set(fullscreenNoticeCountAtom, (count) => count + 1);
+    set(fullscreenNoticeCountAtom, (count) => (count ?? 0) + 1);
   }
 }
 var isBeforeUnloadAtom = (0, import_jotai.atom)(false);
@@ -931,35 +1007,25 @@ var viewerModeAtom = (0, import_jotai.atom)((get) => {
 var setViewerOptionsAtom = (0, import_jotai.atom)(null, async (get, set, options) => {
   try {
     const { source } = options;
-    const previousOptions = get(viewerStateAtom).options;
+    const previousOptions = get(viewerOptionsAtom);
     const shouldLoadSource = source && source !== previousOptions.source;
-    const optionChanges = { options, ...shouldLoadSource ? { status: "loading" } : {} };
-    set(viewerStateAtom, (state) => ({ ...state, ...optionChanges }));
     if (!shouldLoadSource) {
       return;
     }
-    const images = await source({ cause: "load", maxSize: get(maxSizeAtom) });
-    if (!Array.isArray(images)) {
-      throw new Error(`Invalid comic source type: ${typeof images}`);
-    }
-    set(viewerStateAtom, (state) => ({
-      ...state,
-      status: "complete",
-      pages: images.map((source2, index) => createPageAtom({ source: source2, index }))
-    }));
+    set(viewerStatusAtom, (previous) => previous === "complete" ? "complete" : "loading");
+    set(viewerOptionsAtom, options);
+    await set(refreshMediaSourceAtom, { cause: "load" });
+    set(viewerStatusAtom, "complete");
   } catch (error) {
-    set(viewerStateAtom, (state) => ({ ...state, status: "error" }));
-    console.error(error);
+    set(viewerStatusAtom, "error");
     throw error;
   }
 });
 var reloadErroredAtom = (0, import_jotai.atom)(null, (get, set) => {
   stop();
-  const pages = get(pagesAtom);
-  for (const atom3 of pages ?? []) {
-    const page = get(atom3);
+  for (const page of get(pageAtomsAtom).map(get)) {
     if (page.state.status !== "complete") {
-      set(page.reloadAtom);
+      set(page.reloadAtom, "load");
     }
   }
 });
@@ -1001,31 +1067,20 @@ var SpaceBetween = styled("div", {
   flexFlow: "row nowrap",
   justifyContent: "space-between"
 });
-var isGmFetchAvailable = typeof GM_xmlhttpRequest === "function";
-function gmFetch(url, init) {
+var isGmFetchAvailable = typeof GM.xmlHttpRequest === "function";
+async function gmFetch(url, init) {
   const method = init?.body ? "POST" : "GET";
-  return new Promise((resolve, reject) => {
-    const request = GM_xmlhttpRequest({
-      method,
-      url,
-      headers: {
-        referer: `${location.origin}/`,
-        ...init?.headers
-      },
-      responseType: init?.type === "text" ? void 0 : init?.type,
-      data: init?.body,
-      onload: resolve,
-      onerror: reject,
-      onabort: reject
-    });
-    init?.signal?.addEventListener(
-      "abort",
-      () => {
-        request.abort();
-      },
-      { once: true }
-    );
+  const response = await GM.xmlHttpRequest({
+    method,
+    url,
+    headers: {
+      referer: `${location.origin}/`,
+      ...init?.headers
+    },
+    responseType: init?.type === "text" ? void 0 : init?.type,
+    data: init?.body
   });
+  return response;
 }
 async function download(comic, options) {
   const { onError, onProgress, signal } = options || {};
@@ -1061,7 +1116,7 @@ async function download(comic, options) {
     const errors = [];
     startedCount++;
     reportProgress();
-    for await (const event of downloadImage({ image: source, pageIndex })) {
+    for await (const event of downloadImage({ media: source, pageIndex })) {
       if ("error" in event) {
         errors.push(event.error);
         onError?.(event.error);
@@ -1080,14 +1135,13 @@ async function download(comic, options) {
       blob: new Blob([errors.map((x) => `${x}`).join("\n\n")])
     };
   }
-  async function* downloadImage({ image, pageIndex }) {
+  async function* downloadImage({ media, pageIndex }) {
     const maxSize = { width: Infinity, height: Infinity };
-    const imageParams = { image, index: pageIndex, comic, maxSize };
-    for await (const src of getImageIterable(imageParams)) {
+    const mediaParams = { media, index: pageIndex, comic, maxSize };
+    for await (const url of getMediaIterable(mediaParams)) {
       if (signal?.aborted) {
         break;
       }
-      const url = getUrl(src);
       try {
         const blob = await fetchBlobWithCacheIfPossible(url, signal);
         yield { url, blob };
@@ -1148,7 +1202,7 @@ async function fetchBlobIgnoringCors(url, { signal, fetchError }) {
   if (isCrossOrigin(url) && !isGmFetchAvailable) {
     return {
       error: new Error(
-        "It could be a CORS issue but cannot use GM_xmlhttpRequest",
+        "It could be a CORS issue but cannot use GM.xmlhttpRequest",
         { cause: fetchError }
       )
     };
@@ -1255,125 +1309,167 @@ function confirmDownloadAbort(event) {
 }
 var controllerAtom = (0, import_jotai.atom)(null);
 var controllerCreationAtom = (0, import_jotai.atom)((get) => get(controllerAtom), (get, set) => {
-  if (!get(controllerAtom)) {
-    set(controllerAtom, createViewerController(get, set));
+  const existing = get(controllerAtom);
+  if (existing) {
+    return existing;
   }
-  return get(controllerAtom);
+  const controller = new Controller(get, set);
+  set(controllerAtom, controller);
+  return controller;
 });
-controllerCreationAtom.onMount = (set) => {
-  set();
-};
-function createViewerController(get, set) {
-  const downloader = {
-    download: (options) => set(startDownloadAtom, options),
-    downloadAndSave: (options) => set(downloadAndSaveAtom, options),
-    cancel: () => set(cancelDownloadAtom)
+controllerCreationAtom.onMount = (set) => void set();
+var Controller = class {
+  constructor(get, set) {
+    this.get = get;
+    this.set = set;
+    addEventListener("keydown", this.defaultGlobalKeyHandler);
+    this.elementKeyHandler = this.defaultElementKeyHandler;
+  }
+  currentElementKeyHandler = null;
+  get options() {
+    return this.get(viewerStateAtom).options;
+  }
+  get status() {
+    return this.get(viewerStateAtom).status;
+  }
+  get container() {
+    return this.get(scrollBarStyleFactorAtom).viewerElement;
+  }
+  downloader = {
+    download: (options) => this.set(startDownloadAtom, options),
+    downloadAndSave: (options) => this.set(downloadAndSaveAtom, options),
+    cancel: () => this.set(cancelDownloadAtom)
   };
-  const elementKeyHandler = (event) => {
+  get pages() {
+    return this.get(pageAtomsAtom).map(this.get);
+  }
+  get viewerMode() {
+    return this.get(viewerModeAtom);
+  }
+  get effectivePreferences() {
+    return this.get(preferencesAtom);
+  }
+  get manualPreferences() {
+    return this.get(manualPreferencesAtom);
+  }
+  set elementKeyHandler(handler) {
+    const { currentElementKeyHandler, container } = this;
+    const scrollable = this.container?.querySelector("div[data-overlayscrollbars-viewport]");
+    if (currentElementKeyHandler) {
+      container?.removeEventListener("keydown", currentElementKeyHandler);
+      scrollable?.removeEventListener("keydown", currentElementKeyHandler);
+    }
+    if (handler) {
+      container?.addEventListener("keydown", handler);
+      scrollable?.addEventListener("keydown", handler);
+    }
+  }
+  setOptions = (value) => {
+    this.set(setViewerOptionsAtom, value);
+  };
+  goPrevious = () => {
+    this.set(goPreviousAtom);
+  };
+  goNext = () => {
+    this.set(goNextAtom);
+  };
+  setManualPreferences = (value) => {
+    return this.set(manualPreferencesAtom, value);
+  };
+  setScriptPreferences = ({
+    manualPreset,
+    preferences
+  }) => {
+    if (manualPreset) {
+      this.set(preferencesPresetAtom, manualPreset);
+    }
+    if (preferences) {
+      this.set(scriptPreferencesAtom, preferences);
+    }
+  };
+  setImmersive = (value) => {
+    return this.set(setViewerImmersiveAtom, value);
+  };
+  setIsFullscreenPreferred = (value) => {
+    return this.set(isFullscreenPreferredSettingsAtom, value);
+  };
+  toggleImmersive = () => {
+    this.set(toggleImmersiveAtom);
+  };
+  toggleFullscreen = () => {
+    this.set(toggleFullscreenAtom);
+  };
+  reloadErrored = () => {
+    this.set(reloadErroredAtom);
+  };
+  unmount = () => {
+    return this.get(rootAtom)?.unmount();
+  };
+  defaultElementKeyHandler = (event) => {
     if (maybeNotHotkey(event)) {
       return false;
     }
     switch (event.key) {
       case "j":
       case "ArrowDown":
-        controller.goNext();
+        event.stopPropagation();
         event.preventDefault();
+        this.goNext();
         break;
       case "k":
       case "ArrowUp":
-        controller.goPrevious();
+        event.stopPropagation();
         event.preventDefault();
+        this.goPrevious();
         break;
       case ";":
-        controller.downloader?.downloadAndSave();
+        event.stopPropagation();
+        this.downloader?.downloadAndSave();
         break;
       case "/":
-        controller.setManualPreferences({
-          ...controller.manualPreferences,
-          singlePageCount: controller.effectivePreferences.singlePageCount + 1
-        });
+        event.stopPropagation();
+        (async () => {
+          const effectivePreferences = await this.effectivePreferences;
+          await this.setManualPreferences((preferences) => ({
+            ...preferences,
+            singlePageCount: effectivePreferences.singlePageCount + 1
+          }));
+        })();
         break;
       case "?":
-        controller.setManualPreferences({
-          ...controller.manualPreferences,
-          singlePageCount: Math.max(0, controller.effectivePreferences.singlePageCount - 1)
-        });
+        event.stopPropagation();
+        (async () => {
+          const effectivePreferences = await this.effectivePreferences;
+          await this.setManualPreferences((preferences) => ({
+            ...preferences,
+            singlePageCount: Math.max(0, effectivePreferences.singlePageCount - 1)
+          }));
+        })();
         break;
       case "'":
-        controller.reloadErrored();
+        event.stopPropagation();
+        this.reloadErrored();
         break;
       default:
         return false;
     }
-    event.stopPropagation();
     return true;
   };
-  const globalKeyHandler = (event) => {
+  defaultGlobalKeyHandler = (event) => {
     if (maybeNotHotkey(event)) {
       return false;
     }
     if (["KeyI", "Numpad0", "Enter"].includes(event.code)) {
       if (event.shiftKey) {
-        controller.toggleFullscreen();
+        this.toggleFullscreen();
       } else {
-        controller.toggleImmersive();
+        this.toggleImmersive();
       }
       return true;
     }
     return false;
   };
-  const controller = {
-    get options() {
-      return get(viewerStateAtom).options;
-    },
-    get status() {
-      return get(viewerStateAtom).status;
-    },
-    get container() {
-      return get(scrollBarStyleFactorAtom).viewerElement;
-    },
-    downloader,
-    get pages() {
-      return get(pagesAtom);
-    },
-    get viewerMode() {
-      return get(viewerModeAtom);
-    },
-    get effectivePreferences() {
-      return get(preferencesAtom);
-    },
-    get manualPreferences() {
-      return get(manualPreferencesAtom);
-    },
-    setOptions: (value) => set(setViewerOptionsAtom, value),
-    goPrevious: () => set(goPreviousAtom),
-    goNext: () => set(goNextAtom),
-    setManualPreferences: (value) => {
-      return set(manualPreferencesAtom, value);
-    },
-    setScriptPreferences: ({ manualPreset, preferences }) => {
-      if (manualPreset) {
-        set(preferencesPresetAtom, manualPreset);
-      }
-      if (preferences) {
-        set(scriptPreferencesAtom, preferences);
-      }
-    },
-    setImmersive: (value) => {
-      return set(setViewerImmersiveAtom, value);
-    },
-    setIsFullscreenPreferred: (value) => {
-      return set(isFullscreenPreferredSettingsAtom, value);
-    },
-    toggleImmersive: () => set(toggleImmersiveAtom),
-    toggleFullscreen: () => set(toggleFullscreenAtom),
-    reloadErrored: () => set(reloadErroredAtom),
-    elementKeyHandler,
-    globalKeyHandler,
-    unmount: () => get(rootAtom)?.unmount()
-  };
-  return controller;
-}
+};
 function maybeNotHotkey(event) {
   const { ctrlKey, altKey, metaKey } = event;
   return ctrlKey || altKey || metaKey || isTyping(event);
@@ -1489,16 +1585,6 @@ var SettingsButton = (props) => {
      React.createElement("path", { d: "M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" })
   ));
 };
-var defaultScrollbar = {
-  "scrollbarWidth": "initial",
-  "scrollbarColor": "initial",
-  "&::-webkit-scrollbar": { all: "initial" },
-  "&::-webkit-scrollbar-thumb": {
-    all: "initial",
-    background: "#00000088"
-  },
-  "&::-webkit-scrollbar-track": { all: "initial" }
-};
 var Container = styled("div", {
   position: "relative",
   height: "100%",
@@ -1519,17 +1605,19 @@ var Container = styled("div", {
     }
   }
 });
-var ScrollableLayout = styled("div", {
+var OverlayScroller = styled("div", {
   position: "relative",
   width: "100%",
   height: "100%",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  flexFlow: "row-reverse wrap",
-  overflowY: "auto",
   outline: "none",
-  ...defaultScrollbar,
+  "& > div[data-overlayscrollbars-viewport]:focus-visible": {
+    outline: "none"
+  },
+  "& .os-scrollbar-handle": {
+    backdropFilter: "brightness(0.5)",
+    background: "none",
+    border: "#fff8 1px solid"
+  },
   variants: {
     fullscreen: {
       true: {
@@ -1537,11 +1625,6 @@ var ScrollableLayout = styled("div", {
         top: 0,
         bottom: 0,
         overflow: "auto"
-      }
-    },
-    ltr: {
-      true: {
-        flexFlow: "row wrap"
       }
     },
     dark: {
@@ -1554,23 +1637,6 @@ var ScrollableLayout = styled("div", {
     }
   }
 });
-function useDefault({ enable, controller }) {
-  (0, import_react3.useEffect)(() => {
-    if (!controller || !enable) {
-      return;
-    }
-    const { container, elementKeyHandler, globalKeyHandler } = controller;
-    const scrollable = container?.firstElementChild;
-    addEventListener("keydown", globalKeyHandler);
-    container?.addEventListener("keydown", elementKeyHandler);
-    scrollable?.addEventListener("keydown", elementKeyHandler);
-    return () => {
-      scrollable?.removeEventListener("keydown", elementKeyHandler);
-      container?.removeEventListener("keydown", elementKeyHandler);
-      removeEventListener("keydown", globalKeyHandler);
-    };
-  }, [controller, enable]);
-}
 var import_jotai3 = require("jotai");
 var Backdrop = styled("div", {
   position: "absolute",
@@ -1941,7 +2007,7 @@ var Spinner = () =>  React.createElement(SpinnerContainer, null,  React.createEl
 var Overlay = styled("div", {
   position: "relative",
   maxWidth: "100%",
-  height: "100%",
+  height: "100vh",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -1949,17 +2015,8 @@ var Overlay = styled("div", {
     margin: 0
   },
   variants: {
-    placeholder: {
-      true: { width: "45%", height: "100%" }
-    },
     fullWidth: {
       true: { width: "100%" }
-    },
-    originalSize: {
-      true: {
-        minHeight: "100%",
-        height: "auto"
-      }
     }
   }
 });
@@ -2009,6 +2066,7 @@ var Page = ({ atom: atom3, ...props }) => {
     fullWidth,
     reloadAtom,
     shouldBeOriginalSize,
+    divCss,
     state: pageState,
     setDiv
   } = (0, import_jotai.useAtomValue)(atom3);
@@ -2017,22 +2075,17 @@ var Page = ({ atom: atom3, ...props }) => {
   const { status } = pageState;
   const reloadErrored = async (event) => {
     event.stopPropagation();
-    await reload();
+    await reload("load");
   };
-  return  React.createElement(
-    Overlay,
-    {
-      ref: setDiv,
-      placeholder: status !== "complete",
-      originalSize: shouldBeOriginalSize,
-      fullWidth
-    },
-    status === "loading" &&  React.createElement(Spinner, null),
-    status === "error" &&  React.createElement(LinkColumn, { onClick: reloadErrored },  React.createElement(CircledX, null),  React.createElement("p", null, strings.failedToLoadImage),  React.createElement("p", null, pageState.urls?.join("\n"))),
-    videoProps &&  React.createElement(Video, { ...videoProps, originalSize: shouldBeOriginalSize, ...props }),
-    imageProps &&  React.createElement(Image, { ...imageProps, originalSize: shouldBeOriginalSize, ...props })
-  );
+  return  React.createElement(Overlay, { ref: setDiv, css: divCss, fullWidth }, status === "loading" &&  React.createElement(Spinner, null), status === "error" &&  React.createElement(LinkColumn, { onClick: reloadErrored },  React.createElement(CircledX, null),  React.createElement("p", null, strings.failedToLoadImage),  React.createElement("p", null, pageState.urls?.join("\n"))), videoProps &&  React.createElement(Video, { ...videoProps, originalSize: shouldBeOriginalSize, ...props }), imageProps &&  React.createElement(Image, { ...imageProps, originalSize: shouldBeOriginalSize, ...props }));
 };
+insertVendorCss();
+async function insertVendorCss() {
+  await Promise.all([
+    GM.getResourceText("react-toastify-css").then(insertCss),
+    GM.getResourceText("overlayscrollbars-css").then(insertCss)
+  ]);
+}
 function InnerViewer(props) {
   const { options: viewerOptions, onInitialized, ...otherProps } = props;
   const isFullscreen = (0, import_jotai.useAtomValue)(viewerFullscreenAtom);
@@ -2042,11 +2095,22 @@ function InnerViewer(props) {
   const pageDirection = (0, import_jotai.useAtomValue)(pageDirectionAtom);
   const strings = (0, import_jotai.useAtomValue)(i18nAtom);
   const mode = (0, import_jotai.useAtomValue)(viewerModeAtom);
-  (0, import_jotai.useAtomValue)(fullscreenSynchronizationAtom);
-  const { status } = viewer;
   const controller = (0, import_jotai.useAtomValue)(controllerCreationAtom);
+  const virtualContainerRef = (0, import_react3.useRef)(null);
+  const virtualContainer = virtualContainerRef.current;
+  const setScrollElement = (0, import_jotai.useSetAtom)(setScrollElementAtom);
   const options = controller?.options;
-  useDefault({ enable: !options?.noDefaultBinding, controller });
+  const { status } = viewer;
+  const pageAtoms = (0, import_jotai.useAtomValue)(pageAtomsAtom);
+  const [initialize2] = (0, import_overlayscrollbars_react.useOverlayScrollbars)({
+    defer: true,
+    events: { scroll: (0, import_jotai.useSetAtom)(synchronizeScrollAtom), initialized: setupScroll }
+  });
+  (0, import_jotai.useAtomValue)(fullscreenSynchronizationAtom);
+  function setupScroll() {
+    const selector = "div[data-overlayscrollbars-viewport]";
+    setScrollElement(virtualContainerRef.current?.querySelector(selector));
+  }
   (0, import_react3.useEffect)(() => {
     if (controller) {
       onInitialized?.(controller);
@@ -2055,6 +2119,11 @@ function InnerViewer(props) {
   (0, import_react3.useEffect)(() => {
     setViewerOptions(viewerOptions);
   }, [viewerOptions]);
+  (0, import_react3.useEffect)(() => {
+    if (virtualContainer) {
+      initialize2(virtualContainer);
+    }
+  }, [initialize2, virtualContainer]);
   return  React.createElement(
     Container,
     {
@@ -2063,26 +2132,24 @@ function InnerViewer(props) {
       immersive: mode === "window"
     },
      React.createElement(
-      ScrollableLayout,
+      OverlayScroller,
       {
         tabIndex: 0,
-        ref: (0, import_jotai.useSetAtom)(setScrollElementAtom),
+        ref: virtualContainerRef,
         dark: isDarkColor(backgroundColor),
         fullscreen: isFullscreen,
-        ltr: pageDirection === "leftToRight",
-        onScroll: (0, import_jotai.useSetAtom)(synchronizeScrollAtom),
         onClick: (0, import_jotai.useSetAtom)(navigateAtom),
         onMouseDown: (0, import_jotai.useSetAtom)(blockSelectionAtom),
-        children: status === "complete" ? viewer.pages.map((atom3) =>  React.createElement(
-          Page,
-          {
-            key: `${atom3}`,
-            atom: atom3,
-            ...options?.imageProps
-          }
-        )) :  React.createElement("p", null, status === "error" ? strings.errorIsOccurred : strings.loading),
         ...otherProps
-      }
+      },
+       React.createElement(Pages, { ltr: pageDirection === "leftToRight" }, status === "complete" ? pageAtoms.map((atom3) =>  React.createElement(
+        Page,
+        {
+          key: `${atom3}`,
+          atom: atom3,
+          ...options?.mediaProps
+        }
+      )) :  React.createElement("p", null, status === "error" ? strings.errorIsOccurred : strings.loading))
     ),
     status === "complete" ?  React.createElement(LeftBottomControl, null) : false,
      React.createElement(FullscreenButton, { onClick: (0, import_jotai.useSetAtom)(toggleImmersiveAtom) }),
@@ -2098,15 +2165,29 @@ function isDarkColor(rgbColor) {
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance < 0.5;
 }
+var Pages = styled("div", {
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  flexFlow: "row-reverse wrap",
+  overflowY: "auto",
+  variants: {
+    ltr: {
+      true: {
+        flexFlow: "row wrap"
+      }
+    }
+  }
+});
 function initialize(options) {
   const store = (0, import_jotai.createStore)();
   const root = (0, import_react_dom.createRoot)(getDefaultRoot());
-  const deferredController = deferred();
-  root.render(
-     React.createElement(import_jotai.Provider, { store },  React.createElement(InnerViewer, { onInitialized: deferredController.resolve, options }))
-  );
   store.set(rootAtom, root);
-  return deferredController;
+  return new Promise(
+    (resolve) => root.render(
+       React.createElement(import_jotai.Provider, { store },  React.createElement(InnerViewer, { options, onInitialized: resolve }))
+    )
+  );
 }
 var Viewer = (0, import_react3.forwardRef)(({ options, onInitialized }) => {
   const store = (0, import_react3.useMemo)(import_jotai.createStore, []);
