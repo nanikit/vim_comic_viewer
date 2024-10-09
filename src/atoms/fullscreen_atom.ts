@@ -40,7 +40,6 @@ export const scrollBarStyleFactorAtom = atom(
     hideBodyScrollBar(canScrollBarDuplicate);
   },
 );
-scrollBarStyleFactorAtom.onMount = (set) => set({});
 
 export const viewerFullscreenAtom = atom((get) => {
   // For detecting other tab configuration change
