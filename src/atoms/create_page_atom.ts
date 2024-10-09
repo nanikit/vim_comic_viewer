@@ -39,12 +39,12 @@ type PageState =
     source: AdvancedSource;
   });
 
-type ImageProps = React.DetailedHTMLProps<
+type VideoProps = React.DetailedHTMLProps<
   React.VideoHTMLAttributes<HTMLVideoElement>,
   HTMLVideoElement
 >;
 
-type VideoProps = React.DetailedHTMLProps<
+type ImageProps = React.DetailedHTMLProps<
   React.ImgHTMLAttributes<HTMLImageElement>,
   HTMLImageElement
 >;
@@ -196,6 +196,9 @@ export function createPageAtom(
       fullWidth: index < compactWidthIndex || canMessUpRow,
       shouldBeOriginalSize,
       divCss,
+      imageProps: state.source && state.source.type !== "video"
+        ? { ...mediaProps, onLoad: setCompleteState } satisfies ImageProps
+        : undefined,
       videoProps: state.source?.type === "video"
         ? {
           ...mediaProps,
@@ -204,12 +207,6 @@ export function createPageAtom(
           loop: true,
           muted: true,
           onLoadedMetadata: setCompleteState,
-        } satisfies ImageProps
-        : undefined,
-      imageProps: state.source?.type === "image"
-        ? {
-          ...mediaProps,
-          onLoad: setCompleteState,
         } satisfies VideoProps
         : undefined,
     };

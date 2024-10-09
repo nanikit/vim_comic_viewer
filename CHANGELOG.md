@@ -7,6 +7,7 @@
 # 17.0.1
 
 - Fixed scrolling issue that occurred after refreshing in immersive mode
+- Fix some pages not exiting loading state.
 - Known issue: immersive mode restoration is broken. It'll be next fix.
 
 # 17.0.0
