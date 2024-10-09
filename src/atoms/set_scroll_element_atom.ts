@@ -22,7 +22,7 @@ export const setScrollElementAtom = atom(null, async (get, set, div: HTMLDivElem
   }
 
   const setScrollElementSize = () => {
-    const size = { width: div.clientWidth, height: div.clientHeight };
+    const size = div.getBoundingClientRect();
     set(scrollElementSizeAtom, size);
     set(maxSizeAtom, size);
   };
