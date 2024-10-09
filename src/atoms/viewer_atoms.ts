@@ -2,7 +2,6 @@ import { atom, ExtractAtomValue, Getter, Root, Setter, toast } from "../deps.ts"
 import {
   fullscreenNoticeCountAtom,
   isFullscreenPreferredAtom,
-  wasImmersiveAtom,
 } from "../features/preferences/atoms.ts";
 import { timeout } from "../utils.ts";
 import { PageAtom, pageAtomsAtom, refreshMediaSourceAtom } from "./create_page_atom.ts";
@@ -180,9 +179,8 @@ fullscreenSynchronizationAtom.onMount = (set) => {
   return () => document.removeEventListener("fullscreenchange", notify);
 };
 
-export const setViewerElementAtom = atom(null, async (get, set, element: HTMLDivElement | null) => {
+export const setViewerElementAtom = atom(null, (_get, set, element: HTMLDivElement | null) => {
   set(scrollBarStyleFactorAtom, { viewerElement: element });
-  await set(setViewerImmersiveAtom, get(wasImmersiveAtom));
 });
 
 export const viewerModeAtom = atom((get) => {

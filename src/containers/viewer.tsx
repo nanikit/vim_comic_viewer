@@ -62,9 +62,9 @@ export function InnerViewer(
 
   useAtomValue(fullscreenSynchronizationAtom);
 
-  function setupScroll() {
+  async function setupScroll() {
     const selector = "div[data-overlayscrollbars-viewport]";
-    setScrollElement(virtualContainerRef.current?.querySelector(selector)!);
+    await setScrollElement(virtualContainerRef.current?.querySelector(selector)!);
   }
 
   useEffect(() => {
