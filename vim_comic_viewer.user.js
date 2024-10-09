@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        17.0.0
+// @version        17.0.1
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -745,7 +745,7 @@ var scrollBarStyleFactorAtom = (0, import_jotai.atom)(
       set(wasImmersiveAtom, isImmersive);
       set(isImmersiveAtom, isImmersive);
     }
-    const canScrollBarDuplicate = !get(isViewerFullscreenAtom) && get(wasImmersiveAtom);
+    const canScrollBarDuplicate = !get(isViewerFullscreenAtom) && get(isImmersiveAtom);
     hideBodyScrollBar(canScrollBarDuplicate);
   }
 );

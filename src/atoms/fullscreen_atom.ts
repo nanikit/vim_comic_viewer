@@ -36,7 +36,7 @@ export const scrollBarStyleFactorAtom = atom(
       set(isImmersiveAtom, isImmersive);
     }
 
-    const canScrollBarDuplicate = !get(isViewerFullscreenAtom) && get(wasImmersiveAtom);
+    const canScrollBarDuplicate = !get(isViewerFullscreenAtom) && get(isImmersiveAtom);
     hideBodyScrollBar(canScrollBarDuplicate);
   },
 );

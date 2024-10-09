@@ -4,6 +4,11 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+# 17.0.1
+
+- Fixed scrolling issue that occurred after refreshing in immersive mode
+- Known issue: immersive mode restoration is broken. It'll be next fix.
+
 # 17.0.0
 
 - **Change `ImageSource` type to `MediaSourceOrDelay`, `imageProps` in `ViewerOptions` to
