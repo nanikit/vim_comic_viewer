@@ -65,7 +65,7 @@ const viewerScrollAtom = atom(
 export const restoreScrollAtom = atom(null, (get, set) => {
   const { page, ratio } = get(pageScrollStateAtom);
   const scrollable = get(scrollElementAtom);
-  if (!scrollable || !page) {
+  if (!page || !scrollable || scrollable.clientHeight < 1) {
     return;
   }
 
