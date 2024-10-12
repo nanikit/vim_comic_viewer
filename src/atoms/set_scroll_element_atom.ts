@@ -25,13 +25,11 @@ export const setScrollElementAtom = atom(null, async (get, set, div: HTMLDivElem
     const size = div.getBoundingClientRect();
     set(scrollElementSizeAtom, size);
     set(maxSizeAtom, size);
+    set(restoreScrollAtom);
   };
 
   setScrollElementSize();
-  const resizeObserver = new ResizeObserver(() => {
-    setScrollElementSize();
-    set(restoreScrollAtom);
-  });
+  const resizeObserver = new ResizeObserver(setScrollElementSize);
   resizeObserver.observe(div);
 
   set(scrollElementStateAtom, { div, resizeObserver });
