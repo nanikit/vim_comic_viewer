@@ -37,15 +37,16 @@ const previousSizeAtom = atom({ width: 0, height: 0 });
 export const synchronizeScrollAtom = atom(null, (get, set) => {
   const scrollElement = get(scrollElementAtom);
   const current = getCurrentViewerScroll(scrollElement);
-  if (!current.page) {
+  const previous = get(pageScrollStateAtom);
+  if (!current.page && !previous.page) {
     return;
   }
 
   const height = scrollElement?.clientHeight ?? 0;
   const width = scrollElement?.clientWidth ?? 0;
-  const previous = get(previousSizeAtom);
-  const isResizing = width === 0 || height === 0 || height !== previous.height ||
-    width !== previous.width;
+  const previousSize = get(previousSizeAtom);
+  const isResizing = width === 0 || height === 0 || height !== previousSize.height ||
+    width !== previousSize.width;
   if (isResizing) {
     set(restoreScrollAtom);
     set(previousSizeAtom, { width, height });
