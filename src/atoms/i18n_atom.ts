@@ -18,6 +18,10 @@ i18nAtom.onMount = (set) => {
 function getLanguage() {
   for (const language of navigator.languages) {
     const locale = language.split("-")[0];
+    if (!locale) {
+      continue;
+    }
+
     const translation = translations[locale];
     if (translation) {
       return translation;
