@@ -58,38 +58,17 @@ export function getUrlImgs(urls: string[]) {
 }
 
 export function getCurrentScroll<T extends HTMLElement>(elements: T[]): PageScrollState<T> {
-  if (!elements.length) {
+  const middle = getPageScroll(elements);
+  if (middle === null) {
     return emptyScroll;
   }
 
-  const pages = elements.map((page) => ({ page, rect: page.getBoundingClientRect() }));
-  const fullyVisiblePages = pages.filter(({ rect }) =>
-    rect.y >= 0 && rect.y + rect.height <= innerHeight
-  );
-  if (fullyVisiblePages.length) {
-    return {
-      page: fullyVisiblePages[0].page,
-      ratio: 0.5,
-      fullyVisiblePages: fullyVisiblePages.map((x) => x.page),
-    };
-  }
+  const index = Math.floor(middle);
+  const currentPage = elements[index]!;
+  const ratio = middle - index;
 
-  const scrollCenter = innerHeight / 2;
-  const centerCrossingPage = pages.find(({ rect }) =>
-    rect.top <= scrollCenter && rect.bottom >= scrollCenter
-  );
-  if (centerCrossingPage) {
-    const centerCrossingRect = centerCrossingPage.rect;
-    const ratio = 1 - ((centerCrossingRect.bottom - scrollCenter) / centerCrossingRect.height);
-    return { page: centerCrossingPage.page, ratio, fullyVisiblePages: [] };
-  }
-
-  const firstPage = pages[0];
-  const lastPage = pages[pages.length - 1];
-  if (scrollCenter < pages[0].rect.top) {
-    return { page: firstPage.page, ratio: 0, fullyVisiblePages: [] };
-  }
-  return { page: lastPage.page, ratio: 1, fullyVisiblePages: [] };
+  const state = { page: currentPage, ratio, fullyVisiblePages: [] };
+  return state;
 }
 
 export function isUserGesturePermissionError(error: unknown) {
@@ -101,4 +80,30 @@ export function isUserGesturePermissionError(error: unknown) {
 export function isDocumentNotActiveError(error: unknown) {
   const message = (error as { message?: string })?.message;
   return message?.match(/Failed to execute '.*?' on 'Document': Document not active/) ?? false;
+}
+
+function getPageScroll(elements: HTMLElement[]): number | null {
+  if (!elements.length) {
+    return null;
+  }
+
+  const scrollCenter = innerHeight / 2;
+
+  // Even top level elements can have fractional size depending on the devicePixelRatio.
+  const pages = elements.map((page) => ({ page, rect: page.getBoundingClientRect() }));
+
+  const currentPages = pages.filter(isCenterCrossing);
+  const currentPage = currentPages[Math.floor(currentPages.length / 2)];
+  if (!currentPage) {
+    return null;
+  }
+
+  const ratio = 1 - ((currentPage.rect.bottom - scrollCenter) / currentPage.rect.height);
+  const middle = elements.indexOf(currentPage.page) + ratio;
+
+  return middle;
+
+  function isCenterCrossing({ rect: { y, height } }: { rect: { y: number; height: number } }) {
+    return y <= scrollCenter && y + height >= scrollCenter;
+  }
 }
