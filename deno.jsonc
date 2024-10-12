@@ -12,6 +12,8 @@
       "deno.ns",
       "deno.unstable"
     ],
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
     "jsx": "react-jsx",
     "jsxImportSource": "react"
   },
