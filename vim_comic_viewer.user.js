@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        17.0.1
+// @version        17.0.2
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -342,38 +342,36 @@ function getUrlImgs(urls) {
   return pages;
 }
 function getCurrentScroll(elements) {
-  if (!elements.length) {
+  const middle = getPageScroll(elements);
+  if (middle === null) {
     return emptyScroll;
   }
-  const pages = elements.map((page) => ({ page, rect: page.getBoundingClientRect() }));
-  const fullyVisiblePages = pages.filter(
-    ({ rect }) => rect.y >= 0 && rect.y + rect.height <= innerHeight
-  );
-  if (fullyVisiblePages.length) {
-    return {
-      page: fullyVisiblePages[0].page,
-      ratio: 0.5,
-      fullyVisiblePages: fullyVisiblePages.map((x) => x.page)
-    };
-  }
-  const scrollCenter = innerHeight / 2;
-  const centerCrossingPage = pages.find(
-    ({ rect }) => rect.top <= scrollCenter && rect.bottom >= scrollCenter
-  );
-  if (centerCrossingPage) {
-    const centerCrossingRect = centerCrossingPage.rect;
-    const ratio = 1 - (centerCrossingRect.bottom - scrollCenter) / centerCrossingRect.height;
-    return { page: centerCrossingPage.page, ratio, fullyVisiblePages: [] };
-  }
-  const firstPage = pages[0];
-  const lastPage = pages[pages.length - 1];
-  if (scrollCenter < pages[0].rect.top) {
-    return { page: firstPage.page, ratio: 0, fullyVisiblePages: [] };
-  }
-  return { page: lastPage.page, ratio: 1, fullyVisiblePages: [] };
+  const index = Math.floor(middle);
+  const currentPage = elements[index];
+  const ratio = middle - index;
+  const state = { page: currentPage, ratio, fullyVisiblePages: [] };
+  return state;
 }
 function isUserGesturePermissionError(error) {
   return error?.message === "Permissions check failed";
+}
+function getPageScroll(elements) {
+  if (!elements.length) {
+    return null;
+  }
+  const scrollCenter = innerHeight / 2;
+  const pages = elements.map((page) => ({ page, rect: page.getBoundingClientRect() }));
+  const currentPages = pages.filter(isCenterCrossing);
+  const currentPage = currentPages[Math.floor(currentPages.length / 2)];
+  if (!currentPage) {
+    return null;
+  }
+  const ratio = 1 - (currentPage.rect.bottom - scrollCenter) / currentPage.rect.height;
+  const middle = elements.indexOf(currentPage.page) + ratio;
+  return middle;
+  function isCenterCrossing({ rect: { y, height } }) {
+    return y <= scrollCenter && y + height >= scrollCenter;
+  }
 }
 var scrollElementStateAtom = (0, import_jotai.atom)(null);
 var scrollElementAtom = (0, import_jotai.atom)((get) => get(scrollElementStateAtom)?.div ?? null);
@@ -401,13 +399,14 @@ var previousSizeAtom = (0, import_jotai.atom)({ width: 0, height: 0 });
 var synchronizeScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
   const scrollElement = get(scrollElementAtom);
   const current = getCurrentViewerScroll(scrollElement);
-  if (!current.page) {
+  const previous = get(pageScrollStateAtom);
+  if (!current.page && !previous.page) {
     return;
   }
   const height = scrollElement?.clientHeight ?? 0;
   const width = scrollElement?.clientWidth ?? 0;
-  const previous = get(previousSizeAtom);
-  const isResizing = width === 0 || height === 0 || height !== previous.height || width !== previous.width;
+  const previousSize = get(previousSizeAtom);
+  const isResizing = width === 0 || height === 0 || height !== previousSize.height || width !== previousSize.width;
   if (isResizing) {
     set(restoreScrollAtom);
     set(previousSizeAtom, { width, height });
@@ -425,7 +424,7 @@ var viewerScrollAtom = (0, import_jotai.atom)(
 var restoreScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
   const { page, ratio } = get(pageScrollStateAtom);
   const scrollable = get(scrollElementAtom);
-  if (!scrollable || !page) {
+  if (!page || !scrollable || scrollable.clientHeight < 1) {
     return;
   }
   const { offsetTop, clientHeight } = page;
@@ -647,6 +646,7 @@ function createPageAtom(params) {
       fullWidth: index < compactWidthIndex || canMessUpRow,
       shouldBeOriginalSize,
       divCss,
+      imageProps: state.source && state.source.type !== "video" ? { ...mediaProps, onLoad: setCompleteState } : void 0,
       videoProps: state.source?.type === "video" ? {
         ...mediaProps,
         controls: true,
@@ -654,10 +654,6 @@ function createPageAtom(params) {
         loop: true,
         muted: true,
         onLoadedMetadata: setCompleteState
-      } : void 0,
-      imageProps: state.source?.type === "image" ? {
-        ...mediaProps,
-        onLoad: setCompleteState
       } : void 0
     };
     return page;
@@ -749,7 +745,6 @@ var scrollBarStyleFactorAtom = (0, import_jotai.atom)(
     hideBodyScrollBar(canScrollBarDuplicate);
   }
 );
-scrollBarStyleFactorAtom.onMount = (set) => set({});
 var viewerFullscreenAtom = (0, import_jotai.atom)((get) => {
   get(isFullscreenPreferredAtom);
   return get(isViewerFullscreenAtom);
@@ -861,6 +856,9 @@ i18nAtom.onMount = (set) => {
 function getLanguage() {
   for (const language of navigator.languages) {
     const locale = language.split("-")[0];
+    if (!locale) {
+      continue;
+    }
     const translation = translations[locale];
     if (translation) {
       return translation;
@@ -932,8 +930,8 @@ async function transactImmersive(get, set, value) {
       await set(viewerFullscreenAtom, value);
     }
   } catch (error) {
-    if (isUserGesturePermissionError(error)) {
-      showF11GuideGently();
+    if (shouldShowF11Guide({ error, noticeCount: get(fullscreenNoticeCountAtom) })) {
+      showF11Guide();
       return;
     }
     throw error;
@@ -949,17 +947,13 @@ async function transactImmersive(get, set, value) {
       focusWithoutScroll(externalFocusElement);
     }
   }
-  async function showF11GuideGently() {
-    if (get(fullscreenNoticeCountAtom) >= 3) {
-      return;
-    }
-    const isUserFullscreen = innerHeight === screen.height || innerWidth === screen.width;
-    if (isUserFullscreen) {
-      return;
-    }
-    (0, import_react_toastify.toast)(get(i18nAtom).fullScreenRestorationGuide, { type: "info" });
-    await timeout(5e3);
-    set(fullscreenNoticeCountAtom, (count) => (count ?? 0) + 1);
+  function showF11Guide() {
+    (0, import_react_toastify.toast)(get(i18nAtom).fullScreenRestorationGuide, {
+      type: "info",
+      onClose: () => {
+        set(fullscreenNoticeCountAtom, (count) => (count ?? 0) + 1);
+      }
+    });
   }
 }
 var isBeforeUnloadAtom = (0, import_jotai.atom)(false);
@@ -995,9 +989,8 @@ fullscreenSynchronizationAtom.onMount = (set) => {
   document.addEventListener("fullscreenchange", notify);
   return () => document.removeEventListener("fullscreenchange", notify);
 };
-var setViewerElementAtom = (0, import_jotai.atom)(null, async (get, set, element) => {
+var setViewerElementAtom = (0, import_jotai.atom)(null, (_get, set, element) => {
   set(scrollBarStyleFactorAtom, { viewerElement: element });
-  await set(setViewerImmersiveAtom, get(wasImmersiveAtom));
 });
 var viewerModeAtom = (0, import_jotai.atom)((get) => {
   const isFullscreen = get(viewerFullscreenAtom);
@@ -1056,6 +1049,10 @@ async function waitUnloadFinishRoughly() {
   for (let i = 0; i < 5; i++) {
     await timeout(100);
   }
+}
+function shouldShowF11Guide({ error, noticeCount }) {
+  const isUserFullscreen = innerHeight === screen.height || innerWidth === screen.width;
+  return isUserGesturePermissionError(error) && noticeCount < 3 && !isUserFullscreen;
 }
 var { styled, css, keyframes } = (0, import_react.createStitches)({});
 function DownloadCancel({ onClick }) {
@@ -1474,28 +1471,27 @@ function maybeNotHotkey(event) {
   const { ctrlKey, altKey, metaKey } = event;
   return ctrlKey || altKey || metaKey || isTyping(event);
 }
-var setScrollElementAtom = (0, import_jotai.atom)(null, (_get, set, div) => {
-  set(scrollElementStateAtom, (previous) => {
-    if (previous?.div === div) {
-      return previous;
-    }
-    previous?.resizeObserver.disconnect();
-    if (div === null) {
-      return null;
-    }
-    const setScrollElementSize = () => {
-      const size = { width: div.clientWidth, height: div.clientHeight };
-      set(scrollElementSizeAtom, size);
-      set(maxSizeAtom, size);
-    };
-    setScrollElementSize();
-    const resizeObserver = new ResizeObserver(() => {
-      setScrollElementSize();
-      set(restoreScrollAtom);
-    });
-    resizeObserver.observe(div);
-    return { div, resizeObserver };
-  });
+var setScrollElementAtom = (0, import_jotai.atom)(null, async (get, set, div) => {
+  const previous = get(scrollElementStateAtom);
+  if (previous?.div === div) {
+    return;
+  }
+  previous?.resizeObserver.disconnect();
+  if (div === null) {
+    set(scrollElementStateAtom, null);
+    return;
+  }
+  const setScrollElementSize = () => {
+    const size = div.getBoundingClientRect();
+    set(scrollElementSizeAtom, size);
+    set(maxSizeAtom, size);
+    Promise.resolve().then(() => set(restoreScrollAtom));
+  };
+  setScrollElementSize();
+  const resizeObserver = new ResizeObserver(setScrollElementSize);
+  resizeObserver.observe(div);
+  set(scrollElementStateAtom, { div, resizeObserver });
+  await set(setViewerImmersiveAtom, get(wasImmersiveAtom));
 });
 var Svg = styled("svg", {
   opacity: "50%",
@@ -2107,9 +2103,9 @@ function InnerViewer(props) {
     events: { scroll: (0, import_jotai.useSetAtom)(synchronizeScrollAtom), initialized: setupScroll }
   });
   (0, import_jotai.useAtomValue)(fullscreenSynchronizationAtom);
-  function setupScroll() {
+  async function setupScroll() {
     const selector = "div[data-overlayscrollbars-viewport]";
-    setScrollElement(virtualContainerRef.current?.querySelector(selector));
+    await setScrollElement(virtualContainerRef.current?.querySelector(selector));
   }
   (0, import_react3.useEffect)(() => {
     if (controller) {
@@ -2162,6 +2158,9 @@ function isDarkColor(rgbColor) {
     return false;
   }
   const [_, r, g, b] = match.map((x) => parseInt(x, 16));
+  if (!r || !g || !b) {
+    return false;
+  }
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance < 0.5;
 }
