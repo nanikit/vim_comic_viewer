@@ -37,8 +37,8 @@ async function assertScreenshotEqual(test: Deno.TestContext, screenshot: Uint8Ar
     await assertSnapshot(test, encodeBase64(encoded), "screenshot.png");
   } catch (error) {
     await Promise.all([
-      Deno.writeFile("actual.png", screenshot),
-      getSnapshot(test).then((binary) => Deno.writeFile("expected.png", binary)),
+      Deno.writeFile("test/failure/actual.png", screenshot),
+      getSnapshot(test).then((binary) => Deno.writeFile("test/failure/expected.png", binary)),
     ]);
     throw error;
   }

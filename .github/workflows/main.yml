@@ -35,6 +35,12 @@ jobs:
       - name: Check
         run: deno check src/mod.tsx
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: test-failure
+          path: test/failure/
+          if-no-files-found: ignore
+
       - name: Run tests
         run: deno test -A
 
