@@ -108,8 +108,8 @@ async function transactImmersive(get: Getter, set: Setter, value: boolean) {
       await set(viewerFullscreenAtom, value);
     }
   } catch (error) {
-    if (isUserGesturePermissionError(error)) {
-      showF11GuideGently();
+    if (shouldShowF11Guide({ error, noticeCount: get(fullscreenNoticeCountAtom) })) {
+      showF11Guide();
       return;
     }
     throw error;
@@ -127,19 +127,13 @@ async function transactImmersive(get: Getter, set: Setter, value: boolean) {
     }
   }
 
-  async function showF11GuideGently() {
-    if (get(fullscreenNoticeCountAtom) >= 3) {
-      return;
-    }
-
-    const isUserFullscreen = innerHeight === screen.height || innerWidth === screen.width;
-    if (isUserFullscreen) {
-      return;
-    }
-
-    toast(get(i18nAtom).fullScreenRestorationGuide, { type: "info" });
-    await timeout(5000);
-    set(fullscreenNoticeCountAtom, (count) => (count ?? 0) + 1);
+  function showF11Guide() {
+    toast(get(i18nAtom).fullScreenRestorationGuide, {
+      type: "info",
+      onClose: () => {
+        set(fullscreenNoticeCountAtom, (count) => (count ?? 0) + 1);
+      },
+    });
   }
 }
 
@@ -255,4 +249,9 @@ async function waitUnloadFinishRoughly() {
   for (let i = 0; i < 5; i++) {
     await timeout(100);
   }
+}
+
+function shouldShowF11Guide({ error, noticeCount }: { error: unknown; noticeCount: number }) {
+  const isUserFullscreen = innerHeight === screen.height || innerWidth === screen.width;
+  return isUserGesturePermissionError(error) && noticeCount < 3 && !isUserFullscreen;
 }
