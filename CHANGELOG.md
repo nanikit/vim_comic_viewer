@@ -4,6 +4,10 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+# 17.0.2
+
+- Fix immersive mode restoration.
+
 # 17.0.1
 
 - Fixed scrolling issue that occurred after refreshing in immersive mode
