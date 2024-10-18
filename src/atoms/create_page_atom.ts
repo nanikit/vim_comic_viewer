@@ -108,6 +108,7 @@ export function createPageAtom(
     status: "loading",
     source: initialSource ? toAdvancedObject(initialSource) : { src: undefined },
   });
+
   const loadAtom = atom(null, async (get, set, cause: "load" | "error") => {
     switch (cause) {
       case "load":
@@ -117,16 +118,14 @@ export function createPageAtom(
         break;
     }
 
+    if (isComplete()) {
+      return;
+    }
+
     let newSource: MediaSourceOrDelay;
 
     try {
-      while (isDelay(newSource)) {
-        if (isComplete()) {
-          return;
-        }
-
-        newSource = await set(refreshMediaSourceAtom, { cause, page: index });
-      }
+      newSource = await set(refreshMediaSourceAtom, { cause, page: index });
     } catch (error) {
       console.error(error);
       set(stateAtom, (previous) => ({
@@ -137,7 +136,12 @@ export function createPageAtom(
       return;
     }
 
-    if (isComplete() || isDelay(newSource)) {
+    if (isComplete()) {
+      return;
+    }
+
+    if (isDelay(newSource)) {
+      set(stateAtom, { status: "error", urls: [], source: { src: undefined } });
       return;
     }
 
@@ -149,7 +153,6 @@ export function createPageAtom(
       return get(stateAtom).status === "complete";
     }
   });
-  loadAtom.onMount = (set) => void set("load");
 
   const aggregateAtom = atom((get) => {
     get(loadAtom);
@@ -210,6 +213,7 @@ export function createPageAtom(
         } satisfies VideoProps
         : undefined,
     };
+
     return page;
   });
 
@@ -259,6 +263,10 @@ export function createPageAtom(
           }),
       },
     });
+  }
+
+  if (isDelay(initialSource)) {
+    set(loadAtom, "load");
   }
 
   return aggregateAtom;

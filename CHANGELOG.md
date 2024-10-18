@@ -4,6 +4,10 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+# 17.0.3
+
+- Fix infinite loop with empty string.
+
 # 17.0.2
 
 - Fix immersive mode restoration.
