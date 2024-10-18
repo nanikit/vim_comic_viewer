@@ -1,6 +1,6 @@
 import { atom, ExtractAtomValue, Getter, Root, Setter, toast } from "../deps.ts";
 import {
-  fullscreenNoticeCountAtom,
+  fullscreenNoticeCountPromiseAtom,
   isFullscreenPreferredAtom,
 } from "../features/preferences/atoms.ts";
 import { timeout } from "../utils.ts";
@@ -108,7 +108,8 @@ async function transactImmersive(get: Getter, set: Setter, value: boolean) {
       await set(viewerFullscreenAtom, value);
     }
   } catch (error) {
-    if (shouldShowF11Guide({ error, noticeCount: get(fullscreenNoticeCountAtom) })) {
+    const noticeCount = (await get(fullscreenNoticeCountPromiseAtom)) ?? 0;
+    if (shouldShowF11Guide({ error, noticeCount })) {
       showF11Guide();
       return;
     }
@@ -131,7 +132,7 @@ async function transactImmersive(get: Getter, set: Setter, value: boolean) {
     toast(get(i18nAtom).fullScreenRestorationGuide, {
       type: "info",
       onClose: () => {
-        set(fullscreenNoticeCountAtom, (count) => (count ?? 0) + 1);
+        set(fullscreenNoticeCountPromiseAtom, (count) => (count ?? 0) + 1);
       },
     });
   }
