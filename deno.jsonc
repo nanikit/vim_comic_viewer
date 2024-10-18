@@ -30,6 +30,7 @@
     "fflate": "npm:fflate@0.8.2",
     "jotai": "npm:jotai@2.10.0",
     "jotai/utils": "npm:jotai@2.10.0/utils",
+    "jotai-cache": "npm:jotai-cache@0.5.0",
     "overlayscrollbars-react": "npm:overlayscrollbars-react",
     "react-dom": "npm:react-dom",
     "react": "npm:react",

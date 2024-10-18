@@ -21,8 +21,7 @@ import {
 } from "../atoms/viewer_atoms.ts";
 import { atom, Getter, Setter } from "../deps.ts";
 import {
-  manualPreferencesAtom,
-  preferencesAtom,
+  effectivePreferencesAtom,
   preferencesPresetAtom,
   scriptPreferencesAtom,
 } from "../features/preferences/atoms.ts";
@@ -81,11 +80,7 @@ class Controller {
   }
 
   get effectivePreferences() {
-    return this.get(preferencesAtom);
-  }
-
-  get manualPreferences() {
-    return this.get(manualPreferencesAtom);
+    return this.get(effectivePreferencesAtom);
   }
 
   set elementKeyHandler(handler: ((event: KeyboardEvent) => void) | null) {
@@ -120,7 +115,7 @@ class Controller {
   setManualPreferences = (
     value: SetStateAction<Partial<Omit<PersistentPreferences, "isFullscreenPreferred">>>,
   ) => {
-    return this.set(manualPreferencesAtom, value);
+    return this.set(effectivePreferencesAtom, value);
   };
 
   setScriptPreferences = ({

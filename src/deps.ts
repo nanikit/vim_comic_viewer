@@ -3,6 +3,7 @@ export * from "fflate";
 export * from "https://deno.land/std@0.204.0/async/deferred.ts";
 export { atom, createStore, Provider, useAtom, useAtomValue, useSetAtom, useStore } from "jotai";
 export type { Atom, ExtractAtomValue, Getter, Setter } from "jotai";
+export { atomWithCache } from "jotai-cache";
 export {
   atomWithStorage,
   createJSONStorage,

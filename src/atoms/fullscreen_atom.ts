@@ -1,4 +1,4 @@
-import { atom, Deferred, deferred, ExtractAtomValue } from "../deps.ts";
+import { atom, Deferred, deferred, ExtractAtomValue, RESET } from "../deps.ts";
 import { isFullscreenPreferredAtom, wasImmersiveAtom } from "../features/preferences/atoms.ts";
 import { hideBodyScrollBar, setFullscreenElement } from "./dom/dom_helpers.ts";
 
@@ -70,13 +70,14 @@ export const transitionLockAtom = atom(null, async (get, set) => {
 
 export const isFullscreenPreferredSettingsAtom = atom(
   (get) => get(isFullscreenPreferredAtom),
-  async (get, set, value: boolean) => {
-    set(isFullscreenPreferredAtom, value);
+  async (get, set, value: boolean | typeof RESET) => {
+    const promise = set(isFullscreenPreferredAtom, value);
+    const appliedValue = value === RESET ? (await promise, get(isFullscreenPreferredAtom)) : value;
 
     const lock = await set(transitionLockAtom);
     try {
       const wasImmersive = get(wasImmersiveAtom);
-      const shouldEnterFullscreen = value && wasImmersive;
+      const shouldEnterFullscreen = appliedValue && wasImmersive;
       await set(viewerFullscreenAtom, shouldEnterFullscreen);
     } finally {
       lock.deferred.resolve();
