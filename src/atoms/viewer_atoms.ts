@@ -7,7 +7,7 @@ import { timeout } from "../utils.ts";
 import { PageAtom, pageAtomsAtom, refreshMediaSourceAtom } from "./create_page_atom.ts";
 import {
   focusWithoutScroll,
-  getCurrentScroll,
+  getPageScroll,
   getUrlImgs,
   isUserGesturePermissionError,
 } from "./dom/dom_helpers.ts";
@@ -52,27 +52,23 @@ const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   const imgs = getUrlImgs(urls);
   const viewerImgs = new Set(pages.flatMap((page) => page.div?.querySelector("img") ?? []));
   const originalImgs = imgs.filter((img) => !viewerImgs.has(img));
-  const { page, ratio, fullyVisiblePages: fullyVisibleWindowPages } = getCurrentScroll(
-    originalImgs,
-  );
-  if (!page) {
+
+  const ratio = getPageScroll(originalImgs);
+  if (!ratio) {
     return;
   }
 
-  const viewerPage = urlToViewerPages.get(page.src);
+  const viewerPage = urlToViewerPages.get(originalImgs[Math.floor(ratio)]?.src ?? "");
   if (!viewerPage) {
     return;
   }
 
-  const fullyVisiblePages = fullyVisibleWindowPages.flatMap((img) => {
-    return urlToViewerPages.get(img.src)?.div ?? [];
-  });
-
-  const snappedRatio = Math.abs(ratio - 0.5) < 0.1 ? 0.5 : ratio;
+  const pageRatio = ratio - Math.floor(ratio);
+  const snappedRatio = Math.abs(pageRatio - 0.5) < 0.1 ? 0.5 : pageRatio;
   set(pageScrollStateAtom, {
     page: viewerPage.div,
     ratio: snappedRatio,
-    fullyVisiblePages,
+    fullyVisiblePages: [],
   });
 });
 
