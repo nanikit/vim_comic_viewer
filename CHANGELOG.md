@@ -4,6 +4,10 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+# 18.0.1
+
+- Fix sometimes not appearing F11 failure guide.
+
 # 18.0.0
 
 - **Remove `manualPreferences` from `ViewerController`.**

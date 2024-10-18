@@ -19,10 +19,12 @@ export const [singlePageCountAtom] = atomWithPreferences("singlePageCount");
 export const [maxZoomOutExponentAtom] = atomWithPreferences("maxZoomOutExponent");
 export const [maxZoomInExponentAtom] = atomWithPreferences("maxZoomInExponent");
 export const [pageDirectionAtom] = atomWithPreferences("pageDirection");
-export const [isFullscreenPreferredAtom, asyncIsFullscreenPreferredAtom] = atomWithPreferences(
+export const [isFullscreenPreferredAtom, isFullscreenPreferredPromiseAtom] = atomWithPreferences(
   "isFullscreenPreferred",
 );
-export const [fullscreenNoticeCountAtom] = atomWithPreferences("fullscreenNoticeCount");
+export const [fullscreenNoticeCountAtom, fullscreenNoticeCountPromiseAtom] = atomWithPreferences(
+  "fullscreenNoticeCount",
+);
 
 /** Whether the viewer was in immersive mode when the page was unloaded. */
 export const wasImmersiveAtom = atomWithSession("vim_comic_viewer.was_immersive", false);
