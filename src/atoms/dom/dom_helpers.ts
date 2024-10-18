@@ -30,10 +30,9 @@ export function isVisible(element: HTMLElement) {
 export type PageScrollState<T extends HTMLElement> = {
   page: T | null;
   ratio: number;
-  fullyVisiblePages: T[];
 };
 
-const emptyScroll = { page: null, ratio: 0, fullyVisiblePages: [] };
+const emptyScroll = { page: null, ratio: 0 };
 
 export function getCurrentViewerScroll(
   container?: HTMLElement | null,
@@ -67,7 +66,7 @@ export function getCurrentScroll<T extends HTMLElement>(elements: T[]): PageScro
   const currentPage = elements[index]!;
   const ratio = middle - index;
 
-  const state = { page: currentPage, ratio, fullyVisiblePages: [] };
+  const state = { page: currentPage, ratio };
   return state;
 }
 
