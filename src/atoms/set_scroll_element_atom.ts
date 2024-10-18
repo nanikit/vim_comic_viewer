@@ -1,5 +1,5 @@
 import { atom } from "../deps.ts";
-import { wasImmersiveAtom } from "../features/preferences/atoms.ts";
+import { asyncIsFullscreenPreferredAtom, wasImmersiveAtom } from "../features/preferences/atoms.ts";
 import { maxSizeAtom } from "./create_page_atom.ts";
 import {
   restoreScrollAtom,
@@ -34,5 +34,6 @@ export const setScrollElementAtom = atom(null, async (get, set, div: HTMLDivElem
   resizeObserver.observe(div);
 
   set(scrollElementStateAtom, { div, resizeObserver });
+  await get(asyncIsFullscreenPreferredAtom);
   await set(setViewerImmersiveAtom, get(wasImmersiveAtom));
 });

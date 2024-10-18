@@ -17,10 +17,3 @@ export const defaultPreferences: PersistentPreferences = {
   isFullscreenPreferred: false,
   fullscreenNoticeCount: 0,
 };
-
-export function getEffectivePreferences(
-  scriptPreferences: Partial<PersistentPreferences>,
-  manualPreferences: Partial<PersistentPreferences>,
-) {
-  return { ...defaultPreferences, ...scriptPreferences, ...manualPreferences };
-}

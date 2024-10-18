@@ -1,10 +1,9 @@
 import { isFullscreenPreferredSettingsAtom } from "../../../../atoms/fullscreen_atom.ts";
 import { i18nAtom } from "../../../../atoms/i18n_atom.ts";
-import { useAtom, useAtomValue, useId, useSetAtom, useState } from "../../../../deps.ts";
+import { RESET, useAtom, useAtomValue, useId, useState } from "../../../../deps.ts";
 import { styled } from "../../../../vendors/stitches.ts";
 import {
   backgroundColorAtom,
-  manualPreferencesAtom,
   maxZoomInExponentAtom,
   maxZoomOutExponentAtom,
   pageDirectionAtom,
@@ -20,7 +19,6 @@ export function SettingsTab() {
   const [isFullscreenPreferred, setIsFullscreenPreferred] = useAtom(
     isFullscreenPreferredSettingsAtom,
   );
-  const setManualPreferences = useSetAtom(manualPreferencesAtom);
 
   const zoomOutExponentInputId = useId();
   const zoomInExponentInputId = useId();
@@ -35,12 +33,18 @@ export function SettingsTab() {
   const maxZoomIn = formatMultiplier(maxZoomInExponent);
 
   function tryReset() {
-    if (isResetConfirming) {
-      setManualPreferences({});
-      setResetConfirming(false);
-    } else {
+    if (!isResetConfirming) {
       setResetConfirming(true);
+      return;
     }
+
+    setMaxZoomInExponent(RESET);
+    setMaxZoomOutExponent(RESET);
+    setSinglePageCount(RESET);
+    setBackgroundColor(RESET);
+    setPageDirection(RESET);
+    setIsFullscreenPreferred(RESET);
+    setResetConfirming(false);
   }
 
   return (

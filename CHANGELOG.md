@@ -4,6 +4,11 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+# 18.0.0
+
+- **Remove `manualPreferences` from `ViewerController`.**
+- Try fixing immersive fullscreen restoration.
+
 # 17.0.3
 
 - Fix infinite loop with empty string.
