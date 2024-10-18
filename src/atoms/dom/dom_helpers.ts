@@ -82,7 +82,7 @@ export function isDocumentNotActiveError(error: unknown) {
   return message?.match(/Failed to execute '.*?' on 'Document': Document not active/) ?? false;
 }
 
-function getPageScroll(elements: HTMLElement[]): number | null {
+export function getPageScroll(elements: HTMLElement[]): number | null {
   if (!elements.length) {
     return null;
   }
