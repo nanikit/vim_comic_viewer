@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        17.0.3
+// @version        18.0.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -25,6 +25,7 @@
 // @resource       link:jotai/utils             https://cdn.jsdelivr.net/npm/jotai@2.10.0/utils.js
 // @resource       link:jotai/vanilla           https://cdn.jsdelivr.net/npm/jotai@2.10.0/vanilla.js
 // @resource       link:jotai/vanilla/utils     https://cdn.jsdelivr.net/npm/jotai@2.10.0/vanilla/utils.js
+// @resource       link:jotai-cache             https://cdn.jsdelivr.net/npm/jotai-cache@0.5.0/dist/cjs/atomWithCache.js
 // @resource       link:overlayscrollbars       https://cdn.jsdelivr.net/npm/overlayscrollbars@2.10.0/overlayscrollbars.cjs
 // @resource       link:overlayscrollbars-react https://cdn.jsdelivr.net/npm/overlayscrollbars-react@0.5.6/overlayscrollbars-react.cjs.js
 // @resource       link:react                   https://cdn.jsdelivr.net/npm/react@18.3.1/cjs/react.production.min.js
@@ -80,6 +81,7 @@ __export(deps_exports, {
   Tab: () => import_react2.Tab,
   ToastContainer: () => import_react_toastify.ToastContainer,
   atom: () => import_jotai.atom,
+  atomWithCache: () => import_jotai_cache.atomWithCache,
   atomWithStorage: () => import_utils.atomWithStorage,
   createContext: () => import_react3.createContext,
   createJSONStorage: () => import_utils.createJSONStorage,
@@ -130,6 +132,7 @@ function deferred() {
   return Object.assign(promise, methods);
 }
 var import_jotai = require("jotai");
+var import_jotai_cache = require("jotai-cache");
 var import_utils = require("jotai/utils");
 var import_overlayscrollbars_react = require("overlayscrollbars-react");
 var import_react_toastify = require("react-toastify");
@@ -173,60 +176,74 @@ var defaultPreferences = {
   isFullscreenPreferred: false,
   fullscreenNoticeCount: 0
 };
-function getEffectivePreferences(scriptPreferences, manualPreferences) {
-  return { ...defaultPreferences, ...scriptPreferences, ...manualPreferences };
-}
 var scriptPreferencesAtom = (0, import_jotai2.atom)({});
 var preferencesPresetAtom = (0, import_jotai2.atom)("default");
-var manualPreferencesAtomAtom = (0, import_jotai2.atom)((get) => {
-  const preset = get(preferencesPresetAtom);
-  const key = `vim_comic_viewer.preferences.${preset}`;
-  return atomWithGmValue(key, {});
-});
-var manualPreferencesAtom = (0, import_jotai2.atom)(
-  (get) => get(get(manualPreferencesAtomAtom)),
+var [backgroundColorAtom] = atomWithPreferences("backgroundColor");
+var [singlePageCountAtom] = atomWithPreferences("singlePageCount");
+var [maxZoomOutExponentAtom] = atomWithPreferences("maxZoomOutExponent");
+var [maxZoomInExponentAtom] = atomWithPreferences("maxZoomInExponent");
+var [pageDirectionAtom] = atomWithPreferences("pageDirection");
+var [isFullscreenPreferredAtom, asyncIsFullscreenPreferredAtom] = atomWithPreferences(
+  "isFullscreenPreferred"
+);
+var [fullscreenNoticeCountAtom] = atomWithPreferences("fullscreenNoticeCount");
+var wasImmersiveAtom = atomWithSession("vim_comic_viewer.was_immersive", false);
+var effectivePreferencesAtom = (0, import_jotai2.atom)(
+  (get) => ({
+    backgroundColor: get(backgroundColorAtom),
+    singlePageCount: get(singlePageCountAtom),
+    maxZoomOutExponent: get(maxZoomOutExponentAtom),
+    maxZoomInExponent: get(maxZoomInExponentAtom),
+    pageDirection: get(pageDirectionAtom),
+    isFullscreenPreferred: get(isFullscreenPreferredAtom),
+    fullscreenNoticeCount: get(fullscreenNoticeCountAtom)
+  }),
   (get, set, update) => {
-    const preferencesAtom2 = get(manualPreferencesAtomAtom);
-    if (typeof update !== "function") {
-      return set(preferencesAtom2, update);
+    if (typeof update === "function") {
+      const preferences = get(effectivePreferencesAtom);
+      const newPreferences = update(preferences);
+      return updatePreferences(newPreferences);
     }
-    return set(preferencesAtom2, async (preferencesPromise) => {
-      return update(await preferencesPromise);
-    });
+    return updatePreferences(update);
+    function updatePreferences(preferences) {
+      return Promise.all([
+        updateIfDefined(backgroundColorAtom, preferences.backgroundColor),
+        updateIfDefined(singlePageCountAtom, preferences.singlePageCount),
+        updateIfDefined(maxZoomOutExponentAtom, preferences.maxZoomOutExponent),
+        updateIfDefined(maxZoomInExponentAtom, preferences.maxZoomInExponent),
+        updateIfDefined(pageDirectionAtom, preferences.pageDirection),
+        updateIfDefined(isFullscreenPreferredAtom, preferences.isFullscreenPreferred),
+        updateIfDefined(fullscreenNoticeCountAtom, preferences.fullscreenNoticeCount)
+      ]);
+    }
+    function updateIfDefined(atom3, value) {
+      return value !== void 0 ? set(atom3, value) : Promise.resolve();
+    }
   }
 );
-var preferencesAtom = (0, import_jotai2.atom)((get) => {
-  const script = get(scriptPreferencesAtom);
-  const manual = get(manualPreferencesAtom);
-  if ("then" in manual) {
-    return new Promise((resolve) => {
-      manual.then((manual2) => resolve(getEffectivePreferences(script, manual2)));
-    });
-  }
-  return getEffectivePreferences(script, manual);
-});
-var backgroundColorAtom = atomWithPreferences("backgroundColor");
-var singlePageCountAtom = atomWithPreferences("singlePageCount");
-var maxZoomOutExponentAtom = atomWithPreferences("maxZoomOutExponent");
-var maxZoomInExponentAtom = atomWithPreferences("maxZoomInExponent");
-var pageDirectionAtom = atomWithPreferences("pageDirection");
-var isFullscreenPreferredAtom = atomWithPreferences("isFullscreenPreferred");
-var fullscreenNoticeCountAtom = atomWithPreferences("fullscreenNoticeCount");
-var wasImmersiveAtom = atomWithSession("vim_comic_viewer.was_immersive", false);
 function atomWithPreferences(key) {
-  const loadableAtom = (0, import_utils.loadable)(preferencesAtom);
-  return (0, import_jotai2.atom)(
-    (get) => {
-      const preferences = get(loadableAtom);
-      return preferences.state === "hasData" ? preferences.data[key] : defaultPreferences[key];
-    },
-    (_get, set, update) => {
-      return set(manualPreferencesAtom, (preferences) => ({
-        ...preferences,
-        [key]: typeof update === "function" ? update(preferences[key]) : update
-      }));
+  const asyncAtomAtom = (0, import_jotai2.atom)((get) => {
+    const preset = get(preferencesPresetAtom);
+    const qualifiedKey = `vim_comic_viewer.preferences.${preset}.${key}`;
+    return atomWithGmValue(qualifiedKey, void 0);
+  });
+  const cacheAtom = (0, import_jotai_cache.atomWithCache)((get) => get(get(asyncAtomAtom)));
+  const manualAtom = (0, import_jotai2.atom)((get) => get(cacheAtom), updater);
+  const loadableAtom = (0, import_utils.loadable)(manualAtom);
+  const effectiveAtom = (0, import_jotai2.atom)((get) => {
+    const value = get(loadableAtom);
+    if (value.state === "hasData" && value.data !== void 0) {
+      return value.data;
     }
-  );
+    return get(scriptPreferencesAtom)[key] ?? defaultPreferences[key];
+  }, updater);
+  return [effectiveAtom, manualAtom];
+  function updater(get, set, update) {
+    return set(
+      get(asyncAtomAtom),
+      (value) => typeof update === "function" ? Promise.resolve(value).then(update) : update
+    );
+  }
 }
 var utils_exports = {};
 __export(utils_exports, {
@@ -775,11 +792,12 @@ var transitionLockAtom = (0, import_jotai.atom)(null, async (get, set) => {
 var isFullscreenPreferredSettingsAtom = (0, import_jotai.atom)(
   (get) => get(isFullscreenPreferredAtom),
   async (get, set, value) => {
-    set(isFullscreenPreferredAtom, value);
+    const promise = set(isFullscreenPreferredAtom, value);
+    const appliedValue = value === import_utils.RESET ? (await promise, get(isFullscreenPreferredAtom)) : value;
     const lock = await set(transitionLockAtom);
     try {
       const wasImmersive = get(wasImmersiveAtom);
-      const shouldEnterFullscreen = value && wasImmersive;
+      const shouldEnterFullscreen = appliedValue && wasImmersive;
       await set(viewerFullscreenAtom, shouldEnterFullscreen);
     } finally {
       lock.deferred.resolve();
@@ -1348,10 +1366,7 @@ var Controller = class {
     return this.get(viewerModeAtom);
   }
   get effectivePreferences() {
-    return this.get(preferencesAtom);
-  }
-  get manualPreferences() {
-    return this.get(manualPreferencesAtom);
+    return this.get(effectivePreferencesAtom);
   }
   set elementKeyHandler(handler) {
     const { currentElementKeyHandler, container } = this;
@@ -1375,7 +1390,7 @@ var Controller = class {
     this.set(goNextAtom);
   };
   setManualPreferences = (value) => {
-    return this.set(manualPreferencesAtom, value);
+    return this.set(effectivePreferencesAtom, value);
   };
   setScriptPreferences = ({
     manualPreset,
@@ -1495,6 +1510,7 @@ var setScrollElementAtom = (0, import_jotai.atom)(null, async (get, set, div) =>
   const resizeObserver = new ResizeObserver(setScrollElementSize);
   resizeObserver.observe(div);
   set(scrollElementStateAtom, { div, resizeObserver });
+  await get(asyncIsFullscreenPreferredAtom);
   await set(setViewerImmersiveAtom, get(wasImmersiveAtom));
 });
 var Svg = styled("svg", {
@@ -1731,7 +1747,6 @@ function SettingsTab() {
   const [isFullscreenPreferred, setIsFullscreenPreferred] = (0, import_jotai.useAtom)(
     isFullscreenPreferredSettingsAtom
   );
-  const setManualPreferences = (0, import_jotai.useSetAtom)(manualPreferencesAtom);
   const zoomOutExponentInputId = (0, import_react3.useId)();
   const zoomInExponentInputId = (0, import_react3.useId)();
   const singlePageCountInputId = (0, import_react3.useId)();
@@ -1743,12 +1758,17 @@ function SettingsTab() {
   const maxZoomOut = formatMultiplier(maxZoomOutExponent);
   const maxZoomIn = formatMultiplier(maxZoomInExponent);
   function tryReset() {
-    if (isResetConfirming) {
-      setManualPreferences({});
-      setResetConfirming(false);
-    } else {
+    if (!isResetConfirming) {
       setResetConfirming(true);
+      return;
     }
+    setMaxZoomInExponent(import_utils.RESET);
+    setMaxZoomOutExponent(import_utils.RESET);
+    setSinglePageCount(import_utils.RESET);
+    setBackgroundColor(import_utils.RESET);
+    setPageDirection(import_utils.RESET);
+    setIsFullscreenPreferred(import_utils.RESET);
+    setResetConfirming(false);
   }
   return  React.createElement(ConfigSheet, null,  React.createElement(ConfigRow, null,  React.createElement(ConfigLabel, { htmlFor: zoomOutExponentInputId }, strings.maxZoomOut, ": ", maxZoomOut),  React.createElement(
     "input",
