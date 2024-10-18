@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        17.0.2
+// @version        17.0.3
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -583,14 +583,12 @@ function createPageAtom(params) {
       case "error":
         break;
     }
+    if (isComplete()) {
+      return;
+    }
     let newSource;
     try {
-      while (isDelay(newSource)) {
-        if (isComplete()) {
-          return;
-        }
-        newSource = await set2(refreshMediaSourceAtom, { cause, page: index });
-      }
+      newSource = await set2(refreshMediaSourceAtom, { cause, page: index });
     } catch (error) {
       console.error(error);
       set2(stateAtom, (previous) => ({
@@ -600,7 +598,11 @@ function createPageAtom(params) {
       }));
       return;
     }
-    if (isComplete() || isDelay(newSource)) {
+    if (isComplete()) {
+      return;
+    }
+    if (isDelay(newSource)) {
+      set2(stateAtom, { status: "error", urls: [], source: { src: void 0 } });
       return;
     }
     const source = toAdvancedSource(newSource);
@@ -610,7 +612,6 @@ function createPageAtom(params) {
       return get(stateAtom).status === "complete";
     }
   });
-  loadAtom.onMount = (set2) => void set2("load");
   const aggregateAtom = (0, import_jotai.atom)((get) => {
     get(loadAtom);
     const state = get(stateAtom);
@@ -698,6 +699,9 @@ function createPageAtom(params) {
         }
       }
     });
+  }
+  if (isDelay(initialSource)) {
+    set(loadAtom, "load");
   }
   return aggregateAtom;
 }
