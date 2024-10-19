@@ -1,3 +1,5 @@
+import type { Size } from "./size.ts";
+
 /**
  * Controls what contents are shown in the viewer. It can manage
  * error handling and throttling.
@@ -20,7 +22,7 @@ export type SourceRefreshParams = {
 
 export type ComicSourceParams = SourceRefreshParams & {
   /** Possible maximum viewer size until now. */
-  maxSize: { width: number; height: number };
+  maxSize: Size;
 };
 
 /** `undefined` and `{ src: undefined }` means delay the source loading. Viewer will request source again. */
@@ -38,9 +40,7 @@ type SimpleSource = string;
 /** Width and height are planned to be used for CLS prevention. */
 export type AdvancedSource = { src: string } & SourceProps;
 
-type SourceProps = {
-  width?: number;
-  height?: number;
+type SourceProps = Partial<Size> & {
   /** @default "image" */
   type?: MediaType;
 };
@@ -69,7 +69,7 @@ export async function* getMediaIterable(
     media: MediaSourceOrDelay;
     index: number;
     comic?: ComicSource;
-    maxSize: { width: number; height: number };
+    maxSize: Size;
   },
 ) {
   if (!isDelay(media)) {
