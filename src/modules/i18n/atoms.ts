@@ -1,6 +1,6 @@
-import { atom } from "../deps.ts";
-import en from "./i18n/en.json" with { type: "json" };
-import ko from "./i18n/ko.json" with { type: "json" };
+import { atom } from "../../deps.ts";
+import en from "./languages/en.json" with { type: "json" };
+import ko from "./languages/ko.json" with { type: "json" };
 
 const translations = { en, ko } as Record<string, typeof en>;
 

@@ -1,8 +1,8 @@
 import { PageAtom } from "../atoms/create_page_atom.ts";
-import { i18nAtom } from "../atoms/i18n_atom.ts";
 import { CircledX } from "../components/icons.tsx";
 import { Image, LinkColumn, Overlay, Spinner, Video } from "../components/spinner.tsx";
 import { MouseEventHandler, useAtomValue, useSetAtom } from "../deps.ts";
+import { i18nAtom } from "../modules/i18n/atoms.ts";
 
 export const Page = ({ atom, ...props }: { atom: PageAtom }) => {
   const {

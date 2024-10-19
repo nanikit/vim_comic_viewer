@@ -3,6 +3,7 @@ import {
   fullscreenNoticeCountPromiseAtom,
   isFullscreenPreferredAtom,
 } from "../features/preferences/atoms.ts";
+import { i18nAtom } from "../modules/i18n/atoms.ts";
 import { timeout } from "../utils.ts";
 import { PageAtom, pageAtomsAtom, refreshMediaSourceAtom } from "./create_page_atom.ts";
 import {
@@ -18,7 +19,6 @@ import {
   transitionLockAtom,
   viewerFullscreenAtom,
 } from "./fullscreen_atom.ts";
-import { i18nAtom } from "./i18n_atom.ts";
 import {
   pageScrollStateAtom,
   scrollElementAtom,

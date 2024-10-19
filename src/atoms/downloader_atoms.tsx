@@ -2,8 +2,8 @@ import { DownloadCancel } from "../components/download_cancel.tsx";
 import { atom, Id, toast } from "../deps.ts";
 import type { ComicSource } from "../helpers/comic_source.ts";
 import { download, DownloadProgress } from "../helpers/downloader.ts";
+import { i18nAtom } from "../modules/i18n/atoms.ts";
 import { save, timeout } from "../utils.ts";
-import { i18nAtom } from "./i18n_atom.ts";
 import { viewerStateAtom } from "./viewer_base_atoms.ts";
 
 const aborterAtom = atom<AbortController | null>(null);
