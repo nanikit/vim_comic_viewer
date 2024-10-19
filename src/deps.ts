@@ -12,7 +12,6 @@ export {
   selectAtom,
   splitAtom,
 } from "jotai/utils";
-export { useOverlayScrollbars } from "overlayscrollbars-react";
 
 export { Dialog, Tab } from "@headlessui/react";
 
