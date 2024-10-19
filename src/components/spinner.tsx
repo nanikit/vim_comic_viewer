@@ -1,4 +1,4 @@
-import { keyframes, styled } from "../vendors/stitches.ts";
+import { keyframes, styled } from "../modules/stitches.ts";
 
 const stretch = keyframes({
   "0%": {

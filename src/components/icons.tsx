@@ -1,5 +1,5 @@
 import { ButtonHTMLAttributes, SVGProps } from "../deps.ts";
-import { styled } from "../vendors/stitches.ts";
+import { styled } from "../modules/stitches.ts";
 
 const Svg = styled("svg", {
   opacity: "50%",
