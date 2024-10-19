@@ -14,22 +14,15 @@ import {
 import { type ViewerOptions, viewerStateAtom } from "../atoms/viewer_base_atoms.ts";
 import { FullscreenButton } from "../components/icons.tsx";
 import { Container, OverlayScroller } from "../components/scrollable_layout.ts";
-import {
-  HTMLProps,
-  useAtomValue,
-  useEffect,
-  useOverlayScrollbars,
-  useRef,
-  useSetAtom,
-} from "../deps.ts";
+import { HTMLProps, useAtomValue, useEffect, useRef, useSetAtom } from "../deps.ts";
 import { backgroundColorAtom, pageDirectionAtom } from "../features/preferences/atoms.ts";
 import { styled } from "../modules/stitches.ts";
 import { LeftBottomControl } from "./left_bottom_control.tsx";
 import { Page } from "./page.tsx";
 
 import { i18nAtom } from "../modules/i18n/atoms.ts";
+import { useOverlayScrollbars } from "../modules/overlayscrollbars.ts";
 import { ToastContainer } from "../modules/toast.ts";
-import "../vendors/external_css.ts";
 
 export function InnerViewer(
   props: HTMLProps<HTMLDivElement> & {
