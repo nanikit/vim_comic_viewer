@@ -1,9 +1,5 @@
 import { atom } from "../deps.ts";
-import {
-  restoreScrollAtom,
-  scrollElementSizeAtom,
-  scrollElementStateAtom,
-} from "../features/navigation/atoms.ts";
+import { correctScrollAtom, scrollElementStateAtom } from "../features/navigation/atoms.ts";
 import {
   isFullscreenPreferredPromiseAtom,
   wasImmersiveAtom,
@@ -26,10 +22,8 @@ export const setScrollElementAtom = atom(null, async (get, set, div: HTMLDivElem
 
   const setScrollElementSize = () => {
     const size = div.getBoundingClientRect();
-    set(scrollElementSizeAtom, size);
     set(maxSizeAtom, size);
-
-    Promise.resolve().then(() => set(restoreScrollAtom));
+    set(correctScrollAtom);
   };
 
   const resizeObserver = new ResizeObserver(setScrollElementSize);

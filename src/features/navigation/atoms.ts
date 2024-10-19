@@ -33,28 +33,37 @@ export const transferViewerScrollToWindowAtom = atom(null, (get) => {
   return true;
 });
 
-const previousSizeAtom = atom({ width: 0, height: 0 });
 export const synchronizeScrollAtom = atom(null, (get, set) => {
   const scrollElement = get(scrollElementAtom);
   if (!scrollElement) {
     return;
   }
 
+  if (set(correctScrollAtom)) {
+    return;
+  }
+
   const current = getCurrentViewerScroll(scrollElement);
-  const previous = get(pageScrollStateAtom);
-  if (!current.page && !previous.page) {
+  set(pageScrollStateAtom, current);
+  set(transferViewerScrollToWindowAtom);
+});
+
+export const correctScrollAtom = atom(null, (get, set) => {
+  const scrollElement = get(scrollElementAtom);
+  if (!scrollElement) {
     return;
   }
 
   const currentSize = scrollElement.getBoundingClientRect();
-  const previousSize = get(previousSizeAtom);
-  if (needsScrollRestoration(previousSize, currentSize)) {
-    set(restoreScrollAtom);
-    set(previousSizeAtom, currentSize);
-  } else {
-    set(pageScrollStateAtom, current);
-    set(transferViewerScrollToWindowAtom);
+  const previousSize = get(scrollElementSizeAtom);
+  if (!needsScrollRestoration(previousSize, currentSize)) {
+    return false;
   }
+
+  set(scrollElementSizeAtom, currentSize);
+  set(restoreScrollAtom);
+  setTimeout(() => set(restoreScrollAtom), 0);
+  return true;
 });
 
 const viewerScrollAtom = atom(
