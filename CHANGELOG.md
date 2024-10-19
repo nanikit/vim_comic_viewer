@@ -7,6 +7,7 @@
 # 18.0.1
 
 - Fix sometimes not appearing F11 failure guide.
+- Navigation 1px precision issue.
 
 # 18.0.0
 
