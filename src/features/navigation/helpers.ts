@@ -15,17 +15,13 @@ export function getCurrentViewerScroll(
     return emptyScroll;
   }
 
-  return getCurrentScroll(children);
-}
-
-export function getCurrentScroll<T extends HTMLElement>(elements: T[]): PageScrollState<T> {
-  const middle = getPageScroll(elements);
+  const middle = getPageScroll(children);
   if (middle === null) {
     return emptyScroll;
   }
 
   const index = Math.floor(middle);
-  const currentPage = elements[index]!;
+  const currentPage = children[index]!;
   const ratio = middle - index;
 
   const state = { page: currentPage, ratio };
