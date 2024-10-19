@@ -1,9 +1,10 @@
-import { atom, ExtractAtomValue, Getter, Root, Setter, toast } from "../deps.ts";
+import { atom, ExtractAtomValue, Getter, Root, Setter } from "../deps.ts";
 import {
   fullscreenNoticeCountPromiseAtom,
   isFullscreenPreferredAtom,
 } from "../features/preferences/atoms.ts";
 import { i18nAtom } from "../modules/i18n/atoms.ts";
+import { toast } from "../modules/toast.ts";
 import { timeout } from "../utils.ts";
 import { PageAtom, pageAtomsAtom, refreshMediaSourceAtom } from "./create_page_atom.ts";
 import {
