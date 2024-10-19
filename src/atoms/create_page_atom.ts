@@ -18,12 +18,11 @@ import {
   toAdvancedObject,
   toAdvancedSource,
 } from "../helpers/comic_source.ts";
+import type { Size } from "../helpers/size.ts";
 import { scrollElementSizeAtom } from "./navigation_atoms.ts";
 import { viewerOptionsAtom } from "./viewer_base_atoms.ts";
 
 export type PageAtom = ReturnType<typeof createPageAtom>;
-
-type Size = { width: number; height: number };
 
 type PageState =
   & {
@@ -53,7 +52,7 @@ type ImageProps = React.DetailedHTMLProps<
 const maxSizeStateAtom = atom({ width: screen.width, height: screen.height });
 export const maxSizeAtom = atom(
   (get) => get(maxSizeStateAtom),
-  (get, set, size: { width: number; height: number }) => {
+  (get, set, size: Size) => {
     const current = get(maxSizeStateAtom);
     if (size.width <= current.width && size.height <= current.height) {
       return;
