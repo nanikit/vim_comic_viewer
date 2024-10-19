@@ -19,7 +19,8 @@
   },
   "tasks": {
     "hooks:install": "deno run --allow-read=deno.json,deno.jsonc,.git/hooks/ --allow-write=.git/hooks/ jsr:@hongminhee/deno-task-hooks",
-    "hooks:pre-commit": "deno fmt --check && deno lint && deno check src/mod.tsx",
+    "hooks:pre-commit": "deno task check",
+    "check": "deno fmt --check && deno lint && deno check src/mod.tsx",
     "build": "deno run --allow-all https://raw.githubusercontent.com/nanikit/deno_userscript_linker/d84482723e6077f6f5d2c20b44e78c21ccb467a3/mod.ts --inject src/react_shim.ts -o vim_comic_viewer.user.js src/mod.tsx",
     "watch": "deno run --allow-all https://raw.githubusercontent.com/nanikit/deno_userscript_linker/d84482723e6077f6f5d2c20b44e78c21ccb467a3/mod.ts --inject src/react_shim.ts -o vim_comic_viewer.user.js src/mod.tsx --watch"
   },
