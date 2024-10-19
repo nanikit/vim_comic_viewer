@@ -75,17 +75,18 @@ export const restoreScrollAtom = atom(null, (get, set) => {
   set(viewerScrollAtom, restoredY);
 });
 
-export const goNextAtom = atom(null, (get, set) => {
-  const top = getNextScroll(get(scrollElementAtom));
-  if (top != null) {
-    set(viewerScrollAtom, top);
+export const goNextAtom = atom(null, (get) => {
+  const diffY = getNextScroll(get(scrollElementAtom));
+  if (diffY != null) {
+    // Use scrollBy because scrollTop precision is not enough on HiDPI.
+    get(scrollElementAtom)?.scrollBy({ top: diffY });
   }
 });
 
-export const goPreviousAtom = atom(null, (get, set) => {
-  const top = getPreviousScroll(get(scrollElementAtom));
-  if (top != null) {
-    set(viewerScrollAtom, top);
+export const goPreviousAtom = atom(null, (get) => {
+  const diffY = getPreviousScroll(get(scrollElementAtom));
+  if (diffY != null) {
+    get(scrollElementAtom)?.scrollBy({ top: diffY });
   }
 });
 
@@ -104,6 +105,7 @@ export const navigateAtom = atom(null, (get, set, event: React.MouseEvent) => {
   }
 });
 
+/** Returns difference of scrollTop to make the target section visible. */
 function getPreviousScroll(scrollElement: HTMLDivElement | null) {
   const { page } = getCurrentViewerScroll(scrollElement);
   if (!page || !scrollElement) {
@@ -112,12 +114,11 @@ function getPreviousScroll(scrollElement: HTMLDivElement | null) {
 
   const viewerHeight = scrollElement.clientHeight;
   const ignorableHeight = viewerHeight * 0.05;
-  // HACK: scrollTop has fractional px for unknown reason, -1 is monkey patching for it.
+  // HACK: scrollTop has fractional px on HiDPI, -1 is monkey patching for it.
   const remainingHeight = scrollElement.scrollTop - Math.ceil(page.offsetTop) - 1;
   if (remainingHeight > ignorableHeight) {
     const divisor = Math.ceil(remainingHeight / viewerHeight);
-    const delta = -Math.ceil(remainingHeight / divisor);
-    return Math.floor(scrollElement.scrollTop + delta);
+    return -Math.ceil(remainingHeight / divisor);
   } else {
     return getPreviousPageBottomOrStart(page);
   }
@@ -132,12 +133,11 @@ function getNextScroll(scrollElement: HTMLDivElement | null) {
   const viewerHeight = scrollElement.clientHeight;
   const ignorableHeight = viewerHeight * 0.05;
   const scrollBottom = scrollElement.scrollTop + viewerHeight;
-  // HACK: scrollTop has fractional px for unknown reason, -1 is monkey patching for it.
+  // HACK: scrollTop has fractional px on HiDPI, -1 is monkey patching for it.
   const remainingHeight = page.offsetTop + page.clientHeight - Math.ceil(scrollBottom) - 1;
   if (remainingHeight > ignorableHeight) {
     const divisor = Math.ceil(remainingHeight / viewerHeight);
-    const delta = Math.ceil(remainingHeight / divisor);
-    return Math.floor(scrollElement.scrollTop + delta);
+    return Math.ceil(remainingHeight / divisor);
   } else {
     return getNextPageTopOrEnd(page);
   }
@@ -154,12 +154,13 @@ function getNextPageTopOrEnd(page: HTMLElement) {
   while (cursor.nextElementSibling) {
     const next = cursor.nextElementSibling as HTMLElement;
     if (pageBottom <= next.offsetTop) {
-      return next.offsetTop;
+      return next.getBoundingClientRect().top;
     }
     cursor = next;
   }
 
-  return cursor.offsetTop + cursor.clientHeight;
+  const { y, height } = cursor.getBoundingClientRect();
+  return y + height;
 }
 
 function getPreviousPageBottomOrStart(page: HTMLElement) {
@@ -174,10 +175,13 @@ function getPreviousPageBottomOrStart(page: HTMLElement) {
     const previous = cursor.previousElementSibling as HTMLElement;
     const previousBottom = previous.offsetTop + previous.clientHeight;
     if (previousBottom <= pageTop) {
-      return previous.offsetTop + previous.clientHeight - scrollable.clientHeight;
+      const { bottom } = previous.getBoundingClientRect();
+      const { height } = scrollable.getBoundingClientRect();
+      return bottom - height;
     }
     cursor = previous;
   }
 
-  return cursor.offsetTop;
+  const { y, height } = cursor.getBoundingClientRect();
+  return y - height;
 }
