@@ -1,6 +1,5 @@
 import { atom } from "../../deps.ts";
-import type { Size } from "../../helpers/size.ts";
-import { getCurrentViewerScroll, type PageScrollState } from "./helpers.ts";
+import { getCurrentViewerScroll, needsScrollRestoration, type PageScrollState } from "./helpers.ts";
 
 export const scrollElementStateAtom = atom<
   {
@@ -186,11 +185,4 @@ function getPreviousPageBottomOrStart(page: HTMLElement) {
 
   const { y, height } = cursor.getBoundingClientRect();
   return y - height;
-}
-
-function needsScrollRestoration(previousSize: Size, currentSize: Size) {
-  const { width, height } = currentSize;
-  const { width: previousWidth, height: previousHeight } = previousSize;
-  return previousWidth === 0 || previousHeight === 0 ||
-    previousWidth !== width || previousHeight !== height;
 }
