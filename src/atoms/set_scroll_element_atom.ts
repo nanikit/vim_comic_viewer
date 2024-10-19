@@ -32,11 +32,11 @@ export const setScrollElementAtom = atom(null, async (get, set, div: HTMLDivElem
     Promise.resolve().then(() => set(restoreScrollAtom));
   };
 
-  setScrollElementSize();
   const resizeObserver = new ResizeObserver(setScrollElementSize);
   resizeObserver.observe(div);
 
   set(scrollElementStateAtom, { div, resizeObserver });
+  setScrollElementSize();
   await get(isFullscreenPreferredPromiseAtom);
   await set(setViewerImmersiveAtom, get(wasImmersiveAtom));
 });
