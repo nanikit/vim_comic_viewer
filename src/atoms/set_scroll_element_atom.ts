@@ -1,14 +1,14 @@
 import { atom } from "../deps.ts";
 import {
+  restoreScrollAtom,
+  scrollElementSizeAtom,
+  scrollElementStateAtom,
+} from "../features/navigation/atoms.ts";
+import {
   isFullscreenPreferredPromiseAtom,
   wasImmersiveAtom,
 } from "../features/preferences/atoms.ts";
 import { maxSizeAtom } from "./create_page_atom.ts";
-import {
-  restoreScrollAtom,
-  scrollElementSizeAtom,
-  scrollElementStateAtom,
-} from "./navigation_atoms.ts";
 import { setViewerImmersiveAtom } from "./viewer_atoms.ts";
 
 export const setScrollElementAtom = atom(null, async (get, set, div: HTMLDivElement | null) => {

@@ -2,6 +2,7 @@ import type { CSS } from "@stitches/react";
 import type { Setter } from "jotai";
 import type React from "npm:@types/react";
 import { atom } from "../deps.ts";
+import { scrollElementSizeAtom } from "../features/navigation/atoms.ts";
 import {
   maxZoomInExponentAtom,
   maxZoomOutExponentAtom,
@@ -19,7 +20,6 @@ import {
   toAdvancedSource,
 } from "../helpers/comic_source.ts";
 import type { Size } from "../helpers/size.ts";
-import { scrollElementSizeAtom } from "./navigation_atoms.ts";
 import { viewerOptionsAtom } from "./viewer_base_atoms.ts";
 
 export type PageAtom = ReturnType<typeof createPageAtom>;

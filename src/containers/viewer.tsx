@@ -1,7 +1,6 @@
 import { controllerCreationAtom, ViewerController } from "../atoms/controller_atom.ts";
 import { pageAtomsAtom } from "../atoms/create_page_atom.ts";
 import { viewerFullscreenAtom } from "../atoms/fullscreen_atom.ts";
-import { navigateAtom, synchronizeScrollAtom } from "../atoms/navigation_atoms.ts";
 import { setScrollElementAtom } from "../atoms/set_scroll_element_atom.ts";
 import {
   blockSelectionAtom,
@@ -15,6 +14,7 @@ import { type ViewerOptions, viewerStateAtom } from "../atoms/viewer_base_atoms.
 import { FullscreenButton } from "../components/icons.tsx";
 import { Container, OverlayScroller } from "../components/scrollable_layout.ts";
 import { HTMLProps, useAtomValue, useEffect, useRef, useSetAtom } from "../deps.ts";
+import { navigateAtom, synchronizeScrollAtom } from "../features/navigation/atoms.ts";
 import { backgroundColorAtom, pageDirectionAtom } from "../features/preferences/atoms.ts";
 import { styled } from "../modules/stitches.ts";
 import { LeftBottomControl } from "./left_bottom_control.tsx";

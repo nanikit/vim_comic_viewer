@@ -1,6 +1,6 @@
-import { atom } from "../deps.ts";
-import type { Size } from "../helpers/size.ts";
-import { getCurrentViewerScroll, PageScrollState } from "./dom/dom_helpers.ts";
+import { atom } from "../../deps.ts";
+import type { Size } from "../../helpers/size.ts";
+import { getCurrentViewerScroll, type PageScrollState } from "./helpers.ts";
 
 export const scrollElementStateAtom = atom<
   {

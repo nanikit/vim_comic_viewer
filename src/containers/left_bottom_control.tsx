@@ -1,8 +1,8 @@
 import { useAtomValue } from "jotai";
 import { downloadAndSaveAtom } from "../atoms/downloader_atoms.tsx";
-import { scrollElementAtom } from "../atoms/navigation_atoms.ts";
 import { DownloadButton, SettingsButton } from "../components/icons.tsx";
 import { useSetAtom, useState } from "../deps.ts";
+import { scrollElementAtom } from "../features/navigation/atoms.ts";
 import { ViewerDialog } from "../features/preferences/containers/viewer_dialog.tsx";
 import { styled } from "../modules/stitches.ts";
 
