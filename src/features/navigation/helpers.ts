@@ -1,3 +1,5 @@
+import type { Size } from "../../helpers/size.ts";
+
 export type PageScrollState<T extends HTMLElement> = {
   page: T | null;
   ratio: number;
@@ -54,4 +56,11 @@ export function getPageScroll(elements: HTMLElement[]): number | null {
   function isCenterCrossing({ rect: { y, height } }: { rect: { y: number; height: number } }) {
     return y <= scrollCenter && y + height >= scrollCenter;
   }
+}
+
+export function needsScrollRestoration(previousSize: Size, currentSize: Size) {
+  const { width, height } = currentSize;
+  const { width: previousWidth, height: previousHeight } = previousSize;
+  return previousWidth === 0 || previousHeight === 0 ||
+    previousWidth !== width || previousHeight !== height;
 }
