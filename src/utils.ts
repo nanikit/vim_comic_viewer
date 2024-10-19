@@ -1,3 +1,5 @@
+// These are exported to library users.
+
 export const timeout = (millisecond: number) =>
   new Promise((resolve) => setTimeout(resolve, millisecond));
 

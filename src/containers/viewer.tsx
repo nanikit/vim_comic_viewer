@@ -16,7 +16,6 @@ import { FullscreenButton } from "../components/icons.tsx";
 import { Container, OverlayScroller } from "../components/scrollable_layout.ts";
 import {
   HTMLProps,
-  ToastContainer,
   useAtomValue,
   useEffect,
   useOverlayScrollbars,
@@ -29,6 +28,7 @@ import { LeftBottomControl } from "./left_bottom_control.tsx";
 import { Page } from "./page.tsx";
 
 import { i18nAtom } from "../modules/i18n/atoms.ts";
+import { ToastContainer } from "../modules/toast.ts";
 import "../vendors/external_css.ts";
 
 export function InnerViewer(

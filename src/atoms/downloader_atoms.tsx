@@ -1,8 +1,9 @@
 import { DownloadCancel } from "../components/download_cancel.tsx";
-import { atom, Id, toast } from "../deps.ts";
+import { atom } from "../deps.ts";
 import type { ComicSource } from "../helpers/comic_source.ts";
 import { download, DownloadProgress } from "../helpers/downloader.ts";
 import { i18nAtom } from "../modules/i18n/atoms.ts";
+import { type Id, toast } from "../modules/toast.ts";
 import { save, timeout } from "../utils.ts";
 import { viewerStateAtom } from "./viewer_base_atoms.ts";
 
