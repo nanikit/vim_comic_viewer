@@ -24,7 +24,7 @@ import {
   useSetAtom,
 } from "../deps.ts";
 import { backgroundColorAtom, pageDirectionAtom } from "../features/preferences/atoms.ts";
-import { styled } from "../vendors/stitches.ts";
+import { styled } from "../modules/stitches.ts";
 import { LeftBottomControl } from "./left_bottom_control.tsx";
 import { Page } from "./page.tsx";
 

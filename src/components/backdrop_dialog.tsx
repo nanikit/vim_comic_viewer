@@ -1,6 +1,6 @@
 import { ComponentProps, useEffect, useState } from "../deps.ts";
+import { styled } from "../modules/stitches.ts";
 import { timeout } from "../utils.ts";
-import { styled } from "../vendors/stitches.ts";
 
 const Backdrop = styled("div", {
   position: "absolute",

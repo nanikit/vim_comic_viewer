@@ -1,4 +1,4 @@
-import { styled } from "../vendors/stitches.ts";
+import { styled } from "../modules/stitches.ts";
 
 export const Container = styled("div", {
   position: "relative",

@@ -4,7 +4,7 @@ import { scrollElementAtom } from "../atoms/navigation_atoms.ts";
 import { DownloadButton, SettingsButton } from "../components/icons.tsx";
 import { useSetAtom, useState } from "../deps.ts";
 import { ViewerDialog } from "../features/preferences/containers/viewer_dialog.tsx";
-import { styled } from "../vendors/stitches.ts";
+import { styled } from "../modules/stitches.ts";
 
 const LeftBottomFloat = styled("div", {
   position: "absolute",
