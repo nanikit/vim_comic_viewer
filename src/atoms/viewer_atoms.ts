@@ -1,5 +1,11 @@
 import { atom, ExtractAtomValue, Getter, Root, Setter } from "../deps.ts";
 import {
+  pageScrollStateAtom,
+  scrollElementAtom,
+  transferViewerScrollToWindowAtom,
+} from "../features/navigation/atoms.ts";
+import { getPageScroll } from "../features/navigation/helpers.ts";
+import {
   fullscreenNoticeCountPromiseAtom,
   isFullscreenPreferredAtom,
 } from "../features/preferences/atoms.ts";
@@ -7,12 +13,7 @@ import { i18nAtom } from "../modules/i18n/atoms.ts";
 import { toast } from "../modules/toast.ts";
 import { timeout } from "../utils.ts";
 import { PageAtom, pageAtomsAtom, refreshMediaSourceAtom } from "./create_page_atom.ts";
-import {
-  focusWithoutScroll,
-  getPageScroll,
-  getUrlImgs,
-  isUserGesturePermissionError,
-} from "./dom/dom_helpers.ts";
+import { focusWithoutScroll, getUrlImgs, isUserGesturePermissionError } from "./dom/dom_helpers.ts";
 import {
   isFullscreenPreferredSettingsAtom,
   isViewerImmersiveAtom,
@@ -20,11 +21,6 @@ import {
   transitionLockAtom,
   viewerFullscreenAtom,
 } from "./fullscreen_atom.ts";
-import {
-  pageScrollStateAtom,
-  scrollElementAtom,
-  transferViewerScrollToWindowAtom,
-} from "./navigation_atoms.ts";
 import {
   type ViewerOptions,
   viewerOptionsAtom,

@@ -9,7 +9,6 @@ import {
   isFullscreenPreferredSettingsAtom,
   scrollBarStyleFactorAtom,
 } from "../atoms/fullscreen_atom.ts";
-import { goNextAtom, goPreviousAtom } from "../atoms/navigation_atoms.ts";
 import {
   reloadErroredAtom,
   rootAtom,
@@ -20,6 +19,7 @@ import {
   viewerModeAtom,
 } from "../atoms/viewer_atoms.ts";
 import { atom, Getter, Setter } from "../deps.ts";
+import { goNextAtom, goPreviousAtom } from "../features/navigation/atoms.ts";
 import {
   effectivePreferencesAtom,
   preferencesPresetAtom,
