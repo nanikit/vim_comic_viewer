@@ -1,6 +1,6 @@
 import { isFullscreenPreferredSettingsAtom } from "../../../../atoms/fullscreen_atom.ts";
-import { i18nAtom } from "../../../../atoms/i18n_atom.ts";
 import { RESET, useAtom, useAtomValue, useId, useState } from "../../../../deps.ts";
+import { i18nAtom } from "../../../../modules/i18n/atoms.ts";
 import { styled } from "../../../../vendors/stitches.ts";
 import {
   backgroundColorAtom,

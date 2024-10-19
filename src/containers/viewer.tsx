@@ -1,7 +1,6 @@
 import { controllerCreationAtom, ViewerController } from "../atoms/controller_atom.ts";
 import { pageAtomsAtom } from "../atoms/create_page_atom.ts";
 import { viewerFullscreenAtom } from "../atoms/fullscreen_atom.ts";
-import { i18nAtom } from "../atoms/i18n_atom.ts";
 import { navigateAtom, synchronizeScrollAtom } from "../atoms/navigation_atoms.ts";
 import { setScrollElementAtom } from "../atoms/set_scroll_element_atom.ts";
 import {
@@ -29,6 +28,7 @@ import { styled } from "../vendors/stitches.ts";
 import { LeftBottomControl } from "./left_bottom_control.tsx";
 import { Page } from "./page.tsx";
 
+import { i18nAtom } from "../modules/i18n/atoms.ts";
 import "../vendors/external_css.ts";
 
 export function InnerViewer(

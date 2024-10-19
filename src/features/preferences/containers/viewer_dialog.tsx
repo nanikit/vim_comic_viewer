@@ -1,6 +1,6 @@
-import { i18nAtom } from "../../../atoms/i18n_atom.ts";
 import { BackdropDialog } from "../../../components/backdrop_dialog.tsx";
 import { Tab, useAtomValue } from "../../../deps.ts";
+import { i18nAtom } from "../../../modules/i18n/atoms.ts";
 import { styled } from "../../../vendors/stitches.ts";
 import { HelpTab } from "./tabs/help_tab.tsx";
 import { SettingsTab } from "./tabs/settings_tab.tsx";
