@@ -1,6 +1,6 @@
 import { atom, ExtractAtomValue, Getter, Root, Setter } from "../deps.ts";
 import {
-  pageScrollStateAtom,
+  pageScrollMiddleAtom,
   scrollElementAtom,
   transferViewerScrollToWindowAtom,
 } from "../features/navigation/atoms.ts";
@@ -62,7 +62,7 @@ const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
 
   const pageRatio = ratio - Math.floor(ratio);
   const snappedRatio = Math.abs(pageRatio - 0.5) < 0.1 ? 0.5 : pageRatio;
-  set(pageScrollStateAtom, { middle: Math.floor(ratio) + snappedRatio });
+  set(pageScrollMiddleAtom, Math.floor(ratio) + snappedRatio);
 });
 
 const externalFocusElementAtom = atom<Element | null>(null);
