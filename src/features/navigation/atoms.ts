@@ -1,10 +1,9 @@
 import { atom } from "../../deps.ts";
 import {
+  getCurrentMiddleFromScrollElement,
   getCurrentPageFromScrollElement,
-  getCurrentViewerScroll,
   getScrollPage,
   needsScrollRestoration,
-  type PageScrollState,
 } from "./helpers.ts";
 
 export const scrollElementStateAtom = atom<
@@ -16,10 +15,10 @@ export const scrollElementStateAtom = atom<
 export const scrollElementAtom = atom((get) => get(scrollElementStateAtom)?.div ?? null);
 
 export const scrollElementSizeAtom = atom({ width: 0, height: 0 });
-export const pageScrollStateAtom = atom<PageScrollState<HTMLDivElement>>(getCurrentViewerScroll());
+export const pageScrollMiddleAtom = atom(0.5);
 
 export const transferViewerScrollToWindowAtom = atom(null, (get) => {
-  const { middle } = get(pageScrollStateAtom);
+  const middle = get(pageScrollMiddleAtom);
   const page = getScrollPage(middle, get(scrollElementAtom));
   const src = page?.querySelector("img")?.src;
   if (!src) {
@@ -51,8 +50,11 @@ export const synchronizeScrollAtom = atom(null, (get, set) => {
     return;
   }
 
-  const current = getCurrentViewerScroll(scrollElement);
-  set(pageScrollStateAtom, current);
+  const middle = getCurrentMiddleFromScrollElement(scrollElement);
+  if (middle) {
+    set(pageScrollMiddleAtom, middle);
+  }
+
   set(transferViewerScrollToWindowAtom);
 });
 
@@ -82,7 +84,7 @@ const viewerScrollAtom = atom(
 );
 
 export const restoreScrollAtom = atom(null, (get, set) => {
-  const { middle } = get(pageScrollStateAtom);
+  const middle = get(pageScrollMiddleAtom);
   const scrollable = get(scrollElementAtom);
   const page = getScrollPage(middle, scrollable);
   if (!page || !scrollable || scrollable.clientHeight < 1) {

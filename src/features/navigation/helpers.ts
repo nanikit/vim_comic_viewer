@@ -1,46 +1,23 @@
 import type { Size } from "../../helpers/size.ts";
 
-export type PageScrollState<T extends HTMLElement> = {
-  middle: number;
-};
-
-const emptyScroll = { page: null, ratio: 0, middle: 0.5 };
-
 export function getScrollPage(middle: number, container?: HTMLElement | null) {
   const element = container?.firstElementChild?.children?.item(Math.floor(middle));
   return element instanceof HTMLElement ? element : null;
 }
 
-export function getCurrentViewerScroll(
-  container?: HTMLElement | null,
-): PageScrollState<HTMLDivElement> {
-  const children = [...(container?.firstElementChild?.children ?? [])] as HTMLDivElement[];
-  if (!container || !children.length) {
-    return emptyScroll;
-  }
-
-  const middle = getPageScroll(children);
-  if (middle === null) {
-    return emptyScroll;
-  }
-
-  const index = Math.floor(middle);
-  const currentPage = children[index]!;
-  const ratio = middle - index;
-
-  const state = { page: currentPage, ratio, middle };
-  return state;
-}
-
 export function getCurrentPageFromScrollElement(scrollElement?: HTMLElement | null) {
-  const children = [...(scrollElement?.firstElementChild?.children ?? [])] as HTMLDivElement[];
-  const middle = getPageScroll(children);
+  const middle = getCurrentMiddleFromScrollElement(scrollElement);
 
   if (!middle || !scrollElement) {
     return null;
   }
 
   return getScrollPage(middle, scrollElement);
+}
+
+export function getCurrentMiddleFromScrollElement(scrollElement: HTMLElement | null | undefined) {
+  const children = [...(scrollElement?.firstElementChild?.children ?? [])] as HTMLDivElement[];
+  return getPageScroll(children);
 }
 
 export function getPageScroll(elements: HTMLElement[]): number | null {
