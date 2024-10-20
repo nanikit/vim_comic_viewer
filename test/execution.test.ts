@@ -1,110 +1,113 @@
-import { decode, encode } from "https://deno.land/x/pngs@0.1.1/mod.ts";
-import { Browser, launch } from "jsr:@astral/astral";
-import { decodeBase64, encodeBase64 } from "jsr:@std/encoding/base64";
+import decode from "https://deno.land/x/wasm_image_decoder@v0.0.7/mod.js";
+import { assertEquals } from "jsr:@std/assert";
+import { delay } from "jsr:@std/async/delay";
 import { resolve } from "jsr:@std/path";
-import { assertSnapshot } from "jsr:@std/testing/snapshot";
-
-type Celestial = ReturnType<InstanceType<typeof Browser>["unsafelyGetCelestialBindings"]>;
-
-const snapshotContext = {
-  name: "",
-  count: 0,
-};
+import puppeteer from "npm:puppeteer";
 
 Deno.test("With test page", async (test) => {
   const server = runTestHttpServer();
 
-  const browser = await launch({ headless: true });
-  const page = await browser.newPage(`http://localhost:${server.addr.port}/test.html`);
-  await page.setViewportSize({ width: 1920, height: 1080 });
+  const headless = true;
+  const browser = await puppeteer.launch({
+    headless,
+    args: [...(headless ? [] : ["--auto-open-devtools-for-tabs"])],
+  });
+  const page = await browser.newPage();
+  await page.setViewport({
+    width: 1283,
+    height: 719,
+    deviceScaleFactor: 1.5,
+    isMobile: false,
+  });
+  await page.bringToFront();
+  await page.goto(`http://localhost:${server.addr.port}/test.html`);
   await page.waitForNetworkIdle();
 
   await test.step("when press i key", async (test) => {
-    await pressKey(page.unsafelyGetCelestialBindings());
+    await delay(300);
+    await page.keyboard.press("i");
 
-    await test.step("then viewer should be shown", async (test) => {
-      const screenshot = await page.screenshot();
-      await assertScreenshotEqual(test, screenshot);
+    const expectedRaw = await Deno.readFile("test/assets/snapshots/1-after-load.webp");
+    const expected = decode(expectedRaw);
+
+    await test.step("then viewer should be shown", async () => {
+      const actualRaw = await page.screenshot({ type: "webp" });
+      const actual = decode(actualRaw);
+
+      try {
+        assertEquals(actual.width, expected.width, "width");
+        assertEquals(actual.height, expected.height, "height");
+        for (let i = 0; i < actual.data.length; i++) {
+          assertEquals(actual.data[i], expected.data[i], `index: ${i}`);
+        }
+      } catch (error) {
+        await Promise.all([
+          Deno.writeFile("test/failure/1-actual.webp", bufferToUint8Array(actualRaw)),
+          Deno.writeFile("test/failure/1-expected.webp", expectedRaw),
+        ]);
+        throw error;
+      }
+    });
+  });
+
+  await test.step("when press j key", async (test) => {
+    await page.keyboard.press("j");
+
+    const expectedRaw = await Deno.readFile("test/assets/snapshots/2-j.webp");
+    const expected = decode(expectedRaw);
+
+    await test.step("then viewer should show next page", async () => {
+      const actualRaw = await page.screenshot({ type: "webp" });
+      const actual = decode(actualRaw);
+
+      try {
+        assertEquals(actual.width, expected.width, "width");
+        assertEquals(actual.height, expected.height, "height");
+        for (let i = 0; i < actual.data.length; i++) {
+          assertEquals(actual.data[i], expected.data[i], `index: ${i}`);
+        }
+      } catch (error) {
+        await Promise.all([
+          Deno.writeFile("test/failure/2-actual.webp", bufferToUint8Array(actualRaw)),
+          Deno.writeFile("test/failure/2-expected.webp", expectedRaw),
+        ]);
+        throw error;
+      }
     });
   });
 
   await Promise.all([browser.close(), server.shutdown()]);
 });
 
-async function assertScreenshotEqual(test: Deno.TestContext, screenshot: Uint8Array) {
-  const encoded = rewritePngForStability(screenshot);
-  try {
-    await assertSnapshot(test, encodeBase64(encoded), "screenshot.png");
-  } catch (error) {
-    await Promise.all([
-      Deno.writeFile("test/failure/actual.png", screenshot),
-      getSnapshot(test).then((binary) => Deno.writeFile("test/failure/expected.png", binary)),
-    ]);
-    throw error;
+function bufferToUint8Array(actualRaw: Uint8Array) {
+  const buffer = new Uint8Array(actualRaw.length);
+  for (let i = 0; i < actualRaw.length; i++) {
+    buffer[i] = actualRaw[i] as number;
   }
-}
-
-function rewritePngForStability(screenshot: Uint8Array) {
-  const { image, width, height, colorType, bitDepth } = decode(screenshot);
-  return encode(image, width, height, { color: colorType, depth: bitDepth });
-}
-
-async function getSnapshot(test: Deno.TestContext) {
-  const segments = import.meta.url.split("/");
-  const snapshotPath = [
-    ...segments.slice(0, segments.length - 1),
-    "__snapshots__",
-    segments.at(-1) + ".snap",
-  ].join("/");
-
-  const { snapshot } = await import(snapshotPath);
-  const name = `${getTestName(test)} ${++snapshotContext.count}`;
-  const data = JSON.parse(snapshot[name]);
-  return decodeBase64(data);
-}
-
-function getTestName(context: Deno.TestContext): string {
-  return context.parent ? `${getTestName(context.parent)} > ${context.name}` : context.name;
-}
-
-async function pressKey(celestial: Celestial) {
-  await celestial.Input.dispatchKeyEvent({
-    type: "keyDown",
-    key: "i",
-    code: "KeyI",
-    location: 0,
-    text: "i",
-  });
-  await celestial.Input.dispatchKeyEvent({
-    type: "keyUp",
-    key: "i",
-    code: "KeyI",
-    location: 0,
-    text: "i",
-  });
+  return buffer;
 }
 
 function runTestHttpServer() {
   return Deno.serve({ port: 0 }, async (request) => {
-    try {
-      const url = new URL(request.url);
-      const relativePath = url.pathname.replace(/^\//, "");
-      if (relativePath === "vim_comic_viewer.user.js") {
-        return giveStaticFile("vim_comic_viewer.user.js");
-      }
-
-      const filePath = resolve("test/assets", relativePath);
-      return await giveStaticFile(filePath);
-    } catch (error) {
-      if (error instanceof Deno.errors.NotFound) {
-        return new Response(null, { status: 404 });
-      }
-      throw error;
+    const url = new URL(request.url);
+    const relativePath = url.pathname.replace(/^\//, "");
+    if (relativePath === "vim_comic_viewer.user.js") {
+      return await giveStaticFile("vim_comic_viewer.user.js");
     }
+
+    const filePath = resolve("test/assets", relativePath);
+    return await giveStaticFile(filePath);
   });
 }
 
 async function giveStaticFile(path: string) {
-  const file = await Deno.open(path);
-  return new Response(file.readable);
+  try {
+    const file = await Deno.open(path);
+    return new Response(file.readable);
+  } catch (error) {
+    if (error instanceof Deno.errors.NotFound) {
+      return new Response(null, { status: 404 });
+    }
+    throw error;
+  }
 }
