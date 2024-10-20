@@ -1,5 +1,11 @@
 import { atom } from "../../deps.ts";
-import { getCurrentViewerScroll, needsScrollRestoration, type PageScrollState } from "./helpers.ts";
+import {
+  getCurrentPageFromScrollElement,
+  getCurrentViewerScroll,
+  getScrollPage,
+  needsScrollRestoration,
+  type PageScrollState,
+} from "./helpers.ts";
 
 export const scrollElementStateAtom = atom<
   {
@@ -13,7 +19,8 @@ export const scrollElementSizeAtom = atom({ width: 0, height: 0 });
 export const pageScrollStateAtom = atom<PageScrollState<HTMLDivElement>>(getCurrentViewerScroll());
 
 export const transferViewerScrollToWindowAtom = atom(null, (get) => {
-  const { page, middle } = get(pageScrollStateAtom);
+  const { middle } = get(pageScrollStateAtom);
+  const page = getScrollPage(middle, get(scrollElementAtom));
   const src = page?.querySelector("img")?.src;
   if (!src) {
     return false;
@@ -75,8 +82,9 @@ const viewerScrollAtom = atom(
 );
 
 export const restoreScrollAtom = atom(null, (get, set) => {
-  const { page, middle } = get(pageScrollStateAtom);
+  const { middle } = get(pageScrollStateAtom);
   const scrollable = get(scrollElementAtom);
+  const page = getScrollPage(middle, scrollable);
   if (!page || !scrollable || scrollable.clientHeight < 1) {
     return;
   }
@@ -119,7 +127,7 @@ export const navigateAtom = atom(null, (get, set, event: React.MouseEvent) => {
 
 /** Returns difference of scrollTop to make the target section visible. */
 function getPreviousScroll(scrollElement: HTMLDivElement | null) {
-  const { page } = getCurrentViewerScroll(scrollElement);
+  const page = getCurrentPageFromScrollElement(scrollElement);
   if (!page || !scrollElement) {
     return;
   }
@@ -137,7 +145,7 @@ function getPreviousScroll(scrollElement: HTMLDivElement | null) {
 }
 
 function getNextScroll(scrollElement: HTMLDivElement | null) {
-  const { page } = getCurrentViewerScroll(scrollElement);
+  const page = getCurrentPageFromScrollElement(scrollElement);
   if (!page || !scrollElement) {
     return;
   }
