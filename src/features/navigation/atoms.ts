@@ -6,7 +6,10 @@ import {
   getPreviousScroll,
   getScrollPage,
   getUrlMedia,
+  isMiddleScrollSame,
+  isVisible,
   needsScrollRestoration,
+  viewerScrollToWindow,
 } from "./helpers.ts";
 
 export const scrollElementStateAtom = atom<
@@ -20,8 +23,11 @@ export const scrollElementAtom = atom((get) => get(scrollElementStateAtom)?.div 
 export const scrollElementSizeAtom = atom({ width: 0, height: 0, scrollHeight: 0 });
 export const pageScrollMiddleAtom = atom(0.5);
 
+const lastScrollTransferMiddleAtom = atom(0.5);
+
 export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   const scrollable = get(scrollElementAtom);
+  const lastScrollTransferMiddle = get(lastScrollTransferMiddleAtom);
   if (!scrollable) {
     return;
   }
@@ -38,38 +44,30 @@ export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   const urls = [...urlToViewerPages.keys()];
   const media = getUrlMedia(urls);
   const siteMedia = media.filter((medium) => !viewerMedia.includes(medium));
-
-  const middle = getPageScroll(siteMedia);
-  if (!middle) {
+  const visibleMedia = siteMedia.filter(isVisible);
+  const middle = getPageScroll(visibleMedia);
+  if (!middle || isMiddleScrollSame(middle, lastScrollTransferMiddle)) {
     return;
   }
 
   const pageRatio = middle - Math.floor(middle);
   const snappedRatio = Math.abs(pageRatio - 0.5) < 0.1 ? 0.5 : pageRatio;
-  set(pageScrollMiddleAtom, Math.floor(middle) + snappedRatio);
+  const snappedMiddle = Math.floor(middle) + snappedRatio;
+
+  set(pageScrollMiddleAtom, snappedMiddle);
+  set(lastScrollTransferMiddleAtom, snappedMiddle);
 });
 
-export const transferViewerScrollToWindowAtom = atom(null, (get) => {
+export const transferViewerScrollToWindowAtom = atom(null, (get, set) => {
   const middle = get(pageScrollMiddleAtom);
-  const page = getScrollPage(middle, get(scrollElementAtom));
-  const src = page?.querySelector("img")?.src;
-  if (!src) {
-    return false;
-  }
+  const scrollElement = get(scrollElementAtom);
+  const lastScrollTransferMiddle = get(lastScrollTransferMiddleAtom);
 
-  const fileName = src.split("/").pop()?.split("?")[0];
-  const candidates = document.querySelectorAll<HTMLImageElement>(`img[src*="${fileName}"]`);
-  const original = [...candidates].find((img) => img.src === src);
-  const isViewerMedia = original?.parentElement === page;
-  if (!original || isViewerMedia) {
-    return false;
+  const top = viewerScrollToWindow({ middle, scrollElement, lastScrollTransferMiddle });
+  if (top !== undefined) {
+    set(lastScrollTransferMiddleAtom, middle);
+    scroll({ behavior: "instant", top });
   }
-
-  const rect = original.getBoundingClientRect();
-  const ratio = middle - Math.floor(middle);
-  const top = scrollY + rect.y + rect.height * ratio - innerHeight / 2;
-  scroll({ behavior: "instant", top });
-  return true;
 });
 
 export const synchronizeScrollAtom = atom(null, (get, set) => {

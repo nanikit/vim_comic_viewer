@@ -110,6 +110,52 @@ export function getUrlMedia(urls: string[]) {
   return pages;
 }
 
+export function isVisible(element: HTMLElement) {
+  if ("checkVisibility" in element) {
+    return element.checkVisibility();
+  }
+
+  const { x, y, width, height } = (element as HTMLElement).getBoundingClientRect();
+  const elements = document.elementsFromPoint(x + width / 2, y + height / 2);
+  return elements.includes(element);
+}
+
+export function isMiddleScrollSame(middle: number, lastScrollTransferMiddle: number) {
+  return Math.abs(middle - lastScrollTransferMiddle) < 0.01;
+}
+
+export function viewerScrollToWindow(
+  { middle, scrollElement, lastScrollTransferMiddle }: {
+    middle: number;
+    scrollElement: HTMLDivElement | null;
+    lastScrollTransferMiddle: number;
+  },
+) {
+  if (isMiddleScrollSame(middle, lastScrollTransferMiddle)) {
+    return;
+  }
+
+  const page = getScrollPage(middle, scrollElement);
+  const src = page?.querySelector("img")?.src;
+  if (!src) {
+    return;
+  }
+
+  const fileName = src.split("/").pop()?.split("?")[0];
+  const candidates = document.querySelectorAll<HTMLImageElement>(`img[src*="${fileName}"]`);
+  const original = [...candidates].find((img) => img.src === src);
+  const isViewerMedia = original?.parentElement === page;
+  if (!original || isViewerMedia) {
+    return;
+  }
+
+  const rect = original.getBoundingClientRect();
+  const ratio = middle - Math.floor(middle);
+  const top = scrollY + rect.y + rect.height * ratio - innerHeight / 2;
+
+  return top;
+}
+
 function getNextPageTopOrEnd(page: HTMLElement) {
   const scrollable = page.offsetParent;
   if (!scrollable) {

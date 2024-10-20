@@ -23,10 +23,6 @@ export function focusWithoutScroll(element?: HTMLElement) {
   element?.focus({ preventScroll: true });
 }
 
-export function isVisible(element: HTMLElement) {
-  return element.offsetWidth > 0 || element.offsetHeight > 0;
-}
-
 export function isUserGesturePermissionError(error: unknown) {
   // Failed to execute 'requestFullscreen' on 'Element': API can only be initiated by a user gesture.
   return (error as { message?: string })?.message === "Permissions check failed";
