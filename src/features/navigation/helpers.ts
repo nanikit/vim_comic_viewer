@@ -1,11 +1,15 @@
 import type { Size } from "../../helpers/size.ts";
 
 export type PageScrollState<T extends HTMLElement> = {
-  page: T | null;
   middle: number;
 };
 
 const emptyScroll = { page: null, ratio: 0, middle: 0.5 };
+
+export function getScrollPage(middle: number, container?: HTMLElement | null) {
+  const element = container?.firstElementChild?.children?.item(Math.floor(middle));
+  return element instanceof HTMLElement ? element : null;
+}
 
 export function getCurrentViewerScroll(
   container?: HTMLElement | null,
@@ -26,6 +30,17 @@ export function getCurrentViewerScroll(
 
   const state = { page: currentPage, ratio, middle };
   return state;
+}
+
+export function getCurrentPageFromScrollElement(scrollElement?: HTMLElement | null) {
+  const children = [...(scrollElement?.firstElementChild?.children ?? [])] as HTMLDivElement[];
+  const middle = getPageScroll(children);
+
+  if (!middle || !scrollElement) {
+    return null;
+  }
+
+  return getScrollPage(middle, scrollElement);
 }
 
 export function getPageScroll(elements: HTMLElement[]): number | null {

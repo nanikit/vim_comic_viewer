@@ -62,10 +62,7 @@ const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
 
   const pageRatio = ratio - Math.floor(ratio);
   const snappedRatio = Math.abs(pageRatio - 0.5) < 0.1 ? 0.5 : pageRatio;
-  set(pageScrollStateAtom, {
-    page: viewerPage.div,
-    middle: Math.floor(ratio) + snappedRatio,
-  });
+  set(pageScrollStateAtom, { middle: Math.floor(ratio) + snappedRatio });
 });
 
 const externalFocusElementAtom = atom<Element | null>(null);
