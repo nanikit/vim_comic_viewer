@@ -52,3 +52,84 @@ export function needsScrollRestoration(previousSize: Size, currentSize: Size) {
   return previousWidth === 0 || previousHeight === 0 ||
     previousWidth !== width || previousHeight !== height;
 }
+
+/** Returns difference of scrollTop to make the target section visible. */
+export function getPreviousScroll(scrollElement: HTMLDivElement | null) {
+  const page = getCurrentPageFromScrollElement(scrollElement);
+  if (!page || !scrollElement) {
+    return;
+  }
+
+  const viewerHeight = scrollElement.clientHeight;
+  const ignorableHeight = viewerHeight * 0.05;
+  // HACK: scrollTop has fractional px on HiDPI, -1 is monkey patching for it.
+  const remainingHeight = scrollElement.scrollTop - Math.ceil(page.offsetTop) - 1;
+  if (remainingHeight > ignorableHeight) {
+    const divisor = Math.ceil(remainingHeight / viewerHeight);
+    return -Math.ceil(remainingHeight / divisor);
+  } else {
+    return getPreviousPageBottomOrStart(page);
+  }
+}
+
+export function getNextScroll(scrollElement: HTMLDivElement | null) {
+  const page = getCurrentPageFromScrollElement(scrollElement);
+  if (!page || !scrollElement) {
+    return;
+  }
+
+  const viewerHeight = scrollElement.clientHeight;
+  const ignorableHeight = viewerHeight * 0.05;
+  const scrollBottom = scrollElement.scrollTop + viewerHeight;
+  // HACK: scrollTop has fractional px on HiDPI, -1 is monkey patching for it.
+  const remainingHeight = page.offsetTop + page.clientHeight - Math.ceil(scrollBottom) - 1;
+  if (remainingHeight > ignorableHeight) {
+    const divisor = Math.ceil(remainingHeight / viewerHeight);
+    return Math.ceil(remainingHeight / divisor);
+  } else {
+    return getNextPageTopOrEnd(page);
+  }
+}
+
+function getNextPageTopOrEnd(page: HTMLElement) {
+  const scrollable = page.offsetParent;
+  if (!scrollable) {
+    return;
+  }
+
+  const pageBottom = page.offsetTop + page.clientHeight;
+  let cursor = page as HTMLElement;
+  while (cursor.nextElementSibling) {
+    const next = cursor.nextElementSibling as HTMLElement;
+    if (pageBottom <= next.offsetTop) {
+      return next.getBoundingClientRect().top;
+    }
+    cursor = next;
+  }
+
+  const { y, height } = cursor.getBoundingClientRect();
+  return y + height;
+}
+
+function getPreviousPageBottomOrStart(page: HTMLElement) {
+  const scrollable = page.offsetParent;
+  if (!scrollable) {
+    return;
+  }
+
+  const pageTop = page.offsetTop;
+  let cursor = page as HTMLElement;
+  while (cursor.previousElementSibling) {
+    const previous = cursor.previousElementSibling as HTMLElement;
+    const previousBottom = previous.offsetTop + previous.clientHeight;
+    if (previousBottom <= pageTop) {
+      const { bottom } = previous.getBoundingClientRect();
+      const { height } = scrollable.getBoundingClientRect();
+      return bottom - height;
+    }
+    cursor = previous;
+  }
+
+  const { y, height } = cursor.getBoundingClientRect();
+  return y - height;
+}
