@@ -50,19 +50,19 @@ const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   const viewerImgs = new Set(pages.flatMap((page) => page.div?.querySelector("img") ?? []));
   const originalImgs = imgs.filter((img) => !viewerImgs.has(img));
 
-  const ratio = getPageScroll(originalImgs);
-  if (!ratio) {
+  const middle = getPageScroll(originalImgs);
+  if (!middle) {
     return;
   }
 
-  const viewerPage = urlToViewerPages.get(originalImgs[Math.floor(ratio)]?.src ?? "");
+  const viewerPage = urlToViewerPages.get(originalImgs[Math.floor(middle)]?.src ?? "");
   if (!viewerPage) {
     return;
   }
 
-  const pageRatio = ratio - Math.floor(ratio);
+  const pageRatio = middle - Math.floor(middle);
   const snappedRatio = Math.abs(pageRatio - 0.5) < 0.1 ? 0.5 : pageRatio;
-  set(pageScrollMiddleAtom, Math.floor(ratio) + snappedRatio);
+  set(pageScrollMiddleAtom, Math.floor(middle) + snappedRatio);
 });
 
 const externalFocusElementAtom = atom<Element | null>(null);
