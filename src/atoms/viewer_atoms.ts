@@ -1,10 +1,9 @@
-import { atom, ExtractAtomValue, Getter, Root, Setter } from "../deps.ts";
+import { atom, Getter, Root, Setter } from "../deps.ts";
 import {
-  pageScrollMiddleAtom,
   scrollElementAtom,
   transferViewerScrollToWindowAtom,
+  transferWindowScrollToViewerAtom,
 } from "../features/navigation/atoms.ts";
-import { getPageScroll } from "../features/navigation/helpers.ts";
 import {
   fullscreenNoticeCountPromiseAtom,
   isFullscreenPreferredAtom,
@@ -12,8 +11,8 @@ import {
 import { i18nAtom } from "../modules/i18n/atoms.ts";
 import { toast } from "../modules/toast.ts";
 import { timeout } from "../utils.ts";
-import { PageAtom, pageAtomsAtom, refreshMediaSourceAtom } from "./create_page_atom.ts";
-import { focusWithoutScroll, getUrlImgs, isUserGesturePermissionError } from "./dom/dom_helpers.ts";
+import { pageAtomsAtom, refreshMediaSourceAtom } from "./create_page_atom.ts";
+import { focusWithoutScroll, isUserGesturePermissionError } from "./dom/dom_helpers.ts";
 import {
   isFullscreenPreferredSettingsAtom,
   isViewerImmersiveAtom,
@@ -29,41 +28,6 @@ import {
 } from "./viewer_base_atoms.ts";
 
 export const rootAtom = atom<Root | null>(null);
-
-const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
-  type Page = ExtractAtomValue<PageAtom>;
-
-  const pages = get(pageAtomsAtom).map(get);
-  if (!pages.length) {
-    return;
-  }
-
-  const urlToViewerPages = new Map<string, Page>();
-  for (const page of pages) {
-    if (page.state.source?.src) {
-      urlToViewerPages.set(page.state.source.src, page);
-    }
-  }
-
-  const urls = [...urlToViewerPages.keys()];
-  const imgs = getUrlImgs(urls);
-  const viewerImgs = new Set(pages.flatMap((page) => page.div?.querySelector("img") ?? []));
-  const originalImgs = imgs.filter((img) => !viewerImgs.has(img));
-
-  const middle = getPageScroll(originalImgs);
-  if (!middle) {
-    return;
-  }
-
-  const viewerPage = urlToViewerPages.get(originalImgs[Math.floor(middle)]?.src ?? "");
-  if (!viewerPage) {
-    return;
-  }
-
-  const pageRatio = middle - Math.floor(middle);
-  const snappedRatio = Math.abs(pageRatio - 0.5) < 0.1 ? 0.5 : pageRatio;
-  set(pageScrollMiddleAtom, Math.floor(middle) + snappedRatio);
-});
 
 const externalFocusElementAtom = atom<Element | null>(null);
 export const setViewerImmersiveAtom = atom(null, async (get, set, value: boolean) => {

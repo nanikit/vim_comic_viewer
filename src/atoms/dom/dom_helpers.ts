@@ -27,17 +27,6 @@ export function isVisible(element: HTMLElement) {
   return element.offsetWidth > 0 || element.offsetHeight > 0;
 }
 
-export function getUrlImgs(urls: string[]) {
-  const pages = [];
-  const imgs = document.querySelectorAll<HTMLImageElement>("img[src]");
-  for (const img of imgs) {
-    if (urls.includes(img.src)) {
-      pages.push(img);
-    }
-  }
-  return pages;
-}
-
 export function isUserGesturePermissionError(error: unknown) {
   // Failed to execute 'requestFullscreen' on 'Element': API can only be initiated by a user gesture.
   return (error as { message?: string })?.message === "Permissions check failed";

@@ -2,8 +2,10 @@ import { atom } from "../../deps.ts";
 import {
   getCurrentMiddleFromScrollElement,
   getNextScroll,
+  getPageScroll,
   getPreviousScroll,
   getScrollPage,
+  getUrlMedia,
   needsScrollRestoration,
 } from "./helpers.ts";
 
@@ -17,6 +19,35 @@ export const scrollElementAtom = atom((get) => get(scrollElementStateAtom)?.div 
 
 export const scrollElementSizeAtom = atom({ width: 0, height: 0, scrollHeight: 0 });
 export const pageScrollMiddleAtom = atom(0.5);
+
+export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
+  const scrollable = get(scrollElementAtom);
+  if (!scrollable) {
+    return;
+  }
+
+  const viewerMedia = [
+    ...scrollable.querySelectorAll<HTMLImageElement | HTMLVideoElement>("img[src], video[src]"),
+  ];
+
+  const urlToViewerPages = new Map<string, HTMLElement>();
+  for (const media of viewerMedia) {
+    urlToViewerPages.set(media.src, media);
+  }
+
+  const urls = [...urlToViewerPages.keys()];
+  const media = getUrlMedia(urls);
+  const siteMedia = media.filter((medium) => !viewerMedia.includes(medium));
+
+  const middle = getPageScroll(siteMedia);
+  if (!middle) {
+    return;
+  }
+
+  const pageRatio = middle - Math.floor(middle);
+  const snappedRatio = Math.abs(pageRatio - 0.5) < 0.1 ? 0.5 : pageRatio;
+  set(pageScrollMiddleAtom, Math.floor(middle) + snappedRatio);
+});
 
 export const transferViewerScrollToWindowAtom = atom(null, (get) => {
   const middle = get(pageScrollMiddleAtom);

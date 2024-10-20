@@ -97,6 +97,19 @@ export function getNextScroll(scrollElement: HTMLDivElement | null) {
   }
 }
 
+export function getUrlMedia(urls: string[]) {
+  const pages = [];
+  const imgs = document.querySelectorAll<HTMLImageElement | HTMLVideoElement>(
+    "img[src], video[src]",
+  );
+  for (const img of imgs) {
+    if (urls.includes(img.src)) {
+      pages.push(img);
+    }
+  }
+  return pages;
+}
+
 function getNextPageTopOrEnd(page: HTMLElement) {
   const scrollable = page.offsetParent;
   if (!scrollable) {
