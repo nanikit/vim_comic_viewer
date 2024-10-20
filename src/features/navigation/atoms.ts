@@ -15,7 +15,7 @@ export const scrollElementStateAtom = atom<
 >(null);
 export const scrollElementAtom = atom((get) => get(scrollElementStateAtom)?.div ?? null);
 
-export const scrollElementSizeAtom = atom({ width: 0, height: 0 });
+export const scrollElementSizeAtom = atom({ width: 0, height: 0, scrollHeight: 0 });
 export const pageScrollMiddleAtom = atom(0.5);
 
 export const transferViewerScrollToWindowAtom = atom(null, (get) => {
@@ -64,15 +64,21 @@ export const correctScrollAtom = atom(null, (get, set) => {
   if (!scrollElement) {
     return;
   }
-
-  const currentSize = scrollElement.getBoundingClientRect();
   const previousSize = get(scrollElementSizeAtom);
+
+  const rect = scrollElement.getBoundingClientRect();
+  const currentSize = {
+    width: rect.width,
+    height: rect.height,
+    scrollHeight: scrollElement.scrollHeight,
+  };
   if (!needsScrollRestoration(previousSize, currentSize)) {
     return false;
   }
 
   set(scrollElementSizeAtom, currentSize);
   set(restoreScrollAtom);
+  // It handles shouldBeOriginalSize change.
   setTimeout(() => set(restoreScrollAtom), 0);
   return true;
 });

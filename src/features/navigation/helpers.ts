@@ -1,5 +1,9 @@
 import type { Size } from "../../helpers/size.ts";
 
+type ScrollSize = Size & {
+  scrollHeight: number;
+};
+
 export function getScrollPage(middle: number, container?: HTMLElement | null) {
   const element = container?.firstElementChild?.children?.item(Math.floor(middle));
   return element instanceof HTMLElement ? element : null;
@@ -46,11 +50,13 @@ export function getPageScroll(elements: HTMLElement[]): number | null {
   }
 }
 
-export function needsScrollRestoration(previousSize: Size, currentSize: Size) {
-  const { width, height } = currentSize;
-  const { width: previousWidth, height: previousHeight } = previousSize;
+export function needsScrollRestoration(previousSize: ScrollSize, currentSize: ScrollSize) {
+  const { width, height, scrollHeight } = currentSize;
+  const { width: previousWidth, height: previousHeight, scrollHeight: previousScrollHeight } =
+    previousSize;
   return previousWidth === 0 || previousHeight === 0 ||
-    previousWidth !== width || previousHeight !== height;
+    previousWidth !== width || previousHeight !== height ||
+    previousScrollHeight !== scrollHeight;
 }
 
 /** Returns difference of scrollTop to make the target section visible. */
