@@ -3,9 +3,10 @@ import type { Size } from "../../helpers/size.ts";
 export type PageScrollState<T extends HTMLElement> = {
   page: T | null;
   ratio: number;
+  middle: number;
 };
 
-const emptyScroll = { page: null, ratio: 0 };
+const emptyScroll = { page: null, ratio: 0, middle: 0.5 };
 
 export function getCurrentViewerScroll(
   container?: HTMLElement | null,
@@ -24,7 +25,7 @@ export function getCurrentViewerScroll(
   const currentPage = children[index]!;
   const ratio = middle - index;
 
-  const state = { page: currentPage, ratio };
+  const state = { page: currentPage, ratio, middle };
   return state;
 }
 
