@@ -2,7 +2,6 @@ import type { Size } from "../../helpers/size.ts";
 
 export type PageScrollState<T extends HTMLElement> = {
   page: T | null;
-  ratio: number;
   middle: number;
 };
 
