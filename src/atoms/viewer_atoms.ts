@@ -65,6 +65,7 @@ const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   set(pageScrollStateAtom, {
     page: viewerPage.div,
     ratio: snappedRatio,
+    middle: ratio,
   });
 });
 
