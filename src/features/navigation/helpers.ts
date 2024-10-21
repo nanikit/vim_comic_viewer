@@ -143,9 +143,11 @@ export function viewerScrollToWindow(
 
   const fileName = src.split("/").pop()?.split("?")[0];
   const candidates = document.querySelectorAll<HTMLImageElement>(`img[src*="${fileName}"]`);
-  const original = [...candidates].find((img) => img.src === src);
-  const isViewerMedia = original?.parentElement === page;
-  if (!original || isViewerMedia) {
+  const originals = [...candidates].filter((img) =>
+    img.src === src && img.parentElement !== page && isVisible(img)
+  );
+  const original = originals.length === 1 ? originals[0] : null;
+  if (!original) {
     return;
   }
 

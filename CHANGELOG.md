@@ -4,6 +4,10 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+# 18.1.1
+
+- Fix scroll transfer more.
+
 # 18.1.0
 
 - _Do not transfer scroll to window when viewer scroll is not changed._
