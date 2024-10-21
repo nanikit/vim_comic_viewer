@@ -6,6 +6,8 @@ export type ViewerOptions = {
   mediaProps?: Record<string, string>;
   /** do not synchronize scroll position if true. */
   noSyncScroll?: boolean;
+  onNextSeries?: () => void;
+  onPreviousSeries?: () => void;
 };
 
 export const viewerOptionsAtom = atom<ViewerOptions>({});

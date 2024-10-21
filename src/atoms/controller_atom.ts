@@ -162,52 +162,13 @@ class Controller {
       return false;
     }
 
-    switch (event.key) {
-      case "j":
-      case "ArrowDown":
-        event.stopPropagation();
-        event.preventDefault();
-        this.goNext();
-        break;
-      case "k":
-      case "ArrowUp":
-        event.stopPropagation();
-        event.preventDefault();
-        this.goPrevious();
-        break;
-      case ";":
-        event.stopPropagation();
-        this.downloader?.downloadAndSave();
-        break;
-      case "/":
-        event.stopPropagation();
-        (async () => {
-          const effectivePreferences = await this.effectivePreferences;
-          await this.setManualPreferences((preferences) => ({
-            ...preferences,
-            singlePageCount: effectivePreferences.singlePageCount + 1,
-          }));
-        })();
-        break;
-      case "?":
-        event.stopPropagation();
-        (async () => {
-          const effectivePreferences = await this.effectivePreferences;
-          await this.setManualPreferences((preferences) => ({
-            ...preferences,
-            singlePageCount: Math.max(0, effectivePreferences.singlePageCount - 1),
-          }));
-        })();
-        break;
-      case "'":
-        event.stopPropagation();
-        this.reloadErrored();
-        break;
-      default:
-        return false;
+    const isHandled = this.handleElementKey(event);
+    if (isHandled) {
+      event.stopPropagation();
+      event.preventDefault();
     }
 
-    return true;
+    return isHandled;
   };
 
   defaultGlobalKeyHandler = (event: KeyboardEvent): boolean => {
@@ -225,6 +186,56 @@ class Controller {
     }
     return false;
   };
+
+  private handleElementKey(event: KeyboardEvent) {
+    switch (event.key) {
+      case "j":
+      case "ArrowDown":
+      case "q":
+        this.goNext();
+        return true;
+      case "k":
+      case "ArrowUp":
+        this.goPrevious();
+        return true;
+      case "h":
+      case "ArrowLeft":
+        if (this.options.onPreviousSeries) {
+          this.options.onPreviousSeries();
+          return true;
+        }
+        return false;
+      case "l":
+      case "ArrowRight":
+      case "w":
+        if (this.options.onNextSeries) {
+          this.options.onNextSeries();
+          return true;
+        }
+        return false;
+      case ";":
+        this.downloader?.downloadAndSave();
+        return true;
+      case "/":
+        void this.addSinglePageCount(1);
+        return true;
+      case "?":
+        void this.addSinglePageCount(-1);
+        return true;
+      case "'":
+        this.reloadErrored();
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  private async addSinglePageCount(diff: number) {
+    await this.setManualPreferences((preferences) => ({
+      ...preferences,
+      singlePageCount: this.effectivePreferences.singlePageCount + diff,
+    }));
+  }
 }
 
 function maybeNotHotkey(event: KeyboardEvent) {

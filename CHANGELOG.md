@@ -7,6 +7,7 @@
 # 18.1.0
 
 - _Do not transfer scroll to window when viewer scroll is not changed._
+- Add `onNextSeries`, `onPreviousSeries` options.
 - Fix sometimes not appearing F11 failure guide.
 - Navigation 1px precision issue.
 
