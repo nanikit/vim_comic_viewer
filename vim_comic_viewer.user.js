@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        18.0.0
+// @version        18.1.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -79,7 +79,6 @@ __export(deps_exports, {
   Provider: () => import_jotai.Provider,
   RESET: () => import_utils.RESET,
   Tab: () => import_react2.Tab,
-  ToastContainer: () => import_react_toastify.ToastContainer,
   atom: () => import_jotai.atom,
   atomWithCache: () => import_jotai_cache.atomWithCache,
   atomWithStorage: () => import_utils.atomWithStorage,
@@ -94,7 +93,6 @@ __export(deps_exports, {
   loadable: () => import_utils.loadable,
   selectAtom: () => import_utils.selectAtom,
   splitAtom: () => import_utils.splitAtom,
-  toast: () => import_react_toastify.toast,
   useAtom: () => import_jotai.useAtom,
   useAtomValue: () => import_jotai.useAtomValue,
   useCallback: () => import_react3.useCallback,
@@ -103,7 +101,6 @@ __export(deps_exports, {
   useImperativeHandle: () => import_react3.useImperativeHandle,
   useLayoutEffect: () => import_react3.useLayoutEffect,
   useMemo: () => import_react3.useMemo,
-  useOverlayScrollbars: () => import_overlayscrollbars_react.useOverlayScrollbars,
   useReducer: () => import_react3.useReducer,
   useRef: () => import_react3.useRef,
   useSetAtom: () => import_jotai.useSetAtom,
@@ -134,11 +131,278 @@ function deferred() {
 var import_jotai = require("jotai");
 var import_jotai_cache = require("jotai-cache");
 var import_utils = require("jotai/utils");
-var import_overlayscrollbars_react = require("overlayscrollbars-react");
-var import_react_toastify = require("react-toastify");
 var import_react2 = require("@headlessui/react");
 var import_react3 = require("react");
 var import_react_dom = require("react-dom");
+function getScrollPage(middle, container) {
+  const element = container?.firstElementChild?.children?.item(Math.floor(middle));
+  return element instanceof HTMLElement ? element : null;
+}
+function getCurrentPageFromScrollElement(scrollElement) {
+  const middle = getCurrentMiddleFromScrollElement(scrollElement);
+  if (!middle || !scrollElement) {
+    return null;
+  }
+  return getScrollPage(middle, scrollElement);
+}
+function getCurrentMiddleFromScrollElement(scrollElement) {
+  const children = [...scrollElement?.firstElementChild?.children ?? []];
+  return getPageScroll(children);
+}
+function getPageScroll(elements) {
+  if (!elements.length) {
+    return null;
+  }
+  const scrollCenter = innerHeight / 2;
+  const pages = elements.map((page) => ({ page, rect: page.getBoundingClientRect() }));
+  const currentPages = pages.filter(isCenterCrossing);
+  const currentPage = currentPages[Math.floor(currentPages.length / 2)];
+  if (!currentPage) {
+    return null;
+  }
+  const ratio = 1 - (currentPage.rect.bottom - scrollCenter) / currentPage.rect.height;
+  const middle = elements.indexOf(currentPage.page) + ratio;
+  return middle;
+  function isCenterCrossing({ rect: { y, height } }) {
+    return y <= scrollCenter && y + height >= scrollCenter;
+  }
+}
+function needsScrollRestoration(previousSize, currentSize) {
+  const { width, height, scrollHeight } = currentSize;
+  const { width: previousWidth, height: previousHeight, scrollHeight: previousScrollHeight } = previousSize;
+  return previousWidth === 0 || previousHeight === 0 || previousWidth !== width || previousHeight !== height || previousScrollHeight !== scrollHeight;
+}
+function getPreviousScroll(scrollElement) {
+  const page = getCurrentPageFromScrollElement(scrollElement);
+  if (!page || !scrollElement) {
+    return;
+  }
+  const viewerHeight = scrollElement.clientHeight;
+  const ignorableHeight = viewerHeight * 0.05;
+  const remainingHeight = scrollElement.scrollTop - Math.ceil(page.offsetTop) - 1;
+  if (remainingHeight > ignorableHeight) {
+    const divisor = Math.ceil(remainingHeight / viewerHeight);
+    return -Math.ceil(remainingHeight / divisor);
+  } else {
+    return getPreviousPageBottomOrStart(page);
+  }
+}
+function getNextScroll(scrollElement) {
+  const page = getCurrentPageFromScrollElement(scrollElement);
+  if (!page || !scrollElement) {
+    return;
+  }
+  const viewerHeight = scrollElement.clientHeight;
+  const ignorableHeight = viewerHeight * 0.05;
+  const scrollBottom = scrollElement.scrollTop + viewerHeight;
+  const remainingHeight = page.offsetTop + page.clientHeight - Math.ceil(scrollBottom) - 1;
+  if (remainingHeight > ignorableHeight) {
+    const divisor = Math.ceil(remainingHeight / viewerHeight);
+    return Math.ceil(remainingHeight / divisor);
+  } else {
+    return getNextPageTopOrEnd(page);
+  }
+}
+function getUrlMedia(urls) {
+  const pages = [];
+  const imgs = document.querySelectorAll(
+    "img[src], video[src]"
+  );
+  for (const img of imgs) {
+    if (urls.includes(img.src)) {
+      pages.push(img);
+    }
+  }
+  return pages;
+}
+function isVisible(element) {
+  if ("checkVisibility" in element) {
+    return element.checkVisibility();
+  }
+  const { x, y, width, height } = element.getBoundingClientRect();
+  const elements = document.elementsFromPoint(x + width / 2, y + height / 2);
+  return elements.includes(element);
+}
+function isMiddleScrollSame(middle, lastScrollTransferMiddle) {
+  return Math.abs(middle - lastScrollTransferMiddle) < 0.01;
+}
+function viewerScrollToWindow({ middle, scrollElement, lastScrollTransferMiddle }) {
+  if (isMiddleScrollSame(middle, lastScrollTransferMiddle)) {
+    return;
+  }
+  const page = getScrollPage(middle, scrollElement);
+  const src = page?.querySelector("img")?.src;
+  if (!src) {
+    return;
+  }
+  const fileName = src.split("/").pop()?.split("?")[0];
+  const candidates = document.querySelectorAll(`img[src*="${fileName}"]`);
+  const original = [...candidates].find((img) => img.src === src);
+  const isViewerMedia = original?.parentElement === page;
+  if (!original || isViewerMedia) {
+    return;
+  }
+  const rect = original.getBoundingClientRect();
+  const ratio = middle - Math.floor(middle);
+  const top = scrollY + rect.y + rect.height * ratio - innerHeight / 2;
+  return top;
+}
+function getNextPageTopOrEnd(page) {
+  const scrollable = page.offsetParent;
+  if (!scrollable) {
+    return;
+  }
+  const pageBottom = page.offsetTop + page.clientHeight;
+  let cursor = page;
+  while (cursor.nextElementSibling) {
+    const next = cursor.nextElementSibling;
+    if (pageBottom <= next.offsetTop) {
+      return next.getBoundingClientRect().top;
+    }
+    cursor = next;
+  }
+  const { y, height } = cursor.getBoundingClientRect();
+  return y + height;
+}
+function getPreviousPageBottomOrStart(page) {
+  const scrollable = page.offsetParent;
+  if (!scrollable) {
+    return;
+  }
+  const pageTop = page.offsetTop;
+  let cursor = page;
+  while (cursor.previousElementSibling) {
+    const previous = cursor.previousElementSibling;
+    const previousBottom = previous.offsetTop + previous.clientHeight;
+    if (previousBottom <= pageTop) {
+      const { bottom } = previous.getBoundingClientRect();
+      const { height: height2 } = scrollable.getBoundingClientRect();
+      return bottom - height2;
+    }
+    cursor = previous;
+  }
+  const { y, height } = cursor.getBoundingClientRect();
+  return y - height;
+}
+var scrollElementStateAtom = (0, import_jotai.atom)(null);
+var scrollElementAtom = (0, import_jotai.atom)((get) => get(scrollElementStateAtom)?.div ?? null);
+var scrollElementSizeAtom = (0, import_jotai.atom)({ width: 0, height: 0, scrollHeight: 0 });
+var pageScrollMiddleAtom = (0, import_jotai.atom)(0.5);
+var lastScrollTransferMiddleAtom = (0, import_jotai.atom)(0.5);
+var transferWindowScrollToViewerAtom = (0, import_jotai.atom)(null, (get, set) => {
+  const scrollable = get(scrollElementAtom);
+  const lastScrollTransferMiddle = get(lastScrollTransferMiddleAtom);
+  if (!scrollable) {
+    return;
+  }
+  const viewerMedia = [
+    ...scrollable.querySelectorAll("img[src], video[src]")
+  ];
+  const urlToViewerPages =  new Map();
+  for (const media2 of viewerMedia) {
+    urlToViewerPages.set(media2.src, media2);
+  }
+  const urls = [...urlToViewerPages.keys()];
+  const media = getUrlMedia(urls);
+  const siteMedia = media.filter((medium) => !viewerMedia.includes(medium));
+  const visibleMedia = siteMedia.filter(isVisible);
+  const middle = getPageScroll(visibleMedia);
+  if (!middle || isMiddleScrollSame(middle, lastScrollTransferMiddle)) {
+    return;
+  }
+  const pageRatio = middle - Math.floor(middle);
+  const snappedRatio = Math.abs(pageRatio - 0.5) < 0.1 ? 0.5 : pageRatio;
+  const snappedMiddle = Math.floor(middle) + snappedRatio;
+  set(pageScrollMiddleAtom, snappedMiddle);
+  set(lastScrollTransferMiddleAtom, snappedMiddle);
+});
+var transferViewerScrollToWindowAtom = (0, import_jotai.atom)(null, (get, set) => {
+  const middle = get(pageScrollMiddleAtom);
+  const scrollElement = get(scrollElementAtom);
+  const lastScrollTransferMiddle = get(lastScrollTransferMiddleAtom);
+  const top = viewerScrollToWindow({ middle, scrollElement, lastScrollTransferMiddle });
+  if (top !== void 0) {
+    set(lastScrollTransferMiddleAtom, middle);
+    scroll({ behavior: "instant", top });
+  }
+});
+var synchronizeScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
+  const scrollElement = get(scrollElementAtom);
+  if (!scrollElement) {
+    return;
+  }
+  if (set(correctScrollAtom)) {
+    return;
+  }
+  const middle = getCurrentMiddleFromScrollElement(scrollElement);
+  if (middle) {
+    set(pageScrollMiddleAtom, middle);
+  }
+  set(transferViewerScrollToWindowAtom);
+});
+var correctScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
+  const scrollElement = get(scrollElementAtom);
+  if (!scrollElement) {
+    return;
+  }
+  const previousSize = get(scrollElementSizeAtom);
+  const rect = scrollElement.getBoundingClientRect();
+  const currentSize = {
+    width: rect.width,
+    height: rect.height,
+    scrollHeight: scrollElement.scrollHeight
+  };
+  if (!needsScrollRestoration(previousSize, currentSize)) {
+    return false;
+  }
+  set(scrollElementSizeAtom, currentSize);
+  set(restoreScrollAtom);
+  setTimeout(() => set(restoreScrollAtom), 0);
+  return true;
+});
+var viewerScrollAtom = (0, import_jotai.atom)(
+  (get) => get(scrollElementAtom)?.scrollTop,
+  (get, _set, top) => {
+    get(scrollElementAtom)?.scroll({ top });
+  }
+);
+var restoreScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
+  const middle = get(pageScrollMiddleAtom);
+  const scrollable = get(scrollElementAtom);
+  const page = getScrollPage(middle, scrollable);
+  if (!page || !scrollable || scrollable.clientHeight < 1) {
+    return;
+  }
+  const { offsetTop, clientHeight } = page;
+  const ratio = middle - Math.floor(middle);
+  const restoredY = Math.floor(offsetTop + clientHeight * ratio - scrollable.clientHeight / 2);
+  set(viewerScrollAtom, restoredY);
+});
+var goNextAtom = (0, import_jotai.atom)(null, (get) => {
+  const diffY = getNextScroll(get(scrollElementAtom));
+  if (diffY != null) {
+    get(scrollElementAtom)?.scrollBy({ top: diffY });
+  }
+});
+var goPreviousAtom = (0, import_jotai.atom)(null, (get) => {
+  const diffY = getPreviousScroll(get(scrollElementAtom));
+  if (diffY != null) {
+    get(scrollElementAtom)?.scrollBy({ top: diffY });
+  }
+});
+var navigateAtom = (0, import_jotai.atom)(null, (get, set, event) => {
+  const height = get(scrollElementAtom)?.clientHeight;
+  if (!height || event.button !== 0) {
+    return;
+  }
+  event.preventDefault();
+  const isTop = event.clientY < height / 2;
+  if (isTop) {
+    set(goPreviousAtom);
+  } else {
+    set(goNextAtom);
+  }
+});
 var import_jotai2 = require("jotai");
 var gmStorage = {
   getItem: GM.getValue,
@@ -183,10 +447,12 @@ var [singlePageCountAtom] = atomWithPreferences("singlePageCount");
 var [maxZoomOutExponentAtom] = atomWithPreferences("maxZoomOutExponent");
 var [maxZoomInExponentAtom] = atomWithPreferences("maxZoomInExponent");
 var [pageDirectionAtom] = atomWithPreferences("pageDirection");
-var [isFullscreenPreferredAtom, asyncIsFullscreenPreferredAtom] = atomWithPreferences(
+var [isFullscreenPreferredAtom, isFullscreenPreferredPromiseAtom] = atomWithPreferences(
   "isFullscreenPreferred"
 );
-var [fullscreenNoticeCountAtom] = atomWithPreferences("fullscreenNoticeCount");
+var [fullscreenNoticeCountAtom, fullscreenNoticeCountPromiseAtom] = atomWithPreferences(
+  "fullscreenNoticeCount"
+);
 var wasImmersiveAtom = atomWithSession("vim_comic_viewer.was_immersive", false);
 var effectivePreferencesAtom = (0, import_jotai2.atom)(
   (get) => ({
@@ -245,6 +511,90 @@ function atomWithPreferences(key) {
     );
   }
 }
+var en_default = {
+  "@@locale": "en",
+  settings: "Settings",
+  help: "Help",
+  maxZoomOut: "Maximum zoom out",
+  maxZoomIn: "Maximum zoom in",
+  singlePageCount: "single page count",
+  backgroundColor: "Background color",
+  leftToRight: "Left to right",
+  reset: "Reset",
+  doYouReallyWantToReset: "Do you really want to reset?",
+  errorIsOccurred: "Error is occurred.",
+  failedToLoadImage: "Failed to load image.",
+  loading: "Loading...",
+  fullScreenRestorationGuide: "Enter full screen yourself if you want to keep the viewer open in full screen.",
+  useFullScreen: "Use full screen",
+  downloading: "Downloading...",
+  cancel: "CANCEL",
+  downloadComplete: "Download complete.",
+  errorOccurredWhileDownloading: "Error occurred while downloading.",
+  keyBindings: "Key bindings",
+  toggleViewer: "Toggle viewer",
+  toggleFullscreenSetting: "Toggle fullscreen setting",
+  nextPage: "Next page",
+  previousPage: "Previous page",
+  download: "Download",
+  refresh: "Refresh",
+  increaseSinglePageCount: "Increase single page count",
+  decreaseSinglePageCount: "Decrease single page count"
+};
+var ko_default = {
+  "@@locale": "ko",
+  settings: "설정",
+  help: "도움말",
+  maxZoomOut: "최대 축소",
+  maxZoomIn: "최대 확대",
+  singlePageCount: "한쪽 페이지 수",
+  backgroundColor: "배경색",
+  leftToRight: "왼쪽부터 보기",
+  reset: "초기화",
+  doYouReallyWantToReset: "정말 초기화하시겠어요?",
+  errorIsOccurred: "에러가 발생했습니다.",
+  failedToLoadImage: "이미지를 불러오지 못했습니다.",
+  loading: "로딩 중...",
+  fullScreenRestorationGuide: "뷰어 전체 화면을 유지하려면 직접 전체 화면을 켜 주세요 (F11).",
+  useFullScreen: "전체 화면",
+  downloading: "다운로드 중...",
+  cancel: "취소",
+  downloadComplete: "다운로드 완료",
+  errorOccurredWhileDownloading: "다운로드 도중 오류가 발생했습니다",
+  keyBindings: "단축키",
+  toggleViewer: "뷰어 전환",
+  toggleFullscreenSetting: "전체화면 설정 전환",
+  nextPage: "다음 페이지",
+  previousPage: "이전 페이지",
+  download: "다운로드",
+  refresh: "새로고침",
+  increaseSinglePageCount: "한쪽 페이지 수 늘리기",
+  decreaseSinglePageCount: "한쪽 페이지 수 줄이기"
+};
+var translations = { en: en_default, ko: ko_default };
+var i18nStringsAtom = (0, import_jotai.atom)(getLanguage());
+var i18nAtom = (0, import_jotai.atom)((get) => get(i18nStringsAtom), (_get, set) => {
+  set(i18nStringsAtom, getLanguage());
+});
+i18nAtom.onMount = (set) => {
+  addEventListener("languagechange", set);
+  return () => {
+    removeEventListener("languagechange", set);
+  };
+};
+function getLanguage() {
+  for (const language of navigator.languages) {
+    const locale = language.split("-")[0];
+    if (!locale) {
+      continue;
+    }
+    const translation = translations[locale];
+    if (translation) {
+      return translation;
+    }
+  }
+  return en_default;
+}
 var utils_exports = {};
 __export(utils_exports, {
   getSafeFileName: () => getSafeFileName,
@@ -278,6 +628,8 @@ var getSafeFileName = (str) => {
 var save = (blob) => {
   return saveAs(blob, `${getSafeFileName(document.title)}.zip`);
 };
+var import_react_toastify = require("react-toastify");
+GM.getResourceText("react-toastify-css").then(insertCss);
 var MAX_RETRY_COUNT = 6;
 var MAX_SAME_URL_RETRY_COUNT = 2;
 function isDelay(sourceOrDelay) {
@@ -318,226 +670,6 @@ async function* getMediaIterable({ media, index, comic, maxSize }) {
 }
 function getUrl(source) {
   return typeof source === "string" ? source : source.src;
-}
-var globalCss = document.createElement("style");
-globalCss.innerHTML = `html, body {
-  overflow: hidden;
-}`;
-function hideBodyScrollBar(doHide) {
-  if (doHide) {
-    document.head.append(globalCss);
-  } else {
-    globalCss.remove();
-  }
-}
-async function setFullscreenElement(element) {
-  if (element) {
-    await element.requestFullscreen?.();
-  } else {
-    await document.exitFullscreen?.();
-  }
-}
-function focusWithoutScroll(element) {
-  element?.focus({ preventScroll: true });
-}
-var emptyScroll = { page: null, ratio: 0, fullyVisiblePages: [] };
-function getCurrentViewerScroll(container) {
-  const children = [...container?.firstElementChild?.children ?? []];
-  if (!container || !children.length) {
-    return emptyScroll;
-  }
-  return getCurrentScroll(children);
-}
-function getUrlImgs(urls) {
-  const pages = [];
-  const imgs = document.querySelectorAll("img[src]");
-  for (const img of imgs) {
-    if (urls.includes(img.src)) {
-      pages.push(img);
-    }
-  }
-  return pages;
-}
-function getCurrentScroll(elements) {
-  const middle = getPageScroll(elements);
-  if (middle === null) {
-    return emptyScroll;
-  }
-  const index = Math.floor(middle);
-  const currentPage = elements[index];
-  const ratio = middle - index;
-  const state = { page: currentPage, ratio, fullyVisiblePages: [] };
-  return state;
-}
-function isUserGesturePermissionError(error) {
-  return error?.message === "Permissions check failed";
-}
-function getPageScroll(elements) {
-  if (!elements.length) {
-    return null;
-  }
-  const scrollCenter = innerHeight / 2;
-  const pages = elements.map((page) => ({ page, rect: page.getBoundingClientRect() }));
-  const currentPages = pages.filter(isCenterCrossing);
-  const currentPage = currentPages[Math.floor(currentPages.length / 2)];
-  if (!currentPage) {
-    return null;
-  }
-  const ratio = 1 - (currentPage.rect.bottom - scrollCenter) / currentPage.rect.height;
-  const middle = elements.indexOf(currentPage.page) + ratio;
-  return middle;
-  function isCenterCrossing({ rect: { y, height } }) {
-    return y <= scrollCenter && y + height >= scrollCenter;
-  }
-}
-var scrollElementStateAtom = (0, import_jotai.atom)(null);
-var scrollElementAtom = (0, import_jotai.atom)((get) => get(scrollElementStateAtom)?.div ?? null);
-var scrollElementSizeAtom = (0, import_jotai.atom)({ width: 0, height: 0 });
-var pageScrollStateAtom = (0, import_jotai.atom)(getCurrentViewerScroll());
-var transferViewerScrollToWindowAtom = (0, import_jotai.atom)(null, (get) => {
-  const { page, ratio } = get(pageScrollStateAtom);
-  const src = page?.querySelector("img")?.src;
-  if (!src) {
-    return false;
-  }
-  const fileName = src.split("/").pop()?.split("?")[0];
-  const candidates = document.querySelectorAll(`img[src*="${fileName}"]`);
-  const original = [...candidates].find((img) => img.src === src);
-  const isViewerMedia = original?.parentElement === page;
-  if (!original || isViewerMedia) {
-    return false;
-  }
-  const rect = original.getBoundingClientRect();
-  const top = scrollY + rect.y + rect.height * ratio - innerHeight / 2;
-  scroll({ behavior: "instant", top });
-  return true;
-});
-var previousSizeAtom = (0, import_jotai.atom)({ width: 0, height: 0 });
-var synchronizeScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
-  const scrollElement = get(scrollElementAtom);
-  const current = getCurrentViewerScroll(scrollElement);
-  const previous = get(pageScrollStateAtom);
-  if (!current.page && !previous.page) {
-    return;
-  }
-  const height = scrollElement?.clientHeight ?? 0;
-  const width = scrollElement?.clientWidth ?? 0;
-  const previousSize = get(previousSizeAtom);
-  const isResizing = width === 0 || height === 0 || height !== previousSize.height || width !== previousSize.width;
-  if (isResizing) {
-    set(restoreScrollAtom);
-    set(previousSizeAtom, { width, height });
-  } else {
-    set(pageScrollStateAtom, current);
-    set(transferViewerScrollToWindowAtom);
-  }
-});
-var viewerScrollAtom = (0, import_jotai.atom)(
-  (get) => get(scrollElementAtom)?.scrollTop,
-  (get, _set, top) => {
-    get(scrollElementAtom)?.scroll({ top });
-  }
-);
-var restoreScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
-  const { page, ratio } = get(pageScrollStateAtom);
-  const scrollable = get(scrollElementAtom);
-  if (!page || !scrollable || scrollable.clientHeight < 1) {
-    return;
-  }
-  const { offsetTop, clientHeight } = page;
-  const restoredY = Math.floor(offsetTop + clientHeight * ratio - scrollable.clientHeight / 2);
-  set(viewerScrollAtom, restoredY);
-});
-var goNextAtom = (0, import_jotai.atom)(null, (get, set) => {
-  const top = getNextScroll(get(scrollElementAtom));
-  if (top != null) {
-    set(viewerScrollAtom, top);
-  }
-});
-var goPreviousAtom = (0, import_jotai.atom)(null, (get, set) => {
-  const top = getPreviousScroll(get(scrollElementAtom));
-  if (top != null) {
-    set(viewerScrollAtom, top);
-  }
-});
-var navigateAtom = (0, import_jotai.atom)(null, (get, set, event) => {
-  const height = get(scrollElementAtom)?.clientHeight;
-  if (!height || event.button !== 0) {
-    return;
-  }
-  event.preventDefault();
-  const isTop = event.clientY < height / 2;
-  if (isTop) {
-    set(goPreviousAtom);
-  } else {
-    set(goNextAtom);
-  }
-});
-function getPreviousScroll(scrollElement) {
-  const { page } = getCurrentViewerScroll(scrollElement);
-  if (!page || !scrollElement) {
-    return;
-  }
-  const viewerHeight = scrollElement.clientHeight;
-  const ignorableHeight = viewerHeight * 0.05;
-  const remainingHeight = scrollElement.scrollTop - Math.ceil(page.offsetTop) - 1;
-  if (remainingHeight > ignorableHeight) {
-    const divisor = Math.ceil(remainingHeight / viewerHeight);
-    const delta = -Math.ceil(remainingHeight / divisor);
-    return Math.floor(scrollElement.scrollTop + delta);
-  } else {
-    return getPreviousPageBottomOrStart(page);
-  }
-}
-function getNextScroll(scrollElement) {
-  const { page } = getCurrentViewerScroll(scrollElement);
-  if (!page || !scrollElement) {
-    return;
-  }
-  const viewerHeight = scrollElement.clientHeight;
-  const ignorableHeight = viewerHeight * 0.05;
-  const scrollBottom = scrollElement.scrollTop + viewerHeight;
-  const remainingHeight = page.offsetTop + page.clientHeight - Math.ceil(scrollBottom) - 1;
-  if (remainingHeight > ignorableHeight) {
-    const divisor = Math.ceil(remainingHeight / viewerHeight);
-    const delta = Math.ceil(remainingHeight / divisor);
-    return Math.floor(scrollElement.scrollTop + delta);
-  } else {
-    return getNextPageTopOrEnd(page);
-  }
-}
-function getNextPageTopOrEnd(page) {
-  const scrollable = page.offsetParent;
-  if (!scrollable) {
-    return;
-  }
-  const pageBottom = page.offsetTop + page.clientHeight;
-  let cursor = page;
-  while (cursor.nextElementSibling) {
-    const next = cursor.nextElementSibling;
-    if (pageBottom <= next.offsetTop) {
-      return next.offsetTop;
-    }
-    cursor = next;
-  }
-  return cursor.offsetTop + cursor.clientHeight;
-}
-function getPreviousPageBottomOrStart(page) {
-  const scrollable = page.offsetParent;
-  if (!scrollable) {
-    return;
-  }
-  const pageTop = page.offsetTop;
-  let cursor = page;
-  while (cursor.previousElementSibling) {
-    const previous = cursor.previousElementSibling;
-    const previousBottom = previous.offsetTop + previous.clientHeight;
-    if (previousBottom <= pageTop) {
-      return previous.offsetTop + previous.clientHeight - scrollable.clientHeight;
-    }
-    cursor = previous;
-  }
-  return cursor.offsetTop;
 }
 var viewerOptionsAtom = (0, import_jotai.atom)({});
 var viewerStatusAtom = (0, import_jotai.atom)("idle");
@@ -737,6 +869,30 @@ function shouldMediaBeOriginalSize({ maxZoomOutExponent, maxZoomInExponent, medi
   const isOver = minZoomRatio < mediaRatio || mediaRatio < 1 / maxZoomRatio;
   return isOver;
 }
+var globalCss = document.createElement("style");
+globalCss.innerHTML = `html, body {
+  overflow: hidden;
+}`;
+function hideBodyScrollBar(doHide) {
+  if (doHide) {
+    document.head.append(globalCss);
+  } else {
+    globalCss.remove();
+  }
+}
+async function setFullscreenElement(element) {
+  if (element) {
+    await element.requestFullscreen?.();
+  } else {
+    await document.exitFullscreen?.();
+  }
+}
+function focusWithoutScroll(element) {
+  element?.focus({ preventScroll: true });
+}
+function isUserGesturePermissionError(error) {
+  return error?.message === "Permissions check failed";
+}
 var fullscreenElementAtom = (0, import_jotai.atom)(null);
 var viewerElementAtom = (0, import_jotai.atom)(null);
 var isViewerFullscreenAtom = (0, import_jotai.atom)((get) => {
@@ -804,126 +960,7 @@ var isFullscreenPreferredSettingsAtom = (0, import_jotai.atom)(
     }
   }
 );
-var en_default = {
-  "@@locale": "en",
-  settings: "Settings",
-  help: "Help",
-  maxZoomOut: "Maximum zoom out",
-  maxZoomIn: "Maximum zoom in",
-  singlePageCount: "single page count",
-  backgroundColor: "Background color",
-  leftToRight: "Left to right",
-  reset: "Reset",
-  doYouReallyWantToReset: "Do you really want to reset?",
-  errorIsOccurred: "Error is occurred.",
-  failedToLoadImage: "Failed to load image.",
-  loading: "Loading...",
-  fullScreenRestorationGuide: "Enter full screen yourself if you want to keep the viewer open in full screen.",
-  useFullScreen: "Use full screen",
-  downloading: "Downloading...",
-  cancel: "CANCEL",
-  downloadComplete: "Download complete.",
-  errorOccurredWhileDownloading: "Error occurred while downloading.",
-  keyBindings: "Key bindings",
-  toggleViewer: "Toggle viewer",
-  toggleFullscreenSetting: "Toggle fullscreen setting",
-  nextPage: "Next page",
-  previousPage: "Previous page",
-  download: "Download",
-  refresh: "Refresh",
-  increaseSinglePageCount: "Increase single page count",
-  decreaseSinglePageCount: "Decrease single page count"
-};
-var ko_default = {
-  "@@locale": "ko",
-  settings: "설정",
-  help: "도움말",
-  maxZoomOut: "최대 축소",
-  maxZoomIn: "최대 확대",
-  singlePageCount: "한쪽 페이지 수",
-  backgroundColor: "배경색",
-  leftToRight: "왼쪽부터 보기",
-  reset: "초기화",
-  doYouReallyWantToReset: "정말 초기화하시겠어요?",
-  errorIsOccurred: "에러가 발생했습니다.",
-  failedToLoadImage: "이미지를 불러오지 못했습니다.",
-  loading: "로딩 중...",
-  fullScreenRestorationGuide: "뷰어 전체 화면을 유지하려면 직접 전체 화면을 켜 주세요 (F11).",
-  useFullScreen: "전체 화면",
-  downloading: "다운로드 중...",
-  cancel: "취소",
-  downloadComplete: "다운로드 완료",
-  errorOccurredWhileDownloading: "다운로드 도중 오류가 발생했습니다",
-  keyBindings: "단축키",
-  toggleViewer: "뷰어 전환",
-  toggleFullscreenSetting: "전체화면 설정 전환",
-  nextPage: "다음 페이지",
-  previousPage: "이전 페이지",
-  download: "다운로드",
-  refresh: "새로고침",
-  increaseSinglePageCount: "한쪽 페이지 수 늘리기",
-  decreaseSinglePageCount: "한쪽 페이지 수 줄이기"
-};
-var translations = { en: en_default, ko: ko_default };
-var i18nStringsAtom = (0, import_jotai.atom)(getLanguage());
-var i18nAtom = (0, import_jotai.atom)((get) => get(i18nStringsAtom), (_get, set) => {
-  set(i18nStringsAtom, getLanguage());
-});
-i18nAtom.onMount = (set) => {
-  addEventListener("languagechange", set);
-  return () => {
-    removeEventListener("languagechange", set);
-  };
-};
-function getLanguage() {
-  for (const language of navigator.languages) {
-    const locale = language.split("-")[0];
-    if (!locale) {
-      continue;
-    }
-    const translation = translations[locale];
-    if (translation) {
-      return translation;
-    }
-  }
-  return en_default;
-}
 var rootAtom = (0, import_jotai.atom)(null);
-var transferWindowScrollToViewerAtom = (0, import_jotai.atom)(null, (get, set) => {
-  const pages = get(pageAtomsAtom).map(get);
-  if (!pages.length) {
-    return;
-  }
-  const urlToViewerPages =  new Map();
-  for (const page2 of pages) {
-    if (page2.state.source?.src) {
-      urlToViewerPages.set(page2.state.source.src, page2);
-    }
-  }
-  const urls = [...urlToViewerPages.keys()];
-  const imgs = getUrlImgs(urls);
-  const viewerImgs = new Set(pages.flatMap((page2) => page2.div?.querySelector("img") ?? []));
-  const originalImgs = imgs.filter((img) => !viewerImgs.has(img));
-  const { page, ratio, fullyVisiblePages: fullyVisibleWindowPages } = getCurrentScroll(
-    originalImgs
-  );
-  if (!page) {
-    return;
-  }
-  const viewerPage = urlToViewerPages.get(page.src);
-  if (!viewerPage) {
-    return;
-  }
-  const fullyVisiblePages = fullyVisibleWindowPages.flatMap((img) => {
-    return urlToViewerPages.get(img.src)?.div ?? [];
-  });
-  const snappedRatio = Math.abs(ratio - 0.5) < 0.1 ? 0.5 : ratio;
-  set(pageScrollStateAtom, {
-    page: viewerPage.div,
-    ratio: snappedRatio,
-    fullyVisiblePages
-  });
-});
 var externalFocusElementAtom = (0, import_jotai.atom)(null);
 var setViewerImmersiveAtom = (0, import_jotai.atom)(null, async (get, set, value) => {
   const lock = await set(transitionLockAtom);
@@ -952,7 +989,8 @@ async function transactImmersive(get, set, value) {
       await set(viewerFullscreenAtom, value);
     }
   } catch (error) {
-    if (shouldShowF11Guide({ error, noticeCount: get(fullscreenNoticeCountAtom) })) {
+    const noticeCount = await get(fullscreenNoticeCountPromiseAtom) ?? 0;
+    if (shouldShowF11Guide({ error, noticeCount })) {
       showF11Guide();
       return;
     }
@@ -973,7 +1011,7 @@ async function transactImmersive(get, set, value) {
     (0, import_react_toastify.toast)(get(i18nAtom).fullScreenRestorationGuide, {
       type: "info",
       onClose: () => {
-        set(fullscreenNoticeCountAtom, (count) => (count ?? 0) + 1);
+        set(fullscreenNoticeCountPromiseAtom, (count) => (count ?? 0) + 1);
       }
     });
   }
@@ -1425,51 +1463,12 @@ var Controller = class {
     if (maybeNotHotkey(event)) {
       return false;
     }
-    switch (event.key) {
-      case "j":
-      case "ArrowDown":
-        event.stopPropagation();
-        event.preventDefault();
-        this.goNext();
-        break;
-      case "k":
-      case "ArrowUp":
-        event.stopPropagation();
-        event.preventDefault();
-        this.goPrevious();
-        break;
-      case ";":
-        event.stopPropagation();
-        this.downloader?.downloadAndSave();
-        break;
-      case "/":
-        event.stopPropagation();
-        (async () => {
-          const effectivePreferences = await this.effectivePreferences;
-          await this.setManualPreferences((preferences) => ({
-            ...preferences,
-            singlePageCount: effectivePreferences.singlePageCount + 1
-          }));
-        })();
-        break;
-      case "?":
-        event.stopPropagation();
-        (async () => {
-          const effectivePreferences = await this.effectivePreferences;
-          await this.setManualPreferences((preferences) => ({
-            ...preferences,
-            singlePageCount: Math.max(0, effectivePreferences.singlePageCount - 1)
-          }));
-        })();
-        break;
-      case "'":
-        event.stopPropagation();
-        this.reloadErrored();
-        break;
-      default:
-        return false;
+    const isHandled = this.handleElementKey(event);
+    if (isHandled) {
+      event.stopPropagation();
+      event.preventDefault();
     }
-    return true;
+    return isHandled;
   };
   defaultGlobalKeyHandler = (event) => {
     if (maybeNotHotkey(event)) {
@@ -1485,6 +1484,54 @@ var Controller = class {
     }
     return false;
   };
+  handleElementKey(event) {
+    switch (event.key) {
+      case "j":
+      case "ArrowDown":
+      case "q":
+        this.goNext();
+        return true;
+      case "k":
+      case "ArrowUp":
+        this.goPrevious();
+        return true;
+      case "h":
+      case "ArrowLeft":
+        if (this.options.onPreviousSeries) {
+          this.options.onPreviousSeries();
+          return true;
+        }
+        return false;
+      case "l":
+      case "ArrowRight":
+      case "w":
+        if (this.options.onNextSeries) {
+          this.options.onNextSeries();
+          return true;
+        }
+        return false;
+      case ";":
+        this.downloader?.downloadAndSave();
+        return true;
+      case "/":
+        void this.addSinglePageCount(1);
+        return true;
+      case "?":
+        void this.addSinglePageCount(-1);
+        return true;
+      case "'":
+        this.reloadErrored();
+        return true;
+      default:
+        return false;
+    }
+  }
+  async addSinglePageCount(diff) {
+    await this.setManualPreferences((preferences) => ({
+      ...preferences,
+      singlePageCount: this.effectivePreferences.singlePageCount + diff
+    }));
+  }
 };
 function maybeNotHotkey(event) {
   const { ctrlKey, altKey, metaKey } = event;
@@ -1502,15 +1549,15 @@ var setScrollElementAtom = (0, import_jotai.atom)(null, async (get, set, div) =>
   }
   const setScrollElementSize = () => {
     const size = div.getBoundingClientRect();
-    set(scrollElementSizeAtom, size);
     set(maxSizeAtom, size);
-    Promise.resolve().then(() => set(restoreScrollAtom));
+    set(correctScrollAtom);
   };
-  setScrollElementSize();
   const resizeObserver = new ResizeObserver(setScrollElementSize);
   resizeObserver.observe(div);
+  resizeObserver.observe(div.firstElementChild);
   set(scrollElementStateAtom, { div, resizeObserver });
-  await get(asyncIsFullscreenPreferredAtom);
+  setScrollElementSize();
+  await get(isFullscreenPreferredPromiseAtom);
   await set(setViewerImmersiveAtom, get(wasImmersiveAtom));
 });
 var Svg = styled("svg", {
@@ -2099,13 +2146,8 @@ var Page = ({ atom: atom3, ...props }) => {
   };
   return  React.createElement(Overlay, { ref: setDiv, css: divCss, fullWidth }, status === "loading" &&  React.createElement(Spinner, null), status === "error" &&  React.createElement(LinkColumn, { onClick: reloadErrored },  React.createElement(CircledX, null),  React.createElement("p", null, strings.failedToLoadImage),  React.createElement("p", null, pageState.urls?.join("\n"))), videoProps &&  React.createElement(Video, { ...videoProps, originalSize: shouldBeOriginalSize, ...props }), imageProps &&  React.createElement(Image, { ...imageProps, originalSize: shouldBeOriginalSize, ...props }));
 };
-insertVendorCss();
-async function insertVendorCss() {
-  await Promise.all([
-    GM.getResourceText("react-toastify-css").then(insertCss),
-    GM.getResourceText("overlayscrollbars-css").then(insertCss)
-  ]);
-}
+var import_overlayscrollbars_react = require("overlayscrollbars-react");
+GM.getResourceText("overlayscrollbars-css").then(insertCss);
 function InnerViewer(props) {
   const { options: viewerOptions, onInitialized, ...otherProps } = props;
   const isFullscreen = (0, import_jotai.useAtomValue)(viewerFullscreenAtom);
