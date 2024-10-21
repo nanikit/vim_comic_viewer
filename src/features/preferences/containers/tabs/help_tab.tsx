@@ -36,8 +36,18 @@ const keyBindingsAtom = atom((get) => {
         <kbd>⇧Shift</kbd>+(<kbd>i</kbd>, <kbd>Enter⏎</kbd>, <kbd>NumPad0</kbd>)
       </>,
     ],
-    [strings.nextPage, <kbd>j</kbd>],
-    [strings.previousPage, <kbd>k</kbd>],
+    [
+      strings.nextPage,
+      <>
+        <kbd>j</kbd>, <kbd>↓</kbd>, <kbd>q</kbd>
+      </>,
+    ],
+    [
+      strings.previousPage,
+      <>
+        <kbd>k</kbd>, <kbd>↑</kbd>
+      </>,
+    ],
     [strings.download, <kbd>;</kbd>],
     [strings.refresh, <kbd>'</kbd>],
     [strings.increaseSinglePageCount, <kbd>/</kbd>],
