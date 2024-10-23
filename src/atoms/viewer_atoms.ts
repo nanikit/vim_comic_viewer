@@ -12,7 +12,7 @@ import { i18nAtom } from "../modules/i18n/atoms.ts";
 import { toast } from "../modules/toast.ts";
 import { timeout } from "../utils.ts";
 import { pageAtomsAtom, refreshMediaSourceAtom } from "./create_page_atom.ts";
-import { focusWithoutScroll, isUserGesturePermissionError } from "./dom/dom_helpers.ts";
+import { focusWithoutScroll } from "./dom/dom_helpers.ts";
 import {
   isFullscreenPreferredSettingsAtom,
   isViewerImmersiveAtom,
@@ -58,15 +58,15 @@ async function transactImmersive(get: Getter, set: Setter, value: boolean) {
 
   try {
     if (get(isFullscreenPreferredAtom)) {
-      await set(viewerFullscreenAtom, value);
+      const isAccepted = await set(viewerFullscreenAtom, value);
+      if (!isAccepted) {
+        const noticeCount = (await get(fullscreenNoticeCountPromiseAtom)) ?? 0;
+        if (shouldShowF11Guide({ noticeCount })) {
+          showF11Guide();
+          return;
+        }
+      }
     }
-  } catch (error) {
-    const noticeCount = (await get(fullscreenNoticeCountPromiseAtom)) ?? 0;
-    if (shouldShowF11Guide({ error, noticeCount })) {
-      showF11Guide();
-      return;
-    }
-    throw error;
   } finally {
     set(scrollBarStyleFactorAtom, { isImmersive: value });
 
@@ -205,7 +205,7 @@ async function waitUnloadFinishRoughly() {
   }
 }
 
-function shouldShowF11Guide({ error, noticeCount }: { error: unknown; noticeCount: number }) {
+function shouldShowF11Guide({ noticeCount }: { noticeCount: number }) {
   const isUserFullscreen = innerHeight === screen.height || innerWidth === screen.width;
-  return isUserGesturePermissionError(error) && noticeCount < 3 && !isUserFullscreen;
+  return noticeCount < 3 && !isUserFullscreen;
 }
