@@ -9,27 +9,36 @@ export function getScrollPage(middle: number, container?: HTMLElement | null) {
   return element instanceof HTMLElement ? element : null;
 }
 
-export function getCurrentPageFromScrollElement(scrollElement?: HTMLElement | null) {
-  const middle = getCurrentMiddleFromScrollElement(scrollElement);
-
-  if (!middle || !scrollElement) {
-    return null;
-  }
-
-  return getScrollPage(middle, scrollElement);
-}
-
-export function getCurrentMiddleFromScrollElement(scrollElement: HTMLElement | null | undefined) {
+export function getCurrentMiddleFromScrollElement({
+  scrollElement,
+  previousMiddle,
+}: {
+  scrollElement?: HTMLElement | null;
+  previousMiddle: number;
+}) {
   const children = scrollElement?.firstElementChild?.children;
   if (!children) {
     return null;
   }
 
   const elements = [...children] as HTMLDivElement[];
-  return getPageScroll(elements, scrollElement.getBoundingClientRect().height);
+  return getPageScroll({
+    elements,
+    viewportHeight: scrollElement.getBoundingClientRect().height,
+    previousMiddle,
+  });
 }
 
-export function getPageScroll(elements: HTMLElement[], viewportHeight: number): number | null {
+export function getPageScroll(
+  { elements, viewportHeight, previousMiddle }: {
+    elements: HTMLElement[];
+    viewportHeight: number;
+    previousMiddle: number;
+  },
+): number | null {
+  type PageRect = { y: number; height: number };
+  type Page = { page: HTMLElement; rect: PageRect };
+
   if (!elements.length) {
     return null;
   }
@@ -37,21 +46,40 @@ export function getPageScroll(elements: HTMLElement[], viewportHeight: number): 
   const scrollCenter = viewportHeight / 2;
 
   // Even top level elements can have fractional size depending on the devicePixelRatio.
-  const pages = elements.map((page) => ({ page, rect: page.getBoundingClientRect() }));
-
-  const currentPages = pages.filter(isCenterCrossing);
-  const currentPage = currentPages[Math.floor(currentPages.length / 2)];
+  const pages: Page[] = elements.map((page) => ({ page, rect: page.getBoundingClientRect() }));
+  const currentRow = pages.filter(isCenterCrossing);
+  const currentPage = getCurrentPage(currentRow);
   if (!currentPage) {
     return null;
   }
 
-  const ratio = 1 - ((currentPage.rect.bottom - scrollCenter) / currentPage.rect.height);
-  const middle = elements.indexOf(currentPage.page) + ratio;
-
+  const middle = getMiddle(currentPage);
   return middle;
 
-  function isCenterCrossing({ rect: { y, height } }: { rect: { y: number; height: number } }) {
+  function isCenterCrossing({ rect: { y, height } }: { rect: PageRect }) {
     return y <= scrollCenter && y + height >= scrollCenter;
+  }
+
+  function getCurrentPage(row: Page[]) {
+    const half = Math.floor(row.length / 2);
+    if (row.length % 2 === 1) {
+      return row[half];
+    }
+
+    const page = row[half]?.page;
+    if (!page) {
+      return;
+    }
+
+    const centerNextTop = elements.indexOf(page);
+    // Previous middle must be odd row page count, so preserve it.
+    const previousMiddlePage = previousMiddle < centerNextTop ? row[half - 1] : row[half];
+    return previousMiddlePage;
+  }
+
+  function getMiddle(page: Page) {
+    const ratio = 1 - ((page.rect.y + page.rect.height - scrollCenter) / page.rect.height);
+    return elements.indexOf(page.page) + ratio;
   }
 }
 
@@ -66,7 +94,7 @@ export function needsScrollRestoration(previousSize: ScrollSize, currentSize: Sc
 
 /** Returns difference of scrollTop to make the target section visible. */
 export function getPreviousScroll(scrollElement: HTMLDivElement | null) {
-  const page = getCurrentPageFromScrollElement(scrollElement);
+  const page = getCurrentPageFromScrollElement({ scrollElement, previousMiddle: Infinity });
   if (!page || !scrollElement) {
     return;
   }
@@ -84,7 +112,7 @@ export function getPreviousScroll(scrollElement: HTMLDivElement | null) {
 }
 
 export function getNextScroll(scrollElement: HTMLDivElement | null) {
-  const page = getCurrentPageFromScrollElement(scrollElement);
+  const page = getCurrentPageFromScrollElement({ scrollElement, previousMiddle: 0 });
   if (!page || !scrollElement) {
     return;
   }
@@ -204,4 +232,15 @@ function getPreviousPageBottomOrStart(page: HTMLElement) {
 
   const { y, height } = cursor.getBoundingClientRect();
   return y - height;
+}
+
+function getCurrentPageFromScrollElement(
+  { scrollElement, previousMiddle }: { scrollElement: HTMLElement | null; previousMiddle: number },
+) {
+  const middle = getCurrentMiddleFromScrollElement({ scrollElement, previousMiddle });
+  if (!middle || !scrollElement) {
+    return null;
+  }
+
+  return getScrollPage(middle, scrollElement);
 }

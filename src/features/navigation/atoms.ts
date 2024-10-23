@@ -46,7 +46,11 @@ export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   const media = getUrlMedia(urls);
   const siteMedia = media.filter((medium) => !viewerMedia.includes(medium));
   const visibleMedia = siteMedia.filter(isVisible);
-  const middle = getPageScroll(visibleMedia, visualViewport?.height ?? innerHeight);
+  const middle = getPageScroll({
+    elements: visibleMedia,
+    viewportHeight: visualViewport?.height ?? innerHeight,
+    previousMiddle: lastScrollTransferMiddle,
+  });
   if (!middle || isMiddleScrollSame(middle, lastScrollTransferMiddle)) {
     return;
   }
@@ -81,7 +85,10 @@ export const synchronizeScrollAtom = atom(null, (get, set) => {
     return;
   }
 
-  const middle = getCurrentMiddleFromScrollElement(scrollElement);
+  const middle = getCurrentMiddleFromScrollElement({
+    scrollElement,
+    previousMiddle: get(pageScrollMiddleAtom),
+  });
   if (middle) {
     set(pageScrollMiddleAtom, middle);
   }
