@@ -1,6 +1,10 @@
 import { atom, Deferred, deferred, ExtractAtomValue, RESET } from "../deps.ts";
 import { isFullscreenPreferredAtom, wasImmersiveAtom } from "../features/preferences/atoms.ts";
-import { hideBodyScrollBar, setFullscreenElement } from "./dom/dom_helpers.ts";
+import {
+  hideBodyScrollBar,
+  isUserGesturePermissionError,
+  setFullscreenElement,
+} from "./dom/dom_helpers.ts";
 
 const fullscreenElementAtom = atom<Element | null>(null);
 const viewerElementAtom = atom<HTMLDivElement | null>(null);
@@ -49,14 +53,23 @@ export const viewerFullscreenAtom = atom((get) => {
   const element = value ? get(viewerElementAtom) : null;
   const { fullscreenElement } = get(scrollBarStyleFactorAtom);
   if (element === fullscreenElement) {
-    return;
+    return true;
   }
 
   const fullscreenChange = new Promise((resolve) => {
     addEventListener("fullscreenchange", resolve, { once: true });
   });
-  await setFullscreenElement(element);
-  await fullscreenChange;
+
+  try {
+    await setFullscreenElement(element);
+    await fullscreenChange;
+    return true;
+  } catch (error) {
+    if (isUserGesturePermissionError(error)) {
+      return false;
+    }
+    throw error;
+  }
 });
 
 const transitionDeferredAtom = atom<{ deferred?: Deferred<void> }>({});
