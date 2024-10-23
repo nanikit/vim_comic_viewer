@@ -54,13 +54,5 @@ export const OverlayScroller = styled("div", {
         overflow: "auto",
       },
     },
-    dark: {
-      true: {
-        "&::-webkit-scrollbar-thumb": {
-          all: "initial",
-          background: "#ffffff88",
-        },
-      },
-    },
   },
 });
