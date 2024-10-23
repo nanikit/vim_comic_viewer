@@ -1,4 +1,5 @@
 import { atom } from "../../deps.ts";
+import { beforeRepaintAtom } from "../../modules/use_before_repaint.ts";
 import {
   getCurrentMiddleFromScrollElement,
   getNextScroll,
@@ -45,7 +46,7 @@ export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   const media = getUrlMedia(urls);
   const siteMedia = media.filter((medium) => !viewerMedia.includes(medium));
   const visibleMedia = siteMedia.filter(isVisible);
-  const middle = getPageScroll(visibleMedia);
+  const middle = getPageScroll(visibleMedia, visualViewport?.height ?? innerHeight);
   if (!middle || isMiddleScrollSame(middle, lastScrollTransferMiddle)) {
     return;
   }
@@ -108,16 +109,8 @@ export const correctScrollAtom = atom(null, (get, set) => {
   set(scrollElementSizeAtom, currentSize);
   set(restoreScrollAtom);
   // It handles shouldBeOriginalSize change.
-  setTimeout(() => set(restoreScrollAtom), 0);
   return true;
 });
-
-const viewerScrollAtom = atom(
-  (get) => get(scrollElementAtom)?.scrollTop,
-  (get, _set, top: number) => {
-    get(scrollElementAtom)?.scroll({ top });
-  },
-);
 
 export const restoreScrollAtom = atom(null, (get, set) => {
   const middle = get(pageScrollMiddleAtom);
@@ -127,10 +120,13 @@ export const restoreScrollAtom = atom(null, (get, set) => {
     return;
   }
 
-  const { offsetTop, clientHeight } = page;
+  const { height: scrollableHeight } = scrollable.getBoundingClientRect();
+  const { y: pageY, height: pageHeight } = page.getBoundingClientRect();
   const ratio = middle - Math.floor(middle);
-  const restoredY = Math.floor(offsetTop + clientHeight * ratio - scrollable.clientHeight / 2);
-  set(viewerScrollAtom, restoredY);
+  const restoredYDiff = pageY + pageHeight * ratio - scrollableHeight / 2;
+  const previousScrollTop = scrollable.scrollTop;
+  scrollable.scrollBy({ top: restoredYDiff });
+  set(beforeRepaintAtom, { task: () => set(correctScrollAtom) });
 });
 
 export const goNextAtom = atom(null, (get) => {
