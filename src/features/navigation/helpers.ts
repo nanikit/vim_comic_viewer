@@ -169,15 +169,17 @@ export function viewerScrollToWindow(
   }
 
   const page = getScrollPage(middle, scrollElement);
-  const src = page?.querySelector("img")?.src;
+  const src = page?.querySelector<HTMLImageElement | HTMLVideoElement>("img[src], video[src]")?.src;
   if (!src) {
     return;
   }
 
   const fileName = src.split("/").pop()?.split("?")[0];
-  const candidates = document.querySelectorAll<HTMLImageElement>(`img[src*="${fileName}"]`);
-  const originals = [...candidates].filter((img) =>
-    img.src === src && img.parentElement !== page && isVisible(img)
+  const candidates = document.querySelectorAll<HTMLImageElement | HTMLVideoElement>(
+    `img[src*="${fileName}"], video[src*="${fileName}"]`,
+  );
+  const originals = [...candidates].filter((media) =>
+    media.src === src && media.parentElement !== page && isVisible(media)
   );
   const original = originals.length === 1 ? originals[0] : null;
   if (!original) {
