@@ -20,16 +20,21 @@ export function getCurrentPageFromScrollElement(scrollElement?: HTMLElement | nu
 }
 
 export function getCurrentMiddleFromScrollElement(scrollElement: HTMLElement | null | undefined) {
-  const children = [...(scrollElement?.firstElementChild?.children ?? [])] as HTMLDivElement[];
-  return getPageScroll(children);
+  const children = scrollElement?.firstElementChild?.children;
+  if (!children) {
+    return null;
+  }
+
+  const elements = [...children] as HTMLDivElement[];
+  return getPageScroll(elements, scrollElement.getBoundingClientRect().height);
 }
 
-export function getPageScroll(elements: HTMLElement[]): number | null {
+export function getPageScroll(elements: HTMLElement[], viewportHeight: number): number | null {
   if (!elements.length) {
     return null;
   }
 
-  const scrollCenter = innerHeight / 2;
+  const scrollCenter = viewportHeight / 2;
 
   // Even top level elements can have fractional size depending on the devicePixelRatio.
   const pages = elements.map((page) => ({ page, rect: page.getBoundingClientRect() }));
