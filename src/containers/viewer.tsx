@@ -23,6 +23,7 @@ import { Page } from "./page.tsx";
 import { i18nAtom } from "../modules/i18n/atoms.ts";
 import { useOverlayScrollbars } from "../modules/overlayscrollbars.ts";
 import { ToastContainer } from "../modules/toast.ts";
+import { useBeforeRepaint } from "../modules/use_before_repaint.ts";
 
 export function InnerViewer(
   props: HTMLProps<HTMLDivElement> & {
@@ -54,6 +55,7 @@ export function InnerViewer(
   });
 
   useAtomValue(fullscreenSynchronizationAtom);
+  useBeforeRepaint();
 
   async function setupScroll() {
     const selector = "div[data-overlayscrollbars-viewport]";
@@ -86,7 +88,6 @@ export function InnerViewer(
         tabIndex={0}
         // deno-lint-ignore no-explicit-any
         ref={virtualContainerRef as any}
-        dark={isDarkColor(backgroundColor)}
         fullscreen={isFullscreen}
         onClick={useSetAtom(navigateAtom)}
         onMouseDown={useSetAtom(blockSelectionAtom)}
@@ -109,22 +110,6 @@ export function InnerViewer(
       <ToastContainer />
     </Container>
   );
-}
-
-// #878787 -> true, #888888 -> false,
-function isDarkColor(rgbColor: string) {
-  const match = rgbColor.match(/#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/);
-  if (!match) {
-    return false;
-  }
-
-  const [_, r, g, b] = match.map((x) => parseInt(x, 16));
-  if (!r || !g || !b) {
-    return false;
-  }
-
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance < 0.5;
 }
 
 const Pages = styled("div", {
