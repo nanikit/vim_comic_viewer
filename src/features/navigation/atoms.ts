@@ -7,6 +7,7 @@ import {
   getPreviousScroll,
   getScrollPage,
   getUrlMedia,
+  hasNoticeableDifference,
   isSamePage,
   isVisible,
   needsScrollRestoration,
@@ -66,9 +67,8 @@ export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
 export const transferViewerScrollToWindowAtom = atom(null, (get, set) => {
   const middle = get(pageScrollMiddleAtom);
   const scrollElement = get(scrollElementAtom);
-  const lastScrollTransferMiddle = get(lastScrollTransferMiddleAtom);
 
-  const top = viewerScrollToWindow({ middle, scrollElement, lastScrollTransferMiddle });
+  const top = viewerScrollToWindow({ middle, scrollElement });
   if (top !== undefined) {
     set(lastScrollTransferMiddleAtom, middle);
     scroll({ behavior: "instant", top });
@@ -91,9 +91,12 @@ export const synchronizeScrollAtom = atom(null, (get, set) => {
   });
   if (middle) {
     set(pageScrollMiddleAtom, middle);
-  }
 
-  set(transferViewerScrollToWindowAtom);
+    if (hasNoticeableDifference(middle, get(lastScrollTransferMiddleAtom))) {
+      set(lastScrollTransferMiddleAtom, -1.5);
+      set(transferViewerScrollToWindowAtom);
+    }
+  }
 });
 
 export const correctScrollAtom = atom(null, (get, set) => {

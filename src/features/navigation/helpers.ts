@@ -157,17 +157,13 @@ export function isSamePage(middle: number, lastScrollTransferMiddle: number) {
   return Math.floor(middle) === Math.floor(lastScrollTransferMiddle);
 }
 
-export function viewerScrollToWindow(
-  { middle, scrollElement, lastScrollTransferMiddle }: {
-    middle: number;
-    scrollElement: HTMLDivElement | null;
-    lastScrollTransferMiddle: number;
-  },
-) {
-  if (isSamePage(middle, lastScrollTransferMiddle)) {
-    return;
-  }
+export function hasNoticeableDifference(middle: number, lastScrollTransferMiddle: number) {
+  return Math.abs(middle - lastScrollTransferMiddle) > 0.01;
+}
 
+export function viewerScrollToWindow(
+  { middle, scrollElement }: { middle: number; scrollElement: HTMLDivElement | null },
+) {
   const page = getScrollPage(middle, scrollElement);
   const src = page?.querySelector<HTMLImageElement | HTMLVideoElement>("img[src], video[src]")?.src;
   if (!src) {
