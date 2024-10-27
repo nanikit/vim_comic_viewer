@@ -1,12 +1,11 @@
-import { atom, useAtom, useLayoutEffect } from "../deps.ts";
+import { atom, useAtomValue, useLayoutEffect } from "../deps.ts";
 
 export const beforeRepaintAtom = atom<{ task?: () => void }>({});
 
 export const useBeforeRepaint = () => {
-  const [{ task }, set] = useAtom(beforeRepaintAtom);
+  const { task } = useAtomValue(beforeRepaintAtom);
 
   useLayoutEffect(() => {
-    set({});
     task?.();
   }, [task]);
 };
