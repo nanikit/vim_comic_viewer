@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        18.1.0
+// @version        18.1.1
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -134,37 +134,72 @@ var import_utils = require("jotai/utils");
 var import_react2 = require("@headlessui/react");
 var import_react3 = require("react");
 var import_react_dom = require("react-dom");
+var beforeRepaintAtom = (0, import_jotai.atom)({});
+var useBeforeRepaint = () => {
+  const { task } = (0, import_jotai.useAtomValue)(beforeRepaintAtom);
+  (0, import_react3.useLayoutEffect)(() => {
+    task?.();
+  }, [task]);
+};
 function getScrollPage(middle, container) {
   const element = container?.firstElementChild?.children?.item(Math.floor(middle));
   return element instanceof HTMLElement ? element : null;
 }
-function getCurrentPageFromScrollElement(scrollElement) {
-  const middle = getCurrentMiddleFromScrollElement(scrollElement);
-  if (!middle || !scrollElement) {
+function getCurrentMiddleFromScrollElement({
+  scrollElement,
+  previousMiddle
+}) {
+  const children = scrollElement?.firstElementChild?.children;
+  if (!children) {
     return null;
   }
-  return getScrollPage(middle, scrollElement);
+  const elements = [...children];
+  return getPageScroll({
+    elements,
+    viewportHeight: scrollElement.getBoundingClientRect().height,
+    previousMiddle
+  });
 }
-function getCurrentMiddleFromScrollElement(scrollElement) {
-  const children = [...scrollElement?.firstElementChild?.children ?? []];
-  return getPageScroll(children);
-}
-function getPageScroll(elements) {
+function getPageScroll({ elements, viewportHeight, previousMiddle }) {
   if (!elements.length) {
     return null;
   }
-  const scrollCenter = innerHeight / 2;
+  const scrollCenter = viewportHeight / 2;
   const pages = elements.map((page) => ({ page, rect: page.getBoundingClientRect() }));
-  const currentPages = pages.filter(isCenterCrossing);
-  const currentPage = currentPages[Math.floor(currentPages.length / 2)];
+  const currentRow = pages.filter(isCenterCrossing);
+  const currentPage = getCurrentPage(currentRow);
   if (!currentPage) {
     return null;
   }
-  const ratio = 1 - (currentPage.rect.bottom - scrollCenter) / currentPage.rect.height;
-  const middle = elements.indexOf(currentPage.page) + ratio;
+  const middle = getMiddle(currentPage);
   return middle;
   function isCenterCrossing({ rect: { y, height } }) {
     return y <= scrollCenter && y + height >= scrollCenter;
+  }
+  function getCurrentPage(row) {
+    const firstPage = row.find(({ page: page2 }) => page2 === elements[0]);
+    if (firstPage) {
+      return firstPage;
+    }
+    const lastPage = row.find(({ page: page2 }) => page2 === elements.at(-1));
+    if (lastPage) {
+      return lastPage;
+    }
+    const half = Math.floor(row.length / 2);
+    if (row.length % 2 === 1) {
+      return row[half];
+    }
+    const page = row[half]?.page;
+    if (!page) {
+      return;
+    }
+    const centerNextTop = elements.indexOf(page);
+    const previousMiddlePage = previousMiddle < centerNextTop ? row[half - 1] : row[half];
+    return previousMiddlePage;
+  }
+  function getMiddle(page) {
+    const ratio = 1 - (page.rect.y + page.rect.height - scrollCenter) / page.rect.height;
+    return elements.indexOf(page.page) + ratio;
   }
 }
 function needsScrollRestoration(previousSize, currentSize) {
@@ -173,7 +208,7 @@ function needsScrollRestoration(previousSize, currentSize) {
   return previousWidth === 0 || previousHeight === 0 || previousWidth !== width || previousHeight !== height || previousScrollHeight !== scrollHeight;
 }
 function getPreviousScroll(scrollElement) {
-  const page = getCurrentPageFromScrollElement(scrollElement);
+  const page = getCurrentPageFromScrollElement({ scrollElement, previousMiddle: Infinity });
   if (!page || !scrollElement) {
     return;
   }
@@ -188,7 +223,7 @@ function getPreviousScroll(scrollElement) {
   }
 }
 function getNextScroll(scrollElement) {
-  const page = getCurrentPageFromScrollElement(scrollElement);
+  const page = getCurrentPageFromScrollElement({ scrollElement, previousMiddle: 0 });
   if (!page || !scrollElement) {
     return;
   }
@@ -223,29 +258,43 @@ function isVisible(element) {
   const elements = document.elementsFromPoint(x + width / 2, y + height / 2);
   return elements.includes(element);
 }
-function isMiddleScrollSame(middle, lastScrollTransferMiddle) {
-  return Math.abs(middle - lastScrollTransferMiddle) < 0.01;
+function hasNoticeableDifference(middle, lastMiddle) {
+  return Math.abs(middle - lastMiddle) > 0.01;
 }
-function viewerScrollToWindow({ middle, scrollElement, lastScrollTransferMiddle }) {
-  if (isMiddleScrollSame(middle, lastScrollTransferMiddle)) {
+function viewerScrollToWindow({ middle, lastMiddle, scrollElement }) {
+  if (!hasNoticeableDifference(middle, lastMiddle)) {
     return;
   }
   const page = getScrollPage(middle, scrollElement);
-  const src = page?.querySelector("img")?.src;
+  const src = page?.querySelector("img[src], video[src]")?.src;
   if (!src) {
     return;
   }
-  const fileName = src.split("/").pop()?.split("?")[0];
-  const candidates = document.querySelectorAll(`img[src*="${fileName}"]`);
-  const original = [...candidates].find((img) => img.src === src);
-  const isViewerMedia = original?.parentElement === page;
-  if (!original || isViewerMedia) {
+  const original = findOriginElement(src, page);
+  if (!original) {
     return;
   }
   const rect = original.getBoundingClientRect();
   const ratio = middle - Math.floor(middle);
   const top = scrollY + rect.y + rect.height * ratio - innerHeight / 2;
   return top;
+}
+function findOriginElement(src, page) {
+  const fileName = src.split("/").pop()?.split("?")[0];
+  const candidates = document.querySelectorAll(
+    `img[src*="${fileName}"], video[src*="${fileName}"]`
+  );
+  const originals = [...candidates].filter(
+    (media) => media.src === src && media.parentElement !== page && isVisible(media)
+  );
+  if (originals.length === 1) {
+    return originals[0];
+  }
+  const links = document.querySelectorAll(`a[href*="${fileName}"`);
+  const visibleLinks = [...links].filter(isVisible);
+  if (visibleLinks.length === 1) {
+    return visibleLinks[0];
+  }
 }
 function getNextPageTopOrEnd(page) {
   const scrollable = page.offsetParent;
@@ -284,14 +333,22 @@ function getPreviousPageBottomOrStart(page) {
   const { y, height } = cursor.getBoundingClientRect();
   return y - height;
 }
+function getCurrentPageFromScrollElement({ scrollElement, previousMiddle }) {
+  const middle = getCurrentMiddleFromScrollElement({ scrollElement, previousMiddle });
+  if (!middle || !scrollElement) {
+    return null;
+  }
+  return getScrollPage(middle, scrollElement);
+}
 var scrollElementStateAtom = (0, import_jotai.atom)(null);
 var scrollElementAtom = (0, import_jotai.atom)((get) => get(scrollElementStateAtom)?.div ?? null);
 var scrollElementSizeAtom = (0, import_jotai.atom)({ width: 0, height: 0, scrollHeight: 0 });
 var pageScrollMiddleAtom = (0, import_jotai.atom)(0.5);
-var lastScrollTransferMiddleAtom = (0, import_jotai.atom)(0.5);
+var lastViewerToWindowMiddleAtom = (0, import_jotai.atom)(-1);
+var lastWindowToViewerMiddleAtom = (0, import_jotai.atom)(-1);
 var transferWindowScrollToViewerAtom = (0, import_jotai.atom)(null, (get, set) => {
   const scrollable = get(scrollElementAtom);
-  const lastScrollTransferMiddle = get(lastScrollTransferMiddleAtom);
+  const lastWindowToViewerMiddle = get(lastWindowToViewerMiddleAtom);
   if (!scrollable) {
     return;
   }
@@ -306,23 +363,27 @@ var transferWindowScrollToViewerAtom = (0, import_jotai.atom)(null, (get, set) =
   const media = getUrlMedia(urls);
   const siteMedia = media.filter((medium) => !viewerMedia.includes(medium));
   const visibleMedia = siteMedia.filter(isVisible);
-  const middle = getPageScroll(visibleMedia);
-  if (!middle || isMiddleScrollSame(middle, lastScrollTransferMiddle)) {
+  const middle = getPageScroll({
+    elements: visibleMedia,
+    viewportHeight: visualViewport?.height ?? innerHeight,
+    previousMiddle: lastWindowToViewerMiddle
+  });
+  if (!middle || !hasNoticeableDifference(middle, lastWindowToViewerMiddle)) {
     return;
   }
   const pageRatio = middle - Math.floor(middle);
   const snappedRatio = Math.abs(pageRatio - 0.5) < 0.1 ? 0.5 : pageRatio;
   const snappedMiddle = Math.floor(middle) + snappedRatio;
   set(pageScrollMiddleAtom, snappedMiddle);
-  set(lastScrollTransferMiddleAtom, snappedMiddle);
+  set(lastWindowToViewerMiddleAtom, snappedMiddle);
 });
 var transferViewerScrollToWindowAtom = (0, import_jotai.atom)(null, (get, set) => {
   const middle = get(pageScrollMiddleAtom);
   const scrollElement = get(scrollElementAtom);
-  const lastScrollTransferMiddle = get(lastScrollTransferMiddleAtom);
-  const top = viewerScrollToWindow({ middle, scrollElement, lastScrollTransferMiddle });
+  const lastMiddle = get(lastViewerToWindowMiddleAtom);
+  const top = viewerScrollToWindow({ middle, lastMiddle, scrollElement });
   if (top !== void 0) {
-    set(lastScrollTransferMiddleAtom, middle);
+    set(lastViewerToWindowMiddleAtom, middle);
     scroll({ behavior: "instant", top });
   }
 });
@@ -334,11 +395,14 @@ var synchronizeScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
   if (set(correctScrollAtom)) {
     return;
   }
-  const middle = getCurrentMiddleFromScrollElement(scrollElement);
+  const middle = getCurrentMiddleFromScrollElement({
+    scrollElement,
+    previousMiddle: get(pageScrollMiddleAtom)
+  });
   if (middle) {
     set(pageScrollMiddleAtom, middle);
+    set(transferViewerScrollToWindowAtom);
   }
-  set(transferViewerScrollToWindowAtom);
 });
 var correctScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
   const scrollElement = get(scrollElementAtom);
@@ -357,15 +421,8 @@ var correctScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
   }
   set(scrollElementSizeAtom, currentSize);
   set(restoreScrollAtom);
-  setTimeout(() => set(restoreScrollAtom), 0);
   return true;
 });
-var viewerScrollAtom = (0, import_jotai.atom)(
-  (get) => get(scrollElementAtom)?.scrollTop,
-  (get, _set, top) => {
-    get(scrollElementAtom)?.scroll({ top });
-  }
-);
 var restoreScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
   const middle = get(pageScrollMiddleAtom);
   const scrollable = get(scrollElementAtom);
@@ -373,10 +430,12 @@ var restoreScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
   if (!page || !scrollable || scrollable.clientHeight < 1) {
     return;
   }
-  const { offsetTop, clientHeight } = page;
+  const { height: scrollableHeight } = scrollable.getBoundingClientRect();
+  const { y: pageY, height: pageHeight } = page.getBoundingClientRect();
   const ratio = middle - Math.floor(middle);
-  const restoredY = Math.floor(offsetTop + clientHeight * ratio - scrollable.clientHeight / 2);
-  set(viewerScrollAtom, restoredY);
+  const restoredYDiff = pageY + pageHeight * ratio - scrollableHeight / 2;
+  scrollable.scrollBy({ top: restoredYDiff });
+  set(beforeRepaintAtom, { task: () => set(correctScrollAtom) });
 });
 var goNextAtom = (0, import_jotai.atom)(null, (get) => {
   const diffY = getNextScroll(get(scrollElementAtom));
@@ -929,13 +988,21 @@ var viewerFullscreenAtom = (0, import_jotai.atom)((get) => {
   const element = value ? get(viewerElementAtom) : null;
   const { fullscreenElement } = get(scrollBarStyleFactorAtom);
   if (element === fullscreenElement) {
-    return;
+    return true;
   }
   const fullscreenChange = new Promise((resolve) => {
     addEventListener("fullscreenchange", resolve, { once: true });
   });
-  await setFullscreenElement(element);
-  await fullscreenChange;
+  try {
+    await setFullscreenElement(element);
+    await fullscreenChange;
+    return true;
+  } catch (error) {
+    if (isUserGesturePermissionError(error)) {
+      return false;
+    }
+    throw error;
+  }
 });
 var transitionDeferredAtom = (0, import_jotai.atom)({});
 var transitionLockAtom = (0, import_jotai.atom)(null, async (get, set) => {
@@ -986,15 +1053,15 @@ async function transactImmersive(get, set, value) {
   }
   try {
     if (get(isFullscreenPreferredAtom)) {
-      await set(viewerFullscreenAtom, value);
+      const isAccepted = await set(viewerFullscreenAtom, value);
+      if (!isAccepted) {
+        const noticeCount = await get(fullscreenNoticeCountPromiseAtom) ?? 0;
+        if (shouldShowF11Guide({ noticeCount })) {
+          showF11Guide();
+          return;
+        }
+      }
     }
-  } catch (error) {
-    const noticeCount = await get(fullscreenNoticeCountPromiseAtom) ?? 0;
-    if (shouldShowF11Guide({ error, noticeCount })) {
-      showF11Guide();
-      return;
-    }
-    throw error;
   } finally {
     set(scrollBarStyleFactorAtom, { isImmersive: value });
     if (value) {
@@ -1110,9 +1177,9 @@ async function waitUnloadFinishRoughly() {
     await timeout(100);
   }
 }
-function shouldShowF11Guide({ error, noticeCount }) {
+function shouldShowF11Guide({ noticeCount }) {
   const isUserFullscreen = innerHeight === screen.height || innerWidth === screen.width;
-  return isUserGesturePermissionError(error) && noticeCount < 3 && !isUserFullscreen;
+  return noticeCount < 3 && !isUserFullscreen;
 }
 var { styled, css, keyframes } = (0, import_react.createStitches)({});
 function DownloadCancel({ onClick }) {
@@ -1689,14 +1756,6 @@ var OverlayScroller = styled("div", {
         bottom: 0,
         overflow: "auto"
       }
-    },
-    dark: {
-      true: {
-        "&::-webkit-scrollbar-thumb": {
-          all: "initial",
-          background: "#ffffff88"
-        }
-      }
     }
   }
 });
@@ -1774,8 +1833,14 @@ var keyBindingsAtom = (0, import_jotai.atom)((get) => {
       strings.toggleFullscreenSetting,
        React.createElement(React.Fragment, null,  React.createElement("kbd", null, "⇧Shift"), "+(",  React.createElement("kbd", null, "i"), ", ",  React.createElement("kbd", null, "Enter⏎"), ", ",  React.createElement("kbd", null, "NumPad0"), ")")
     ],
-    [strings.nextPage,  React.createElement("kbd", null, "j")],
-    [strings.previousPage,  React.createElement("kbd", null, "k")],
+    [
+      strings.nextPage,
+       React.createElement(React.Fragment, null,  React.createElement("kbd", null, "j"), ", ",  React.createElement("kbd", null, "↓"), ", ",  React.createElement("kbd", null, "q"))
+    ],
+    [
+      strings.previousPage,
+       React.createElement(React.Fragment, null,  React.createElement("kbd", null, "k"), ", ",  React.createElement("kbd", null, "↑"))
+    ],
     [strings.download,  React.createElement("kbd", null, ";")],
     [strings.refresh,  React.createElement("kbd", null, "'")],
     [strings.increaseSinglePageCount,  React.createElement("kbd", null, "/")],
@@ -2169,6 +2234,7 @@ function InnerViewer(props) {
     events: { scroll: (0, import_jotai.useSetAtom)(synchronizeScrollAtom), initialized: setupScroll }
   });
   (0, import_jotai.useAtomValue)(fullscreenSynchronizationAtom);
+  useBeforeRepaint();
   async function setupScroll() {
     const selector = "div[data-overlayscrollbars-viewport]";
     await setScrollElement(virtualContainerRef.current?.querySelector(selector));
@@ -2198,7 +2264,6 @@ function InnerViewer(props) {
       {
         tabIndex: 0,
         ref: virtualContainerRef,
-        dark: isDarkColor(backgroundColor),
         fullscreen: isFullscreen,
         onClick: (0, import_jotai.useSetAtom)(navigateAtom),
         onMouseDown: (0, import_jotai.useSetAtom)(blockSelectionAtom),
@@ -2217,18 +2282,6 @@ function InnerViewer(props) {
      React.createElement(FullscreenButton, { onClick: (0, import_jotai.useSetAtom)(toggleImmersiveAtom) }),
      React.createElement(import_react_toastify.ToastContainer, null)
   );
-}
-function isDarkColor(rgbColor) {
-  const match = rgbColor.match(/#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/);
-  if (!match) {
-    return false;
-  }
-  const [_, r, g, b] = match.map((x) => parseInt(x, 16));
-  if (!r || !g || !b) {
-    return false;
-  }
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance < 0.5;
 }
 var Pages = styled("div", {
   display: "flex",

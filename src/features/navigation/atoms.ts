@@ -131,7 +131,6 @@ export const restoreScrollAtom = atom(null, (get, set) => {
   const { y: pageY, height: pageHeight } = page.getBoundingClientRect();
   const ratio = middle - Math.floor(middle);
   const restoredYDiff = pageY + pageHeight * ratio - scrollableHeight / 2;
-  const previousScrollTop = scrollable.scrollTop;
   scrollable.scrollBy({ top: restoredYDiff });
   set(beforeRepaintAtom, { task: () => set(correctScrollAtom) });
 });
