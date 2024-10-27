@@ -158,13 +158,13 @@ export function isSamePage(middle: number, lastScrollTransferMiddle: number) {
 }
 
 export function viewerScrollToWindow(
-  { middle, scrollElement, lastScrollTransferMiddle }: {
+  { middle, lastMiddle, scrollElement }: {
     middle: number;
+    lastMiddle: number;
     scrollElement: HTMLDivElement | null;
-    lastScrollTransferMiddle: number;
   },
 ) {
-  if (isSamePage(middle, lastScrollTransferMiddle)) {
+  if (isSamePage(middle, lastMiddle)) {
     return;
   }
 

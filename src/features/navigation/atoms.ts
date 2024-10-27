@@ -24,11 +24,12 @@ export const scrollElementAtom = atom((get) => get(scrollElementStateAtom)?.div 
 export const scrollElementSizeAtom = atom({ width: 0, height: 0, scrollHeight: 0 });
 export const pageScrollMiddleAtom = atom(0.5);
 
-const lastScrollTransferMiddleAtom = atom(0.5);
+const lastViewerToWindowMiddleAtom = atom(-1);
+const lastWindowToViewerMiddleAtom = atom(-1);
 
 export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   const scrollable = get(scrollElementAtom);
-  const lastScrollTransferMiddle = get(lastScrollTransferMiddleAtom);
+  const lastWindowToViewerMiddle = get(lastWindowToViewerMiddleAtom);
   if (!scrollable) {
     return;
   }
@@ -49,9 +50,9 @@ export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   const middle = getPageScroll({
     elements: visibleMedia,
     viewportHeight: visualViewport?.height ?? innerHeight,
-    previousMiddle: lastScrollTransferMiddle,
+    previousMiddle: lastWindowToViewerMiddle,
   });
-  if (!middle || isSamePage(middle, lastScrollTransferMiddle)) {
+  if (!middle || isSamePage(middle, lastWindowToViewerMiddle)) {
     return;
   }
 
@@ -60,17 +61,17 @@ export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   const snappedMiddle = Math.floor(middle) + snappedRatio;
 
   set(pageScrollMiddleAtom, snappedMiddle);
-  set(lastScrollTransferMiddleAtom, snappedMiddle);
+  set(lastWindowToViewerMiddleAtom, snappedMiddle);
 });
 
 export const transferViewerScrollToWindowAtom = atom(null, (get, set) => {
   const middle = get(pageScrollMiddleAtom);
   const scrollElement = get(scrollElementAtom);
-  const lastScrollTransferMiddle = get(lastScrollTransferMiddleAtom);
+  const lastMiddle = get(lastViewerToWindowMiddleAtom);
 
-  const top = viewerScrollToWindow({ middle, scrollElement, lastScrollTransferMiddle });
+  const top = viewerScrollToWindow({ middle, lastMiddle, scrollElement });
   if (top !== undefined) {
-    set(lastScrollTransferMiddleAtom, middle);
+    set(lastViewerToWindowMiddleAtom, middle);
     scroll({ behavior: "instant", top });
   }
 });
@@ -91,9 +92,8 @@ export const synchronizeScrollAtom = atom(null, (get, set) => {
   });
   if (middle) {
     set(pageScrollMiddleAtom, middle);
+    set(transferViewerScrollToWindowAtom);
   }
-
-  set(transferViewerScrollToWindowAtom);
 });
 
 export const correctScrollAtom = atom(null, (get, set) => {
