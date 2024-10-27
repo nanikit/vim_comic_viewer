@@ -174,14 +174,7 @@ export function viewerScrollToWindow(
     return;
   }
 
-  const fileName = src.split("/").pop()?.split("?")[0];
-  const candidates = document.querySelectorAll<HTMLImageElement | HTMLVideoElement>(
-    `img[src*="${fileName}"], video[src*="${fileName}"]`,
-  );
-  const originals = [...candidates].filter((media) =>
-    media.src === src && media.parentElement !== page && isVisible(media)
-  );
-  const original = originals.length === 1 ? originals[0] : null;
+  const original = findOriginElement(src, page);
   if (!original) {
     return;
   }
@@ -191,6 +184,25 @@ export function viewerScrollToWindow(
   const top = scrollY + rect.y + rect.height * ratio - innerHeight / 2;
 
   return top;
+}
+
+function findOriginElement(src: string, page: HTMLElement) {
+  const fileName = src.split("/").pop()?.split("?")[0];
+  const candidates = document.querySelectorAll<HTMLImageElement | HTMLVideoElement>(
+    `img[src*="${fileName}"], video[src*="${fileName}"]`,
+  );
+  const originals = [...candidates].filter((media) =>
+    media.src === src && media.parentElement !== page && isVisible(media)
+  );
+  if (originals.length === 1) {
+    return originals[0];
+  }
+
+  const links = document.querySelectorAll<HTMLAnchorElement>(`a[href*="${fileName}"`);
+  const visibleLinks = [...links].filter(isVisible);
+  if (visibleLinks.length === 1) {
+    return visibleLinks[0];
+  }
 }
 
 function getNextPageTopOrEnd(page: HTMLElement) {
