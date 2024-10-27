@@ -61,6 +61,16 @@ export function getPageScroll(
   }
 
   function getCurrentPage(row: Page[]) {
+    const firstPage = row.find(({ page }) => page === elements[0]);
+    if (firstPage) {
+      return firstPage;
+    }
+
+    const lastPage = row.find(({ page }) => page === elements.at(-1));
+    if (lastPage) {
+      return lastPage;
+    }
+
     const half = Math.floor(row.length / 2);
     if (row.length % 2 === 1) {
       return row[half];
