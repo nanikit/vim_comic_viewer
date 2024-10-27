@@ -153,8 +153,8 @@ export function isVisible(element: HTMLElement) {
   return elements.includes(element);
 }
 
-export function isSamePage(middle: number, lastScrollTransferMiddle: number) {
-  return Math.floor(middle) === Math.floor(lastScrollTransferMiddle);
+export function hasNoticeableDifference(middle: number, lastMiddle: number) {
+  return Math.abs(middle - lastMiddle) > 0.01;
 }
 
 export function viewerScrollToWindow(
@@ -164,7 +164,7 @@ export function viewerScrollToWindow(
     scrollElement: HTMLDivElement | null;
   },
 ) {
-  if (isSamePage(middle, lastMiddle)) {
+  if (!hasNoticeableDifference(middle, lastMiddle)) {
     return;
   }
 

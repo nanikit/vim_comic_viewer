@@ -7,7 +7,7 @@ import {
   getPreviousScroll,
   getScrollPage,
   getUrlMedia,
-  isSamePage,
+  hasNoticeableDifference,
   isVisible,
   needsScrollRestoration,
   viewerScrollToWindow,
@@ -52,7 +52,7 @@ export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
     viewportHeight: visualViewport?.height ?? innerHeight,
     previousMiddle: lastWindowToViewerMiddle,
   });
-  if (!middle || isSamePage(middle, lastWindowToViewerMiddle)) {
+  if (!middle || !hasNoticeableDifference(middle, lastWindowToViewerMiddle)) {
     return;
   }
 
