@@ -3,14 +3,11 @@ import { beforeRepaintAtom } from "../../modules/use_before_repaint.ts";
 import {
   getCurrentMiddleFromScrollElement,
   getNextScroll,
-  getPageScroll,
   getPreviousScroll,
   getScrollPage,
-  getUrlMedia,
-  hasNoticeableDifference,
-  isVisible,
   needsScrollRestoration,
-  viewerScrollToWindow,
+  toViewerScroll,
+  toWindowScroll,
 } from "./helpers.ts";
 
 export const scrollElementStateAtom = atom<
@@ -30,38 +27,14 @@ const lastWindowToViewerMiddleAtom = atom(-1);
 export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   const scrollable = get(scrollElementAtom);
   const lastWindowToViewerMiddle = get(lastWindowToViewerMiddleAtom);
-  if (!scrollable) {
+
+  const middle = toViewerScroll({ scrollable, lastWindowToViewerMiddle });
+  if (!middle) {
     return;
   }
 
-  const viewerMedia = [
-    ...scrollable.querySelectorAll<HTMLImageElement | HTMLVideoElement>("img[src], video[src]"),
-  ];
-
-  const urlToViewerPages = new Map<string, HTMLElement>();
-  for (const media of viewerMedia) {
-    urlToViewerPages.set(media.src, media);
-  }
-
-  const urls = [...urlToViewerPages.keys()];
-  const media = getUrlMedia(urls);
-  const siteMedia = media.filter((medium) => !viewerMedia.includes(medium as HTMLImageElement));
-  const visibleMedia = siteMedia.filter(isVisible);
-  const middle = getPageScroll({
-    elements: visibleMedia,
-    viewportHeight: visualViewport?.height ?? innerHeight,
-    previousMiddle: lastWindowToViewerMiddle,
-  });
-  if (!middle || !hasNoticeableDifference(middle, lastWindowToViewerMiddle)) {
-    return;
-  }
-
-  const pageRatio = middle - Math.floor(middle);
-  const snappedRatio = Math.abs(pageRatio - 0.5) < 0.1 ? 0.5 : pageRatio;
-  const snappedMiddle = Math.floor(middle) + snappedRatio;
-
-  set(pageScrollMiddleAtom, snappedMiddle);
-  set(lastWindowToViewerMiddleAtom, snappedMiddle);
+  set(pageScrollMiddleAtom, middle);
+  set(lastWindowToViewerMiddleAtom, middle);
 });
 
 export const transferViewerScrollToWindowAtom = atom(null, (get, set) => {
@@ -69,7 +42,7 @@ export const transferViewerScrollToWindowAtom = atom(null, (get, set) => {
   const scrollElement = get(scrollElementAtom);
   const lastMiddle = get(lastViewerToWindowMiddleAtom);
 
-  const top = viewerScrollToWindow({ middle, lastMiddle, scrollElement });
+  const top = toWindowScroll({ middle, lastMiddle, scrollElement });
   if (top !== undefined) {
     set(lastViewerToWindowMiddleAtom, middle);
     scroll({ behavior: "instant", top });
