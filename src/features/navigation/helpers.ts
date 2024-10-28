@@ -3,8 +3,8 @@ import type { Size } from "../../helpers/size.ts";
 type ScrollSize = Size & {
   scrollHeight: number;
 };
-type PageRect = { y: number; height: number };
-type Page = { page: HTMLElement; rect: PageRect };
+type RectHeight = { y: number; height: number };
+type VisibleRect = { page: HTMLElement; rect: RectHeight };
 
 export function getScrollPage(middle: number, container?: HTMLElement | null) {
   const element = container?.firstElementChild?.children?.item(Math.floor(middle));
@@ -52,19 +52,28 @@ export function toViewerScroll({ scrollable, lastWindowToViewerMiddle }: {
   const media = getUrlMedia(urls);
   const siteMedia = media.filter((medium) => !viewerMedia.includes(medium as HTMLImageElement));
   const visibleMedia = siteMedia.filter(isVisible);
-  const middle = getPageScroll({
-    elements: visibleMedia,
-    viewportHeight: visualViewport?.height ?? innerHeight,
-    previousMiddle: lastWindowToViewerMiddle,
-  });
 
-  if (!middle || !hasNoticeableDifference(middle, lastWindowToViewerMiddle)) {
+  const viewportHeight = visualViewport?.height ?? innerHeight;
+  const currentRow = getCurrentRow({ elements: visibleMedia, viewportHeight });
+  if (!currentRow) {
     return;
   }
 
-  const pageRatio = middle - Math.floor(middle);
+  const indexed = currentRow.map((sized) => [sized, getUrlIndex(sized.page, urls)] as const);
+  const last = lastWindowToViewerMiddle - 0.5;
+  const sorted = indexed.sort((a, b) => Math.abs(a[1] - last) - Math.abs(b[1] - last));
+  const [page, index] = sorted[0] ?? [];
+  if (!page || index === undefined) {
+    return;
+  }
+
+  const pageRatio = getInPageRatio({ page, viewportHeight });
   const snappedRatio = Math.abs(pageRatio - 0.5) < 0.1 ? 0.5 : pageRatio;
-  return Math.floor(middle) + snappedRatio;
+  if (!hasNoticeableDifference(index + snappedRatio, lastWindowToViewerMiddle)) {
+    return;
+  }
+
+  return index + snappedRatio;
 }
 
 export function needsScrollRestoration(previousSize: ScrollSize, currentSize: ScrollSize) {
@@ -216,8 +225,40 @@ function getCurrentPageFromScrollElement(
   return getScrollPage(middle, scrollElement);
 }
 
-function containsUrl(media: HTMLPictureElement | HTMLVideoElement, urls: string[]) {
-  return getUrlsFromSources(media).some((url) => urls.includes(url));
+function getUrlMedia(urls: string[]) {
+  const media = document.querySelectorAll<HTMLImageElement | HTMLVideoElement>("img, video");
+  return [...media].filter((medium) => getUrlIndex(medium, urls) !== -1);
+}
+
+function getUrlIndex(medium: HTMLElement, urls: string[]) {
+  if (medium instanceof HTMLImageElement) {
+    const img = medium;
+    const parent = img.parentElement;
+
+    const imgUrlIndex = urls.findIndex((x) => x === img.src);
+    const pictureUrlIndex = parent instanceof HTMLPictureElement
+      ? getUrlIndexFromSrcset(parent, urls)
+      : -1;
+    return imgUrlIndex === -1 ? pictureUrlIndex : imgUrlIndex;
+  } else if (medium instanceof HTMLVideoElement) {
+    const video = medium;
+    const videoUrlIndex = urls.findIndex((x) => x === video.src);
+    const srcsetUrlIndex = getUrlIndexFromSrcset(video, urls);
+    return videoUrlIndex === -1 ? srcsetUrlIndex : videoUrlIndex;
+  }
+
+  return -1;
+}
+
+function getUrlIndexFromSrcset(media: HTMLPictureElement | HTMLVideoElement, urls: string[]) {
+  for (const url of getUrlsFromSources(media)) {
+    const index = urls.findIndex((x) => x === url);
+    if (index !== -1) {
+      return index;
+    }
+  }
+
+  return -1;
 }
 
 function getUrlsFromSources(picture: HTMLPictureElement | HTMLVideoElement) {
@@ -227,25 +268,6 @@ function getUrlsFromSources(picture: HTMLPictureElement | HTMLVideoElement) {
 
 function getSrcFromSrcset(srcset: string) {
   return srcset.split(",").map((x) => x.split(/\s+/)[0]).filter((x) => x !== undefined);
-}
-
-function getUrlMedia(urls: string[]) {
-  const media = document.querySelectorAll<HTMLImageElement | HTMLVideoElement>("img, video");
-  return [...media].filter((medium) => hasTargetUrl(medium, urls));
-}
-
-function hasTargetUrl(medium: HTMLImageElement | HTMLVideoElement, urls: string[]) {
-  if (medium instanceof HTMLImageElement) {
-    const img = medium;
-    const parent = img.parentElement;
-
-    const isTargetImg = urls.includes(img.src);
-    const isTargetPictureImg = parent instanceof HTMLPictureElement && containsUrl(parent, urls);
-    return isTargetImg || isTargetPictureImg;
-  } else {
-    const video = medium;
-    return urls.includes(video.src) || containsUrl(video, urls);
-  }
 }
 
 function getPageScroll(
@@ -258,12 +280,17 @@ function getPageScroll(
   const currentPage = getCurrentPageFromElements(params);
   return currentPage ? getMiddle(currentPage) : undefined;
 
-  function getMiddle(page: Page) {
+  function getMiddle(page: VisibleRect) {
     const { viewportHeight, elements } = params;
-    const scrollCenter = viewportHeight / 2;
-    const ratio = 1 - ((page.rect.y + page.rect.height - scrollCenter) / page.rect.height);
+    const ratio = getInPageRatio({ page, viewportHeight });
     return elements.indexOf(page.page) + ratio;
   }
+}
+
+function getInPageRatio({ page, viewportHeight }: { page: VisibleRect; viewportHeight: number }) {
+  const scrollCenter = viewportHeight / 2;
+  const { y, height } = page.rect;
+  return 1 - ((y + height - scrollCenter) / height);
 }
 
 function getCurrentPageFromElements(
@@ -272,23 +299,15 @@ function getCurrentPageFromElements(
     viewportHeight: number;
     previousMiddle: number;
   },
-): Page | undefined {
-  if (!elements.length) {
+): VisibleRect | undefined {
+  const currentRow = getCurrentRow({ elements, viewportHeight });
+  if (!currentRow) {
     return;
   }
 
-  const scrollCenter = viewportHeight / 2;
-
-  // Even top level elements can have fractional size depending on the devicePixelRatio.
-  const pages: Page[] = elements.map((page) => ({ page, rect: page.getBoundingClientRect() }));
-  const currentRow = pages.filter(isCenterCrossing);
   return selectColumn(currentRow);
 
-  function isCenterCrossing({ rect: { y, height } }: { rect: PageRect }) {
-    return y <= scrollCenter && y + height >= scrollCenter;
-  }
-
-  function selectColumn(row: Page[]) {
+  function selectColumn(row: VisibleRect[]) {
     const firstPage = row.find(({ page }) => page === elements[0]);
     if (firstPage) {
       return firstPage;
@@ -313,6 +332,27 @@ function getCurrentPageFromElements(
     // Previous middle must be odd row page count, so preserve it.
     const previousMiddlePage = previousMiddle < centerNextTop ? row[half - 1] : row[half];
     return previousMiddlePage;
+  }
+}
+
+function getCurrentRow(
+  { elements, viewportHeight }: { elements: HTMLElement[]; viewportHeight: number },
+) {
+  if (!elements.length) {
+    return;
+  }
+
+  const scrollCenter = viewportHeight / 2;
+
+  // Even top level elements can have fractional size depending on the devicePixelRatio.
+  const pages: VisibleRect[] = elements.map((page) => ({
+    page,
+    rect: page.getBoundingClientRect(),
+  }));
+  return pages.filter(isCenterCrossing);
+
+  function isCenterCrossing({ rect: { y, height } }: { rect: RectHeight }) {
+    return y <= scrollCenter && y + height >= scrollCenter;
   }
 }
 
