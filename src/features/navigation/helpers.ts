@@ -3,6 +3,8 @@ import type { Size } from "../../helpers/size.ts";
 type ScrollSize = Size & {
   scrollHeight: number;
 };
+type PageRect = { y: number; height: number };
+type Page = { page: HTMLElement; rect: PageRect };
 
 export function getScrollPage(middle: number, container?: HTMLElement | null) {
   const element = container?.firstElementChild?.children?.item(Math.floor(middle));
@@ -30,17 +32,32 @@ export function getCurrentMiddleFromScrollElement({
 }
 
 export function getPageScroll(
+  params: {
+    elements: HTMLElement[];
+    viewportHeight: number;
+    previousMiddle: number;
+  },
+): number | undefined {
+  const currentPage = getCurrentPageFromElements(params);
+  return currentPage ? getMiddle(currentPage) : undefined;
+
+  function getMiddle(page: Page) {
+    const { viewportHeight, elements } = params;
+    const scrollCenter = viewportHeight / 2;
+    const ratio = 1 - ((page.rect.y + page.rect.height - scrollCenter) / page.rect.height);
+    return elements.indexOf(page.page) + ratio;
+  }
+}
+
+export function getCurrentPageFromElements(
   { elements, viewportHeight, previousMiddle }: {
     elements: HTMLElement[];
     viewportHeight: number;
     previousMiddle: number;
   },
-): number | null {
-  type PageRect = { y: number; height: number };
-  type Page = { page: HTMLElement; rect: PageRect };
-
+): Page | undefined {
   if (!elements.length) {
-    return null;
+    return;
   }
 
   const scrollCenter = viewportHeight / 2;
@@ -48,19 +65,13 @@ export function getPageScroll(
   // Even top level elements can have fractional size depending on the devicePixelRatio.
   const pages: Page[] = elements.map((page) => ({ page, rect: page.getBoundingClientRect() }));
   const currentRow = pages.filter(isCenterCrossing);
-  const currentPage = getCurrentPage(currentRow);
-  if (!currentPage) {
-    return null;
-  }
-
-  const middle = getMiddle(currentPage);
-  return middle;
+  return selectColumn(currentRow);
 
   function isCenterCrossing({ rect: { y, height } }: { rect: PageRect }) {
     return y <= scrollCenter && y + height >= scrollCenter;
   }
 
-  function getCurrentPage(row: Page[]) {
+  function selectColumn(row: Page[]) {
     const firstPage = row.find(({ page }) => page === elements[0]);
     if (firstPage) {
       return firstPage;
@@ -85,11 +96,6 @@ export function getPageScroll(
     // Previous middle must be odd row page count, so preserve it.
     const previousMiddlePage = previousMiddle < centerNextTop ? row[half - 1] : row[half];
     return previousMiddlePage;
-  }
-
-  function getMiddle(page: Page) {
-    const ratio = 1 - ((page.rect.y + page.rect.height - scrollCenter) / page.rect.height);
-    return elements.indexOf(page.page) + ratio;
   }
 }
 
@@ -141,15 +147,28 @@ export function getNextScroll(scrollElement: HTMLDivElement | null) {
 }
 
 export function getUrlMedia(urls: string[]) {
-  const pages = [];
-  const imgs = document.querySelectorAll<HTMLImageElement | HTMLVideoElement>(
-    "img[src], video[src]",
-  );
-  for (const img of imgs) {
-    if (urls.includes(img.src)) {
-      pages.push(img);
+  const pages: (HTMLImageElement | HTMLVideoElement)[] = [];
+  const media = document.querySelectorAll<HTMLImageElement | HTMLVideoElement>("img, video");
+
+  for (const medium of media) {
+    if (medium instanceof HTMLImageElement) {
+      const img = medium;
+      const parent = img.parentElement;
+
+      const isTargetImg = urls.includes(img.src);
+      const isTargetPictureImg = parent instanceof HTMLPictureElement && containsUrl(parent, urls);
+      if (isTargetImg || isTargetPictureImg) {
+        pages.push(img);
+      }
+    } else {
+      const video = medium;
+      const isTargetVideo = urls.includes(video.src) || containsUrl(video, urls);
+      if (isTargetVideo) {
+        pages.push(video);
+      }
     }
   }
+
   return pages;
 }
 
@@ -267,4 +286,17 @@ function getCurrentPageFromScrollElement(
   }
 
   return getScrollPage(middle, scrollElement);
+}
+
+function containsUrl(media: HTMLPictureElement | HTMLVideoElement, urls: string[]) {
+  return getUrlsFromSources(media).some((url) => urls.includes(url));
+}
+
+function getUrlsFromSources(picture: HTMLPictureElement | HTMLVideoElement) {
+  const sources = [...picture.querySelectorAll("source")];
+  return sources.flatMap((x) => getSrcFromSrcset(x.srcset));
+}
+
+function getSrcFromSrcset(srcset: string) {
+  return srcset.split(",").map((x) => x.split(/\s+/)[0]).filter((x) => x !== undefined);
 }

@@ -45,7 +45,7 @@ export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
 
   const urls = [...urlToViewerPages.keys()];
   const media = getUrlMedia(urls);
-  const siteMedia = media.filter((medium) => !viewerMedia.includes(medium));
+  const siteMedia = media.filter((medium) => !viewerMedia.includes(medium as HTMLImageElement));
   const visibleMedia = siteMedia.filter(isVisible);
   const middle = getPageScroll({
     elements: visibleMedia,
