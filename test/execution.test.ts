@@ -77,6 +77,9 @@ Deno.test("With test page", async (test) => {
   });
 
   await Promise.all([browser.close(), server.shutdown()]);
+
+  // puppeteer-core/23.6.0/lib/esm/puppeteer/cdp/FrameManager.js:L24 TIME_FOR_WAITING_FOR_SWAP
+  await delay(100);
 });
 
 function bufferToUint8Array(actualRaw: Uint8Array) {
