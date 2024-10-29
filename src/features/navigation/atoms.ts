@@ -1,3 +1,4 @@
+import { viewerStateAtom } from "../../atoms/viewer_base_atoms.ts";
 import { atom } from "../../deps.ts";
 import { beforeRepaintAtom } from "../../modules/use_before_repaint.ts";
 import {
@@ -28,8 +29,9 @@ const lastWindowToViewerMiddleAtom = atom(-1);
 export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   const scrollable = get(scrollElementAtom);
   const lastWindowToViewerMiddle = get(lastWindowToViewerMiddleAtom);
+  const noSyncScroll = get(viewerStateAtom).options.noSyncScroll ?? false;
 
-  const middle = toViewerScroll({ scrollable, lastWindowToViewerMiddle });
+  const middle = toViewerScroll({ scrollable, lastWindowToViewerMiddle, noSyncScroll });
   if (!middle) {
     return;
   }
@@ -38,17 +40,21 @@ export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   set(lastWindowToViewerMiddleAtom, middle);
 });
 
-export const transferViewerScrollToWindowAtom = atom(null, (get, set) => {
-  const middle = get(pageScrollMiddleAtom);
-  const scrollElement = get(scrollElementAtom);
-  const lastMiddle = get(lastViewerToWindowMiddleAtom);
+export const transferViewerScrollToWindowAtom = atom(
+  null,
+  (get, set, { forFullscreen }: { forFullscreen?: boolean } = {}) => {
+    const middle = get(pageScrollMiddleAtom);
+    const scrollElement = get(scrollElementAtom);
+    const lastMiddle = get(lastViewerToWindowMiddleAtom);
+    const noSyncScroll = get(viewerStateAtom).options.noSyncScroll ?? false;
 
-  const top = toWindowScroll({ middle, lastMiddle, scrollElement });
-  if (top !== undefined) {
-    set(lastViewerToWindowMiddleAtom, middle);
-    scroll({ behavior: "instant", top });
-  }
-});
+    const top = toWindowScroll({ middle, lastMiddle, scrollElement, noSyncScroll, forFullscreen });
+    if (top !== undefined) {
+      set(lastViewerToWindowMiddleAtom, middle);
+      scroll({ behavior: "instant", top });
+    }
+  },
+);
 
 export const synchronizeScrollAtom = atom(null, (get, set) => {
   const scrollElement = get(scrollElementAtom);

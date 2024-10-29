@@ -20,12 +20,7 @@ import {
   transitionLockAtom,
   viewerFullscreenAtom,
 } from "./fullscreen_atom.ts";
-import {
-  type ViewerOptions,
-  viewerOptionsAtom,
-  viewerStateAtom,
-  viewerStatusAtom,
-} from "./viewer_base_atoms.ts";
+import { type ViewerOptions, viewerOptionsAtom, viewerStatusAtom } from "./viewer_base_atoms.ts";
 
 export const rootAtom = atom<Root | null>(null);
 
@@ -46,15 +41,15 @@ async function transactImmersive(get: Getter, set: Setter, value: boolean) {
 
   if (value) {
     set(externalFocusElementAtom, (previous) => previous ? previous : document.activeElement);
-    if (!get(viewerStateAtom).options.noSyncScroll) {
-      set(transferWindowScrollToViewerAtom);
-    }
+    set(transferWindowScrollToViewerAtom);
   }
 
   const scrollable = get(scrollElementAtom);
   if (!scrollable) {
     return;
   }
+
+  const { fullscreenElement } = get(scrollBarStyleFactorAtom);
 
   try {
     if (get(isFullscreenPreferredAtom)) {
@@ -73,8 +68,8 @@ async function transactImmersive(get: Getter, set: Setter, value: boolean) {
     if (value) {
       focusWithoutScroll(scrollable);
     } else {
-      if (!get(viewerStateAtom).options.noSyncScroll) {
-        set(transferViewerScrollToWindowAtom);
+      if (fullscreenElement) {
+        set(transferViewerScrollToWindowAtom, { forFullscreen: true });
       }
       const externalFocusElement = get(externalFocusElementAtom) as HTMLElement;
       focusWithoutScroll(externalFocusElement);

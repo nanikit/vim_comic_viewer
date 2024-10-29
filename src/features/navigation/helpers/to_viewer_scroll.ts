@@ -1,10 +1,11 @@
 import { getCurrentRow, getInPageRatio, hasNoticeableDifference, isVisible } from "./common.ts";
 
-export function toViewerScroll({ scrollable, lastWindowToViewerMiddle }: {
+export function toViewerScroll({ scrollable, lastWindowToViewerMiddle, noSyncScroll }: {
   scrollable: HTMLDivElement | null;
   lastWindowToViewerMiddle: number;
+  noSyncScroll: boolean;
 }) {
-  if (!scrollable) {
+  if (!scrollable || noSyncScroll) {
     return;
   }
 

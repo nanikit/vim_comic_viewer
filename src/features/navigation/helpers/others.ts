@@ -123,13 +123,15 @@ export function goToNextArea(scrollElement: HTMLDivElement | null) {
 }
 
 export function toWindowScroll(
-  { middle, lastMiddle, scrollElement }: {
+  { middle, lastMiddle, noSyncScroll, forFullscreen, scrollElement }: {
     middle: number;
     lastMiddle: number;
+    noSyncScroll: boolean;
+    forFullscreen?: boolean;
     scrollElement: HTMLDivElement | null;
   },
 ) {
-  if (!hasNoticeableDifference(middle, lastMiddle)) {
+  if (noSyncScroll || (!forFullscreen && !hasNoticeableDifference(middle, lastMiddle))) {
     return;
   }
 
