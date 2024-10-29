@@ -1,10 +1,15 @@
-import type { Size } from "../../helpers/size.ts";
+import type { Size } from "../../../helpers/size.ts";
+import {
+  getCurrentRow,
+  getInPageRatio,
+  hasNoticeableDifference,
+  isVisible,
+  type VisibleRect,
+} from "./common.ts";
 
 type ScrollSize = Size & {
   scrollHeight: number;
 };
-type RectHeight = { y: number; height: number };
-type VisibleRect = { page: HTMLElement; rect: RectHeight };
 
 export function getScrollPage(middle: number, container?: HTMLElement | null) {
   const element = container?.firstElementChild?.children?.item(Math.floor(middle));
@@ -31,62 +36,44 @@ export function getCurrentMiddleFromScrollElement({
   });
 }
 
-export function toViewerScroll({ scrollable, lastWindowToViewerMiddle }: {
-  scrollable: HTMLDivElement | null;
-  lastWindowToViewerMiddle: number;
+export function getNewSizeIfResized({ scrollElement, previousSize }: {
+  scrollElement: HTMLDivElement | null;
+  previousSize: ScrollSize;
 }) {
-  if (!scrollable) {
+  if (!scrollElement) {
     return;
   }
 
-  const viewerMedia = [
-    ...scrollable.querySelectorAll<HTMLImageElement | HTMLVideoElement>("img[src], video[src]"),
-  ];
-
-  const urlToViewerPages = new Map<string, HTMLElement>();
-  for (const media of viewerMedia) {
-    urlToViewerPages.set(media.src, media);
-  }
-
-  const urls = [...urlToViewerPages.keys()];
-  const media = getUrlMedia(urls);
-  const siteMedia = media.filter((medium) => !viewerMedia.includes(medium as HTMLImageElement));
-  const visibleMedia = siteMedia.filter(isVisible);
-
-  const viewportHeight = visualViewport?.height ?? innerHeight;
-  const currentRow = getCurrentRow({ elements: visibleMedia, viewportHeight });
-  if (!currentRow) {
-    return;
-  }
-
-  const indexed = currentRow.map((sized) => [sized, getUrlIndex(sized.page, urls)] as const);
-  const last = lastWindowToViewerMiddle - 0.5;
-  const sorted = indexed.sort((a, b) => Math.abs(a[1] - last) - Math.abs(b[1] - last));
-  const [page, index] = sorted[0] ?? [];
-  if (!page || index === undefined) {
-    return;
-  }
-
-  const pageRatio = getInPageRatio({ page, viewportHeight });
-  const snappedRatio = Math.abs(pageRatio - 0.5) < 0.1 ? 0.5 : pageRatio;
-  if (!hasNoticeableDifference(index + snappedRatio, lastWindowToViewerMiddle)) {
-    return;
-  }
-
-  return index + snappedRatio;
-}
-
-export function needsScrollRestoration(previousSize: ScrollSize, currentSize: ScrollSize) {
-  const { width, height, scrollHeight } = currentSize;
+  const { width, height } = scrollElement.getBoundingClientRect();
+  const scrollHeight = scrollElement.scrollHeight;
   const { width: previousWidth, height: previousHeight, scrollHeight: previousScrollHeight } =
     previousSize;
-  return previousWidth === 0 || previousHeight === 0 ||
+
+  const needsScrollRestoration = previousWidth === 0 || previousHeight === 0 ||
     previousWidth !== width || previousHeight !== height ||
     previousScrollHeight !== scrollHeight;
+
+  return needsScrollRestoration ? { width, height, scrollHeight } : undefined;
+}
+
+export function navigateByPointer(scrollElement: HTMLDivElement | null, event: React.MouseEvent) {
+  const height = scrollElement?.clientHeight;
+  if (!height || event.button !== 0) {
+    return;
+  }
+
+  event.preventDefault();
+
+  const isTop = event.clientY < height / 2;
+  if (isTop) {
+    goToPreviousArea(scrollElement);
+  } else {
+    goToNextArea(scrollElement);
+  }
 }
 
 /** Returns difference of scrollTop to make the target section visible. */
-export function getPreviousScroll(scrollElement: HTMLDivElement | null) {
+export function goToPreviousArea(scrollElement: HTMLDivElement | null) {
   const page = getCurrentPageFromScrollElement({ scrollElement, previousMiddle: Infinity });
   if (!page || !scrollElement) {
     return;
@@ -96,15 +83,21 @@ export function getPreviousScroll(scrollElement: HTMLDivElement | null) {
   const ignorableHeight = viewerHeight * 0.05;
   // HACK: scrollTop has fractional px on HiDPI, -1 is monkey patching for it.
   const remainingHeight = scrollElement.scrollTop - Math.ceil(page.offsetTop) - 1;
-  if (remainingHeight > ignorableHeight) {
-    const divisor = Math.ceil(remainingHeight / viewerHeight);
-    return -Math.ceil(remainingHeight / divisor);
-  } else {
-    return getPreviousPageBottomOrStart(page);
+
+  // Use scrollBy because scrollTop precision is not enough on HiDPI.
+  scrollElement.scrollBy({ top: getPreviousYDiff(page) });
+
+  function getPreviousYDiff(page: HTMLElement) {
+    if (remainingHeight > ignorableHeight) {
+      const divisor = Math.ceil(remainingHeight / viewerHeight);
+      return -Math.ceil(remainingHeight / divisor);
+    } else {
+      return getPreviousPageBottomOrStart(page);
+    }
   }
 }
 
-export function getNextScroll(scrollElement: HTMLDivElement | null) {
+export function goToNextArea(scrollElement: HTMLDivElement | null) {
   const page = getCurrentPageFromScrollElement({ scrollElement, previousMiddle: 0 });
   if (!page || !scrollElement) {
     return;
@@ -115,11 +108,17 @@ export function getNextScroll(scrollElement: HTMLDivElement | null) {
   const scrollBottom = scrollElement.scrollTop + viewerHeight;
   // HACK: scrollTop has fractional px on HiDPI, -1 is monkey patching for it.
   const remainingHeight = page.offsetTop + page.clientHeight - Math.ceil(scrollBottom) - 1;
-  if (remainingHeight > ignorableHeight) {
-    const divisor = Math.ceil(remainingHeight / viewerHeight);
-    return Math.ceil(remainingHeight / divisor);
-  } else {
-    return getNextPageTopOrEnd(page);
+
+  // Use scrollBy because scrollTop precision is not enough on HiDPI.
+  scrollElement.scrollBy({ top: getNextYDiff(page) });
+
+  function getNextYDiff(page: HTMLElement) {
+    if (remainingHeight > ignorableHeight) {
+      const divisor = Math.ceil(remainingHeight / viewerHeight);
+      return Math.ceil(remainingHeight / divisor);
+    } else {
+      return getNextPageTopOrEnd(page);
+    }
   }
 }
 
@@ -150,6 +149,24 @@ export function toWindowScroll(
   const top = scrollY + rect.y + rect.height * ratio - innerHeight / 2;
 
   return top;
+}
+
+export function restoreScroll({ scrollable, middle }: {
+  scrollable: HTMLDivElement | null;
+  middle: number;
+}) {
+  const page = getScrollPage(middle, scrollable);
+  if (!page || !scrollable || scrollable.clientHeight < 1) {
+    return false;
+  }
+
+  const { height: scrollableHeight } = scrollable.getBoundingClientRect();
+  const { y: pageY, height: pageHeight } = page.getBoundingClientRect();
+  const ratio = middle - Math.floor(middle);
+  const restoredYDiff = pageY + pageHeight * ratio - scrollableHeight / 2;
+  scrollable.scrollBy({ top: restoredYDiff });
+
+  return true;
 }
 
 function findOriginElement(src: string, page: HTMLElement) {
@@ -225,51 +242,6 @@ function getCurrentPageFromScrollElement(
   return getScrollPage(middle, scrollElement);
 }
 
-function getUrlMedia(urls: string[]) {
-  const media = document.querySelectorAll<HTMLImageElement | HTMLVideoElement>("img, video");
-  return [...media].filter((medium) => getUrlIndex(medium, urls) !== -1);
-}
-
-function getUrlIndex(medium: HTMLElement, urls: string[]) {
-  if (medium instanceof HTMLImageElement) {
-    const img = medium;
-    const parent = img.parentElement;
-
-    const imgUrlIndex = urls.findIndex((x) => x === img.src);
-    const pictureUrlIndex = parent instanceof HTMLPictureElement
-      ? getUrlIndexFromSrcset(parent, urls)
-      : -1;
-    return imgUrlIndex === -1 ? pictureUrlIndex : imgUrlIndex;
-  } else if (medium instanceof HTMLVideoElement) {
-    const video = medium;
-    const videoUrlIndex = urls.findIndex((x) => x === video.src);
-    const srcsetUrlIndex = getUrlIndexFromSrcset(video, urls);
-    return videoUrlIndex === -1 ? srcsetUrlIndex : videoUrlIndex;
-  }
-
-  return -1;
-}
-
-function getUrlIndexFromSrcset(media: HTMLPictureElement | HTMLVideoElement, urls: string[]) {
-  for (const url of getUrlsFromSources(media)) {
-    const index = urls.findIndex((x) => x === url);
-    if (index !== -1) {
-      return index;
-    }
-  }
-
-  return -1;
-}
-
-function getUrlsFromSources(picture: HTMLPictureElement | HTMLVideoElement) {
-  const sources = [...picture.querySelectorAll("source")];
-  return sources.flatMap((x) => getSrcFromSrcset(x.srcset));
-}
-
-function getSrcFromSrcset(srcset: string) {
-  return srcset.split(",").map((x) => x.split(/\s+/)[0]).filter((x) => x !== undefined);
-}
-
 function getPageScroll(
   params: {
     elements: HTMLElement[];
@@ -285,12 +257,6 @@ function getPageScroll(
     const ratio = getInPageRatio({ page, viewportHeight });
     return elements.indexOf(page.page) + ratio;
   }
-}
-
-function getInPageRatio({ page, viewportHeight }: { page: VisibleRect; viewportHeight: number }) {
-  const scrollCenter = viewportHeight / 2;
-  const { y, height } = page.rect;
-  return 1 - ((y + height - scrollCenter) / height);
 }
 
 function getCurrentPageFromElements(
@@ -333,39 +299,4 @@ function getCurrentPageFromElements(
     const previousMiddlePage = previousMiddle < centerNextTop ? row[half - 1] : row[half];
     return previousMiddlePage;
   }
-}
-
-function getCurrentRow(
-  { elements, viewportHeight }: { elements: HTMLElement[]; viewportHeight: number },
-) {
-  if (!elements.length) {
-    return;
-  }
-
-  const scrollCenter = viewportHeight / 2;
-
-  // Even top level elements can have fractional size depending on the devicePixelRatio.
-  const pages: VisibleRect[] = elements.map((page) => ({
-    page,
-    rect: page.getBoundingClientRect(),
-  }));
-  return pages.filter(isCenterCrossing);
-
-  function isCenterCrossing({ rect: { y, height } }: { rect: RectHeight }) {
-    return y <= scrollCenter && y + height >= scrollCenter;
-  }
-}
-
-function isVisible(element: HTMLElement) {
-  if ("checkVisibility" in element) {
-    return element.checkVisibility();
-  }
-
-  const { x, y, width, height } = (element as HTMLElement).getBoundingClientRect();
-  const elements = document.elementsFromPoint(x + width / 2, y + height / 2);
-  return elements.includes(element);
-}
-
-function hasNoticeableDifference(middle: number, lastMiddle: number) {
-  return Math.abs(middle - lastMiddle) > 0.01;
 }

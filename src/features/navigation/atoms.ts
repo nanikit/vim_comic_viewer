@@ -2,13 +2,14 @@ import { atom } from "../../deps.ts";
 import { beforeRepaintAtom } from "../../modules/use_before_repaint.ts";
 import {
   getCurrentMiddleFromScrollElement,
-  getNextScroll,
-  getPreviousScroll,
-  getScrollPage,
-  needsScrollRestoration,
-  toViewerScroll,
+  getNewSizeIfResized,
+  goToNextArea,
+  goToPreviousArea,
+  navigateByPointer,
+  restoreScroll,
   toWindowScroll,
-} from "./helpers.ts";
+} from "./helpers/others.ts";
+import { toViewerScroll } from "./helpers/to_viewer_scroll.ts";
 
 export const scrollElementStateAtom = atom<
   {
@@ -71,22 +72,14 @@ export const synchronizeScrollAtom = atom(null, (get, set) => {
 
 export const correctScrollAtom = atom(null, (get, set) => {
   const scrollElement = get(scrollElementAtom);
-  if (!scrollElement) {
-    return;
-  }
   const previousSize = get(scrollElementSizeAtom);
 
-  const rect = scrollElement.getBoundingClientRect();
-  const currentSize = {
-    width: rect.width,
-    height: rect.height,
-    scrollHeight: scrollElement.scrollHeight,
-  };
-  if (!needsScrollRestoration(previousSize, currentSize)) {
+  const newSize = getNewSizeIfResized({ scrollElement, previousSize });
+  if (!newSize) {
     return false;
   }
 
-  set(scrollElementSizeAtom, currentSize);
+  set(scrollElementSizeAtom, newSize);
   set(restoreScrollAtom);
   // It handles shouldBeOriginalSize change.
   return true;
@@ -95,45 +88,22 @@ export const correctScrollAtom = atom(null, (get, set) => {
 export const restoreScrollAtom = atom(null, (get, set) => {
   const middle = get(pageScrollMiddleAtom);
   const scrollable = get(scrollElementAtom);
-  const page = getScrollPage(middle, scrollable);
-  if (!page || !scrollable || scrollable.clientHeight < 1) {
-    return;
-  }
 
-  const { height: scrollableHeight } = scrollable.getBoundingClientRect();
-  const { y: pageY, height: pageHeight } = page.getBoundingClientRect();
-  const ratio = middle - Math.floor(middle);
-  const restoredYDiff = pageY + pageHeight * ratio - scrollableHeight / 2;
-  scrollable.scrollBy({ top: restoredYDiff });
-  set(beforeRepaintAtom, { task: () => set(correctScrollAtom) });
+  const restored = restoreScroll({ scrollable, middle });
+
+  if (restored) {
+    set(beforeRepaintAtom, { task: () => set(correctScrollAtom) });
+  }
 });
 
 export const goNextAtom = atom(null, (get) => {
-  const diffY = getNextScroll(get(scrollElementAtom));
-  if (diffY != null) {
-    // Use scrollBy because scrollTop precision is not enough on HiDPI.
-    get(scrollElementAtom)?.scrollBy({ top: diffY });
-  }
+  goToNextArea(get(scrollElementAtom));
 });
 
 export const goPreviousAtom = atom(null, (get) => {
-  const diffY = getPreviousScroll(get(scrollElementAtom));
-  if (diffY != null) {
-    get(scrollElementAtom)?.scrollBy({ top: diffY });
-  }
+  goToPreviousArea(get(scrollElementAtom));
 });
 
-export const navigateAtom = atom(null, (get, set, event: React.MouseEvent) => {
-  const height = get(scrollElementAtom)?.clientHeight;
-  if (!height || event.button !== 0) {
-    return;
-  }
-  event.preventDefault();
-
-  const isTop = event.clientY < height / 2;
-  if (isTop) {
-    set(goPreviousAtom);
-  } else {
-    set(goNextAtom);
-  }
+export const navigateAtom = atom(null, (get, _set, event: React.MouseEvent) => {
+  navigateByPointer(get(scrollElementAtom), event);
 });
