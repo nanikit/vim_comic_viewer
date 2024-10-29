@@ -4,6 +4,11 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+# 18.1.2
+
+- Support scroll transfer for picture, source elements.
+- Fix slight scroll misposition when exit fullscreen.
+
 # 18.1.1
 
 - Fix scroll transfer more.
