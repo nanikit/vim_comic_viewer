@@ -27,52 +27,19 @@ Deno.test("With test page", async (test) => {
     await delay(300);
     await page.keyboard.press("i");
 
-    const expectedRaw = await Deno.readFile("test/assets/snapshots/1-after-load.webp");
-    const expected = decode(expectedRaw);
-
     await test.step("then viewer should be shown", async () => {
-      const actualRaw = await page.screenshot({ type: "webp" });
-      const actual = decode(actualRaw);
-
-      try {
-        assertEquals(actual.width, expected.width, "width");
-        assertEquals(actual.height, expected.height, "height");
-        for (let i = 0; i < actual.data.length; i++) {
-          assertEquals(actual.data[i], expected.data[i], `index: ${i}`);
-        }
-      } catch (error) {
-        await Promise.all([
-          Deno.writeFile("test/failure/1-actual.webp", bufferToUint8Array(actualRaw)),
-          Deno.writeFile("test/failure/1-expected.webp", expectedRaw),
-        ]);
-        throw error;
-      }
+      await assertPixelsEqual(
+        page.screenshot({ type: "webp" }),
+        "test/assets/snapshots/1-after-load.webp",
+      );
     });
   });
 
   await test.step("when press j key", async (test) => {
     await page.keyboard.press("j");
 
-    const expectedRaw = await Deno.readFile("test/assets/snapshots/2-j.webp");
-    const expected = decode(expectedRaw);
-
     await test.step("then viewer should show next page", async () => {
-      const actualRaw = await page.screenshot({ type: "webp" });
-      const actual = decode(actualRaw);
-
-      try {
-        assertEquals(actual.width, expected.width, "width");
-        assertEquals(actual.height, expected.height, "height");
-        for (let i = 0; i < actual.data.length; i++) {
-          assertEquals(actual.data[i], expected.data[i], `index: ${i}`);
-        }
-      } catch (error) {
-        await Promise.all([
-          Deno.writeFile("test/failure/2-actual.webp", bufferToUint8Array(actualRaw)),
-          Deno.writeFile("test/failure/2-expected.webp", expectedRaw),
-        ]);
-        throw error;
-      }
+      await assertPixelsEqual(page.screenshot({ type: "webp" }), "test/assets/snapshots/2-j.webp");
     });
   });
 
@@ -81,6 +48,27 @@ Deno.test("With test page", async (test) => {
   // puppeteer-core/23.6.0/lib/esm/puppeteer/cdp/FrameManager.js:L24 TIME_FOR_WAITING_FOR_SWAP
   await delay(100);
 });
+
+async function assertPixelsEqual(actualPromise: Promise<Uint8Array>, expectedPath: string) {
+  const expectedRaw = await Deno.readFile(expectedPath);
+  const expected = decode(expectedRaw);
+  const actualRaw = await actualPromise;
+  const actual = decode(actualRaw);
+
+  try {
+    assertEquals(actual.width, expected.width, "width");
+    assertEquals(actual.height, expected.height, "height");
+    for (let i = 0; i < actual.data.length; i++) {
+      assertEquals(actual.data[i], expected.data[i], `index: ${i}`);
+    }
+  } catch (error) {
+    await Promise.all([
+      Deno.writeFile("test/failure/2-actual.webp", bufferToUint8Array(actualRaw)),
+      Deno.writeFile("test/failure/2-expected.webp", expectedRaw),
+    ]);
+    throw error;
+  }
+}
 
 function bufferToUint8Array(actualRaw: Uint8Array) {
   const buffer = new Uint8Array(actualRaw.length);
