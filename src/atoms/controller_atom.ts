@@ -13,7 +13,6 @@ import {
   reloadErroredAtom,
   rootAtom,
   setViewerImmersiveAtom,
-  setViewerOptionsAtom,
   toggleFullscreenAtom,
   toggleImmersiveAtom,
   viewerModeAtom,
@@ -101,7 +100,7 @@ class Controller {
   }
 
   setOptions = (value: ViewerOptions) => {
-    this.set(setViewerOptionsAtom, value);
+    this.set(viewerOptionsAtom, value);
   };
 
   goPrevious = () => {

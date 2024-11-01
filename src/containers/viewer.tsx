@@ -6,24 +6,43 @@ import {
   blockSelectionAtom,
   fullscreenSynchronizationAtom,
   setViewerElementAtom,
-  setViewerOptionsAtom,
   toggleImmersiveAtom,
   viewerModeAtom,
 } from "../atoms/viewer_atoms.ts";
-import { type ViewerOptions, viewerStatusAtom } from "../atoms/viewer_base_atoms.ts";
+import {
+  type ViewerOptions,
+  viewerOptionsAtom,
+  viewerStatusAtom,
+} from "../atoms/viewer_base_atoms.ts";
 import { FullscreenButton } from "../components/icons.tsx";
 import { Container, OverlayScroller } from "../components/scrollable_layout.ts";
-import { HTMLProps, useAtomValue, useEffect, useRef, useSetAtom } from "../deps.ts";
+import { HTMLProps, useAtom, useAtomValue, useEffect, useRef, useSetAtom } from "../deps.ts";
 import { navigateAtom, synchronizeScrollAtom } from "../features/navigation/atoms.ts";
 import { backgroundColorAtom, pageDirectionAtom } from "../features/preferences/atoms.ts";
+import { i18nAtom } from "../modules/i18n/atoms.ts";
+import { useOverlayScrollbars } from "../modules/overlayscrollbars.ts";
 import { styled } from "../modules/stitches.ts";
+import { ToastContainer } from "../modules/toast.ts";
+import { useBeforeRepaint } from "../modules/use_before_repaint.ts";
 import { LeftBottomControl } from "./left_bottom_control.tsx";
 import { Page } from "./page.tsx";
 
-import { i18nAtom } from "../modules/i18n/atoms.ts";
-import { useOverlayScrollbars } from "../modules/overlayscrollbars.ts";
-import { ToastContainer } from "../modules/toast.ts";
-import { useBeforeRepaint } from "../modules/use_before_repaint.ts";
+const Pages = styled("div", {
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  flexFlow: "row-reverse wrap",
+
+  overflowY: "auto",
+
+  variants: {
+    ltr: {
+      true: {
+        flexFlow: "row wrap",
+      },
+    },
+  },
+});
 
 export function InnerViewer(
   props: HTMLProps<HTMLDivElement> & {
@@ -31,11 +50,11 @@ export function InnerViewer(
     onInitialized?: (controller: ViewerController) => void;
   },
 ) {
-  const { options: viewerOptions, onInitialized, ...otherProps } = props;
+  const { options, onInitialized, ...otherProps } = props;
   const isFullscreen = useAtomValue(viewerFullscreenAtom);
   const backgroundColor = useAtomValue(backgroundColorAtom);
   const status = useAtomValue(viewerStatusAtom);
-  const setViewerOptions = useSetAtom(setViewerOptionsAtom);
+  const [viewerOptions, setViewerOptions] = useAtom(viewerOptionsAtom);
   const pageDirection = useAtomValue(pageDirectionAtom);
   const strings = useAtomValue(i18nAtom);
   const mode = useAtomValue(viewerModeAtom);
@@ -43,8 +62,6 @@ export function InnerViewer(
   const virtualContainerRef = useRef<HTMLDivElement | null>(null);
   const virtualContainer = virtualContainerRef.current;
   const setScrollElement = useSetAtom(setScrollElementAtom);
-
-  const options = controller?.options;
 
   const pageAtoms = useAtomValue(pageAtomsAtom);
 
@@ -68,8 +85,8 @@ export function InnerViewer(
   }, [controller, onInitialized]);
 
   useEffect(() => {
-    setViewerOptions(viewerOptions);
-  }, [viewerOptions]);
+    setViewerOptions(options);
+  }, [options]);
 
   useEffect(() => {
     if (virtualContainer) {
@@ -98,7 +115,7 @@ export function InnerViewer(
               <Page
                 key={`${atom}`}
                 atom={atom}
-                {...options?.mediaProps}
+                {...viewerOptions.mediaProps}
               />
             ))
             : <p>{status === "error" ? strings.errorIsOccurred : strings.loading}</p>}
@@ -110,20 +127,3 @@ export function InnerViewer(
     </Container>
   );
 }
-
-const Pages = styled("div", {
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  flexFlow: "row-reverse wrap",
-
-  overflowY: "auto",
-
-  variants: {
-    ltr: {
-      true: {
-        flexFlow: "row wrap",
-      },
-    },
-  },
-});
