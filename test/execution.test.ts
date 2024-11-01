@@ -1,7 +1,7 @@
 import decode from "https://deno.land/x/wasm_image_decoder@v0.0.7/mod.js";
 import { assertEquals } from "jsr:@std/assert";
 import { delay } from "jsr:@std/async/delay";
-import { resolve } from "jsr:@std/path";
+import { parse, resolve } from "jsr:@std/path";
 import puppeteer from "npm:puppeteer";
 
 Deno.test("With test page", async (test) => {
@@ -43,6 +43,28 @@ Deno.test("With test page", async (test) => {
     });
   });
 
+  await test.step("when click bottom of the page", async (test) => {
+    await page.mouse.click(600, 600);
+
+    await test.step("then viewer should show next page", async () => {
+      await assertPixelsEqual(
+        page.screenshot({ type: "webp" }),
+        "test/assets/snapshots/3-click-bottom.webp",
+      );
+    });
+  });
+
+  await test.step("when touch bottom of the page", async (test) => {
+    await page.touchscreen.tap(600, 600);
+
+    await test.step("then viewer should show next page", async () => {
+      await assertPixelsEqual(
+        page.screenshot({ type: "webp" }),
+        "test/assets/snapshots/4-touch-bottom.webp",
+      );
+    });
+  });
+
   await Promise.all([browser.close(), server.shutdown()]);
 
   // puppeteer-core/23.6.0/lib/esm/puppeteer/cdp/FrameManager.js:L24 TIME_FOR_WAITING_FOR_SWAP
@@ -62,9 +84,12 @@ async function assertPixelsEqual(actualPromise: Promise<Uint8Array>, expectedPat
       assertEquals(actual.data[i], expected.data[i], `index: ${i}`);
     }
   } catch (error) {
+    const { name } = parse(expectedPath);
+    const actualFileName = `${name}-actual.webp`;
+    const expectedFileName = `${name}-expected.webp`;
     await Promise.all([
-      Deno.writeFile("test/failure/2-actual.webp", bufferToUint8Array(actualRaw)),
-      Deno.writeFile("test/failure/2-expected.webp", expectedRaw),
+      Deno.writeFile(`test/failure/${actualFileName}`, bufferToUint8Array(actualRaw)),
+      Deno.writeFile(`test/failure/${expectedFileName}`, expectedRaw),
     ]);
     throw error;
   }
