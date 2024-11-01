@@ -26,6 +26,7 @@ import { ToastContainer } from "../modules/toast.ts";
 import { useBeforeRepaint } from "../modules/use_before_repaint.ts";
 import { LeftBottomControl } from "./left_bottom_control.tsx";
 import { Page } from "./page.tsx";
+import { SideSeriesButtons } from "./side_series_buttons.tsx";
 
 const Pages = styled("div", {
   display: "flex",
@@ -131,6 +132,7 @@ export function InnerViewer(
       {status === "loading" && <CenterText>{strings.loading}</CenterText>}
       {status === "error" && <CenterText>{strings.errorIsOccurred}</CenterText>}
       {status === "complete" && <LeftBottomControl />}
+      <SideSeriesButtons />
       <FullscreenButton onClick={useSetAtom(toggleImmersiveAtom)} />
       <ToastContainer />
     </Container>

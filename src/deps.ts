@@ -43,6 +43,7 @@ export type {
   ReactNode,
   Ref,
   RefObject,
+  SVGAttributes,
   SVGProps,
 } from "react";
 
