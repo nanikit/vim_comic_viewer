@@ -11,6 +11,12 @@ export const Container = styled("div", {
   fontSize: "16px",
   color: "black",
 
+  // For overriding Chrome 118.0.5993.118 UA style sheet
+  // :focus-visible { outline: -webkit-focus-ring-color auto 1px; }
+  "& *:focus-visible": {
+    outline: "none",
+  },
+
   variants: {
     immersive: {
       true: {
@@ -30,15 +36,6 @@ export const OverlayScroller = styled("div", {
   width: "100%",
   height: "100%",
 
-  // For overriding Chrome 118.0.5993.118 UA style sheet
-  // :focus-visible { outline: -webkit-focus-ring-color auto 1px; }
-  outline: "none",
-
-  "& > div[data-overlayscrollbars-viewport]:focus-visible": {
-    // For overriding Chrome 118.0.5993.118 UA style sheet
-    // :focus-visible { outline: -webkit-focus-ring-color auto 1px; }
-    outline: "none",
-  },
   "& .os-scrollbar-handle": {
     backdropFilter: "brightness(0.5)",
     background: "none",
