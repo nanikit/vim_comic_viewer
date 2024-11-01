@@ -12,7 +12,3 @@ export type ViewerOptions = {
 
 export const viewerOptionsAtom = atom<ViewerOptions>({});
 export const viewerStatusAtom = atom<"idle" | "loading" | "error" | "complete">("idle");
-export const viewerStateAtom = atom((get) => ({
-  options: get(viewerOptionsAtom),
-  status: get(viewerStatusAtom),
-}));

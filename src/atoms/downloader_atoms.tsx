@@ -5,7 +5,7 @@ import { download, DownloadProgress } from "../helpers/downloader.ts";
 import { i18nAtom } from "../modules/i18n/atoms.ts";
 import { type Id, toast } from "../modules/toast.ts";
 import { save, timeout } from "../utils.ts";
-import { viewerStateAtom } from "./viewer_base_atoms.ts";
+import { viewerOptionsAtom } from "./viewer_base_atoms.ts";
 
 const aborterAtom = atom<AbortController | null>(null);
 export const cancelDownloadAtom = atom(null, (get) => {
@@ -21,8 +21,8 @@ export const startDownloadAtom = atom(null, async (get, set, options?: UserDownl
     return aborter;
   });
 
-  const viewerState = get(viewerStateAtom);
-  const source = options?.source ?? viewerState.options.source;
+  const viewerOptions = get(viewerOptionsAtom);
+  const source = options?.source ?? viewerOptions.source;
   if (!source) {
     return;
   }

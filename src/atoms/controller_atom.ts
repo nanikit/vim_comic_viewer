@@ -28,7 +28,7 @@ import {
 import { PersistentPreferences } from "../features/preferences/models.ts";
 import { isTyping } from "../utils.ts";
 import { pageAtomsAtom } from "./create_page_atom.ts";
-import { type ViewerOptions, viewerStateAtom } from "./viewer_base_atoms.ts";
+import { type ViewerOptions, viewerOptionsAtom, viewerStatusAtom } from "./viewer_base_atoms.ts";
 
 export type ViewerController = InstanceType<typeof Controller>;
 
@@ -54,11 +54,11 @@ class Controller {
   }
 
   get options() {
-    return this.get(viewerStateAtom).options;
+    return this.get(viewerOptionsAtom);
   }
 
   get status() {
-    return this.get(viewerStateAtom).status;
+    return this.get(viewerStatusAtom);
   }
 
   get container() {
