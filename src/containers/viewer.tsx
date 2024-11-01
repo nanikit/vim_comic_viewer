@@ -129,10 +129,10 @@ export function InnerViewer(
           ))}
         </Pages>
       </OverlayScroller>
+      <SideSeriesButtons />
       {status === "loading" && <CenterText>{strings.loading}</CenterText>}
       {status === "error" && <CenterText>{strings.errorIsOccurred}</CenterText>}
       {status === "complete" && <LeftBottomControl />}
-      <SideSeriesButtons />
       <FullscreenButton onClick={useSetAtom(toggleImmersiveAtom)} />
       <ToastContainer />
     </Container>

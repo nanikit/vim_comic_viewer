@@ -1,6 +1,7 @@
 export { createStitches } from "@stitches/react";
 export * from "fflate";
 export * from "https://deno.land/std@0.204.0/async/deferred.ts";
+export * from "https://raw.githubusercontent.com/denoland/std/df6f32c6bcccc4b46c38be415cecaf1f7742ec10/async/unstable_throttle.ts";
 export { atom, createStore, Provider, useAtom, useAtomValue, useSetAtom, useStore } from "jotai";
 export type { Atom, ExtractAtomValue, Getter, Setter } from "jotai";
 export { atomWithCache } from "jotai-cache";
