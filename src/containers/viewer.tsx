@@ -44,6 +44,15 @@ const Pages = styled("div", {
   },
 });
 
+const CenterText = styled("p", {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+
+  fontSize: "2em",
+});
+
 export function InnerViewer(
   props: HTMLProps<HTMLDivElement> & {
     options: ViewerOptions;
@@ -110,18 +119,18 @@ export function InnerViewer(
         {...otherProps}
       >
         <Pages ltr={pageDirection === "leftToRight"}>
-          {status === "complete"
-            ? pageAtoms.map((atom) => (
-              <Page
-                key={`${atom}`}
-                atom={atom}
-                {...viewerOptions.mediaProps}
-              />
-            ))
-            : <p>{status === "error" ? strings.errorIsOccurred : strings.loading}</p>}
+          {pageAtoms.map((atom) => (
+            <Page
+              key={`${atom}`}
+              atom={atom}
+              {...viewerOptions.mediaProps}
+            />
+          ))}
         </Pages>
       </OverlayScroller>
-      {status === "complete" ? <LeftBottomControl /> : false}
+      {status === "loading" && <CenterText>{strings.loading}</CenterText>}
+      {status === "error" && <CenterText>{strings.errorIsOccurred}</CenterText>}
+      {status === "complete" && <LeftBottomControl />}
       <FullscreenButton onClick={useSetAtom(toggleImmersiveAtom)} />
       <ToastContainer />
     </Container>
