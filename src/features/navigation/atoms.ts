@@ -1,4 +1,4 @@
-import { viewerStateAtom } from "../../atoms/viewer_base_atoms.ts";
+import { viewerOptionsAtom } from "../../atoms/viewer_base_atoms.ts";
 import { atom } from "../../deps.ts";
 import { beforeRepaintAtom } from "../../modules/use_before_repaint.ts";
 import {
@@ -29,7 +29,7 @@ const lastWindowToViewerMiddleAtom = atom(-1);
 export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   const scrollable = get(scrollElementAtom);
   const lastWindowToViewerMiddle = get(lastWindowToViewerMiddleAtom);
-  const noSyncScroll = get(viewerStateAtom).options.noSyncScroll ?? false;
+  const noSyncScroll = get(viewerOptionsAtom).noSyncScroll ?? false;
 
   const middle = toViewerScroll({ scrollable, lastWindowToViewerMiddle, noSyncScroll });
   if (!middle) {
@@ -46,7 +46,7 @@ export const transferViewerScrollToWindowAtom = atom(
     const middle = get(pageScrollMiddleAtom);
     const scrollElement = get(scrollElementAtom);
     const lastMiddle = get(lastViewerToWindowMiddleAtom);
-    const noSyncScroll = get(viewerStateAtom).options.noSyncScroll ?? false;
+    const noSyncScroll = get(viewerOptionsAtom).noSyncScroll ?? false;
 
     const top = toWindowScroll({ middle, lastMiddle, scrollElement, noSyncScroll, forFullscreen });
     if (top !== undefined) {

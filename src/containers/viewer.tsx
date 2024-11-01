@@ -10,7 +10,7 @@ import {
   toggleImmersiveAtom,
   viewerModeAtom,
 } from "../atoms/viewer_atoms.ts";
-import { type ViewerOptions, viewerStateAtom } from "../atoms/viewer_base_atoms.ts";
+import { type ViewerOptions, viewerStatusAtom } from "../atoms/viewer_base_atoms.ts";
 import { FullscreenButton } from "../components/icons.tsx";
 import { Container, OverlayScroller } from "../components/scrollable_layout.ts";
 import { HTMLProps, useAtomValue, useEffect, useRef, useSetAtom } from "../deps.ts";
@@ -34,7 +34,7 @@ export function InnerViewer(
   const { options: viewerOptions, onInitialized, ...otherProps } = props;
   const isFullscreen = useAtomValue(viewerFullscreenAtom);
   const backgroundColor = useAtomValue(backgroundColorAtom);
-  const viewer = useAtomValue(viewerStateAtom);
+  const status = useAtomValue(viewerStatusAtom);
   const setViewerOptions = useSetAtom(setViewerOptionsAtom);
   const pageDirection = useAtomValue(pageDirectionAtom);
   const strings = useAtomValue(i18nAtom);
@@ -45,7 +45,6 @@ export function InnerViewer(
   const setScrollElement = useSetAtom(setScrollElementAtom);
 
   const options = controller?.options;
-  const { status } = viewer;
 
   const pageAtoms = useAtomValue(pageAtomsAtom);
 
