@@ -5,7 +5,18 @@ define("main", (require, exports, module) => {
   var import_vim_comic_viewer = require("vim_comic_viewer");
   async function main() {
     const urls = [...document.querySelectorAll("img")].map((x) => x.src);
-    await (0, import_vim_comic_viewer.initialize)({ source: () => urls, noSyncScroll: true });
+    await (0, import_vim_comic_viewer.initialize)({
+      source: () => urls,
+      noSyncScroll: true,
+      onNextSeries: () => {
+        window.onNextSeriesCount ??= 0;
+        window.onNextSeriesCount++;
+      },
+      onPreviousSeries: () => {
+        window.onPreviousSeriesCount ??= 0;
+        window.onPreviousSeriesCount++;
+      },
+    });
   }
   main();
 });

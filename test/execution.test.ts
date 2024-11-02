@@ -65,6 +65,121 @@ Deno.test("With test page", async (test) => {
     });
   });
 
+  await test.step("when touch top of the page", async (test) => {
+    await page.touchscreen.tap(600, 200);
+
+    await test.step("then viewer should show previous page", async () => {
+      // await assertPixelsEqual(
+      //   page.screenshot({ type: "webp" }),
+      //   "test/assets/snapshots/3-click-bottom.webp",
+      // );
+    });
+  });
+
+  await test.step("when click top of the page", async (test) => {
+    await page.touchscreen.tap(600, 200);
+
+    await test.step("then viewer should show previous page", async () => {
+      await assertPixelsEqual(
+        page.screenshot({ type: "webp" }),
+        "test/assets/snapshots/2-j.webp",
+      );
+    });
+  });
+
+  await test.step("when press k key", async (test) => {
+    await page.keyboard.press("k");
+
+    await test.step("then viewer should show previous page", async () => {
+      await assertPixelsEqual(
+        page.screenshot({ type: "webp" }),
+        "test/assets/snapshots/1-after-load.webp",
+      );
+    });
+  });
+
+  await test.step("when press l key", async (test) => {
+    await page.keyboard.press("l");
+
+    await test.step("then viewer should show next series", async () => {
+      const onNextSeriesCount = await page.evaluate(() => {
+        // @ts-ignore remote function
+        return globalThis.onNextSeriesCount as number;
+      });
+
+      assertEquals(onNextSeriesCount, 1);
+    });
+  });
+
+  await test.step("when click right side", async (test) => {
+    await page.mouse.click(1200, 300);
+
+    await test.step("then viewer should show next series", async () => {
+      const onNextSeriesCount = await page.evaluate(() => {
+        // @ts-ignore remote function
+        return globalThis.onNextSeriesCount as number;
+      });
+
+      assertEquals(onNextSeriesCount, 2);
+    });
+  });
+
+  await test.step("when swipe to left side", async (test) => {
+    await page.touchscreen.touchStart(900, 300);
+    await page.touchscreen.touchMove(700, 300);
+    await page.touchscreen.touchEnd();
+
+    await test.step("then viewer should show next series", async () => {
+      const onNextSeriesCount = await page.evaluate(() => {
+        // @ts-ignore remote function
+        return globalThis.onNextSeriesCount as number;
+      });
+
+      assertEquals(onNextSeriesCount, 3);
+    });
+  });
+
+  await test.step("when press h key", async (test) => {
+    await page.keyboard.press("h");
+
+    await test.step("then viewer should show previous series", async () => {
+      const onPreviousSeriesCount = await page.evaluate(() => {
+        // @ts-ignore remote function
+        return globalThis.onPreviousSeriesCount as number;
+      });
+
+      assertEquals(onPreviousSeriesCount, 1);
+    });
+  });
+
+  await test.step("when click left side", async (test) => {
+    await page.mouse.click(100, 300);
+
+    await test.step("then viewer should show previous series", async () => {
+      const onPreviousSeriesCount = await page.evaluate(() => {
+        // @ts-ignore remote function
+        return globalThis.onPreviousSeriesCount as number;
+      });
+
+      assertEquals(onPreviousSeriesCount, 2);
+    });
+  });
+
+  await test.step("when swipe to right side", async (test) => {
+    await page.touchscreen.touchStart(200, 300);
+    await page.touchscreen.touchMove(400, 300);
+    await page.touchscreen.touchEnd();
+
+    await test.step("then viewer should show previous series", async () => {
+      const onPreviousSeriesCount = await page.evaluate(() => {
+        // @ts-ignore remote function
+        return globalThis.onPreviousSeriesCount as number;
+      });
+
+      assertEquals(onPreviousSeriesCount, 3);
+    });
+  });
+
   await Promise.all([browser.close(), server.shutdown()]);
 
   // puppeteer-core/23.6.0/lib/esm/puppeteer/cdp/FrameManager.js:L24 TIME_FOR_WAITING_FOR_SWAP
@@ -84,9 +199,9 @@ async function assertPixelsEqual(actualPromise: Promise<Uint8Array>, expectedPat
       assertEquals(actual.data[i], expected.data[i], `index: ${i}`);
     }
   } catch (error) {
-    const { name } = parse(expectedPath);
-    const actualFileName = `${name}-actual.webp`;
-    const expectedFileName = `${name}-expected.webp`;
+    const { base, name, ext } = parse(expectedPath);
+    const actualFileName = base;
+    const expectedFileName = `${name}-expected${ext}`;
     await Promise.all([
       Deno.writeFile(`test/failure/${actualFileName}`, bufferToUint8Array(actualRaw)),
       Deno.writeFile(`test/failure/${expectedFileName}`, expectedRaw),
