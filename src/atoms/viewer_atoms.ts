@@ -1,4 +1,4 @@
-import { atom, Getter, Root, Setter } from "../deps.ts";
+import { atom, Getter, Setter } from "../deps.ts";
 import {
   scrollElementAtom,
   transferViewerScrollToWindowAtom,
@@ -21,8 +21,6 @@ import {
   viewerFullscreenAtom,
 } from "./fullscreen_atom.ts";
 import { ViewerOptions, viewerOptionsAtom, viewerStatusAtom } from "./viewer_base_atoms.ts";
-
-export const rootAtom = atom<Root | null>(null);
 
 const externalFocusElementAtom = atom<Element | null>(null);
 export const setViewerImmersiveAtom = atom(null, async (get, set, value: boolean) => {

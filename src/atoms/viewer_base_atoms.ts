@@ -1,4 +1,4 @@
-import { atom } from "../deps.ts";
+import { atom, Root } from "../deps.ts";
 import { type ComicSource } from "../helpers/comic_source.ts";
 
 export type ViewerOptions = {
@@ -9,6 +9,8 @@ export type ViewerOptions = {
   onNextSeries?: () => void;
   onPreviousSeries?: () => void;
 };
+
+export const rootAtom = atom<Root | null>(null);
 
 export const viewerOptionsAtom = atom<ViewerOptions>({});
 export const viewerStatusAtom = atom<"idle" | "loading" | "error" | "complete">("idle");
