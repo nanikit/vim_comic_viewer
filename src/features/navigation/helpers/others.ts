@@ -11,8 +11,8 @@ type ScrollSize = Size & {
   scrollHeight: number;
 };
 
-export function getScrollPage(middle: number, container?: HTMLElement | null) {
-  const element = container?.firstElementChild?.children?.item(Math.floor(middle));
+export function getScrollPage(middle: number, container: HTMLElement | null) {
+  const element = getPagesFromScrollElement(container)?.item(Math.floor(middle));
   return element instanceof HTMLElement ? element : null;
 }
 
@@ -20,17 +20,16 @@ export function getCurrentMiddleFromScrollElement({
   scrollElement,
   previousMiddle,
 }: {
-  scrollElement?: HTMLElement | null;
+  scrollElement: HTMLElement | null;
   previousMiddle: number;
 }) {
-  const children = scrollElement?.firstElementChild?.children;
-  if (!children) {
+  const elements = getPagesFromScrollElement(scrollElement);
+  if (!elements || !scrollElement) {
     return null;
   }
 
-  const elements = [...children] as HTMLDivElement[];
   return getPageScroll({
-    elements,
+    elements: [...elements] as HTMLElement[],
     viewportHeight: scrollElement.getBoundingClientRect().height,
     previousMiddle,
   });
@@ -301,4 +300,8 @@ function getCurrentPageFromElements(
     const previousMiddlePage = previousMiddle < centerNextTop ? row[half - 1] : row[half];
     return previousMiddlePage;
   }
+}
+
+function getPagesFromScrollElement(scrollElement: HTMLElement | null) {
+  return scrollElement?.firstElementChild?.children;
 }
