@@ -36,6 +36,11 @@ export const OverlayScroller = styled("div", {
   width: "100%",
   height: "100%",
 
+  "& .os-scrollbar": {
+    // Side series buttons are above scrollbar
+    zIndex: 1,
+  },
+
   "& .os-scrollbar-handle": {
     backdropFilter: "brightness(0.5)",
     background: "none",
