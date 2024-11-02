@@ -8,6 +8,7 @@
 
 - **Change default key binding for changing single page count.**
 - _Add next, previous series navigation._
+- Preserve scroll position when single page count is changed.
 - Prevent single page count from being negative.
 
 # 18.1.2

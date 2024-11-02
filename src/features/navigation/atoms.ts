@@ -1,7 +1,7 @@
 import { viewerOptionsAtom } from "../../atoms/viewer_base_atoms.ts";
-import { atom } from "../../deps.ts";
+import { atom, RESET } from "../../deps.ts";
 import { beforeRepaintAtom } from "../../modules/use_before_repaint.ts";
-import { singlePageCountAtom } from "../preferences/atoms.ts";
+import { singlePageCountStorageAtom } from "../preferences/atoms.ts";
 import {
   getAbovePageIndex,
   getCurrentMiddleFromScrollElement,
@@ -115,6 +115,28 @@ export const goPreviousAtom = atom(null, (get) => {
 export const navigateAtom = atom(null, (get, _set, event: React.MouseEvent) => {
   navigateByPointer(get(scrollElementAtom), event);
 });
+
+export const singlePageCountAtom = atom(
+  (get) => get(singlePageCountStorageAtom),
+  async (get, set, value: number | typeof RESET) => {
+    const clampedValue = typeof value === "number" ? Math.max(0, value) : value;
+    const middle = get(pageScrollMiddleAtom);
+    const scrollElement = get(scrollElementAtom);
+
+    await set(singlePageCountStorageAtom, clampedValue);
+
+    set(beforeRepaintAtom, {
+      task: () => {
+        // If separated page fill the last row, resize event won't fire.
+        // If mutation is above of the current page, scroll event is fired.
+        // So, restore scroll position.
+        restoreScroll({ scrollable: scrollElement, middle });
+        // synchronizeScroll can't preserve index among multiple pages of row. So restore.
+        set(pageScrollMiddleAtom, middle);
+      },
+    });
+  },
+);
 
 export const anchorSinglePageCountAtom = atom(null, (get, set) => {
   const scrollElement = get(scrollElementAtom);

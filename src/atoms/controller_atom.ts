@@ -1,4 +1,4 @@
-import type { SetStateAction } from "jotai";
+import type { SetStateAction, WritableAtom } from "jotai";
 import {
   cancelDownloadAtom,
   downloadAndSaveAtom,
@@ -22,11 +22,18 @@ import {
   anchorSinglePageCountAtom,
   goNextAtom,
   goPreviousAtom,
+  singlePageCountAtom,
 } from "../features/navigation/atoms.ts";
 import {
-  effectivePreferencesAtom,
+  backgroundColorAtom,
+  fullscreenNoticeCountAtom,
+  isFullscreenPreferredAtom,
+  maxZoomInExponentAtom,
+  maxZoomOutExponentAtom,
+  pageDirectionAtom,
   preferencesPresetAtom,
   scriptPreferencesAtom,
+  singlePageCountStorageAtom,
 } from "../features/preferences/atoms.ts";
 import { PersistentPreferences } from "../features/preferences/models.ts";
 import { isTyping } from "../utils.ts";
@@ -47,6 +54,43 @@ export const controllerAtom = atom((get) => get(controllerPrimitiveAtom), (get, 
   return controller;
 });
 controllerAtom.onMount = (set) => void set();
+
+const effectivePreferencesAtom = atom(
+  (get) => ({
+    backgroundColor: get(backgroundColorAtom),
+    singlePageCount: get(singlePageCountStorageAtom),
+    maxZoomOutExponent: get(maxZoomOutExponentAtom),
+    maxZoomInExponent: get(maxZoomInExponentAtom),
+    pageDirection: get(pageDirectionAtom),
+    isFullscreenPreferred: get(isFullscreenPreferredAtom),
+    fullscreenNoticeCount: get(fullscreenNoticeCountAtom),
+  }),
+  (get, set, update: SetStateAction<Partial<PersistentPreferences>>): Promise<unknown> => {
+    if (typeof update === "function") {
+      const preferences = get(effectivePreferencesAtom);
+      const newPreferences = update(preferences);
+      return updatePreferences(newPreferences);
+    }
+
+    return updatePreferences(update);
+
+    function updatePreferences(preferences: Partial<PersistentPreferences>) {
+      return Promise.all([
+        updateIfDefined(backgroundColorAtom, preferences.backgroundColor),
+        updateIfDefined(singlePageCountAtom, preferences.singlePageCount),
+        updateIfDefined(maxZoomOutExponentAtom, preferences.maxZoomOutExponent),
+        updateIfDefined(maxZoomInExponentAtom, preferences.maxZoomInExponent),
+        updateIfDefined(pageDirectionAtom, preferences.pageDirection),
+        updateIfDefined(isFullscreenPreferredAtom, preferences.isFullscreenPreferred),
+        updateIfDefined(fullscreenNoticeCountAtom, preferences.fullscreenNoticeCount),
+      ]);
+    }
+
+    function updateIfDefined<T>(atom: WritableAtom<T, [T], Promise<void>>, value?: T) {
+      return value !== undefined ? set(atom, value) : Promise.resolve();
+    }
+  },
+);
 
 class Controller {
   private currentElementKeyHandler: ((event: KeyboardEvent) => void) | null = null;
