@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        18.1.2
+// @version        19.0.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -93,6 +93,7 @@ __export(deps_exports, {
   loadable: () => import_utils.loadable,
   selectAtom: () => import_utils.selectAtom,
   splitAtom: () => import_utils.splitAtom,
+  throttle: () => throttle,
   useAtom: () => import_jotai.useAtom,
   useAtomValue: () => import_jotai.useAtomValue,
   useCallback: () => import_react3.useCallback,
@@ -128,18 +129,632 @@ function deferred() {
   Object.defineProperty(promise, "state", { get: () => state });
   return Object.assign(promise, methods);
 }
+function throttle(fn, timeframe) {
+  let lastExecution = NaN;
+  let flush = null;
+  const throttled = (...args) => {
+    flush = () => {
+      try {
+        fn.call(throttled, ...args);
+      } finally {
+        lastExecution = Date.now();
+        flush = null;
+      }
+    };
+    if (throttled.throttling) {
+      return;
+    }
+    flush?.();
+  };
+  throttled.clear = () => {
+    lastExecution = NaN;
+  };
+  throttled.flush = () => {
+    lastExecution = NaN;
+    flush?.();
+    throttled.clear();
+  };
+  Object.defineProperties(throttled, {
+    throttling: { get: () => Date.now() - lastExecution <= timeframe },
+    lastExecution: { get: () => lastExecution }
+  });
+  return throttled;
+}
 var import_jotai = require("jotai");
 var import_jotai_cache = require("jotai-cache");
 var import_utils = require("jotai/utils");
 var import_react2 = require("@headlessui/react");
 var import_react3 = require("react");
 var import_react_dom = require("react-dom");
+var rootAtom = (0, import_jotai.atom)(null);
 var viewerOptionsAtom = (0, import_jotai.atom)({});
 var viewerStatusAtom = (0, import_jotai.atom)("idle");
-var viewerStateAtom = (0, import_jotai.atom)((get) => ({
-  options: get(viewerOptionsAtom),
-  status: get(viewerStatusAtom)
-}));
+var en_default = {
+  "@@locale": "en",
+  settings: "Settings",
+  help: "Help",
+  maxZoomOut: "Maximum zoom out",
+  maxZoomIn: "Maximum zoom in",
+  singlePageCount: "single page count",
+  backgroundColor: "Background color",
+  leftToRight: "Left to right",
+  reset: "Reset",
+  doYouReallyWantToReset: "Do you really want to reset?",
+  errorIsOccurred: "Error is occurred.",
+  failedToLoadImage: "Failed to load image.",
+  loading: "Loading...",
+  fullScreenRestorationGuide: "Enter full screen yourself if you want to keep the viewer open in full screen.",
+  useFullScreen: "Use full screen",
+  downloading: "Downloading...",
+  cancel: "CANCEL",
+  downloadComplete: "Download complete.",
+  errorOccurredWhileDownloading: "Error occurred while downloading.",
+  keyBindings: "Key bindings",
+  toggleViewer: "Toggle viewer",
+  toggleFullscreenSetting: "Toggle fullscreen setting",
+  nextPage: "Next page",
+  previousPage: "Previous page",
+  download: "Download",
+  refresh: "Refresh",
+  increaseSinglePageCount: "Increase single page count",
+  decreaseSinglePageCount: "Decrease single page count",
+  anchorSinglePageCount: "Set single page view until before current page"
+};
+var ko_default = {
+  "@@locale": "ko",
+  settings: "설정",
+  help: "도움말",
+  maxZoomOut: "최대 축소",
+  maxZoomIn: "최대 확대",
+  singlePageCount: "한쪽 페이지 수",
+  backgroundColor: "배경색",
+  leftToRight: "왼쪽부터 보기",
+  reset: "초기화",
+  doYouReallyWantToReset: "정말 초기화하시겠어요?",
+  errorIsOccurred: "에러가 발생했습니다.",
+  failedToLoadImage: "이미지를 불러오지 못했습니다.",
+  loading: "로딩 중...",
+  fullScreenRestorationGuide: "뷰어 전체 화면을 유지하려면 직접 전체 화면을 켜 주세요 (F11).",
+  useFullScreen: "전체 화면",
+  downloading: "다운로드 중...",
+  cancel: "취소",
+  downloadComplete: "다운로드 완료",
+  errorOccurredWhileDownloading: "다운로드 도중 오류가 발생했습니다",
+  keyBindings: "단축키",
+  toggleViewer: "뷰어 전환",
+  toggleFullscreenSetting: "전체화면 설정 전환",
+  nextPage: "다음 페이지",
+  previousPage: "이전 페이지",
+  download: "다운로드",
+  refresh: "새로고침",
+  increaseSinglePageCount: "한쪽 페이지 수 늘리기",
+  decreaseSinglePageCount: "한쪽 페이지 수 줄이기",
+  anchorSinglePageCount: "현재 페이지 전까지 한쪽 페이지로 설정"
+};
+var translations = { en: en_default, ko: ko_default };
+var i18nStringsAtom = (0, import_jotai.atom)(getLanguage());
+var i18nAtom = (0, import_jotai.atom)((get) => get(i18nStringsAtom), (_get, set) => {
+  set(i18nStringsAtom, getLanguage());
+});
+i18nAtom.onMount = (set) => {
+  addEventListener("languagechange", set);
+  return () => {
+    removeEventListener("languagechange", set);
+  };
+};
+function getLanguage() {
+  for (const language of navigator.languages) {
+    const locale = language.split("-")[0];
+    if (!locale) {
+      continue;
+    }
+    const translation = translations[locale];
+    if (translation) {
+      return translation;
+    }
+  }
+  return en_default;
+}
+var { styled, css, keyframes } = (0, import_react.createStitches)({});
+function DownloadCancel({ onClick }) {
+  const strings = (0, import_jotai.useAtomValue)(i18nAtom);
+  return  React.createElement(SpaceBetween, null,  React.createElement("p", null, strings.downloading),  React.createElement("button", { onClick }, strings.cancel));
+}
+var SpaceBetween = styled("div", {
+  display: "flex",
+  flexFlow: "row nowrap",
+  justifyContent: "space-between"
+});
+var MAX_RETRY_COUNT = 6;
+var MAX_SAME_URL_RETRY_COUNT = 2;
+function isDelay(sourceOrDelay) {
+  return sourceOrDelay === void 0 || typeof sourceOrDelay !== "string" && !sourceOrDelay.src;
+}
+function toAdvancedObject(sourceOrDelay) {
+  return isDelay(sourceOrDelay) ? { src: void 0 } : toAdvancedSource(sourceOrDelay);
+}
+function toAdvancedSource(source) {
+  return typeof source === "string" ? { type: "image", src: source } : source;
+}
+async function* getMediaIterable({ media, index, comic, maxSize }) {
+  if (!isDelay(media)) {
+    yield getUrl(media);
+  }
+  if (!comic) {
+    return;
+  }
+  let previous;
+  let retryCount = 0;
+  let sameUrlRetryCount = 0;
+  while (sameUrlRetryCount <= MAX_SAME_URL_RETRY_COUNT && retryCount <= MAX_RETRY_COUNT) {
+    const hadError = media !== void 0 || retryCount > 0;
+    const medias = await comic({ cause: hadError ? "error" : "load", page: index, maxSize });
+    const next = medias[index];
+    if (isDelay(next)) {
+      continue;
+    }
+    const url = getUrl(next);
+    yield url;
+    retryCount++;
+    if (previous === url) {
+      sameUrlRetryCount++;
+      continue;
+    }
+    previous = url;
+  }
+}
+function getUrl(source) {
+  return typeof source === "string" ? source : source.src;
+}
+var isGmFetchAvailable = typeof GM.xmlHttpRequest === "function";
+async function gmFetch(url, init) {
+  const method = init?.body ? "POST" : "GET";
+  const response = await GM.xmlHttpRequest({
+    method,
+    url,
+    headers: {
+      referer: `${location.origin}/`,
+      ...init?.headers
+    },
+    responseType: init?.type === "text" ? void 0 : init?.type,
+    data: init?.body
+  });
+  return response;
+}
+async function download(comic, options) {
+  const { onError, onProgress, signal } = options || {};
+  let startedCount = 0;
+  let resolvedCount = 0;
+  let rejectedCount = 0;
+  let status = "ongoing";
+  const pages = await comic({ cause: "download", maxSize: { width: Infinity, height: Infinity } });
+  const digit = Math.floor(Math.log10(pages.length)) + 1;
+  return archiveWithReport();
+  async function archiveWithReport() {
+    const result = await Promise.all(pages.map(downloadWithReport));
+    if (signal?.aborted) {
+      reportProgress({ transition: "cancelled" });
+      signal.throwIfAborted();
+    }
+    const pairs = await Promise.all(result.map(toPair));
+    const data = Object.assign({}, ...pairs);
+    const value = deferred();
+    const abort = (0, deps_exports.zip)(data, { level: 0 }, (error, array) => {
+      if (error) {
+        reportProgress({ transition: "error" });
+        value.reject(error);
+      } else {
+        reportProgress({ transition: "complete" });
+        value.resolve(array);
+      }
+    });
+    signal?.addEventListener("abort", abort, { once: true });
+    return value;
+  }
+  async function downloadWithReport(source, pageIndex) {
+    const errors = [];
+    startedCount++;
+    reportProgress();
+    for await (const event of downloadImage({ media: source, pageIndex })) {
+      if ("error" in event) {
+        errors.push(event.error);
+        onError?.(event.error);
+        continue;
+      }
+      if (event.url) {
+        resolvedCount++;
+      } else {
+        rejectedCount++;
+      }
+      reportProgress();
+      return event;
+    }
+    return {
+      url: "",
+      blob: new Blob([errors.map((x) => `${x}`).join("\n\n")])
+    };
+  }
+  async function* downloadImage({ media, pageIndex }) {
+    const maxSize = { width: Infinity, height: Infinity };
+    const mediaParams = { media, index: pageIndex, comic, maxSize };
+    for await (const url of getMediaIterable(mediaParams)) {
+      if (signal?.aborted) {
+        break;
+      }
+      try {
+        const blob = await fetchBlobWithCacheIfPossible(url, signal);
+        yield { url, blob };
+      } catch (error) {
+        yield await fetchBlobIgnoringCors(url, { signal, fetchError: error });
+      }
+    }
+  }
+  async function toPair({ url, blob }, index) {
+    const array = new Uint8Array(await blob.arrayBuffer());
+    const pad = `${index}`.padStart(digit, "0");
+    const name = `${pad}${guessExtension(array) ?? getExtension(url)}`;
+    return { [name]: array };
+  }
+  function reportProgress({ transition } = {}) {
+    if (status !== "ongoing") {
+      return;
+    }
+    if (transition) {
+      status = transition;
+    }
+    onProgress?.({
+      total: pages.length,
+      started: startedCount,
+      settled: resolvedCount + rejectedCount,
+      rejected: rejectedCount,
+      status
+    });
+  }
+}
+function getExtension(url) {
+  if (!url) {
+    return ".txt";
+  }
+  const extension = url.match(/\.[^/?#]{3,4}?(?=[?#]|$)/);
+  return extension?.[0] || ".jpg";
+}
+function guessExtension(array) {
+  const { 0: a, 1: b, 2: c, 3: d } = array;
+  if (a === 255 && b === 216 && c === 255) {
+    return ".jpg";
+  }
+  if (a === 137 && b === 80 && c === 78 && d === 71) {
+    return ".png";
+  }
+  if (a === 82 && b === 73 && c === 70 && d === 70) {
+    return ".webp";
+  }
+  if (a === 71 && b === 73 && c === 70 && d === 56) {
+    return ".gif";
+  }
+}
+async function fetchBlobWithCacheIfPossible(url, signal) {
+  const response = await fetch(url, { signal });
+  return await response.blob();
+}
+async function fetchBlobIgnoringCors(url, { signal, fetchError }) {
+  if (isCrossOrigin(url) && !isGmFetchAvailable) {
+    return {
+      error: new Error(
+        "It could be a CORS issue but cannot use GM.xmlhttpRequest",
+        { cause: fetchError }
+      )
+    };
+  }
+  try {
+    const response = await gmFetch(url, { signal, type: "blob" });
+    if (response.status >= 400) {
+      const body = await response.response.text();
+      const message = `failed to load ${url} with HTTP ${response.status} ${response.statusText}
+${body}`;
+      return { error: new Error(message) };
+    }
+    return { url, blob: response.response };
+  } catch (error) {
+    if (isGmCancelled(error)) {
+      return { error: new Error("download aborted") };
+    } else {
+      return { error: fetchError };
+    }
+  }
+}
+function isCrossOrigin(url) {
+  return new URL(url).origin !== location.origin;
+}
+function isGmCancelled(error) {
+  return error instanceof Function;
+}
+var utils_exports = {};
+__export(utils_exports, {
+  getSafeFileName: () => getSafeFileName,
+  insertCss: () => insertCss,
+  isTyping: () => isTyping,
+  save: () => save,
+  saveAs: () => saveAs,
+  timeout: () => timeout,
+  waitDomContent: () => waitDomContent
+});
+var timeout = (millisecond) => new Promise((resolve) => setTimeout(resolve, millisecond));
+var waitDomContent = (document2) => document2.readyState === "loading" ? new Promise((r) => document2.addEventListener("readystatechange", r, { once: true })) : true;
+var insertCss = (css2) => {
+  const style = document.createElement("style");
+  style.innerHTML = css2;
+  document.head.append(style);
+};
+var isTyping = (event) => event.target?.tagName?.match?.(/INPUT|TEXTAREA/) || event.target?.isContentEditable;
+var saveAs = async (blob, name) => {
+  const a = document.createElement("a");
+  a.download = name;
+  a.rel = "noopener";
+  a.href = URL.createObjectURL(blob);
+  a.click();
+  await timeout(4e4);
+  URL.revokeObjectURL(a.href);
+};
+var getSafeFileName = (str) => {
+  return str.replace(/[<>:"/\\|?*\x00-\x1f]+/gi, "").trim() || "download";
+};
+var save = (blob) => {
+  return saveAs(blob, `${getSafeFileName(document.title)}.zip`);
+};
+var import_react_toastify = require("react-toastify");
+GM.getResourceText("react-toastify-css").then(insertCss);
+var aborterAtom = (0, import_jotai.atom)(null);
+var cancelDownloadAtom = (0, import_jotai.atom)(null, (get) => {
+  get(aborterAtom)?.abort();
+});
+var startDownloadAtom = (0, import_jotai.atom)(null, async (get, set, options) => {
+  const aborter = new AbortController();
+  set(aborterAtom, (previous) => {
+    previous?.abort();
+    return aborter;
+  });
+  const viewerOptions = get(viewerOptionsAtom);
+  const source = options?.source ?? viewerOptions.source;
+  if (!source) {
+    return;
+  }
+  let toastId = null;
+  addEventListener("beforeunload", confirmDownloadAbort);
+  try {
+    toastId = (0, import_react_toastify.toast)( React.createElement(DownloadCancel, { onClick: aborter.abort }), { autoClose: false, progress: 0 });
+    return await download(source, {
+      onProgress: reportProgress,
+      onError: logIfNotAborted,
+      signal: aborter.signal
+    });
+  } finally {
+    removeEventListener("beforeunload", confirmDownloadAbort);
+  }
+  async function reportProgress(event) {
+    if (!toastId) {
+      return;
+    }
+    const { total, started, settled, rejected, status } = event;
+    const value = started / total * 0.1 + settled / total * 0.89;
+    switch (status) {
+      case "ongoing":
+        import_react_toastify.toast.update(toastId, { type: rejected > 0 ? "warning" : "default", progress: value });
+        break;
+      case "complete":
+        import_react_toastify.toast.update(toastId, {
+          type: "success",
+          render: get(i18nAtom).downloadComplete,
+          progress: 0.9999
+        });
+        await timeout(1e3);
+        import_react_toastify.toast.done(toastId);
+        break;
+      case "error":
+        import_react_toastify.toast.update(toastId, {
+          type: "error",
+          render: get(i18nAtom).errorOccurredWhileDownloading,
+          progress: 0
+        });
+        break;
+      case "cancelled":
+        import_react_toastify.toast.done(toastId);
+        break;
+    }
+  }
+});
+var downloadAndSaveAtom = (0, import_jotai.atom)(null, async (_get, set, options) => {
+  const zip2 = await set(startDownloadAtom, options);
+  if (zip2) {
+    await save(new Blob([zip2]));
+  }
+});
+function logIfNotAborted(error) {
+  if (isNotAbort(error)) {
+    console.error(error);
+  }
+}
+function isNotAbort(error) {
+  return !/aborted/i.test(`${error}`);
+}
+function confirmDownloadAbort(event) {
+  event.preventDefault();
+  event.returnValue = "";
+}
+var import_jotai2 = require("jotai");
+var gmStorage = {
+  getItem: GM.getValue,
+  setItem: GM.setValue,
+  removeItem: (key) => GM.deleteValue(key),
+  subscribe: (key, callback) => {
+    const idPromise = GM.addValueChangeListener(
+      key,
+      (_key, _oldValue, newValue) => callback(newValue)
+    );
+    return async () => {
+      const id = await idPromise;
+      await GM.removeValueChangeListener(id);
+    };
+  }
+};
+function atomWithGmValue(key, defaultValue) {
+  return (0, import_utils.atomWithStorage)(key, defaultValue, gmStorage, { getOnInit: true });
+}
+var jsonSessionStorage = (0, import_utils.createJSONStorage)(() => sessionStorage);
+function atomWithSession(key, defaultValue) {
+  return (0, import_utils.atomWithStorage)(
+    key,
+    defaultValue,
+    jsonSessionStorage,
+    { getOnInit: true }
+  );
+}
+var defaultPreferences = {
+  backgroundColor: "#eeeeee",
+  singlePageCount: 1,
+  maxZoomOutExponent: 3,
+  maxZoomInExponent: 3,
+  pageDirection: "rightToLeft",
+  isFullscreenPreferred: false,
+  fullscreenNoticeCount: 0
+};
+var scriptPreferencesAtom = (0, import_jotai2.atom)({});
+var preferencesPresetAtom = (0, import_jotai2.atom)("default");
+var [backgroundColorAtom] = atomWithPreferences("backgroundColor");
+var [singlePageCountStorageAtom] = atomWithPreferences("singlePageCount");
+var [maxZoomOutExponentAtom] = atomWithPreferences("maxZoomOutExponent");
+var [maxZoomInExponentAtom] = atomWithPreferences("maxZoomInExponent");
+var [pageDirectionAtom] = atomWithPreferences("pageDirection");
+var [isFullscreenPreferredAtom, isFullscreenPreferredPromiseAtom] = atomWithPreferences(
+  "isFullscreenPreferred"
+);
+var [fullscreenNoticeCountAtom, fullscreenNoticeCountPromiseAtom] = atomWithPreferences(
+  "fullscreenNoticeCount"
+);
+var wasImmersiveAtom = atomWithSession("vim_comic_viewer.was_immersive", false);
+function atomWithPreferences(key) {
+  const asyncAtomAtom = (0, import_jotai2.atom)((get) => {
+    const preset = get(preferencesPresetAtom);
+    const qualifiedKey = `vim_comic_viewer.preferences.${preset}.${key}`;
+    return atomWithGmValue(qualifiedKey, void 0);
+  });
+  const cacheAtom = (0, import_jotai_cache.atomWithCache)((get) => get(get(asyncAtomAtom)));
+  const manualAtom = (0, import_jotai2.atom)((get) => get(cacheAtom), updater);
+  const loadableAtom = (0, import_utils.loadable)(manualAtom);
+  const effectiveAtom = (0, import_jotai2.atom)((get) => {
+    const value = get(loadableAtom);
+    if (value.state === "hasData" && value.data !== void 0) {
+      return value.data;
+    }
+    return get(scriptPreferencesAtom)[key] ?? defaultPreferences[key];
+  }, updater);
+  return [effectiveAtom, manualAtom];
+  function updater(get, set, update) {
+    return set(
+      get(asyncAtomAtom),
+      (value) => typeof update === "function" ? Promise.resolve(value).then(update) : update
+    );
+  }
+}
+var globalCss = document.createElement("style");
+globalCss.innerHTML = `html, body {
+  overflow: hidden;
+}`;
+function hideBodyScrollBar(doHide) {
+  if (doHide) {
+    document.head.append(globalCss);
+  } else {
+    globalCss.remove();
+  }
+}
+async function setFullscreenElement(element) {
+  if (element) {
+    await element.requestFullscreen?.();
+  } else {
+    await document.exitFullscreen?.();
+  }
+}
+function focusWithoutScroll(element) {
+  element?.focus({ preventScroll: true });
+}
+function isUserGesturePermissionError(error) {
+  return error?.message === "Permissions check failed";
+}
+var fullscreenElementAtom = (0, import_jotai.atom)(null);
+var viewerElementAtom = (0, import_jotai.atom)(null);
+var isViewerFullscreenAtom = (0, import_jotai.atom)((get) => {
+  const viewerElement = get(viewerElementAtom);
+  return !!viewerElement && viewerElement === get(fullscreenElementAtom);
+});
+var isImmersiveAtom = (0, import_jotai.atom)(false);
+var isViewerImmersiveAtom = (0, import_jotai.atom)((get) => get(isImmersiveAtom));
+var scrollBarStyleFactorAtom = (0, import_jotai.atom)(
+  (get) => ({
+    fullscreenElement: get(fullscreenElementAtom),
+    viewerElement: get(viewerElementAtom)
+  }),
+  (get, set, factors) => {
+    const { fullscreenElement, viewerElement, isImmersive } = factors;
+    if (fullscreenElement !== void 0) {
+      set(fullscreenElementAtom, fullscreenElement);
+    }
+    if (viewerElement !== void 0) {
+      set(viewerElementAtom, viewerElement);
+    }
+    if (isImmersive !== void 0) {
+      set(wasImmersiveAtom, isImmersive);
+      set(isImmersiveAtom, isImmersive);
+    }
+    const canScrollBarDuplicate = !get(isViewerFullscreenAtom) && get(isImmersiveAtom);
+    hideBodyScrollBar(canScrollBarDuplicate);
+  }
+);
+var viewerFullscreenAtom = (0, import_jotai.atom)((get) => {
+  get(isFullscreenPreferredAtom);
+  return get(isViewerFullscreenAtom);
+}, async (get, _set, value) => {
+  const element = value ? get(viewerElementAtom) : null;
+  const { fullscreenElement } = get(scrollBarStyleFactorAtom);
+  if (element === fullscreenElement) {
+    return true;
+  }
+  const fullscreenChange = new Promise((resolve) => {
+    addEventListener("fullscreenchange", resolve, { once: true });
+  });
+  try {
+    await setFullscreenElement(element);
+    await fullscreenChange;
+    return true;
+  } catch (error) {
+    if (isUserGesturePermissionError(error)) {
+      return false;
+    }
+    throw error;
+  }
+});
+var transitionDeferredAtom = (0, import_jotai.atom)({});
+var transitionLockAtom = (0, import_jotai.atom)(null, async (get, set) => {
+  const { deferred: previousLock } = get(transitionDeferredAtom);
+  const lock = deferred();
+  set(transitionDeferredAtom, { deferred: lock });
+  await previousLock;
+  return { deferred: lock };
+});
+var isFullscreenPreferredSettingsAtom = (0, import_jotai.atom)(
+  (get) => get(isFullscreenPreferredAtom),
+  async (get, set, value) => {
+    const promise = set(isFullscreenPreferredAtom, value);
+    const appliedValue = value === import_utils.RESET ? (await promise, get(isFullscreenPreferredAtom)) : value;
+    const lock = await set(transitionLockAtom);
+    try {
+      const wasImmersive = get(wasImmersiveAtom);
+      const shouldEnterFullscreen = appliedValue && wasImmersive;
+      await set(viewerFullscreenAtom, shouldEnterFullscreen);
+    } finally {
+      lock.deferred.resolve();
+    }
+  }
+);
 var beforeRepaintAtom = (0, import_jotai.atom)({});
 var useBeforeRepaint = () => {
   const { task } = (0, import_jotai.useAtomValue)(beforeRepaintAtom);
@@ -178,20 +793,19 @@ function getInPageRatio({ page, viewportHeight }) {
   return 1 - (y + height - scrollCenter) / height;
 }
 function getScrollPage(middle, container) {
-  const element = container?.firstElementChild?.children?.item(Math.floor(middle));
+  const element = getPagesFromScrollElement(container)?.item(Math.floor(middle));
   return element instanceof HTMLElement ? element : null;
 }
 function getCurrentMiddleFromScrollElement({
   scrollElement,
   previousMiddle
 }) {
-  const children = scrollElement?.firstElementChild?.children;
-  if (!children) {
+  const elements = getPagesFromScrollElement(scrollElement);
+  if (!elements || !scrollElement) {
     return null;
   }
-  const elements = [...children];
   return getPageScroll({
-    elements,
+    elements: [...elements],
     viewportHeight: scrollElement.getBoundingClientRect().height,
     previousMiddle
   });
@@ -285,6 +899,16 @@ function restoreScroll({ scrollable, middle }) {
   const restoredYDiff = pageY + pageHeight * ratio - scrollableHeight / 2;
   scrollable.scrollBy({ top: restoredYDiff });
   return true;
+}
+function getAbovePageIndex(scrollElement) {
+  const children = getPagesFromScrollElement(scrollElement);
+  if (!children || !scrollElement) {
+    return;
+  }
+  const elements = [...children];
+  const currentRow = getCurrentRow({ elements, viewportHeight: scrollElement.clientHeight });
+  const firstPage = currentRow?.[0]?.page;
+  return firstPage ? elements.indexOf(firstPage) : void 0;
 }
 function findOriginElement(src, page) {
   const fileName = src.split("/").pop()?.split("?")[0];
@@ -384,6 +1008,9 @@ function getCurrentPageFromElements({ elements, viewportHeight, previousMiddle }
     return previousMiddlePage;
   }
 }
+function getPagesFromScrollElement(scrollElement) {
+  return scrollElement?.firstElementChild?.children;
+}
 function toViewerScroll({ scrollable, lastWindowToViewerMiddle, noSyncScroll }) {
   if (!scrollable || noSyncScroll) {
     return;
@@ -462,7 +1089,7 @@ var lastWindowToViewerMiddleAtom = (0, import_jotai.atom)(-1);
 var transferWindowScrollToViewerAtom = (0, import_jotai.atom)(null, (get, set) => {
   const scrollable = get(scrollElementAtom);
   const lastWindowToViewerMiddle = get(lastWindowToViewerMiddleAtom);
-  const noSyncScroll = get(viewerStateAtom).options.noSyncScroll ?? false;
+  const noSyncScroll = get(viewerOptionsAtom).noSyncScroll ?? false;
   const middle = toViewerScroll({ scrollable, lastWindowToViewerMiddle, noSyncScroll });
   if (!middle) {
     return;
@@ -476,7 +1103,7 @@ var transferViewerScrollToWindowAtom = (0, import_jotai.atom)(
     const middle = get(pageScrollMiddleAtom);
     const scrollElement = get(scrollElementAtom);
     const lastMiddle = get(lastViewerToWindowMiddleAtom);
-    const noSyncScroll = get(viewerStateAtom).options.noSyncScroll ?? false;
+    const noSyncScroll = get(viewerOptionsAtom).noSyncScroll ?? false;
     const top = toWindowScroll({ middle, lastMiddle, scrollElement, noSyncScroll, forFullscreen });
     if (top !== void 0) {
       set(lastViewerToWindowMiddleAtom, middle);
@@ -529,274 +1156,28 @@ var goPreviousAtom = (0, import_jotai.atom)(null, (get) => {
 var navigateAtom = (0, import_jotai.atom)(null, (get, _set, event) => {
   navigateByPointer(get(scrollElementAtom), event);
 });
-var import_jotai2 = require("jotai");
-var gmStorage = {
-  getItem: GM.getValue,
-  setItem: GM.setValue,
-  removeItem: (key) => GM.deleteValue(key),
-  subscribe: (key, callback) => {
-    const idPromise = GM.addValueChangeListener(
-      key,
-      (_key, _oldValue, newValue) => callback(newValue)
-    );
-    return async () => {
-      const id = await idPromise;
-      await GM.removeValueChangeListener(id);
-    };
-  }
-};
-function atomWithGmValue(key, defaultValue) {
-  return (0, import_utils.atomWithStorage)(key, defaultValue, gmStorage, { getOnInit: true });
-}
-var jsonSessionStorage = (0, import_utils.createJSONStorage)(() => sessionStorage);
-function atomWithSession(key, defaultValue) {
-  return (0, import_utils.atomWithStorage)(
-    key,
-    defaultValue,
-    jsonSessionStorage,
-    { getOnInit: true }
-  );
-}
-var defaultPreferences = {
-  backgroundColor: "#eeeeee",
-  singlePageCount: 1,
-  maxZoomOutExponent: 3,
-  maxZoomInExponent: 3,
-  pageDirection: "rightToLeft",
-  isFullscreenPreferred: false,
-  fullscreenNoticeCount: 0
-};
-var scriptPreferencesAtom = (0, import_jotai2.atom)({});
-var preferencesPresetAtom = (0, import_jotai2.atom)("default");
-var [backgroundColorAtom] = atomWithPreferences("backgroundColor");
-var [singlePageCountAtom] = atomWithPreferences("singlePageCount");
-var [maxZoomOutExponentAtom] = atomWithPreferences("maxZoomOutExponent");
-var [maxZoomInExponentAtom] = atomWithPreferences("maxZoomInExponent");
-var [pageDirectionAtom] = atomWithPreferences("pageDirection");
-var [isFullscreenPreferredAtom, isFullscreenPreferredPromiseAtom] = atomWithPreferences(
-  "isFullscreenPreferred"
-);
-var [fullscreenNoticeCountAtom, fullscreenNoticeCountPromiseAtom] = atomWithPreferences(
-  "fullscreenNoticeCount"
-);
-var wasImmersiveAtom = atomWithSession("vim_comic_viewer.was_immersive", false);
-var effectivePreferencesAtom = (0, import_jotai2.atom)(
-  (get) => ({
-    backgroundColor: get(backgroundColorAtom),
-    singlePageCount: get(singlePageCountAtom),
-    maxZoomOutExponent: get(maxZoomOutExponentAtom),
-    maxZoomInExponent: get(maxZoomInExponentAtom),
-    pageDirection: get(pageDirectionAtom),
-    isFullscreenPreferred: get(isFullscreenPreferredAtom),
-    fullscreenNoticeCount: get(fullscreenNoticeCountAtom)
-  }),
-  (get, set, update) => {
-    if (typeof update === "function") {
-      const preferences = get(effectivePreferencesAtom);
-      const newPreferences = update(preferences);
-      return updatePreferences(newPreferences);
-    }
-    return updatePreferences(update);
-    function updatePreferences(preferences) {
-      return Promise.all([
-        updateIfDefined(backgroundColorAtom, preferences.backgroundColor),
-        updateIfDefined(singlePageCountAtom, preferences.singlePageCount),
-        updateIfDefined(maxZoomOutExponentAtom, preferences.maxZoomOutExponent),
-        updateIfDefined(maxZoomInExponentAtom, preferences.maxZoomInExponent),
-        updateIfDefined(pageDirectionAtom, preferences.pageDirection),
-        updateIfDefined(isFullscreenPreferredAtom, preferences.isFullscreenPreferred),
-        updateIfDefined(fullscreenNoticeCountAtom, preferences.fullscreenNoticeCount)
-      ]);
-    }
-    function updateIfDefined(atom3, value) {
-      return value !== void 0 ? set(atom3, value) : Promise.resolve();
-    }
+var singlePageCountAtom = (0, import_jotai.atom)(
+  (get) => get(singlePageCountStorageAtom),
+  async (get, set, value) => {
+    const clampedValue = typeof value === "number" ? Math.max(0, value) : value;
+    const middle = get(pageScrollMiddleAtom);
+    const scrollElement = get(scrollElementAtom);
+    await set(singlePageCountStorageAtom, clampedValue);
+    set(beforeRepaintAtom, {
+      task: () => {
+        restoreScroll({ scrollable: scrollElement, middle });
+        set(pageScrollMiddleAtom, middle);
+      }
+    });
   }
 );
-function atomWithPreferences(key) {
-  const asyncAtomAtom = (0, import_jotai2.atom)((get) => {
-    const preset = get(preferencesPresetAtom);
-    const qualifiedKey = `vim_comic_viewer.preferences.${preset}.${key}`;
-    return atomWithGmValue(qualifiedKey, void 0);
-  });
-  const cacheAtom = (0, import_jotai_cache.atomWithCache)((get) => get(get(asyncAtomAtom)));
-  const manualAtom = (0, import_jotai2.atom)((get) => get(cacheAtom), updater);
-  const loadableAtom = (0, import_utils.loadable)(manualAtom);
-  const effectiveAtom = (0, import_jotai2.atom)((get) => {
-    const value = get(loadableAtom);
-    if (value.state === "hasData" && value.data !== void 0) {
-      return value.data;
-    }
-    return get(scriptPreferencesAtom)[key] ?? defaultPreferences[key];
-  }, updater);
-  return [effectiveAtom, manualAtom];
-  function updater(get, set, update) {
-    return set(
-      get(asyncAtomAtom),
-      (value) => typeof update === "function" ? Promise.resolve(value).then(update) : update
-    );
+var anchorSinglePageCountAtom = (0, import_jotai.atom)(null, (get, set) => {
+  const scrollElement = get(scrollElementAtom);
+  const abovePageIndex = getAbovePageIndex(scrollElement);
+  if (abovePageIndex !== void 0) {
+    set(singlePageCountAtom, abovePageIndex);
   }
-}
-var en_default = {
-  "@@locale": "en",
-  settings: "Settings",
-  help: "Help",
-  maxZoomOut: "Maximum zoom out",
-  maxZoomIn: "Maximum zoom in",
-  singlePageCount: "single page count",
-  backgroundColor: "Background color",
-  leftToRight: "Left to right",
-  reset: "Reset",
-  doYouReallyWantToReset: "Do you really want to reset?",
-  errorIsOccurred: "Error is occurred.",
-  failedToLoadImage: "Failed to load image.",
-  loading: "Loading...",
-  fullScreenRestorationGuide: "Enter full screen yourself if you want to keep the viewer open in full screen.",
-  useFullScreen: "Use full screen",
-  downloading: "Downloading...",
-  cancel: "CANCEL",
-  downloadComplete: "Download complete.",
-  errorOccurredWhileDownloading: "Error occurred while downloading.",
-  keyBindings: "Key bindings",
-  toggleViewer: "Toggle viewer",
-  toggleFullscreenSetting: "Toggle fullscreen setting",
-  nextPage: "Next page",
-  previousPage: "Previous page",
-  download: "Download",
-  refresh: "Refresh",
-  increaseSinglePageCount: "Increase single page count",
-  decreaseSinglePageCount: "Decrease single page count"
-};
-var ko_default = {
-  "@@locale": "ko",
-  settings: "설정",
-  help: "도움말",
-  maxZoomOut: "최대 축소",
-  maxZoomIn: "최대 확대",
-  singlePageCount: "한쪽 페이지 수",
-  backgroundColor: "배경색",
-  leftToRight: "왼쪽부터 보기",
-  reset: "초기화",
-  doYouReallyWantToReset: "정말 초기화하시겠어요?",
-  errorIsOccurred: "에러가 발생했습니다.",
-  failedToLoadImage: "이미지를 불러오지 못했습니다.",
-  loading: "로딩 중...",
-  fullScreenRestorationGuide: "뷰어 전체 화면을 유지하려면 직접 전체 화면을 켜 주세요 (F11).",
-  useFullScreen: "전체 화면",
-  downloading: "다운로드 중...",
-  cancel: "취소",
-  downloadComplete: "다운로드 완료",
-  errorOccurredWhileDownloading: "다운로드 도중 오류가 발생했습니다",
-  keyBindings: "단축키",
-  toggleViewer: "뷰어 전환",
-  toggleFullscreenSetting: "전체화면 설정 전환",
-  nextPage: "다음 페이지",
-  previousPage: "이전 페이지",
-  download: "다운로드",
-  refresh: "새로고침",
-  increaseSinglePageCount: "한쪽 페이지 수 늘리기",
-  decreaseSinglePageCount: "한쪽 페이지 수 줄이기"
-};
-var translations = { en: en_default, ko: ko_default };
-var i18nStringsAtom = (0, import_jotai.atom)(getLanguage());
-var i18nAtom = (0, import_jotai.atom)((get) => get(i18nStringsAtom), (_get, set) => {
-  set(i18nStringsAtom, getLanguage());
 });
-i18nAtom.onMount = (set) => {
-  addEventListener("languagechange", set);
-  return () => {
-    removeEventListener("languagechange", set);
-  };
-};
-function getLanguage() {
-  for (const language of navigator.languages) {
-    const locale = language.split("-")[0];
-    if (!locale) {
-      continue;
-    }
-    const translation = translations[locale];
-    if (translation) {
-      return translation;
-    }
-  }
-  return en_default;
-}
-var utils_exports = {};
-__export(utils_exports, {
-  getSafeFileName: () => getSafeFileName,
-  insertCss: () => insertCss,
-  isTyping: () => isTyping,
-  save: () => save,
-  saveAs: () => saveAs,
-  timeout: () => timeout,
-  waitDomContent: () => waitDomContent
-});
-var timeout = (millisecond) => new Promise((resolve) => setTimeout(resolve, millisecond));
-var waitDomContent = (document2) => document2.readyState === "loading" ? new Promise((r) => document2.addEventListener("readystatechange", r, { once: true })) : true;
-var insertCss = (css2) => {
-  const style = document.createElement("style");
-  style.innerHTML = css2;
-  document.head.append(style);
-};
-var isTyping = (event) => event.target?.tagName?.match?.(/INPUT|TEXTAREA/) || event.target?.isContentEditable;
-var saveAs = async (blob, name) => {
-  const a = document.createElement("a");
-  a.download = name;
-  a.rel = "noopener";
-  a.href = URL.createObjectURL(blob);
-  a.click();
-  await timeout(4e4);
-  URL.revokeObjectURL(a.href);
-};
-var getSafeFileName = (str) => {
-  return str.replace(/[<>:"/\\|?*\x00-\x1f]+/gi, "").trim() || "download";
-};
-var save = (blob) => {
-  return saveAs(blob, `${getSafeFileName(document.title)}.zip`);
-};
-var import_react_toastify = require("react-toastify");
-GM.getResourceText("react-toastify-css").then(insertCss);
-var MAX_RETRY_COUNT = 6;
-var MAX_SAME_URL_RETRY_COUNT = 2;
-function isDelay(sourceOrDelay) {
-  return sourceOrDelay === void 0 || typeof sourceOrDelay !== "string" && !sourceOrDelay.src;
-}
-function toAdvancedObject(sourceOrDelay) {
-  return isDelay(sourceOrDelay) ? { src: void 0 } : toAdvancedSource(sourceOrDelay);
-}
-function toAdvancedSource(source) {
-  return typeof source === "string" ? { type: "image", src: source } : source;
-}
-async function* getMediaIterable({ media, index, comic, maxSize }) {
-  if (!isDelay(media)) {
-    yield getUrl(media);
-  }
-  if (!comic) {
-    return;
-  }
-  let previous;
-  let retryCount = 0;
-  let sameUrlRetryCount = 0;
-  while (sameUrlRetryCount <= MAX_SAME_URL_RETRY_COUNT && retryCount <= MAX_RETRY_COUNT) {
-    const hadError = media !== void 0 || retryCount > 0;
-    const medias = await comic({ cause: hadError ? "error" : "load", page: index, maxSize });
-    const next = medias[index];
-    if (isDelay(next)) {
-      continue;
-    }
-    const url = getUrl(next);
-    yield url;
-    retryCount++;
-    if (previous === url) {
-      sameUrlRetryCount++;
-      continue;
-    }
-    previous = url;
-  }
-}
-function getUrl(source) {
-  return typeof source === "string" ? source : source.src;
-}
 var maxSizeStateAtom = (0, import_jotai.atom)({ width: screen.width, height: screen.height });
 var maxSizeAtom = (0, import_jotai.atom)(
   (get) => get(maxSizeStateAtom),
@@ -989,106 +1370,6 @@ function shouldMediaBeOriginalSize({ maxZoomOutExponent, maxZoomInExponent, medi
   const isOver = minZoomRatio < mediaRatio || mediaRatio < 1 / maxZoomRatio;
   return isOver;
 }
-var globalCss = document.createElement("style");
-globalCss.innerHTML = `html, body {
-  overflow: hidden;
-}`;
-function hideBodyScrollBar(doHide) {
-  if (doHide) {
-    document.head.append(globalCss);
-  } else {
-    globalCss.remove();
-  }
-}
-async function setFullscreenElement(element) {
-  if (element) {
-    await element.requestFullscreen?.();
-  } else {
-    await document.exitFullscreen?.();
-  }
-}
-function focusWithoutScroll(element) {
-  element?.focus({ preventScroll: true });
-}
-function isUserGesturePermissionError(error) {
-  return error?.message === "Permissions check failed";
-}
-var fullscreenElementAtom = (0, import_jotai.atom)(null);
-var viewerElementAtom = (0, import_jotai.atom)(null);
-var isViewerFullscreenAtom = (0, import_jotai.atom)((get) => {
-  const viewerElement = get(viewerElementAtom);
-  return !!viewerElement && viewerElement === get(fullscreenElementAtom);
-});
-var isImmersiveAtom = (0, import_jotai.atom)(false);
-var isViewerImmersiveAtom = (0, import_jotai.atom)((get) => get(isImmersiveAtom));
-var scrollBarStyleFactorAtom = (0, import_jotai.atom)(
-  (get) => ({
-    fullscreenElement: get(fullscreenElementAtom),
-    viewerElement: get(viewerElementAtom)
-  }),
-  (get, set, factors) => {
-    const { fullscreenElement, viewerElement, isImmersive } = factors;
-    if (fullscreenElement !== void 0) {
-      set(fullscreenElementAtom, fullscreenElement);
-    }
-    if (viewerElement !== void 0) {
-      set(viewerElementAtom, viewerElement);
-    }
-    if (isImmersive !== void 0) {
-      set(wasImmersiveAtom, isImmersive);
-      set(isImmersiveAtom, isImmersive);
-    }
-    const canScrollBarDuplicate = !get(isViewerFullscreenAtom) && get(isImmersiveAtom);
-    hideBodyScrollBar(canScrollBarDuplicate);
-  }
-);
-var viewerFullscreenAtom = (0, import_jotai.atom)((get) => {
-  get(isFullscreenPreferredAtom);
-  return get(isViewerFullscreenAtom);
-}, async (get, _set, value) => {
-  const element = value ? get(viewerElementAtom) : null;
-  const { fullscreenElement } = get(scrollBarStyleFactorAtom);
-  if (element === fullscreenElement) {
-    return true;
-  }
-  const fullscreenChange = new Promise((resolve) => {
-    addEventListener("fullscreenchange", resolve, { once: true });
-  });
-  try {
-    await setFullscreenElement(element);
-    await fullscreenChange;
-    return true;
-  } catch (error) {
-    if (isUserGesturePermissionError(error)) {
-      return false;
-    }
-    throw error;
-  }
-});
-var transitionDeferredAtom = (0, import_jotai.atom)({});
-var transitionLockAtom = (0, import_jotai.atom)(null, async (get, set) => {
-  const { deferred: previousLock } = get(transitionDeferredAtom);
-  const lock = deferred();
-  set(transitionDeferredAtom, { deferred: lock });
-  await previousLock;
-  return { deferred: lock };
-});
-var isFullscreenPreferredSettingsAtom = (0, import_jotai.atom)(
-  (get) => get(isFullscreenPreferredAtom),
-  async (get, set, value) => {
-    const promise = set(isFullscreenPreferredAtom, value);
-    const appliedValue = value === import_utils.RESET ? (await promise, get(isFullscreenPreferredAtom)) : value;
-    const lock = await set(transitionLockAtom);
-    try {
-      const wasImmersive = get(wasImmersiveAtom);
-      const shouldEnterFullscreen = appliedValue && wasImmersive;
-      await set(viewerFullscreenAtom, shouldEnterFullscreen);
-    } finally {
-      lock.deferred.resolve();
-    }
-  }
-);
-var rootAtom = (0, import_jotai.atom)(null);
 var externalFocusElementAtom = (0, import_jotai.atom)(null);
 var setViewerImmersiveAtom = (0, import_jotai.atom)(null, async (get, set, value) => {
   const lock = await set(transitionLockAtom);
@@ -1241,267 +1522,50 @@ function shouldShowF11Guide({ noticeCount }) {
   const isUserFullscreen = innerHeight === screen.height || innerWidth === screen.width;
   return noticeCount < 3 && !isUserFullscreen;
 }
-var { styled, css, keyframes } = (0, import_react.createStitches)({});
-function DownloadCancel({ onClick }) {
-  const strings = (0, import_jotai.useAtomValue)(i18nAtom);
-  return  React.createElement(SpaceBetween, null,  React.createElement("p", null, strings.downloading),  React.createElement("button", { onClick }, strings.cancel));
-}
-var SpaceBetween = styled("div", {
-  display: "flex",
-  flexFlow: "row nowrap",
-  justifyContent: "space-between"
-});
-var isGmFetchAvailable = typeof GM.xmlHttpRequest === "function";
-async function gmFetch(url, init) {
-  const method = init?.body ? "POST" : "GET";
-  const response = await GM.xmlHttpRequest({
-    method,
-    url,
-    headers: {
-      referer: `${location.origin}/`,
-      ...init?.headers
-    },
-    responseType: init?.type === "text" ? void 0 : init?.type,
-    data: init?.body
-  });
-  return response;
-}
-async function download(comic, options) {
-  const { onError, onProgress, signal } = options || {};
-  let startedCount = 0;
-  let resolvedCount = 0;
-  let rejectedCount = 0;
-  let status = "ongoing";
-  const pages = await comic({ cause: "download", maxSize: { width: Infinity, height: Infinity } });
-  const digit = Math.floor(Math.log10(pages.length)) + 1;
-  return archiveWithReport();
-  async function archiveWithReport() {
-    const result = await Promise.all(pages.map(downloadWithReport));
-    if (signal?.aborted) {
-      reportProgress({ transition: "cancelled" });
-      signal.throwIfAborted();
-    }
-    const pairs = await Promise.all(result.map(toPair));
-    const data = Object.assign({}, ...pairs);
-    const value = deferred();
-    const abort = (0, deps_exports.zip)(data, { level: 0 }, (error, array) => {
-      if (error) {
-        reportProgress({ transition: "error" });
-        value.reject(error);
-      } else {
-        reportProgress({ transition: "complete" });
-        value.resolve(array);
-      }
-    });
-    signal?.addEventListener("abort", abort, { once: true });
-    return value;
-  }
-  async function downloadWithReport(source, pageIndex) {
-    const errors = [];
-    startedCount++;
-    reportProgress();
-    for await (const event of downloadImage({ media: source, pageIndex })) {
-      if ("error" in event) {
-        errors.push(event.error);
-        onError?.(event.error);
-        continue;
-      }
-      if (event.url) {
-        resolvedCount++;
-      } else {
-        rejectedCount++;
-      }
-      reportProgress();
-      return event;
-    }
-    return {
-      url: "",
-      blob: new Blob([errors.map((x) => `${x}`).join("\n\n")])
-    };
-  }
-  async function* downloadImage({ media, pageIndex }) {
-    const maxSize = { width: Infinity, height: Infinity };
-    const mediaParams = { media, index: pageIndex, comic, maxSize };
-    for await (const url of getMediaIterable(mediaParams)) {
-      if (signal?.aborted) {
-        break;
-      }
-      try {
-        const blob = await fetchBlobWithCacheIfPossible(url, signal);
-        yield { url, blob };
-      } catch (error) {
-        yield await fetchBlobIgnoringCors(url, { signal, fetchError: error });
-      }
-    }
-  }
-  async function toPair({ url, blob }, index) {
-    const array = new Uint8Array(await blob.arrayBuffer());
-    const pad = `${index}`.padStart(digit, "0");
-    const name = `${pad}${guessExtension(array) ?? getExtension(url)}`;
-    return { [name]: array };
-  }
-  function reportProgress({ transition } = {}) {
-    if (status !== "ongoing") {
-      return;
-    }
-    if (transition) {
-      status = transition;
-    }
-    onProgress?.({
-      total: pages.length,
-      started: startedCount,
-      settled: resolvedCount + rejectedCount,
-      rejected: rejectedCount,
-      status
-    });
-  }
-}
-function getExtension(url) {
-  if (!url) {
-    return ".txt";
-  }
-  const extension = url.match(/\.[^/?#]{3,4}?(?=[?#]|$)/);
-  return extension?.[0] || ".jpg";
-}
-function guessExtension(array) {
-  const { 0: a, 1: b, 2: c, 3: d } = array;
-  if (a === 255 && b === 216 && c === 255) {
-    return ".jpg";
-  }
-  if (a === 137 && b === 80 && c === 78 && d === 71) {
-    return ".png";
-  }
-  if (a === 82 && b === 73 && c === 70 && d === 70) {
-    return ".webp";
-  }
-  if (a === 71 && b === 73 && c === 70 && d === 56) {
-    return ".gif";
-  }
-}
-async function fetchBlobWithCacheIfPossible(url, signal) {
-  const response = await fetch(url, { signal });
-  return await response.blob();
-}
-async function fetchBlobIgnoringCors(url, { signal, fetchError }) {
-  if (isCrossOrigin(url) && !isGmFetchAvailable) {
-    return {
-      error: new Error(
-        "It could be a CORS issue but cannot use GM.xmlhttpRequest",
-        { cause: fetchError }
-      )
-    };
-  }
-  try {
-    const response = await gmFetch(url, { signal, type: "blob" });
-    if (response.status >= 400) {
-      const body = await response.response.text();
-      const message = `failed to load ${url} with HTTP ${response.status} ${response.statusText}
-${body}`;
-      return { error: new Error(message) };
-    }
-    return { url, blob: response.response };
-  } catch (error) {
-    if (isGmCancelled(error)) {
-      return { error: new Error("download aborted") };
-    } else {
-      return { error: fetchError };
-    }
-  }
-}
-function isCrossOrigin(url) {
-  return new URL(url).origin !== location.origin;
-}
-function isGmCancelled(error) {
-  return error instanceof Function;
-}
-var aborterAtom = (0, import_jotai.atom)(null);
-var cancelDownloadAtom = (0, import_jotai.atom)(null, (get) => {
-  get(aborterAtom)?.abort();
-});
-var startDownloadAtom = (0, import_jotai.atom)(null, async (get, set, options) => {
-  const aborter = new AbortController();
-  set(aborterAtom, (previous) => {
-    previous?.abort();
-    return aborter;
-  });
-  const viewerState = get(viewerStateAtom);
-  const source = options?.source ?? viewerState.options.source;
-  if (!source) {
-    return;
-  }
-  let toastId = null;
-  addEventListener("beforeunload", confirmDownloadAbort);
-  try {
-    toastId = (0, import_react_toastify.toast)( React.createElement(DownloadCancel, { onClick: aborter.abort }), { autoClose: false, progress: 0 });
-    return await download(source, {
-      onProgress: reportProgress,
-      onError: logIfNotAborted,
-      signal: aborter.signal
-    });
-  } finally {
-    removeEventListener("beforeunload", confirmDownloadAbort);
-  }
-  async function reportProgress(event) {
-    if (!toastId) {
-      return;
-    }
-    const { total, started, settled, rejected, status } = event;
-    const value = started / total * 0.1 + settled / total * 0.89;
-    switch (status) {
-      case "ongoing":
-        import_react_toastify.toast.update(toastId, { type: rejected > 0 ? "warning" : "default", progress: value });
-        break;
-      case "complete":
-        import_react_toastify.toast.update(toastId, {
-          type: "success",
-          render: get(i18nAtom).downloadComplete,
-          progress: 0.9999
-        });
-        await timeout(1e3);
-        import_react_toastify.toast.done(toastId);
-        break;
-      case "error":
-        import_react_toastify.toast.update(toastId, {
-          type: "error",
-          render: get(i18nAtom).errorOccurredWhileDownloading,
-          progress: 0
-        });
-        break;
-      case "cancelled":
-        import_react_toastify.toast.done(toastId);
-        break;
-    }
-  }
-});
-var downloadAndSaveAtom = (0, import_jotai.atom)(null, async (_get, set, options) => {
-  const zip2 = await set(startDownloadAtom, options);
-  if (zip2) {
-    await save(new Blob([zip2]));
-  }
-});
-function logIfNotAborted(error) {
-  if (isNotAbort(error)) {
-    console.error(error);
-  }
-}
-function isNotAbort(error) {
-  return !/aborted/i.test(`${error}`);
-}
-function confirmDownloadAbort(event) {
-  event.preventDefault();
-  event.returnValue = "";
-}
-var controllerAtom = (0, import_jotai.atom)(null);
-var controllerCreationAtom = (0, import_jotai.atom)((get) => get(controllerAtom), (get, set) => {
-  const existing = get(controllerAtom);
+var controllerPrimitiveAtom = (0, import_jotai.atom)(null);
+var controllerAtom = (0, import_jotai.atom)((get) => get(controllerPrimitiveAtom), (get, set) => {
+  const existing = get(controllerPrimitiveAtom);
   if (existing) {
     return existing;
   }
   const controller = new Controller(get, set);
-  set(controllerAtom, controller);
+  set(controllerPrimitiveAtom, controller);
   return controller;
 });
-controllerCreationAtom.onMount = (set) => void set();
+controllerAtom.onMount = (set) => void set();
+var effectivePreferencesAtom = (0, import_jotai.atom)(
+  (get) => ({
+    backgroundColor: get(backgroundColorAtom),
+    singlePageCount: get(singlePageCountStorageAtom),
+    maxZoomOutExponent: get(maxZoomOutExponentAtom),
+    maxZoomInExponent: get(maxZoomInExponentAtom),
+    pageDirection: get(pageDirectionAtom),
+    isFullscreenPreferred: get(isFullscreenPreferredAtom),
+    fullscreenNoticeCount: get(fullscreenNoticeCountAtom)
+  }),
+  (get, set, update) => {
+    if (typeof update === "function") {
+      const preferences = get(effectivePreferencesAtom);
+      const newPreferences = update(preferences);
+      return updatePreferences(newPreferences);
+    }
+    return updatePreferences(update);
+    function updatePreferences(preferences) {
+      return Promise.all([
+        updateIfDefined(backgroundColorAtom, preferences.backgroundColor),
+        updateIfDefined(singlePageCountAtom, preferences.singlePageCount),
+        updateIfDefined(maxZoomOutExponentAtom, preferences.maxZoomOutExponent),
+        updateIfDefined(maxZoomInExponentAtom, preferences.maxZoomInExponent),
+        updateIfDefined(pageDirectionAtom, preferences.pageDirection),
+        updateIfDefined(isFullscreenPreferredAtom, preferences.isFullscreenPreferred),
+        updateIfDefined(fullscreenNoticeCountAtom, preferences.fullscreenNoticeCount)
+      ]);
+    }
+    function updateIfDefined(atom3, value) {
+      return value !== void 0 ? set(atom3, value) : Promise.resolve();
+    }
+  }
+);
 var Controller = class {
   constructor(get, set) {
     this.get = get;
@@ -1511,10 +1575,10 @@ var Controller = class {
   }
   currentElementKeyHandler = null;
   get options() {
-    return this.get(viewerStateAtom).options;
+    return this.get(viewerOptionsAtom);
   }
   get status() {
-    return this.get(viewerStateAtom).status;
+    return this.get(viewerStatusAtom);
   }
   get container() {
     return this.get(scrollBarStyleFactorAtom).viewerElement;
@@ -1546,7 +1610,7 @@ var Controller = class {
     }
   }
   setOptions = (value) => {
-    this.set(setViewerOptionsAtom, value);
+    return this.set(setViewerOptionsAtom, value);
   };
   goPrevious = () => {
     this.set(goPreviousAtom);
@@ -1640,11 +1704,14 @@ var Controller = class {
       case ";":
         this.downloader?.downloadAndSave();
         return true;
-      case "/":
+      case ",":
+        void this.addSinglePageCount(-1);
+        return true;
+      case ".":
         void this.addSinglePageCount(1);
         return true;
-      case "?":
-        void this.addSinglePageCount(-1);
+      case "/":
+        this.set(anchorSinglePageCountAtom);
         return true;
       case "'":
         this.reloadErrored();
@@ -1699,10 +1766,11 @@ var fullscreenCss = {
   bottom: "1%"
 };
 var IconButton = styled("button", {
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
+  display: "flex",
   padding: 0,
+  border: "none",
+  background: "transparent",
+  cursor: "pointer",
   "& > svg": {
     pointerEvents: "none"
   },
@@ -1734,8 +1802,7 @@ var FullscreenButton = (props) =>  React.createElement(IconButton, { css: fullsc
     x: "0px",
     y: "0px",
     viewBox: "0 0 122.88 122.87",
-    width: "40px",
-    ...props
+    width: "40px"
   },
    React.createElement("g", null,  React.createElement("path", { d: "M122.88,77.63v41.12c0,2.28-1.85,4.12-4.12,4.12H77.33v-9.62h35.95c0-12.34,0-23.27,0-35.62H122.88L122.88,77.63z M77.39,9.53V0h41.37c2.28,0,4.12,1.85,4.12,4.12v41.18h-9.63V9.53H77.39L77.39,9.53z M9.63,45.24H0V4.12C0,1.85,1.85,0,4.12,0h41 v9.64H9.63V45.24L9.63,45.24z M45.07,113.27v9.6H4.12c-2.28,0-4.12-1.85-4.12-4.13V77.57h9.63v35.71H45.07L45.07,113.27z" }))
 ));
@@ -1775,6 +1842,12 @@ var SettingsButton = (props) => {
      React.createElement("path", { d: "M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" })
   ));
 };
+var RightArrow = (props) => {
+  return  React.createElement(Svg, { viewBox: "0 0 330 330", ...props },  React.createElement("path", { d: "M250.606,154.389l-150-149.996c-5.857-5.858-15.355-5.858-21.213,0.001\n	c-5.857,5.858-5.857,15.355,0.001,21.213l139.393,139.39L79.393,304.394c-5.857,5.858-5.857,15.355,0.001,21.213\n	C82.322,328.536,86.161,330,90,330s7.678-1.464,10.607-4.394l149.999-150.004c2.814-2.813,4.394-6.628,4.394-10.606\n	C255,161.018,253.42,157.202,250.606,154.389z" }));
+};
+var LeftArrow = (props) => {
+  return  React.createElement(RightArrow, { ...props, transform: "rotate(180)" });
+};
 var Container = styled("div", {
   position: "relative",
   height: "100%",
@@ -1783,6 +1856,9 @@ var Container = styled("div", {
   fontFamily: "Pretendard, NanumGothic, sans-serif",
   fontSize: "16px",
   color: "black",
+  "& *:focus-visible": {
+    outline: "none"
+  },
   variants: {
     immersive: {
       true: {
@@ -1799,9 +1875,8 @@ var OverlayScroller = styled("div", {
   position: "relative",
   width: "100%",
   height: "100%",
-  outline: "none",
-  "& > div[data-overlayscrollbars-viewport]:focus-visible": {
-    outline: "none"
+  "& .os-scrollbar": {
+    zIndex: 1
   },
   "& .os-scrollbar-handle": {
     backdropFilter: "brightness(0.5)",
@@ -1819,6 +1894,8 @@ var OverlayScroller = styled("div", {
     }
   }
 });
+var import_overlayscrollbars_react = require("overlayscrollbars-react");
+GM.getResourceText("overlayscrollbars-css").then(insertCss);
 var import_jotai3 = require("jotai");
 var Backdrop = styled("div", {
   position: "absolute",
@@ -1877,11 +1954,6 @@ function BackdropDialog({ onClose, ...props }) {
     }
   ));
 }
-function HelpTab() {
-  const keyBindings = (0, import_jotai.useAtomValue)(keyBindingsAtom);
-  const strings = (0, import_jotai.useAtomValue)(i18nAtom);
-  return  React.createElement(React.Fragment, null,  React.createElement("p", null, strings.keyBindings),  React.createElement("table", null, keyBindings.map(([action, keyBinding]) =>  React.createElement("tr", null,  React.createElement(ActionName, null, action),  React.createElement("td", null, keyBinding)))));
-}
 var keyBindingsAtom = (0, import_jotai.atom)((get) => {
   const strings = get(i18nAtom);
   return [
@@ -1903,13 +1975,19 @@ var keyBindingsAtom = (0, import_jotai.atom)((get) => {
     ],
     [strings.download,  React.createElement("kbd", null, ";")],
     [strings.refresh,  React.createElement("kbd", null, "'")],
-    [strings.increaseSinglePageCount,  React.createElement("kbd", null, "/")],
-    [strings.decreaseSinglePageCount,  React.createElement("kbd", null, "?")]
+    [strings.decreaseSinglePageCount,  React.createElement("kbd", null, ",")],
+    [strings.increaseSinglePageCount,  React.createElement("kbd", null, ".")],
+    [strings.anchorSinglePageCount,  React.createElement("kbd", null, "/")]
   ];
 });
 var ActionName = styled("td", {
-  width: "50%"
+  paddingRight: "1em"
 });
+function HelpTab() {
+  const keyBindings = (0, import_jotai.useAtomValue)(keyBindingsAtom);
+  const strings = (0, import_jotai.useAtomValue)(i18nAtom);
+  return  React.createElement(React.Fragment, null,  React.createElement("p", null, strings.keyBindings),  React.createElement("table", null, keyBindings.map(([action, keyBinding]) =>  React.createElement("tr", null,  React.createElement(ActionName, null, action),  React.createElement("td", null, keyBinding)))));
+}
 function SettingsTab() {
   const [maxZoomOutExponent, setMaxZoomOutExponent] = (0, import_jotai.useAtom)(maxZoomOutExponentAtom);
   const [maxZoomInExponent, setMaxZoomInExponent] = (0, import_jotai.useAtom)(maxZoomInExponentAtom);
@@ -2271,23 +2349,209 @@ var Page = ({ atom: atom3, ...props }) => {
   };
   return  React.createElement(Overlay, { ref: setDiv, css: divCss, fullWidth }, status === "loading" &&  React.createElement(Spinner, null), status === "error" &&  React.createElement(LinkColumn, { onClick: reloadErrored },  React.createElement(CircledX, null),  React.createElement("p", null, strings.failedToLoadImage),  React.createElement("p", null, pageState.urls?.join("\n"))), videoProps &&  React.createElement(Video, { ...videoProps, originalSize: shouldBeOriginalSize, ...props }), imageProps &&  React.createElement(Image, { ...imageProps, originalSize: shouldBeOriginalSize, ...props }));
 };
-var import_overlayscrollbars_react = require("overlayscrollbars-react");
-GM.getResourceText("overlayscrollbars-css").then(insertCss);
+function useHorizontalSwipe({ element, onPrevious, onNext }) {
+  const [swipeRatio, setSwipeRatio] = (0, import_react3.useState)(0);
+  (0, import_react3.useEffect)(() => {
+    if (!element || !onPrevious && !onNext)
+      return;
+    let lastX = null;
+    let lastRatio = 0;
+    let startTouch = null;
+    const addTouchIfClean = (event) => {
+      const newTouch = event.touches[0];
+      if (startTouch !== null || !newTouch)
+        return;
+      startTouch = {
+        identifier: newTouch.identifier,
+        x: newTouch.clientX,
+        y: newTouch.clientY,
+        scrollTop: element.scrollTop
+      };
+      lastX = newTouch.clientX;
+    };
+    const throttledSetSwipeRatio = throttle(setSwipeRatio, 1e3 / 60);
+    const updateSwipeRatio = (event) => {
+      const continuedTouch = [...event.changedTouches].find(
+        (touch) => touch.identifier === startTouch?.identifier
+      );
+      if (!continuedTouch || !startTouch || !lastX)
+        return;
+      const isVerticalScroll = element.scrollTop !== startTouch.scrollTop;
+      if (isVerticalScroll) {
+        resetTouch();
+        return;
+      }
+      const ratioDelta = (continuedTouch.clientX - lastX) / 200;
+      lastRatio = Math.max(-1, Math.min(lastRatio + ratioDelta, 1));
+      throttledSetSwipeRatio(lastRatio);
+      lastX = continuedTouch.clientX;
+      const horizontalOffset = Math.abs(continuedTouch.clientX - startTouch.x);
+      const verticalOffset = Math.abs(continuedTouch.clientY - startTouch.y);
+      if (horizontalOffset > verticalOffset) {
+        event.preventDefault();
+      }
+    };
+    const resetSwipeRatioIfReleased = (event) => {
+      const continuedTouch = [...event.touches].find(
+        (touch) => touch.identifier === startTouch?.identifier
+      );
+      if (continuedTouch)
+        return;
+      if (Math.abs(lastRatio) < 0.7) {
+        resetTouch();
+        return;
+      }
+      if (lastRatio > 0) {
+        onPrevious?.();
+      } else {
+        onNext?.();
+      }
+      resetTouch();
+    };
+    function resetTouch() {
+      startTouch = null;
+      lastX = null;
+      lastRatio = 0;
+      throttledSetSwipeRatio(0);
+      throttledSetSwipeRatio.flush();
+    }
+    element.addEventListener("touchend", resetSwipeRatioIfReleased);
+    element.addEventListener("touchcancel", resetSwipeRatioIfReleased);
+    element.addEventListener("touchmove", updateSwipeRatio, { passive: false });
+    element.addEventListener("touchstart", addTouchIfClean, { passive: true });
+    return () => {
+      element.removeEventListener("touchstart", addTouchIfClean);
+      element.removeEventListener("touchmove", updateSwipeRatio);
+      element.removeEventListener("touchcancel", resetSwipeRatioIfReleased);
+      element.removeEventListener("touchend", resetSwipeRatioIfReleased);
+    };
+  }, [element]);
+  return swipeRatio;
+}
+var sideButtonCss = {
+  position: "absolute",
+  top: 0,
+  bottom: "60px",
+  width: "10%",
+  height: "100%",
+  border: "none",
+  backgroundColor: "transparent",
+  "& > *": {
+    transition: "transform 0.2s ease-in-out"
+  },
+  variants: {
+    touchDevice: {
+      true: {
+        transition: "unset",
+        pointerEvents: "none"
+      }
+    }
+  }
+};
+var LeftSideHiddenButton = styled("button", {
+  ...sideButtonCss,
+  left: 0,
+  "&:not(:hover) > *": {
+    transform: "translateX(-60%)"
+  },
+  "&:hover > *, &:focus > *, &:focus-visible > *": {
+    transform: "translateX(-20%)"
+  }
+});
+var RightSideHiddenButton = styled("button", {
+  ...sideButtonCss,
+  right: 0,
+  "&:not(:hover) > *": {
+    transform: "translateX(+60%)"
+  },
+  "&:hover > *, &:focus > *, &:focus-visible > *": {
+    transform: "translateX(+20%)"
+  }
+});
+var FlexCenter = styled("div", {
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  width: "100%",
+  height: "100%"
+});
+function SideSeriesButtons() {
+  const { onNextSeries, onPreviousSeries } = (0, import_jotai.useAtomValue)(viewerOptionsAtom);
+  const scrollElement = (0, import_jotai.useAtomValue)(scrollElementAtom);
+  const swipeRatio = useHorizontalSwipe({
+    element: scrollElement,
+    onPrevious: onPreviousSeries,
+    onNext: onNextSeries
+  });
+  const isTouchDevice = navigator.maxTouchPoints > 0;
+  function forwardWheelEvent(event) {
+    scrollElement?.scrollBy({ top: event.deltaY });
+  }
+  return  React.createElement(React.Fragment, null, onPreviousSeries &&  React.createElement(
+    LeftSideHiddenButton,
+    {
+      onClick: onPreviousSeries,
+      onWheel: forwardWheelEvent,
+      touchDevice: isTouchDevice
+    },
+     React.createElement(
+      FlexCenter,
+      {
+        style: swipeRatio <= 0 ? {} : { transform: `translateX(${swipeRatio * 40 - 60}%)` }
+      },
+       React.createElement(LeftArrow, { height: "3vmin", width: "3vmin" })
+    )
+  ), onNextSeries &&  React.createElement(
+    RightSideHiddenButton,
+    {
+      onClick: onNextSeries,
+      onWheel: forwardWheelEvent,
+      touchDevice: isTouchDevice
+    },
+     React.createElement(
+      FlexCenter,
+      {
+        style: swipeRatio >= 0 ? {} : { transform: `translateX(${swipeRatio * 40 + 60}%)` }
+      },
+       React.createElement(RightArrow, { height: "3vmin", width: "3vmin" })
+    )
+  ));
+}
+var Pages = styled("div", {
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  flexFlow: "row-reverse wrap",
+  overflowY: "auto",
+  variants: {
+    ltr: {
+      true: {
+        flexFlow: "row wrap"
+      }
+    }
+  }
+});
+var CenterText = styled("p", {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  fontSize: "2em"
+});
 function InnerViewer(props) {
-  const { options: viewerOptions, onInitialized, ...otherProps } = props;
+  const { options, onInitialized, ...otherProps } = props;
   const isFullscreen = (0, import_jotai.useAtomValue)(viewerFullscreenAtom);
   const backgroundColor = (0, import_jotai.useAtomValue)(backgroundColorAtom);
-  const viewer = (0, import_jotai.useAtomValue)(viewerStateAtom);
-  const setViewerOptions = (0, import_jotai.useSetAtom)(setViewerOptionsAtom);
+  const status = (0, import_jotai.useAtomValue)(viewerStatusAtom);
+  const viewerOptions = (0, import_jotai.useAtomValue)(viewerOptionsAtom);
   const pageDirection = (0, import_jotai.useAtomValue)(pageDirectionAtom);
   const strings = (0, import_jotai.useAtomValue)(i18nAtom);
   const mode = (0, import_jotai.useAtomValue)(viewerModeAtom);
-  const controller = (0, import_jotai.useAtomValue)(controllerCreationAtom);
+  const controller = (0, import_jotai.useAtomValue)(controllerAtom);
   const virtualContainerRef = (0, import_react3.useRef)(null);
   const virtualContainer = virtualContainerRef.current;
   const setScrollElement = (0, import_jotai.useSetAtom)(setScrollElementAtom);
-  const options = controller?.options;
-  const { status } = viewer;
+  const setViewerOptions = (0, import_jotai.useSetAtom)(setViewerOptionsAtom);
   const pageAtoms = (0, import_jotai.useAtomValue)(pageAtomsAtom);
   const [initialize2] = (0, import_overlayscrollbars_react.useOverlayScrollbars)({
     defer: true,
@@ -2305,8 +2569,8 @@ function InnerViewer(props) {
     }
   }, [controller, onInitialized]);
   (0, import_react3.useEffect)(() => {
-    setViewerOptions(viewerOptions);
-  }, [viewerOptions]);
+    setViewerOptions(options);
+  }, [options]);
   (0, import_react3.useEffect)(() => {
     if (virtualContainer) {
       initialize2(virtualContainer);
@@ -2329,34 +2593,23 @@ function InnerViewer(props) {
         onMouseDown: (0, import_jotai.useSetAtom)(blockSelectionAtom),
         ...otherProps
       },
-       React.createElement(Pages, { ltr: pageDirection === "leftToRight" }, status === "complete" ? pageAtoms.map((atom3) =>  React.createElement(
+       React.createElement(Pages, { ltr: pageDirection === "leftToRight" }, pageAtoms.map((atom3) =>  React.createElement(
         Page,
         {
           key: `${atom3}`,
           atom: atom3,
-          ...options?.mediaProps
+          ...viewerOptions.mediaProps
         }
-      )) :  React.createElement("p", null, status === "error" ? strings.errorIsOccurred : strings.loading))
+      )))
     ),
-    status === "complete" ?  React.createElement(LeftBottomControl, null) : false,
+     React.createElement(SideSeriesButtons, null),
+    status === "loading" &&  React.createElement(CenterText, null, strings.loading),
+    status === "error" &&  React.createElement(CenterText, null, strings.errorIsOccurred),
+    status === "complete" &&  React.createElement(LeftBottomControl, null),
      React.createElement(FullscreenButton, { onClick: (0, import_jotai.useSetAtom)(toggleImmersiveAtom) }),
      React.createElement(import_react_toastify.ToastContainer, null)
   );
 }
-var Pages = styled("div", {
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  flexFlow: "row-reverse wrap",
-  overflowY: "auto",
-  variants: {
-    ltr: {
-      true: {
-        flexFlow: "row wrap"
-      }
-    }
-  }
-});
 function initialize(options) {
   const store = (0, import_jotai.createStore)();
   const root = (0, import_react_dom.createRoot)(getDefaultRoot());
