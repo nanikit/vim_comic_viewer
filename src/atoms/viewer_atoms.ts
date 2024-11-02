@@ -11,7 +11,7 @@ import {
 import { i18nAtom } from "../modules/i18n/atoms.ts";
 import { toast } from "../modules/toast.ts";
 import { timeout } from "../utils.ts";
-import { pageAtomsAtom } from "./create_page_atom.ts";
+import { pageAtomsAtom, refreshMediaSourceAtom } from "./create_page_atom.ts";
 import { focusWithoutScroll } from "./dom/dom_helpers.ts";
 import {
   isFullscreenPreferredSettingsAtom,
@@ -20,6 +20,7 @@ import {
   transitionLockAtom,
   viewerFullscreenAtom,
 } from "./fullscreen_atom.ts";
+import { ViewerOptions, viewerOptionsAtom, viewerStatusAtom } from "./viewer_base_atoms.ts";
 
 export const rootAtom = atom<Root | null>(null);
 
@@ -129,6 +130,28 @@ export const viewerModeAtom = atom((get) => {
   const isFullscreen = get(viewerFullscreenAtom);
   const isImmersive = get(isViewerImmersiveAtom);
   return isFullscreen ? "fullscreen" : isImmersive ? "window" : "normal";
+});
+
+// refreshMediaSourceAtom dependency prevents from moving this to viewer_base_atoms.ts
+export const setViewerOptionsAtom = atom(null, async (get, set, options: ViewerOptions) => {
+  try {
+    const { source } = options;
+    const previousOptions = get(viewerOptionsAtom);
+    const shouldLoadSource = source && source !== previousOptions.source;
+    if (!shouldLoadSource) {
+      return;
+    }
+
+    set(viewerStatusAtom, (previous) => previous === "complete" ? "complete" : "loading");
+    set(viewerOptionsAtom, options);
+
+    await set(refreshMediaSourceAtom, { cause: "load" });
+
+    set(viewerStatusAtom, "complete");
+  } catch (error) {
+    set(viewerStatusAtom, "error");
+    throw error;
+  }
 });
 
 export const reloadErroredAtom = atom(null, (get, set) => {

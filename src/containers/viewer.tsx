@@ -6,6 +6,7 @@ import {
   blockSelectionAtom,
   fullscreenSynchronizationAtom,
   setViewerElementAtom,
+  setViewerOptionsAtom,
   toggleImmersiveAtom,
   viewerModeAtom,
 } from "../atoms/viewer_atoms.ts";
@@ -16,7 +17,7 @@ import {
 } from "../atoms/viewer_base_atoms.ts";
 import { FullscreenButton } from "../components/icons.tsx";
 import { Container, OverlayScroller } from "../components/scrollable_layout.ts";
-import { HTMLProps, useAtom, useAtomValue, useEffect, useRef, useSetAtom } from "../deps.ts";
+import { HTMLProps, useAtomValue, useEffect, useRef, useSetAtom } from "../deps.ts";
 import { navigateAtom, synchronizeScrollAtom } from "../features/navigation/atoms.ts";
 import { backgroundColorAtom, pageDirectionAtom } from "../features/preferences/atoms.ts";
 import { i18nAtom } from "../modules/i18n/atoms.ts";
@@ -64,7 +65,7 @@ export function InnerViewer(
   const isFullscreen = useAtomValue(viewerFullscreenAtom);
   const backgroundColor = useAtomValue(backgroundColorAtom);
   const status = useAtomValue(viewerStatusAtom);
-  const [viewerOptions, setViewerOptions] = useAtom(viewerOptionsAtom);
+  const viewerOptions = useAtomValue(viewerOptionsAtom);
   const pageDirection = useAtomValue(pageDirectionAtom);
   const strings = useAtomValue(i18nAtom);
   const mode = useAtomValue(viewerModeAtom);
@@ -72,6 +73,7 @@ export function InnerViewer(
   const virtualContainerRef = useRef<HTMLDivElement | null>(null);
   const virtualContainer = virtualContainerRef.current;
   const setScrollElement = useSetAtom(setScrollElementAtom);
+  const setViewerOptions = useSetAtom(setViewerOptionsAtom);
 
   const pageAtoms = useAtomValue(pageAtomsAtom);
 
