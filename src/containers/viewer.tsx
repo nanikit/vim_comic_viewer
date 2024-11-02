@@ -1,4 +1,4 @@
-import { controllerCreationAtom, ViewerController } from "../atoms/controller_atom.ts";
+import { controllerAtom, ViewerController } from "../atoms/controller_atom.ts";
 import { pageAtomsAtom } from "../atoms/create_page_atom.ts";
 import { viewerFullscreenAtom } from "../atoms/fullscreen_atom.ts";
 import { setScrollElementAtom } from "../atoms/set_scroll_element_atom.ts";
@@ -68,7 +68,7 @@ export function InnerViewer(
   const pageDirection = useAtomValue(pageDirectionAtom);
   const strings = useAtomValue(i18nAtom);
   const mode = useAtomValue(viewerModeAtom);
-  const controller = useAtomValue(controllerCreationAtom);
+  const controller = useAtomValue(controllerAtom);
   const virtualContainerRef = useRef<HTMLDivElement | null>(null);
   const virtualContainer = virtualContainerRef.current;
   const setScrollElement = useSetAtom(setScrollElementAtom);

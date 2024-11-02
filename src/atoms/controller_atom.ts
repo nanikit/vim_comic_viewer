@@ -31,18 +31,18 @@ import { type ViewerOptions, viewerOptionsAtom, viewerStatusAtom } from "./viewe
 
 export type ViewerController = InstanceType<typeof Controller>;
 
-const controllerAtom = atom<ViewerController | null>(null);
-export const controllerCreationAtom = atom((get) => get(controllerAtom), (get, set) => {
-  const existing = get(controllerAtom);
+const controllerPrimitiveAtom = atom<ViewerController | null>(null);
+export const controllerAtom = atom((get) => get(controllerPrimitiveAtom), (get, set) => {
+  const existing = get(controllerPrimitiveAtom);
   if (existing) {
     return existing;
   }
 
   const controller = new Controller(get, set);
-  set(controllerAtom, controller);
+  set(controllerPrimitiveAtom, controller);
   return controller;
 });
-controllerCreationAtom.onMount = (set) => void set();
+controllerAtom.onMount = (set) => void set();
 
 class Controller {
   private currentElementKeyHandler: ((event: KeyboardEvent) => void) | null = null;
