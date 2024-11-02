@@ -15,10 +15,13 @@ const fullscreenCss = {
 };
 
 const IconButton = styled("button", {
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
+  display: "flex",
+
   padding: 0,
+  border: "none",
+
+  background: "transparent",
+  cursor: "pointer",
 
   "& > svg": {
     pointerEvents: "none",
