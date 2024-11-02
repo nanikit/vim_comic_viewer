@@ -26,5 +26,6 @@
   "download": "Download",
   "refresh": "Refresh",
   "increaseSinglePageCount": "Increase single page count",
-  "decreaseSinglePageCount": "Decrease single page count"
+  "decreaseSinglePageCount": "Decrease single page count",
+  "anchorSinglePageCount": "Set single page view until before current page"
 }

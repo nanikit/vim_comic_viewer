@@ -26,5 +26,6 @@
   "download": "다운로드",
   "refresh": "새로고침",
   "increaseSinglePageCount": "한쪽 페이지 수 늘리기",
-  "decreaseSinglePageCount": "한쪽 페이지 수 줄이기"
+  "decreaseSinglePageCount": "한쪽 페이지 수 줄이기",
+  "anchorSinglePageCount": "현재 페이지 전까지 한쪽 페이지로 설정"
 }

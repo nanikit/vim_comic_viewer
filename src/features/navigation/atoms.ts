@@ -1,7 +1,9 @@
 import { viewerOptionsAtom } from "../../atoms/viewer_base_atoms.ts";
 import { atom } from "../../deps.ts";
 import { beforeRepaintAtom } from "../../modules/use_before_repaint.ts";
+import { singlePageCountAtom } from "../preferences/atoms.ts";
 import {
+  getAbovePageIndex,
   getCurrentMiddleFromScrollElement,
   getNewSizeIfResized,
   goToNextArea,
@@ -112,4 +114,14 @@ export const goPreviousAtom = atom(null, (get) => {
 
 export const navigateAtom = atom(null, (get, _set, event: React.MouseEvent) => {
   navigateByPointer(get(scrollElementAtom), event);
+});
+
+export const anchorSinglePageCountAtom = atom(null, (get, set) => {
+  const scrollElement = get(scrollElementAtom);
+
+  const abovePageIndex = getAbovePageIndex(scrollElement);
+
+  if (abovePageIndex !== undefined) {
+    set(singlePageCountAtom, abovePageIndex);
+  }
 });

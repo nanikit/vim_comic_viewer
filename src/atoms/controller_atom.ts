@@ -18,7 +18,11 @@ import {
   viewerModeAtom,
 } from "../atoms/viewer_atoms.ts";
 import { atom, Getter, Setter } from "../deps.ts";
-import { goNextAtom, goPreviousAtom } from "../features/navigation/atoms.ts";
+import {
+  anchorSinglePageCountAtom,
+  goNextAtom,
+  goPreviousAtom,
+} from "../features/navigation/atoms.ts";
 import {
   effectivePreferencesAtom,
   preferencesPresetAtom,
@@ -215,11 +219,14 @@ class Controller {
       case ";":
         this.downloader?.downloadAndSave();
         return true;
-      case "/":
+      case ",":
+        void this.addSinglePageCount(-1);
+        return true;
+      case ".":
         void this.addSinglePageCount(1);
         return true;
-      case "?":
-        void this.addSinglePageCount(-1);
+      case "/":
+        this.set(anchorSinglePageCountAtom);
         return true;
       case "'":
         this.reloadErrored();

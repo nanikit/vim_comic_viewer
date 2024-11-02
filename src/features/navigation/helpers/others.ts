@@ -170,6 +170,19 @@ export function restoreScroll({ scrollable, middle }: {
   return true;
 }
 
+export function getAbovePageIndex(scrollElement: HTMLDivElement | null) {
+  const children = getPagesFromScrollElement(scrollElement);
+  if (!children || !scrollElement) {
+    return;
+  }
+
+  const elements = [...children] as HTMLElement[];
+  const currentRow = getCurrentRow({ elements, viewportHeight: scrollElement.clientHeight });
+
+  const firstPage = currentRow?.[0]?.page;
+  return firstPage ? elements.indexOf(firstPage as HTMLElement) : undefined;
+}
+
 function findOriginElement(src: string, page: HTMLElement) {
   const fileName = src.split("/").pop()?.split("?")[0];
   const candidates = document.querySelectorAll<HTMLImageElement | HTMLVideoElement>(
