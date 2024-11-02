@@ -11,7 +11,6 @@ import {
 } from "../atoms/fullscreen_atom.ts";
 import {
   reloadErroredAtom,
-  rootAtom,
   setViewerImmersiveAtom,
   setViewerOptionsAtom,
   toggleFullscreenAtom,
@@ -39,7 +38,12 @@ import {
 import { PersistentPreferences } from "../features/preferences/models.ts";
 import { isTyping } from "../utils.ts";
 import { pageAtomsAtom } from "./create_page_atom.ts";
-import { type ViewerOptions, viewerOptionsAtom, viewerStatusAtom } from "./viewer_base_atoms.ts";
+import {
+  rootAtom,
+  type ViewerOptions,
+  viewerOptionsAtom,
+  viewerStatusAtom,
+} from "./viewer_base_atoms.ts";
 
 export type ViewerController = InstanceType<typeof Controller>;
 
