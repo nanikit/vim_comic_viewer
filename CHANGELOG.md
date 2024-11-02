@@ -4,6 +4,12 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+# 19.0.0
+
+- **Change default key binding for changing single page count.**
+- _Add next, previous series navigation._
+- Prevent single page count from being negative.
+
 # 18.1.2
 
 - Support scroll transfer for picture, source elements.
