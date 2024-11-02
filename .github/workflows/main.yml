@@ -35,6 +35,9 @@ jobs:
       - name: Check
         run: deno check src/mod.tsx
 
+      - name: Build
+        run: deno task build
+
       - name: Run tests
         run: deno task test
 
