@@ -14,7 +14,16 @@ export const scriptPreferencesAtom = atom<Partial<PersistentPreferences>>({});
 export const preferencesPresetAtom = atom("default");
 
 export const [backgroundColorAtom] = atomWithPreferences("backgroundColor");
-export const [singlePageCountAtom] = atomWithPreferences("singlePageCount");
+
+const [singlePageCountPersistentAtom] = atomWithPreferences("singlePageCount");
+export const singlePageCountAtom = atom(
+  (get) => get(singlePageCountPersistentAtom),
+  (_get, set, value: number | typeof RESET) => {
+    const clampedValue = typeof value === "number" ? Math.max(0, value) : value;
+    return set(singlePageCountPersistentAtom, clampedValue);
+  },
+);
+
 /** maxZoomOutRatio = Math.sqrt(2) ** maxZoomOutExponent */
 export const [maxZoomOutExponentAtom] = atomWithPreferences("maxZoomOutExponent");
 export const [maxZoomInExponentAtom] = atomWithPreferences("maxZoomInExponent");
