@@ -1,3 +1,4 @@
+import { TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { BackdropDialog } from "../../../components/backdrop_dialog.tsx";
 import { Tab, useAtomValue } from "../../../deps.ts";
 import { i18nAtom } from "../../../modules/i18n/atoms.ts";
@@ -10,20 +11,20 @@ export function ViewerDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <BackdropDialog onClose={onClose}>
-      <Tab.Group>
-        <Tab.List as={TabList}>
+      <TabGroup>
+        <TabList as={StyledTabList}>
           <Tab as={PlainTab}>{strings.settings}</Tab>
           <Tab as={PlainTab}>{strings.help}</Tab>
-        </Tab.List>
-        <Tab.Panels as={TabPanels}>
-          <Tab.Panel>
+        </TabList>
+        <TabPanels as={StyledTabPanels}>
+          <TabPanel>
             <SettingsTab />
-          </Tab.Panel>
-          <Tab.Panel>
+          </TabPanel>
+          <TabPanel>
             <HelpTab />
-          </Tab.Panel>
-        </Tab.Panels>
-      </Tab.Group>
+          </TabPanel>
+        </TabPanels>
+      </TabGroup>
     </BackdropDialog>
   );
 }
@@ -51,12 +52,12 @@ const PlainTab = styled("button", {
   },
 });
 
-const TabList = styled("div", {
+const StyledTabList = styled("div", {
   display: "flex",
   flexFlow: "row nowrap",
   gap: "0.5em",
 });
 
-const TabPanels = styled("div", {
+const StyledTabPanels = styled("div", {
   marginTop: "1em",
 });
