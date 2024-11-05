@@ -31,5 +31,9 @@
   "decreaseSinglePageCount": "Decrease single page count",
   "anchorSinglePageCount": "Set single page view until before current page",
   "pressKey": "Press a key...",
+  "debug": "Debug",
+  "debugExplanation": "This is debugging information. Please attach the following text when reporting bugs.",
+  "copy": "Copy",
+  "copied": "Copied.",
   "resetToDefault": "Reset to default"
 }
