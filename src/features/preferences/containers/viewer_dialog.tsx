@@ -3,6 +3,7 @@ import { BackdropDialog } from "../../../components/backdrop_dialog.tsx";
 import { Tab, useAtomValue } from "../../../deps.ts";
 import { i18nAtom } from "../../../modules/i18n/atoms.ts";
 import { styled } from "../../../modules/stitches.ts";
+import { DebugTab } from "./tabs/debug_tab.tsx";
 import { HelpTab } from "./tabs/help_tab.tsx";
 import { SettingsTab } from "./tabs/settings_tab.tsx";
 
@@ -15,6 +16,7 @@ export function ViewerDialog({ onClose }: { onClose: () => void }) {
         <TabList as={StyledTabList}>
           <Tab as={PlainTab}>{strings.settings}</Tab>
           <Tab as={PlainTab}>{strings.help}</Tab>
+          <Tab as={PlainTab}>{strings.debug}</Tab>
         </TabList>
         <TabPanels as={StyledTabPanels}>
           <TabPanel>
@@ -22,6 +24,9 @@ export function ViewerDialog({ onClose }: { onClose: () => void }) {
           </TabPanel>
           <TabPanel>
             <HelpTab />
+          </TabPanel>
+          <TabPanel>
+            <DebugTab />
           </TabPanel>
         </TabPanels>
       </TabGroup>
@@ -35,7 +40,7 @@ const PlainTab = styled("button", {
   padding: "0.5em 1em",
 
   background: "transparent",
-  border: "none",
+  border: "1px solid transparent",
   borderRadius: "0.5em",
   color: "#888",
   cursor: "pointer",
@@ -43,11 +48,10 @@ const PlainTab = styled("button", {
   fontWeight: "bold",
   textAlign: "center",
 
-  '&[data-headlessui-state="selected"]': {
+  '&[data-headlessui-state~="selected"]': {
     border: "1px solid black",
-    color: "black",
   },
-  "&:hover": {
+  '&[data-headlessui-state~="hover"]': {
     color: "black",
   },
 });
@@ -56,6 +60,8 @@ const StyledTabList = styled("div", {
   display: "flex",
   flexFlow: "row nowrap",
   gap: "0.5em",
+
+  minWidth: "20em",
 });
 
 const StyledTabPanels = styled("div", {
