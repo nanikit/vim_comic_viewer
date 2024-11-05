@@ -5,6 +5,7 @@ import {
   wasImmersiveAtom,
 } from "../features/preferences/atoms.ts";
 import { maxSizeAtom } from "./create_page_atom.ts";
+import { loggerAtom } from "./logger_atom.ts";
 import { setViewerImmersiveAtom } from "./viewer_atoms.ts";
 
 export const setScrollElementAtom = atom(null, async (get, set, div: HTMLDivElement | null) => {
@@ -22,6 +23,7 @@ export const setScrollElementAtom = atom(null, async (get, set, div: HTMLDivElem
 
   const setScrollElementSize = () => {
     const size = div.getBoundingClientRect();
+    set(loggerAtom, { event: "resize", size });
     set(maxSizeAtom, size);
     set(correctScrollAtom);
   };
