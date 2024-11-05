@@ -6,10 +6,10 @@ import {
   getAbovePageIndex,
   getCurrentMiddleFromScrollElement,
   getNewSizeIfResized,
+  getYDifferenceFromPrevious,
   goToNextArea,
   goToPreviousArea,
   navigateByPointer,
-  restoreScroll,
   toWindowScroll,
 } from "./helpers/others.ts";
 import { toViewerScroll } from "./helpers/to_viewer_scroll.ts";
@@ -97,9 +97,10 @@ export const restoreScrollAtom = atom(null, (get, set) => {
   const middle = get(pageScrollMiddleAtom);
   const scrollable = get(scrollElementAtom);
 
-  const restored = restoreScroll({ scrollable, middle });
+  const restored = getYDifferenceFromPrevious({ scrollable, middle });
 
-  if (restored) {
+  if (restored != null) {
+    scrollable?.scrollBy({ top: restored });
     set(beforeRepaintAtom, { task: () => set(correctScrollAtom) });
   }
 });
@@ -130,7 +131,10 @@ export const singlePageCountAtom = atom(
         // If separated page fill the last row, resize event won't fire.
         // If mutation is above of the current page, scroll event is fired.
         // So, restore scroll position.
-        restoreScroll({ scrollable: scrollElement, middle });
+        const yDifference = getYDifferenceFromPrevious({ scrollable: scrollElement, middle });
+        if (yDifference != null) {
+          scrollElement?.scrollBy({ top: yDifference });
+        }
         // synchronizeScroll can't preserve index among multiple pages of row. So restore.
         set(pageScrollMiddleAtom, middle);
       },
