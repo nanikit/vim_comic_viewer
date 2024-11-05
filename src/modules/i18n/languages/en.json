@@ -27,5 +27,9 @@
   "refresh": "Refresh",
   "increaseSinglePageCount": "Increase single page count",
   "decreaseSinglePageCount": "Decrease single page count",
-  "anchorSinglePageCount": "Set single page view until before current page"
+  "anchorSinglePageCount": "Set single page view until before current page",
+  "debug": "Debug",
+  "debugExplanation": "This is debugging information. Please attach the following text when reporting bugs.",
+  "copy": "Copy",
+  "copied": "Copied."
 }
