@@ -152,22 +152,20 @@ export function toWindowScroll(
   return top;
 }
 
-export function restoreScroll({ scrollable, middle }: {
+export function getYDifferenceFromPrevious({ scrollable, middle }: {
   scrollable: HTMLDivElement | null;
   middle: number;
 }) {
   const page = getScrollPage(middle, scrollable);
   if (!page || !scrollable || scrollable.clientHeight < 1) {
-    return false;
+    return;
   }
 
   const { height: scrollableHeight } = scrollable.getBoundingClientRect();
   const { y: pageY, height: pageHeight } = page.getBoundingClientRect();
   const ratio = middle - Math.floor(middle);
   const restoredYDiff = pageY + pageHeight * ratio - scrollableHeight / 2;
-  scrollable.scrollBy({ top: restoredYDiff });
-
-  return true;
+  return restoredYDiff;
 }
 
 export function getAbovePageIndex(scrollElement: HTMLDivElement | null) {
