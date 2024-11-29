@@ -4,6 +4,10 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+# 19.0.1
+
+- Fix shortcut key issue with macOS default IME.
+
 # 19.0.0
 
 - **Change default key binding for changing single page count.**
