@@ -240,44 +240,44 @@ class Controller {
   };
 
   private handleElementKey(event: KeyboardEvent) {
-    switch (event.key) {
-      case "j":
+    switch (event.code) {
+      case "KeyJ":
       case "ArrowDown":
-      case "q":
+      case "KeyQ":
         this.goNext();
         return true;
-      case "k":
+      case "KeyK":
       case "ArrowUp":
         this.goPrevious();
         return true;
-      case "h":
+      case "KeyH":
       case "ArrowLeft":
         if (this.options.onPreviousSeries) {
           this.options.onPreviousSeries();
           return true;
         }
         return false;
-      case "l":
+      case "KeyL":
       case "ArrowRight":
-      case "w":
+      case "KeyW":
         if (this.options.onNextSeries) {
           this.options.onNextSeries();
           return true;
         }
         return false;
-      case ";":
+      case "Semicolon":
         this.downloader?.downloadAndSave();
         return true;
-      case ",":
+      case "Comma":
         void this.addSinglePageCount(-1);
         return true;
-      case ".":
+      case "Period":
         void this.addSinglePageCount(1);
         return true;
-      case "/":
+      case "Slash":
         this.set(anchorSinglePageCountAtom);
         return true;
-      case "'":
+      case "Quote":
         this.reloadErrored();
         return true;
       default:

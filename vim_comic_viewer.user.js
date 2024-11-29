@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        19.0.0
+// @version        19.0.1
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -1676,44 +1676,44 @@ var Controller = class {
     return false;
   };
   handleElementKey(event) {
-    switch (event.key) {
-      case "j":
+    switch (event.code) {
+      case "KeyJ":
       case "ArrowDown":
-      case "q":
+      case "KeyQ":
         this.goNext();
         return true;
-      case "k":
+      case "KeyK":
       case "ArrowUp":
         this.goPrevious();
         return true;
-      case "h":
+      case "KeyH":
       case "ArrowLeft":
         if (this.options.onPreviousSeries) {
           this.options.onPreviousSeries();
           return true;
         }
         return false;
-      case "l":
+      case "KeyL":
       case "ArrowRight":
-      case "w":
+      case "KeyW":
         if (this.options.onNextSeries) {
           this.options.onNextSeries();
           return true;
         }
         return false;
-      case ";":
+      case "Semicolon":
         this.downloader?.downloadAndSave();
         return true;
-      case ",":
+      case "Comma":
         void this.addSinglePageCount(-1);
         return true;
-      case ".":
+      case "Period":
         void this.addSinglePageCount(1);
         return true;
-      case "/":
+      case "Slash":
         this.set(anchorSinglePageCountAtom);
         return true;
-      case "'":
+      case "Quote":
         this.reloadErrored();
         return true;
       default:
