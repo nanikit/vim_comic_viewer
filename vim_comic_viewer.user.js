@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        19.0.1
+// @version        19.1.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -888,17 +888,16 @@ function toWindowScroll({ middle, lastMiddle, noSyncScroll, forFullscreen, scrol
   const top = scrollY + rect.y + rect.height * ratio - innerHeight / 2;
   return top;
 }
-function restoreScroll({ scrollable, middle }) {
+function getYDifferenceFromPrevious({ scrollable, middle }) {
   const page = getScrollPage(middle, scrollable);
   if (!page || !scrollable || scrollable.clientHeight < 1) {
-    return false;
+    return;
   }
   const { height: scrollableHeight } = scrollable.getBoundingClientRect();
   const { y: pageY, height: pageHeight } = page.getBoundingClientRect();
   const ratio = middle - Math.floor(middle);
   const restoredYDiff = pageY + pageHeight * ratio - scrollableHeight / 2;
-  scrollable.scrollBy({ top: restoredYDiff });
-  return true;
+  return restoredYDiff;
 }
 function getAbovePageIndex(scrollElement) {
   const children = getPagesFromScrollElement(scrollElement);
@@ -1142,8 +1141,9 @@ var correctScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
 var restoreScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
   const middle = get(pageScrollMiddleAtom);
   const scrollable = get(scrollElementAtom);
-  const restored = restoreScroll({ scrollable, middle });
-  if (restored) {
+  const restored = getYDifferenceFromPrevious({ scrollable, middle });
+  if (restored != null) {
+    scrollable?.scrollBy({ top: restored });
     set(beforeRepaintAtom, { task: () => set(correctScrollAtom) });
   }
 });
@@ -1165,7 +1165,10 @@ var singlePageCountAtom = (0, import_jotai.atom)(
     await set(singlePageCountStorageAtom, clampedValue);
     set(beforeRepaintAtom, {
       task: () => {
-        restoreScroll({ scrollable: scrollElement, middle });
+        const yDifference = getYDifferenceFromPrevious({ scrollable: scrollElement, middle });
+        if (yDifference != null) {
+          scrollElement?.scrollBy({ top: yDifference });
+        }
         set(pageScrollMiddleAtom, middle);
       }
     });
@@ -1749,10 +1752,25 @@ var setScrollElementAtom = (0, import_jotai.atom)(null, async (get, set, div) =>
   const resizeObserver = new ResizeObserver(setScrollElementSize);
   resizeObserver.observe(div);
   resizeObserver.observe(div.firstElementChild);
+  div.addEventListener("wheel", navigateWithWheel);
+  function navigateWithWheel(event) {
+    const unit = event.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? 10 : 1;
+    const diff = event.deltaY / unit;
+    if (diff >= 1) {
+      set(goNextAtom);
+    } else if (diff <= -1) {
+      set(goPreviousAtom);
+    }
+    event.preventDefault();
+    event.stopPropagation();
+  }
   set(scrollElementStateAtom, { div, resizeObserver });
   setScrollElementSize();
   await get(isFullscreenPreferredPromiseAtom);
   await set(setViewerImmersiveAtom, get(wasImmersiveAtom));
+  return () => {
+    div.removeEventListener("wheel", navigateWithWheel);
+  };
 });
 var Svg = styled("svg", {
   opacity: "50%",
@@ -1897,6 +1915,7 @@ var OverlayScroller = styled("div", {
 var import_overlayscrollbars_react = require("overlayscrollbars-react");
 GM.getResourceText("overlayscrollbars-css").then(insertCss);
 var import_jotai3 = require("jotai");
+var import_react4 = require("@headlessui/react");
 var Backdrop = styled("div", {
   position: "absolute",
   top: 0,
@@ -2180,7 +2199,7 @@ var ConfigSheet = styled("div", {
 });
 function ViewerDialog({ onClose }) {
   const strings = (0, import_jotai.useAtomValue)(i18nAtom);
-  return  React.createElement(BackdropDialog, { onClose },  React.createElement(import_react2.Tab.Group, null,  React.createElement(import_react2.Tab.List, { as: TabList },  React.createElement(import_react2.Tab, { as: PlainTab }, strings.settings),  React.createElement(import_react2.Tab, { as: PlainTab }, strings.help)),  React.createElement(import_react2.Tab.Panels, { as: TabPanels },  React.createElement(import_react2.Tab.Panel, null,  React.createElement(SettingsTab, null)),  React.createElement(import_react2.Tab.Panel, null,  React.createElement(HelpTab, null)))));
+  return  React.createElement(BackdropDialog, { onClose },  React.createElement(import_react4.TabGroup, null,  React.createElement(import_react4.TabList, { as: StyledTabList },  React.createElement(import_react2.Tab, { as: PlainTab }, strings.settings),  React.createElement(import_react2.Tab, { as: PlainTab }, strings.help)),  React.createElement(import_react4.TabPanels, { as: StyledTabPanels },  React.createElement(import_react4.TabPanel, null,  React.createElement(SettingsTab, null)),  React.createElement(import_react4.TabPanel, null,  React.createElement(HelpTab, null)))));
 }
 var PlainTab = styled("button", {
   flex: 1,
@@ -2201,12 +2220,12 @@ var PlainTab = styled("button", {
     color: "black"
   }
 });
-var TabList = styled("div", {
+var StyledTabList = styled("div", {
   display: "flex",
   flexFlow: "row nowrap",
   gap: "0.5em"
 });
-var TabPanels = styled("div", {
+var StyledTabPanels = styled("div", {
   marginTop: "1em"
 });
 var LeftBottomFloat = styled("div", {
