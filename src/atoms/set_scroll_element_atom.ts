@@ -5,11 +5,13 @@ import {
   goPreviousAtom,
   scrollElementStateAtom,
 } from "../features/navigation/atoms.ts";
+import { getPagesFromScrollElement } from "../features/navigation/helpers/others.ts";
 import {
   isFullscreenPreferredPromiseAtom,
   wasImmersiveAtom,
 } from "../features/preferences/atoms.ts";
 import { maxSizeAtom } from "./create_page_atom.ts";
+import { loggerAtom } from "./logger_atom.ts";
 import { setViewerImmersiveAtom } from "./viewer_atoms.ts";
 
 export const setScrollElementAtom = atom(null, async (get, set, div: HTMLDivElement | null) => {
@@ -27,6 +29,17 @@ export const setScrollElementAtom = atom(null, async (get, set, div: HTMLDivElem
 
   const setScrollElementSize = () => {
     const size = div.getBoundingClientRect();
+    const scrollTop = div.scrollTop;
+    const pages = getPagesFromScrollElement(div);
+    const pageRects = [...(pages ?? [])].map((page) => {
+      const { x, y, width, height } = page.getBoundingClientRect();
+      return { x, y: y + scrollTop, width, height };
+    });
+    set(loggerAtom, {
+      event: "resize",
+      size: { width: size.width, height: size.height },
+      pageRects,
+    });
     set(maxSizeAtom, size);
     set(correctScrollAtom);
   };

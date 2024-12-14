@@ -5,6 +5,7 @@ import {
   isUserGesturePermissionError,
   setFullscreenElement,
 } from "./dom/dom_helpers.ts";
+import { loggerAtom } from "./logger_atom.ts";
 
 const fullscreenElementAtom = atom<Element | null>(null);
 const viewerElementAtom = atom<HTMLDivElement | null>(null);
@@ -39,6 +40,11 @@ export const scrollBarStyleFactorAtom = atom(
       set(wasImmersiveAtom, isImmersive);
       set(isImmersiveAtom, isImmersive);
     }
+    set(loggerAtom, {
+      event: "scrollBarStyleFactor",
+      isFullscreen: !!fullscreenElement,
+      isImmersive,
+    });
 
     const canScrollBarDuplicate = !get(isViewerFullscreenAtom) && get(isImmersiveAtom);
     hideBodyScrollBar(canScrollBarDuplicate);

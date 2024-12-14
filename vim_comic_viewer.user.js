@@ -204,6 +204,10 @@ var en_default = {
 	decreaseSinglePageCount: "Decrease single page count",
 	anchorSinglePageCount: "Set single page view until before current page",
 	pressKey: "Press a key...",
+	debug: "Debug",
+	debugExplanation: "This is debugging information. Please attach the following text when reporting bugs.",
+	copy: "Copy",
+	copied: "Copied.",
 	resetToDefault: "Reset to default"
 };
 var ko_default = {
@@ -239,6 +243,10 @@ var ko_default = {
 	decreaseSinglePageCount: "한쪽 페이지 수 줄이기",
 	anchorSinglePageCount: "현재 페이지 전까지 한쪽 페이지로 설정",
 	pressKey: "키를 누르세요...",
+	debug: "디버그",
+	debugExplanation: "디버깅 정보입니다. 버그 제보 시 문제 상황에서 아래 텍스트를 첨부해주세요.",
+	copy: "복사",
+	copied: "복사했습니다.",
 	resetToDefault: "기본값으로"
 };
 const translations = {
@@ -627,6 +635,11 @@ function focusWithoutScroll(element) {
 function isUserGesturePermissionError(error) {
 	return error?.message === "Permissions check failed";
 }
+const logAtom = (0, jotai.atom)([]);
+const loggerAtom = (0, jotai.atom)(null, (_get, set, message) => {
+	set(logAtom, (prev) => [...prev, message].slice(-100));
+	console.log(message);
+});
 const fullscreenElementAtom = (0, jotai.atom)(null);
 const viewerElementAtom = (0, jotai.atom)(null);
 const isViewerFullscreenAtom = (0, jotai.atom)((get) => {
@@ -646,6 +659,11 @@ const scrollBarStyleFactorAtom = (0, jotai.atom)((get) => ({
 		set(wasImmersiveAtom, isImmersive);
 		set(isImmersiveAtom, isImmersive);
 	}
+	set(loggerAtom, {
+		event: "scrollBarStyleFactor",
+		isFullscreen: !!fullscreenElement,
+		isImmersive
+	});
 	hideBodyScrollBar(!get(isViewerFullscreenAtom) && get(isImmersiveAtom));
 });
 const viewerFullscreenAtom = (0, jotai.atom)((get) => {
@@ -686,6 +704,15 @@ const isFullscreenPreferredSettingsAtom = (0, jotai.atom)((get) => get(isFullscr
 		lock.deferred.resolve();
 	}
 });
+function getStableMediaSize({ source, rememberedSize }) {
+	return {
+		width: getPositive(source.naturalWidth) ?? getPositive(source.videoWidth) ?? rememberedSize?.width,
+		height: getPositive(source.naturalHeight) ?? getPositive(source.videoHeight) ?? rememberedSize?.height
+	};
+}
+function getPositive(value) {
+	return value && value > 0 ? value : void 0;
+}
 
 const maxSizeStateAtom = (0, jotai.atom)({
 	width: screen.width,
@@ -721,7 +748,8 @@ function createPageAtom(params) {
 	let sourceElement = null;
 	const stateAtom = (0, jotai.atom)({
 		status: "loading",
-		source: new Image()
+		source: new Image(),
+		rememberedSize: void 0
 	});
 	const loadAtom = (0, jotai.atom)(null, async (get, set, cause) => {
 		if (isComplete()) return;
@@ -737,10 +765,11 @@ function createPageAtom(params) {
 			tryCount = 0;
 			triedUrls.clear();
 		}
-		set(stateAtom, {
+		set(stateAtom, (previous) => ({
 			status: "loading",
-			source: new Image()
-		});
+			source: new Image(),
+			rememberedSize: previous.rememberedSize
+		}));
 		let loadedSource;
 		try {
 			tryCount++;
@@ -756,6 +785,7 @@ function createPageAtom(params) {
 		}
 		sourceElement = loadedSource.isConnected ? loadedSource : null;
 		const source = normalizeMediaElement(loadedSource);
+		const rememberedSize = getStableMediaSize({ source: loadedSource });
 		triedUrls.add(source.src);
 		if (source instanceof HTMLImageElement && source.srcset) {
 			const urls = source.srcset.split(",").flatMap((x) => {
@@ -766,7 +796,8 @@ function createPageAtom(params) {
 		}
 		set(stateAtom, {
 			status: "loading",
-			source
+			source,
+			rememberedSize
 		});
 		function isComplete() {
 			return get(stateAtom).status === "complete";
@@ -779,8 +810,10 @@ function createPageAtom(params) {
 		const maxZoomInExponent = get(maxZoomInExponentAtom);
 		const maxZoomOutExponent = get(maxZoomOutExponentAtom);
 		const source = state.source;
-		const width = source instanceof HTMLImageElement ? source.naturalWidth : source instanceof HTMLVideoElement ? source.videoWidth : void 0;
-		const height = source instanceof HTMLImageElement ? source.naturalHeight : source instanceof HTMLVideoElement ? source.videoHeight : void 0;
+		const { width, height } = getStableMediaSize({
+			source,
+			rememberedSize: state.rememberedSize
+		});
 		const ratio = getImageToViewerSizeRatio({
 			viewerSize: scrollElementSize,
 			imgSize: {
@@ -848,7 +881,8 @@ function createPageAtom(params) {
 		const element = event.currentTarget;
 		set(stateAtom, {
 			status: "complete",
-			source: element
+			source: element,
+			rememberedSize: getStableMediaSize({ source: element })
 		});
 	}
 	set(loadAtom, "load");
@@ -993,6 +1027,9 @@ function findOriginElement(src, page) {
 	const visibleLinks = [...document.querySelectorAll(`a[href*="${fileName}"`)].filter(isVisible);
 	if (visibleLinks.length === 1) return visibleLinks[0];
 }
+function getPagesFromScrollElement(scrollElement) {
+	return scrollElement?.firstElementChild?.children;
+}
 function goToNextRow(currentPage) {
 	const currentPageBottom = currentPage.getBoundingClientRect().bottom - .01;
 	let page = currentPage;
@@ -1068,9 +1105,6 @@ function getCurrentPageFromElements({ elements, viewportHeight, previousMiddle }
 		return previousMiddle < elements.indexOf(page) ? row[half - 1] : row[half];
 	}
 }
-function getPagesFromScrollElement(scrollElement) {
-	return scrollElement?.firstElementChild?.children;
-}
 function toViewerScroll({ scrollable, lastWindowToViewerMiddle, noSyncScroll, mediaElements }) {
 	if (lastWindowToViewerMiddle === "reset") return 0;
 	const lastMiddle = lastWindowToViewerMiddle === "notFound" ? 0 : lastWindowToViewerMiddle;
@@ -1141,14 +1175,27 @@ const lastViewerToWindowMiddleAtom = (0, jotai.atom)(-1);
 
 const lastWindowToViewerMiddleAtom = (0, jotai.atom)("reset");
 const transferWindowScrollToViewerAtom = (0, jotai.atom)(null, (get, set) => {
+	const scrollable = get(scrollElementAtom);
+	const lastWindowToViewerMiddle = get(lastWindowToViewerMiddleAtom);
 	const middle = toViewerScroll({
-		scrollable: get(scrollElementAtom),
-		lastWindowToViewerMiddle: get(lastWindowToViewerMiddleAtom),
+		scrollable,
+		lastWindowToViewerMiddle,
 		noSyncScroll: get(viewerOptionsAtom).noSyncScroll ?? false,
 		mediaElements: get(pageAtomsAtom).map((atom) => get(atom).sourceElement).filter((x) => x !== null)
 	});
 	set(lastWindowToViewerMiddleAtom, middle ?? "notFound");
-	if (typeof middle === "number") set(pageScrollMiddleAtom, middle);
+	if (typeof middle !== "number") {
+		set(loggerAtom, {
+			event: "transferWindowScrollToViewer: no change",
+			lastWindowToViewerMiddle
+		});
+		return;
+	}
+	set(loggerAtom, {
+		event: "transferWindowScrollToViewer: new middle",
+		middle
+	});
+	set(pageScrollMiddleAtom, middle);
 });
 const transferViewerScrollToWindowAtom = (0, jotai.atom)(null, (get, set, { forFullscreen } = {}) => {
 	const middle = get(pageScrollMiddleAtom);
@@ -1161,6 +1208,13 @@ const transferViewerScrollToWindowAtom = (0, jotai.atom)(null, (get, set, { forF
 		forFullscreen
 	});
 	if (top !== void 0) {
+		set(loggerAtom, {
+			event: "transferViewerScrollToWindow",
+			middle,
+			innerHeight,
+			top,
+			pageHeight: scrollElement?.clientHeight
+		});
 		set(lastViewerToWindowMiddleAtom, middle);
 		scroll({
 			behavior: "instant",
@@ -1170,13 +1224,36 @@ const transferViewerScrollToWindowAtom = (0, jotai.atom)(null, (get, set, { forF
 });
 const synchronizeScrollAtom = (0, jotai.atom)(null, (get, set) => {
 	const scrollElement = get(scrollElementAtom);
-	if (!scrollElement) return;
-	if (set(correctScrollAtom)) return;
+	if (!scrollElement) {
+		set(loggerAtom, { event: "synchronizeScroll: no scrollElement" });
+		return;
+	}
+	set(scrollTopAtom, scrollElement.scrollTop);
+	set(loggerAtom, {
+		event: "scrolled",
+		scrollTop: scrollElement.scrollTop,
+		pageRects: get(pageRectsAtom)
+	});
+	const previousSize = get(scrollElementSizeAtom);
+	if (set(correctScrollAtom)) {
+		set(loggerAtom, {
+			event: "synchronizeScroll: corrected scroll",
+			previousSize,
+			currentSize: get(scrollElementSizeAtom),
+			scrollTop: scrollElement.scrollTop
+		});
+		return;
+	}
 	const middle = getCurrentMiddleFromScrollElement({
 		scrollElement,
 		previousMiddle: get(pageScrollMiddleAtom)
 	});
 	if (middle) {
+		set(loggerAtom, {
+			event: "synchronizeScroll: new middle",
+			middle,
+			scrollTop: scrollElement.scrollTop
+		});
 		set(pageScrollMiddleAtom, middle);
 		set(transferViewerScrollToWindowAtom);
 	}
@@ -1192,43 +1269,71 @@ const correctScrollAtom = (0, jotai.atom)(null, (get, set) => {
 	return true;
 });
 const restoreScrollAtom = (0, jotai.atom)(null, (get, set) => {
-	const middle = get(pageScrollMiddleAtom);
-	const scrollable = get(scrollElementAtom);
-	const restored = getYDifferenceFromPrevious({
-		scrollable,
-		middle
-	});
-	if (restored != null) {
-		scrollable?.scrollBy({ top: restored });
-		set(beforeRepaintAtom, { task: () => set(correctScrollAtom) });
-	}
+	if (set(restoreScrollWithLogAtom)) set(beforeRepaintAtom, { task: () => {
+		const previousSize = get(scrollElementSizeAtom);
+		if (set(correctScrollAtom)) set(loggerAtom, {
+			event: "restoreScroll: corrected scroll after repaint",
+			previousSize,
+			currentSize: get(scrollElementSizeAtom),
+			scrollTop: get(scrollElementAtom)?.scrollTop
+		});
+	} });
 });
-const goNextAtom = (0, jotai.atom)(null, (get) => {
+const goNextAtom = (0, jotai.atom)(null, (get, set) => {
+	set(loggerAtom, { event: "goNext" });
 	goToNextArea(get(scrollElementAtom));
 });
-const goPreviousAtom = (0, jotai.atom)(null, (get) => {
+const goPreviousAtom = (0, jotai.atom)(null, (get, set) => {
+	set(loggerAtom, { event: "goPrevious" });
 	goToPreviousArea(get(scrollElementAtom));
 });
-const navigateAtom = (0, jotai.atom)(null, (get, _set, event) => {
+const navigateAtom = (0, jotai.atom)(null, (get, set, event) => {
+	set(loggerAtom, { event: "click" });
 	navigateByPointer(get(scrollElementAtom), event);
 });
 const singlePageCountAtom = (0, jotai.atom)((get) => get(singlePageCountStorageAtom), async (get, set, value) => {
 	const clampedValue = typeof value === "number" ? Math.max(0, value) : value;
 	const middle = get(pageScrollMiddleAtom);
-	const scrollElement = get(scrollElementAtom);
 	await set(singlePageCountStorageAtom, clampedValue);
 	set(beforeRepaintAtom, { task: () => {
-		const yDifference = getYDifferenceFromPrevious({
-			scrollable: scrollElement,
-			middle
-		});
-		if (yDifference != null) scrollElement?.scrollBy({ top: yDifference });
+		set(restoreScrollWithLogAtom);
 		set(pageScrollMiddleAtom, middle);
 	} });
 });
 const anchorSinglePageCountAtom = (0, jotai.atom)(null, (get, set) => {
 	const abovePageIndex = getAbovePageIndex(get(scrollElementAtom));
 	if (abovePageIndex !== void 0) set(singlePageCountAtom, abovePageIndex);
+});
+const restoreScrollWithLogAtom = (0, jotai.atom)(null, (get, set) => {
+	const scrollElement = get(scrollElementAtom);
+	const middle = get(pageScrollMiddleAtom);
+	const yDifference = getYDifferenceFromPrevious({
+		scrollable: scrollElement,
+		middle
+	});
+	if (yDifference != null && scrollElement) {
+		set(loggerAtom, {
+			event: "restoreScroll",
+			middle,
+			yDifference,
+			previousScrollTop: scrollElement.scrollTop,
+			scrollTop: scrollElement.scrollTop
+		});
+		scrollElement.scrollBy({ top: yDifference });
+		return true;
+	}
+	set(loggerAtom, {
+		event: "restoreScroll: no need",
+		middle,
+		scrollTop: scrollElement?.scrollTop
+	});
+	return false;
+});
+const scrollTopAtom = (0, jotai.atom)(0);
+const pageRectsAtom = (0, jotai.atom)((get) => {
+	get(scrollTopAtom);
+	get(scrollElementSizeAtom);
+	return [...getPagesFromScrollElement(get(scrollElementAtom)) ?? []].map((page) => page.getBoundingClientRect());
 });
 const externalFocusElementAtom = (0, jotai.atom)(null);
 const setViewerImmersiveAtom = (0, jotai.atom)(null, async (get, set, value) => {
@@ -1648,7 +1753,26 @@ const setScrollElementAtom = (0, jotai.atom)(null, async (get, set, div) => {
 		return;
 	}
 	const setScrollElementSize = () => {
-		set(maxSizeAtom, div.getBoundingClientRect());
+		const size = div.getBoundingClientRect();
+		const scrollTop = div.scrollTop;
+		const pageRects = [...getPagesFromScrollElement(div) ?? []].map((page) => {
+			const { x, y, width, height } = page.getBoundingClientRect();
+			return {
+				x,
+				y: y + scrollTop,
+				width,
+				height
+			};
+		});
+		set(loggerAtom, {
+			event: "resize",
+			size: {
+				width: size.width,
+				height: size.height
+			},
+			pageRects
+		});
+		set(maxSizeAtom, size);
 		set(correctScrollAtom);
 	};
 	const resizeObserver = new ResizeObserver(setScrollElementSize);
@@ -2003,6 +2127,46 @@ const ResetAllButton = styled("button", {
 	fontSize: "0.9em",
 	"&:hover": { background: "#ffebee" }
 });
+const debugAtom = (0, jotai.atom)((get) => {
+	const log = get(logAtom);
+	const result = {
+		url: location.href,
+		userAgent: navigator.userAgent,
+		devicePixelRatio: globalThis.devicePixelRatio,
+		gmInfo: {
+			...GM.info,
+			script: {
+				...GM.info.script,
+				resources: void 0
+			},
+			scriptMetaStr: void 0
+		},
+		log
+	};
+	console.log(result);
+	return JSON.stringify(result, null, 2);
+});
+const DebugTextarea = styled("textarea", {
+	width: "100%",
+	height: "10em",
+	fontSize: "0.5em"
+});
+function DebugTab() {
+	const strings = (0, jotai.useAtomValue)(i18nAtom);
+	const debug = (0, jotai.useAtomValue)(debugAtom);
+	async function copy() {
+		await navigator.clipboard.writeText(debug);
+		react_toastify.toast.success(strings.copied);
+	}
+	return  (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
+		 (0, react_jsx_runtime.jsx)("p", { children: strings.debugExplanation }),
+		 (0, react_jsx_runtime.jsx)(_headlessui_react.Button, {
+			onClick: copy,
+			children: strings.copy
+		}),
+		 (0, react_jsx_runtime.jsx)(DebugTextarea, { value: debug })
+	] });
+}
 function SettingsTab() {
 	const [maxZoomOutExponent, setMaxZoomOutExponent] = (0, jotai.useAtom)(maxZoomOutExponentAtom);
 	const [maxZoomInExponent, setMaxZoomInExponent] = (0, jotai.useAtom)(maxZoomInExponentAtom);
@@ -2202,16 +2366,27 @@ function ViewerDialog({ onClose }) {
 		onClose,
 		children:  (0, react_jsx_runtime.jsxs)(_headlessui_react.TabGroup, { children: [ (0, react_jsx_runtime.jsxs)(_headlessui_react.TabList, {
 			as: StyledTabList,
-			children: [ (0, react_jsx_runtime.jsx)(_headlessui_react.Tab, {
-				as: PlainTab,
-				children: strings.settings
-			}),  (0, react_jsx_runtime.jsx)(_headlessui_react.Tab, {
-				as: PlainTab,
-				children: strings.keyBindings
-			})]
+			children: [
+				 (0, react_jsx_runtime.jsx)(_headlessui_react.Tab, {
+					as: PlainTab,
+					children: strings.settings
+				}),
+				 (0, react_jsx_runtime.jsx)(_headlessui_react.Tab, {
+					as: PlainTab,
+					children: strings.keyBindings
+				}),
+				 (0, react_jsx_runtime.jsx)(_headlessui_react.Tab, {
+					as: PlainTab,
+					children: strings.debug
+				})
+			]
 		}),  (0, react_jsx_runtime.jsxs)(_headlessui_react.TabPanels, {
 			as: StyledTabPanels,
-			children: [ (0, react_jsx_runtime.jsx)(_headlessui_react.TabPanel, { children:  (0, react_jsx_runtime.jsx)(SettingsTab, {}) }),  (0, react_jsx_runtime.jsx)(_headlessui_react.TabPanel, { children:  (0, react_jsx_runtime.jsx)(KeyBindingsTab, {}) })]
+			children: [
+				 (0, react_jsx_runtime.jsx)(_headlessui_react.TabPanel, { children:  (0, react_jsx_runtime.jsx)(SettingsTab, {}) }),
+				 (0, react_jsx_runtime.jsx)(_headlessui_react.TabPanel, { children:  (0, react_jsx_runtime.jsx)(KeyBindingsTab, {}) }),
+				 (0, react_jsx_runtime.jsx)(_headlessui_react.TabPanel, { children:  (0, react_jsx_runtime.jsx)(DebugTab, {}) })
+			]
 		})] })
 	});
 }
@@ -2219,23 +2394,21 @@ const PlainTab = styled("button", {
 	flex: 1,
 	padding: "0.5em 1em",
 	background: "transparent",
-	border: "none",
+	border: "1px solid transparent",
 	borderRadius: "0.5em",
 	color: "#888",
 	cursor: "pointer",
 	fontSize: "1.2em",
 	fontWeight: "bold",
 	textAlign: "center",
-	"&[data-headlessui-state=\"selected\"]": {
-		border: "1px solid black",
-		color: "black"
-	},
-	"&:hover": { color: "black" }
+	"&[data-headlessui-state~=\"selected\"]": { border: "1px solid black" },
+	"&[data-headlessui-state~=\"hover\"]": { color: "black" }
 });
 const StyledTabList = styled("div", {
 	display: "flex",
 	flexFlow: "row nowrap",
-	gap: "0.5em"
+	gap: "0.5em",
+	minWidth: "20em"
 });
 const StyledTabPanels = styled("div", { marginTop: "1em" });
 const LeftBottomFloat = styled("div", {
