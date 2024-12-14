@@ -198,7 +198,11 @@ var en_default = {
   refresh: "Refresh",
   increaseSinglePageCount: "Increase single page count",
   decreaseSinglePageCount: "Decrease single page count",
-  anchorSinglePageCount: "Set single page view until before current page"
+  anchorSinglePageCount: "Set single page view until before current page",
+  debug: "Debug",
+  debugExplanation: "This is debugging information. Please attach the following text when reporting bugs.",
+  copy: "Copy",
+  copied: "Copied."
 };
 var ko_default = {
   "@@locale": "ko",
@@ -229,7 +233,11 @@ var ko_default = {
   refresh: "새로고침",
   increaseSinglePageCount: "한쪽 페이지 수 늘리기",
   decreaseSinglePageCount: "한쪽 페이지 수 줄이기",
-  anchorSinglePageCount: "현재 페이지 전까지 한쪽 페이지로 설정"
+  anchorSinglePageCount: "현재 페이지 전까지 한쪽 페이지로 설정",
+  debug: "디버그",
+  debugExplanation: "디버깅 정보입니다. 버그 제보 시 문제 상황에서 아래 텍스트를 첨부해주세요.",
+  copy: "복사",
+  copied: "복사했습니다."
 };
 var translations = { en: en_default, ko: ko_default };
 var i18nStringsAtom = (0, import_jotai.atom)(getLanguage());
@@ -680,6 +688,12 @@ function focusWithoutScroll(element) {
 function isUserGesturePermissionError(error) {
   return error?.message === "Permissions check failed";
 }
+var import_jotai3 = require("jotai");
+var logAtom = (0, import_jotai3.atom)([]);
+var loggerAtom = (0, import_jotai3.atom)(null, (_get, set, message) => {
+  set(logAtom, (prev) => [...prev, message].slice(-100));
+  console.log(message);
+});
 var fullscreenElementAtom = (0, import_jotai.atom)(null);
 var viewerElementAtom = (0, import_jotai.atom)(null);
 var isViewerFullscreenAtom = (0, import_jotai.atom)((get) => {
@@ -705,6 +719,11 @@ var scrollBarStyleFactorAtom = (0, import_jotai.atom)(
       set(wasImmersiveAtom, isImmersive);
       set(isImmersiveAtom, isImmersive);
     }
+    set(loggerAtom, {
+      event: "scrollBarStyleFactor",
+      isFullscreen: !!fullscreenElement,
+      isImmersive
+    });
     const canScrollBarDuplicate = !get(isViewerFullscreenAtom) && get(isImmersiveAtom);
     hideBodyScrollBar(canScrollBarDuplicate);
   }
@@ -925,6 +944,9 @@ function findOriginElement(src, page) {
     return visibleLinks[0];
   }
 }
+function getPagesFromScrollElement(scrollElement) {
+  return scrollElement?.firstElementChild?.children;
+}
 function goToNextRow(currentPage) {
   const epsilon = 0.01;
   const currentPageBottom = currentPage.getBoundingClientRect().bottom - epsilon;
@@ -998,9 +1020,6 @@ function getCurrentPageFromElements({ elements, viewportHeight, previousMiddle }
     const previousMiddlePage = previousMiddle < centerNextTop ? row[half - 1] : row[half];
     return previousMiddlePage;
   }
-}
-function getPagesFromScrollElement(scrollElement) {
-  return scrollElement?.firstElementChild?.children;
 }
 function toViewerScroll({ scrollable, lastWindowToViewerMiddle, noSyncScroll }) {
   if (!scrollable || noSyncScroll) {
@@ -1083,8 +1102,10 @@ var transferWindowScrollToViewerAtom = (0, import_jotai.atom)(null, (get, set) =
   const noSyncScroll = get(viewerOptionsAtom).noSyncScroll ?? false;
   const middle = toViewerScroll({ scrollable, lastWindowToViewerMiddle, noSyncScroll });
   if (!middle) {
+    set(loggerAtom, { event: "transferWindowScrollToViewer: no change", lastWindowToViewerMiddle });
     return;
   }
+  set(loggerAtom, { event: "transferWindowScrollToViewer: new middle", middle });
   set(pageScrollMiddleAtom, middle);
   set(lastWindowToViewerMiddleAtom, middle);
 });
@@ -1097,6 +1118,13 @@ var transferViewerScrollToWindowAtom = (0, import_jotai.atom)(
     const noSyncScroll = get(viewerOptionsAtom).noSyncScroll ?? false;
     const top = toWindowScroll({ middle, lastMiddle, scrollElement, noSyncScroll, forFullscreen });
     if (top !== void 0) {
+      set(loggerAtom, {
+        event: "transferViewerScrollToWindow",
+        middle,
+        innerHeight,
+        top,
+        pageHeight: scrollElement?.clientHeight
+      });
       set(lastViewerToWindowMiddleAtom, middle);
       scroll({ behavior: "instant", top });
     }
@@ -1105,9 +1133,23 @@ var transferViewerScrollToWindowAtom = (0, import_jotai.atom)(
 var synchronizeScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
   const scrollElement = get(scrollElementAtom);
   if (!scrollElement) {
+    set(loggerAtom, { event: "synchronizeScroll: no scrollElement" });
     return;
   }
+  set(scrollTopAtom, scrollElement.scrollTop);
+  set(loggerAtom, {
+    event: "scrolled",
+    scrollTop: scrollElement.scrollTop,
+    pageRects: get(pageRectsAtom)
+  });
+  const previousSize = get(scrollElementSizeAtom);
   if (set(correctScrollAtom)) {
+    set(loggerAtom, {
+      event: "synchronizeScroll: corrected scroll",
+      previousSize,
+      currentSize: get(scrollElementSizeAtom),
+      scrollTop: scrollElement?.scrollTop
+    });
     return;
   }
   const middle = getCurrentMiddleFromScrollElement({
@@ -1115,6 +1157,11 @@ var synchronizeScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
     previousMiddle: get(pageScrollMiddleAtom)
   });
   if (middle) {
+    set(loggerAtom, {
+      event: "synchronizeScroll: new middle",
+      middle,
+      scrollTop: scrollElement.scrollTop
+    });
     set(pageScrollMiddleAtom, middle);
     set(transferViewerScrollToWindowAtom);
   }
@@ -1131,21 +1178,33 @@ var correctScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
   return true;
 });
 var restoreScrollAtom = (0, import_jotai.atom)(null, (get, set) => {
-  const middle = get(pageScrollMiddleAtom);
-  const scrollable = get(scrollElementAtom);
-  const restored = getYDifferenceFromPrevious({ scrollable, middle });
-  if (restored != null) {
-    scrollable?.scrollBy({ top: restored });
-    set(beforeRepaintAtom, { task: () => set(correctScrollAtom) });
+  const isRestored = set(restoreScrollWithLogAtom);
+  if (isRestored) {
+    set(beforeRepaintAtom, {
+      task: () => {
+        const previousSize = get(scrollElementSizeAtom);
+        if (set(correctScrollAtom)) {
+          set(loggerAtom, {
+            event: "restoreScroll: corrected scroll after repaint",
+            previousSize,
+            currentSize: get(scrollElementSizeAtom),
+            scrollTop: get(scrollElementAtom)?.scrollTop
+          });
+        }
+      }
+    });
   }
 });
-var goNextAtom = (0, import_jotai.atom)(null, (get) => {
+var goNextAtom = (0, import_jotai.atom)(null, (get, set) => {
+  set(loggerAtom, { event: "goNext" });
   goToNextArea(get(scrollElementAtom));
 });
-var goPreviousAtom = (0, import_jotai.atom)(null, (get) => {
+var goPreviousAtom = (0, import_jotai.atom)(null, (get, set) => {
+  set(loggerAtom, { event: "goPrevious" });
   goToPreviousArea(get(scrollElementAtom));
 });
-var navigateAtom = (0, import_jotai.atom)(null, (get, _set, event) => {
+var navigateAtom = (0, import_jotai.atom)(null, (get, set, event) => {
+  set(loggerAtom, { event: "click" });
   navigateByPointer(get(scrollElementAtom), event);
 });
 var singlePageCountAtom = (0, import_jotai.atom)(
@@ -1153,14 +1212,10 @@ var singlePageCountAtom = (0, import_jotai.atom)(
   async (get, set, value) => {
     const clampedValue = typeof value === "number" ? Math.max(0, value) : value;
     const middle = get(pageScrollMiddleAtom);
-    const scrollElement = get(scrollElementAtom);
     await set(singlePageCountStorageAtom, clampedValue);
     set(beforeRepaintAtom, {
       task: () => {
-        const yDifference = getYDifferenceFromPrevious({ scrollable: scrollElement, middle });
-        if (yDifference != null) {
-          scrollElement?.scrollBy({ top: yDifference });
-        }
+        set(restoreScrollWithLogAtom);
         set(pageScrollMiddleAtom, middle);
       }
     });
@@ -1172,6 +1227,37 @@ var anchorSinglePageCountAtom = (0, import_jotai.atom)(null, (get, set) => {
   if (abovePageIndex !== void 0) {
     set(singlePageCountAtom, abovePageIndex);
   }
+});
+var restoreScrollWithLogAtom = (0, import_jotai.atom)(null, (get, set) => {
+  const scrollElement = get(scrollElementAtom);
+  const middle = get(pageScrollMiddleAtom);
+  const yDifference = getYDifferenceFromPrevious({ scrollable: scrollElement, middle });
+  if (yDifference != null && scrollElement) {
+    set(loggerAtom, {
+      event: "restoreScroll",
+      middle,
+      yDifference,
+      previousScrollTop: scrollElement?.scrollTop,
+      scrollTop: scrollElement?.scrollTop
+    });
+    scrollElement.scrollBy({ top: yDifference });
+    return true;
+  } else {
+    set(loggerAtom, {
+      event: "restoreScroll: no need",
+      middle,
+      scrollTop: scrollElement?.scrollTop
+    });
+    return false;
+  }
+});
+var scrollTopAtom = (0, import_jotai.atom)(0);
+var pageRectsAtom = (0, import_jotai.atom)((get) => {
+  get(scrollTopAtom);
+  get(scrollElementSizeAtom);
+  const pages = getPagesFromScrollElement(get(scrollElementAtom));
+  const rects = [...pages ?? []].map((page) => page.getBoundingClientRect());
+  return rects;
 });
 var maxSizeStateAtom = (0, import_jotai.atom)({ width: screen.width, height: screen.height });
 var maxSizeAtom = (0, import_jotai.atom)(
@@ -1556,8 +1642,8 @@ var effectivePreferencesAtom = (0, import_jotai.atom)(
         updateIfDefined(fullscreenNoticeCountAtom, preferences.fullscreenNoticeCount)
       ]);
     }
-    function updateIfDefined(atom3, value) {
-      return value !== void 0 ? set(atom3, value) : Promise.resolve();
+    function updateIfDefined(atom4, value) {
+      return value !== void 0 ? set(atom4, value) : Promise.resolve();
     }
   }
 );
@@ -1738,6 +1824,17 @@ var setScrollElementAtom = (0, import_jotai.atom)(null, async (get, set, div) =>
   }
   const setScrollElementSize = () => {
     const size = div.getBoundingClientRect();
+    const scrollTop = div.scrollTop;
+    const pages = getPagesFromScrollElement(div);
+    const pageRects = [...pages ?? []].map((page) => {
+      const { x, y, width, height } = page.getBoundingClientRect();
+      return { x, y: y + scrollTop, width, height };
+    });
+    set(loggerAtom, {
+      event: "resize",
+      size: { width: size.width, height: size.height },
+      pageRects
+    });
     set(maxSizeAtom, size);
     set(correctScrollAtom);
   };
@@ -1906,8 +2003,8 @@ var OverlayScroller = styled("div", {
 });
 var import_overlayscrollbars_react = require("overlayscrollbars-react");
 GM.getResourceText("overlayscrollbars-css").then(insertCss);
-var import_jotai3 = require("jotai");
-var import_react4 = require("@headlessui/react");
+var import_jotai4 = require("jotai");
+var import_react5 = require("@headlessui/react");
 var Backdrop = styled("div", {
   position: "absolute",
   top: 0,
@@ -1964,6 +2061,40 @@ function BackdropDialog({ onClose, ...props }) {
       ...props
     }
   ));
+}
+var import_react4 = require("@headlessui/react");
+var debugAtom = (0, import_jotai.atom)((get) => {
+  const log = get(logAtom);
+  const result = {
+    url: location.href,
+    userAgent: navigator.userAgent,
+    devicePixelRatio: globalThis.devicePixelRatio,
+    gmInfo: {
+      ...GM.info,
+      script: {
+        ...GM.info.script,
+        resources: void 0
+      },
+      scriptMetaStr: void 0
+    },
+    log
+  };
+  console.log(result);
+  return JSON.stringify(result, null, 2);
+});
+var DebugTextarea = styled("textarea", {
+  width: "100%",
+  height: "10em",
+  fontSize: "0.5em"
+});
+function DebugTab() {
+  const strings = (0, import_jotai.useAtomValue)(i18nAtom);
+  const debug = (0, import_jotai.useAtomValue)(debugAtom);
+  async function copy() {
+    await navigator.clipboard.writeText(debug);
+    import_react_toastify.toast.success(strings.copied);
+  }
+  return  React.createElement(React.Fragment, null,  React.createElement("p", null, strings.debugExplanation),  React.createElement(import_react4.Button, { onClick: copy }, strings.copy),  React.createElement(DebugTextarea, { value: debug }));
 }
 var keyBindingsAtom = (0, import_jotai.atom)((get) => {
   const strings = get(i18nAtom);
@@ -2191,31 +2322,31 @@ var ConfigSheet = styled("div", {
 });
 function ViewerDialog({ onClose }) {
   const strings = (0, import_jotai.useAtomValue)(i18nAtom);
-  return  React.createElement(BackdropDialog, { onClose },  React.createElement(import_react4.TabGroup, null,  React.createElement(import_react4.TabList, { as: StyledTabList },  React.createElement(import_react2.Tab, { as: PlainTab }, strings.settings),  React.createElement(import_react2.Tab, { as: PlainTab }, strings.help)),  React.createElement(import_react4.TabPanels, { as: StyledTabPanels },  React.createElement(import_react4.TabPanel, null,  React.createElement(SettingsTab, null)),  React.createElement(import_react4.TabPanel, null,  React.createElement(HelpTab, null)))));
+  return  React.createElement(BackdropDialog, { onClose },  React.createElement(import_react5.TabGroup, null,  React.createElement(import_react5.TabList, { as: StyledTabList },  React.createElement(import_react2.Tab, { as: PlainTab }, strings.settings),  React.createElement(import_react2.Tab, { as: PlainTab }, strings.help),  React.createElement(import_react2.Tab, { as: PlainTab }, strings.debug)),  React.createElement(import_react5.TabPanels, { as: StyledTabPanels },  React.createElement(import_react5.TabPanel, null,  React.createElement(SettingsTab, null)),  React.createElement(import_react5.TabPanel, null,  React.createElement(HelpTab, null)),  React.createElement(import_react5.TabPanel, null,  React.createElement(DebugTab, null)))));
 }
 var PlainTab = styled("button", {
   flex: 1,
   padding: "0.5em 1em",
   background: "transparent",
-  border: "none",
+  border: "1px solid transparent",
   borderRadius: "0.5em",
   color: "#888",
   cursor: "pointer",
   fontSize: "1.2em",
   fontWeight: "bold",
   textAlign: "center",
-  '&[data-headlessui-state="selected"]': {
-    border: "1px solid black",
-    color: "black"
+  '&[data-headlessui-state~="selected"]': {
+    border: "1px solid black"
   },
-  "&:hover": {
+  '&[data-headlessui-state~="hover"]': {
     color: "black"
   }
 });
 var StyledTabList = styled("div", {
   display: "flex",
   flexFlow: "row nowrap",
-  gap: "0.5em"
+  gap: "0.5em",
+  minWidth: "20em"
 });
 var StyledTabPanels = styled("div", {
   marginTop: "1em"
@@ -2236,7 +2367,7 @@ var MenuActions = styled("div", {
 function LeftBottomControl() {
   const downloadAndSave = (0, import_jotai.useSetAtom)(downloadAndSaveAtom);
   const [isOpen, setIsOpen] = (0, import_react3.useState)(false);
-  const scrollable = (0, import_jotai3.useAtomValue)(scrollElementAtom);
+  const scrollable = (0, import_jotai4.useAtomValue)(scrollElementAtom);
   const closeDialog = () => {
     setIsOpen(false);
     scrollable?.focus();
@@ -2340,7 +2471,7 @@ var Video = styled("video", {
     }
   }
 });
-var Page = ({ atom: atom3, ...props }) => {
+var Page = ({ atom: atom4, ...props }) => {
   const {
     imageProps,
     videoProps,
@@ -2350,7 +2481,7 @@ var Page = ({ atom: atom3, ...props }) => {
     divCss,
     state: pageState,
     setDiv
-  } = (0, import_jotai.useAtomValue)(atom3);
+  } = (0, import_jotai.useAtomValue)(atom4);
   const strings = (0, import_jotai.useAtomValue)(i18nAtom);
   const reload = (0, import_jotai.useSetAtom)(reloadAtom);
   const { status } = pageState;
@@ -2604,11 +2735,11 @@ function InnerViewer(props) {
         onMouseDown: (0, import_jotai.useSetAtom)(blockSelectionAtom),
         ...otherProps
       },
-       React.createElement(Pages, { ltr: pageDirection === "leftToRight" }, pageAtoms.map((atom3) =>  React.createElement(
+       React.createElement(Pages, { ltr: pageDirection === "leftToRight" }, pageAtoms.map((atom4) =>  React.createElement(
         Page,
         {
-          key: `${atom3}`,
-          atom: atom3,
+          key: `${atom4}`,
+          atom: atom4,
           ...viewerOptions.mediaProps
         }
       )))

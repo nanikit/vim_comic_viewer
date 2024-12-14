@@ -194,6 +194,10 @@ function findOriginElement(src: string, page: HTMLElement) {
   }
 }
 
+export function getPagesFromScrollElement(scrollElement: HTMLElement | null) {
+  return scrollElement?.firstElementChild?.children;
+}
+
 function goToNextRow(currentPage: HTMLElement) {
   // https://greasyfork.org/ko/scripts/418090/discussions/291840
   // Environment: Firefox, Nvidia headed, devicePixelRatio = 1.25, innerHeight = 909
@@ -305,8 +309,4 @@ function getCurrentPageFromElements(
     const previousMiddlePage = previousMiddle < centerNextTop ? row[half - 1] : row[half];
     return previousMiddlePage;
   }
-}
-
-function getPagesFromScrollElement(scrollElement: HTMLElement | null) {
-  return scrollElement?.firstElementChild?.children;
 }
