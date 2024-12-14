@@ -200,6 +200,10 @@ function findOriginElement(src: string, page: HTMLElement) {
   }
 }
 
+export function getPagesFromScrollElement(scrollElement: HTMLElement | null) {
+  return scrollElement?.firstElementChild?.children;
+}
+
 function getNextPageTopOrEnd(page: HTMLElement) {
   const scrollable = page.offsetParent;
   if (!scrollable) {
@@ -311,8 +315,4 @@ function getCurrentPageFromElements(
     const previousMiddlePage = previousMiddle < centerNextTop ? row[half - 1] : row[half];
     return previousMiddlePage;
   }
-}
-
-function getPagesFromScrollElement(scrollElement: HTMLElement | null) {
-  return scrollElement?.firstElementChild?.children;
 }
