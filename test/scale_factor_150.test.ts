@@ -1,8 +1,7 @@
-import decode from "https://deno.land/x/wasm_image_decoder@v0.0.7/mod.js";
 import { assertEquals } from "jsr:@std/assert";
 import { delay } from "jsr:@std/async/delay";
-import { parse, resolve } from "jsr:@std/path";
 import puppeteer from "npm:puppeteer";
+import { assertPixelsEqual, runTestHttpServer } from "./helpers.ts";
 
 Deno.test("With test page", async (test) => {
   const server = runTestHttpServer();
@@ -11,6 +10,7 @@ Deno.test("With test page", async (test) => {
   const browser = await puppeteer.launch({
     headless,
     args: [...(headless ? [] : ["--auto-open-devtools-for-tabs"])],
+    browser: "chrome",
   });
   const page = await browser.newPage();
   await page.setViewport({
@@ -28,10 +28,11 @@ Deno.test("With test page", async (test) => {
     await page.keyboard.press("i");
 
     await test.step("then viewer should be shown", async () => {
-      await assertPixelsEqual(
-        page.screenshot({ type: "webp" }),
-        "test/assets/snapshots/1-after-load.webp",
-      );
+      await assertPixelsEqual({
+        actual: page.screenshot({ type: "webp" }),
+        expect: Deno.readFile("test/assets/snapshots/1-after-load.webp"),
+        name: "1-after-load",
+      });
     });
   });
 
@@ -39,7 +40,11 @@ Deno.test("With test page", async (test) => {
     await page.keyboard.press("j");
 
     await test.step("then viewer should show next page", async () => {
-      await assertPixelsEqual(page.screenshot({ type: "webp" }), "test/assets/snapshots/2-j.webp");
+      await assertPixelsEqual({
+        actual: page.screenshot({ type: "webp" }),
+        expect: Deno.readFile("test/assets/snapshots/2-j.webp"),
+        name: "2-j",
+      });
     });
   });
 
@@ -47,10 +52,11 @@ Deno.test("With test page", async (test) => {
     await page.mouse.click(600, 600);
 
     await test.step("then viewer should show next page", async () => {
-      await assertPixelsEqual(
-        page.screenshot({ type: "webp" }),
-        "test/assets/snapshots/3-click-bottom.webp",
-      );
+      await assertPixelsEqual({
+        actual: page.screenshot({ type: "webp" }),
+        expect: Deno.readFile("test/assets/snapshots/3-click-bottom.webp"),
+        name: "3-click-bottom",
+      });
     });
   });
 
@@ -58,32 +64,39 @@ Deno.test("With test page", async (test) => {
     await page.touchscreen.tap(600, 600);
 
     await test.step("then viewer should show next page", async () => {
-      await assertPixelsEqual(
-        page.screenshot({ type: "webp" }),
-        "test/assets/snapshots/4-touch-bottom.webp",
-      );
+      await assertPixelsEqual({
+        actual: page.screenshot({ type: "webp" }),
+        expect: Deno.readFile("test/assets/snapshots/4-touch-bottom.webp"),
+        name: "4-touch-bottom",
+      });
     });
   });
 
   await test.step("when touch top of the page", async (test) => {
     await page.touchscreen.tap(600, 200);
 
-    await test.step("then viewer should show previous page", async () => {
-      // await assertPixelsEqual(
-      //   page.screenshot({ type: "webp" }),
-      //   "test/assets/snapshots/3-click-bottom.webp",
-      // );
+    await test.step({
+      name: "then viewer should show previous page",
+      ignore: true,
+      fn: async () => {
+        await assertPixelsEqual({
+          actual: page.screenshot({ type: "webp" }),
+          expect: Deno.readFile("test/assets/snapshots/3-click-bottom.webp"),
+          name: "5-touch-top",
+        });
+      },
     });
   });
 
   await test.step("when click top of the page", async (test) => {
-    await page.touchscreen.tap(600, 200);
+    await page.mouse.click(600, 200);
 
     await test.step("then viewer should show previous page", async () => {
-      await assertPixelsEqual(
-        page.screenshot({ type: "webp" }),
-        "test/assets/snapshots/2-j.webp",
-      );
+      await assertPixelsEqual({
+        actual: page.screenshot({ type: "webp" }),
+        expect: Deno.readFile("test/assets/snapshots/2-j.webp"),
+        name: "6-click-top",
+      });
     });
   });
 
@@ -91,10 +104,11 @@ Deno.test("With test page", async (test) => {
     await page.keyboard.press("k");
 
     await test.step("then viewer should show previous page", async () => {
-      await assertPixelsEqual(
-        page.screenshot({ type: "webp" }),
-        "test/assets/snapshots/1-after-load.webp",
-      );
+      await assertPixelsEqual({
+        actual: page.screenshot({ type: "webp" }),
+        expect: Deno.readFile("test/assets/snapshots/5-return.webp"),
+        name: "7-press-k",
+      });
     });
   });
 
@@ -185,60 +199,3 @@ Deno.test("With test page", async (test) => {
   // puppeteer-core/23.6.0/lib/esm/puppeteer/cdp/FrameManager.js:L24 TIME_FOR_WAITING_FOR_SWAP
   await delay(100);
 });
-
-async function assertPixelsEqual(actualPromise: Promise<Uint8Array>, expectedPath: string) {
-  const expectedRaw = await Deno.readFile(expectedPath);
-  const expected = decode(expectedRaw);
-  const actualRaw = await actualPromise;
-  const actual = decode(actualRaw);
-
-  try {
-    assertEquals(actual.width, expected.width, "width");
-    assertEquals(actual.height, expected.height, "height");
-    for (let i = 0; i < actual.data.length; i++) {
-      assertEquals(actual.data[i], expected.data[i], `index: ${i}`);
-    }
-  } catch (error) {
-    const { base, name, ext } = parse(expectedPath);
-    const actualFileName = base;
-    const expectedFileName = `${name}-expected${ext}`;
-    await Promise.all([
-      Deno.writeFile(`test/failure/${actualFileName}`, bufferToUint8Array(actualRaw)),
-      Deno.writeFile(`test/failure/${expectedFileName}`, expectedRaw),
-    ]);
-    throw error;
-  }
-}
-
-function bufferToUint8Array(actualRaw: Uint8Array) {
-  const buffer = new Uint8Array(actualRaw.length);
-  for (let i = 0; i < actualRaw.length; i++) {
-    buffer[i] = actualRaw[i] as number;
-  }
-  return buffer;
-}
-
-function runTestHttpServer() {
-  return Deno.serve({ port: 0 }, async (request) => {
-    const url = new URL(request.url);
-    const relativePath = url.pathname.replace(/^\//, "");
-    if (relativePath === "vim_comic_viewer.user.js") {
-      return await giveStaticFile("vim_comic_viewer.user.js");
-    }
-
-    const filePath = resolve("test/assets", relativePath);
-    return await giveStaticFile(filePath);
-  });
-}
-
-async function giveStaticFile(path: string) {
-  try {
-    const file = await Deno.open(path);
-    return new Response(file.readable);
-  } catch (error) {
-    if (error instanceof Deno.errors.NotFound) {
-      return new Response(null, { status: 404 });
-    }
-    throw error;
-  }
-}
