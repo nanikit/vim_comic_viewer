@@ -4,9 +4,13 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+# 19.2.0
+
+- _Fix page skipping (maybe with hardware accelerated HiDPI)._
+
 # 19.1.0
 
-- Page navigation with wheel.
+- _Page navigation with wheel._
 
 # 19.0.1
 
