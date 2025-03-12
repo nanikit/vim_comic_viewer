@@ -75,16 +75,12 @@ Deno.test("With test page", async (test) => {
   await test.step("when touch top of the page", async (test) => {
     await page.touchscreen.tap(600, 200);
 
-    await test.step({
-      name: "then viewer should show previous page",
-      ignore: true,
-      fn: async () => {
-        await assertPixelsEqual({
-          actual: page.screenshot({ type: "webp" }),
-          expect: Deno.readFile("test/assets/snapshots/3-click-bottom.webp"),
-          name: "5-touch-top",
-        });
-      },
+    await test.step("then viewer should show previous page", async () => {
+      await assertPixelsEqual({
+        actual: page.screenshot({ type: "webp" }),
+        expect: Deno.readFile("test/assets/snapshots/3-click-bottom.webp"),
+        name: "5-touch-top",
+      });
     });
   });
 
