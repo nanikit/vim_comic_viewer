@@ -78,21 +78,19 @@ export function goToPreviousArea(scrollElement: HTMLDivElement | null) {
     return;
   }
 
-  const viewerHeight = scrollElement.clientHeight;
+  const { height: viewerHeight, top: viewerTop } = scrollElement.getBoundingClientRect();
   const ignorableHeight = viewerHeight * 0.05;
-  // HACK: scrollTop has fractional px on HiDPI, -1 is monkey patching for it.
-  const remainingHeight = scrollElement.scrollTop - Math.ceil(page.offsetTop) - 1;
+  const { top: pageTop } = page.getBoundingClientRect();
+  const remainingHeight = viewerTop - pageTop;
+  const needsPartialScroll = remainingHeight > ignorableHeight;
 
-  // Use scrollBy because scrollTop precision is not enough on HiDPI.
-  scrollElement.scrollBy({ top: getPreviousYDiff(page) });
-
-  function getPreviousYDiff(page: HTMLElement) {
-    if (remainingHeight > ignorableHeight) {
-      const divisor = Math.ceil(remainingHeight / viewerHeight);
-      return -Math.ceil(remainingHeight / divisor);
-    } else {
-      return getPreviousPageBottomOrStart(page);
-    }
+  if (needsPartialScroll) {
+    const divisor = Math.ceil(remainingHeight / viewerHeight);
+    const yDiff = -Math.ceil(remainingHeight / divisor);
+    // Use scrollBy because scrollTop precision is not enough on HiDPI.
+    scrollElement.scrollBy({ top: yDiff });
+  } else {
+    goToPreviousRow(page);
   }
 }
 
@@ -102,22 +100,18 @@ export function goToNextArea(scrollElement: HTMLDivElement | null) {
     return;
   }
 
-  const viewerHeight = scrollElement.clientHeight;
+  const { height: viewerHeight, bottom: viewerBottom } = scrollElement.getBoundingClientRect();
   const ignorableHeight = viewerHeight * 0.05;
-  const scrollBottom = scrollElement.scrollTop + viewerHeight;
-  // HACK: scrollTop has fractional px on HiDPI, -1 is monkey patching for it.
-  const remainingHeight = page.offsetTop + page.clientHeight - Math.ceil(scrollBottom) - 1;
+  const { bottom: pageBottom } = page.getBoundingClientRect();
+  const remainingHeight = pageBottom - viewerBottom;
+  const needsPartialScroll = remainingHeight > ignorableHeight;
 
-  // Use scrollBy because scrollTop precision is not enough on HiDPI.
-  scrollElement.scrollBy({ top: getNextYDiff(page) });
-
-  function getNextYDiff(page: HTMLElement) {
-    if (remainingHeight > ignorableHeight) {
-      const divisor = Math.ceil(remainingHeight / viewerHeight);
-      return Math.ceil(remainingHeight / divisor);
-    } else {
-      return getNextPageTopOrEnd(page);
-    }
+  if (needsPartialScroll) {
+    const divisor = Math.ceil(remainingHeight / viewerHeight);
+    const yDiff = Math.ceil(remainingHeight / divisor);
+    scrollElement.scrollBy({ top: yDiff });
+  } else {
+    goToNextRow(page);
   }
 }
 
@@ -200,47 +194,47 @@ function findOriginElement(src: string, page: HTMLElement) {
   }
 }
 
-function getNextPageTopOrEnd(page: HTMLElement) {
+function goToNextRow(currentPage: HTMLElement) {
   // https://greasyfork.org/ko/scripts/418090/discussions/291840
   // Environment: Firefox, Nvidia headed, devicePixelRatio = 1.25, innerHeight = 909
   // Flex-box row could be overlapped by 0.00001px, so adjust with epsilon.
   const epsilon = 0.01;
-  const pageBottom = page.getBoundingClientRect().bottom - epsilon;
+  const currentPageBottom = currentPage.getBoundingClientRect().bottom - epsilon;
 
-  let cursor = page as HTMLElement;
-  while (cursor.nextElementSibling) {
-    const next = cursor.nextElementSibling as HTMLElement;
-    const nextTop = next.getBoundingClientRect().top;
-    if (pageBottom <= nextTop) {
-      return nextTop;
+  let page = currentPage as HTMLElement;
+  while (page.nextElementSibling) {
+    page = page.nextElementSibling as HTMLElement;
+
+    const pageTop = page.getBoundingClientRect().top;
+    const isNextPage = currentPageBottom <= pageTop;
+    if (isNextPage) {
+      page.scrollIntoView({ behavior: "instant", block: "start" });
+      return;
     }
-    cursor = next;
   }
 
-  const { y, height } = cursor.getBoundingClientRect();
-  return y + height;
+  // it is the last page, scroll to end
+  page.scrollIntoView({ behavior: "instant", block: "end" });
 }
 
-function getPreviousPageBottomOrStart(page: HTMLElement) {
+function goToPreviousRow(currentPage: HTMLElement) {
   const epsilon = 0.01;
-  const pageTop = page.getBoundingClientRect().top + epsilon;
+  const currentPageTop = currentPage.getBoundingClientRect().top + epsilon;
 
-  let cursor = page as HTMLElement;
-  while (cursor.previousElementSibling) {
-    const previous = cursor.previousElementSibling as HTMLElement;
-    const previousBottom = previous.getBoundingClientRect().bottom;
-    if (previousBottom <= pageTop) {
-      const scrollable = page.offsetParent;
-      if (!scrollable) return;
+  let page = currentPage as HTMLElement;
+  while (page.previousElementSibling) {
+    page = page.previousElementSibling as HTMLElement;
 
-      const { height } = scrollable.getBoundingClientRect();
-      return previousBottom - height;
+    const pageBottom = page.getBoundingClientRect().bottom;
+    const isPreviousPage = pageBottom <= currentPageTop;
+    if (isPreviousPage) {
+      page.scrollIntoView({ behavior: "instant", block: "end" });
+      return;
     }
-    cursor = previous;
   }
 
-  const { y, height } = cursor.getBoundingClientRect();
-  return y - height;
+  // it is the first page, scroll to start
+  page.scrollIntoView({ behavior: "instant", block: "start" });
 }
 
 function getCurrentPageFromScrollElement(
