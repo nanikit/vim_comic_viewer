@@ -7,7 +7,7 @@ export function DownloadCancel({ onClick }: { onClick?: () => void }) {
   return (
     <SpaceBetween>
       <p>{strings.downloading}</p>
-      <button onClick={onClick}>{strings.cancel}</button>
+      <button type="button" onClick={onClick}>{strings.cancel}</button>
     </SpaceBetween>
   );
 }
