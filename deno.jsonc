@@ -24,7 +24,7 @@
     "build": "deno run --allow-all https://raw.githubusercontent.com/nanikit/deno_userscript_linker/d84482723e6077f6f5d2c20b44e78c21ccb467a3/mod.ts --inject src/react_shim.ts -o vim_comic_viewer.user.js src/mod.tsx",
     "watch": "deno run --allow-all https://raw.githubusercontent.com/nanikit/deno_userscript_linker/d84482723e6077f6f5d2c20b44e78c21ccb467a3/mod.ts --inject src/react_shim.ts -o vim_comic_viewer.user.js src/mod.tsx --watch",
     "test": {
-      "command": "deno test -A",
+      "command": "deno test -A ./test",
       "description": "Test with Chrome browser",
       "dependencies": ["install:chrome"]
     },
