@@ -9,8 +9,10 @@ Deno.test("With test page", async (test) => {
   const headless = true;
   const browser = await puppeteer.launch({
     headless,
-    args: [...(headless ? [] : ["--auto-open-devtools-for-tabs"])],
-    browser: "chrome",
+    args: [
+      ...(Deno.env.get("CI") ? ["--no-sandbox"] : []),
+      ...(headless ? [] : ["--auto-open-devtools-for-tabs"]),
+    ],
   });
   const page = await browser.newPage();
   await page.setViewport({

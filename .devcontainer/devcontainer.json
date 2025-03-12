@@ -4,7 +4,8 @@
   "name": "Ubuntu deno",
   // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
   "build": {
-    "dockerfile": "Dockerfile"
+    "dockerfile": "Dockerfile",
+    "target": "base"
   },
 
   "features": {},
