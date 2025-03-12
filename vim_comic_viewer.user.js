@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        19.1.0
+// @version        19.2.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -258,7 +258,7 @@ function getLanguage() {
 var { styled, css, keyframes } = (0, import_react.createStitches)({});
 function DownloadCancel({ onClick }) {
   const strings = (0, import_jotai.useAtomValue)(i18nAtom);
-  return  React.createElement(SpaceBetween, null,  React.createElement("p", null, strings.downloading),  React.createElement("button", { onClick }, strings.cancel));
+  return  React.createElement(SpaceBetween, null,  React.createElement("p", null, strings.downloading),  React.createElement("button", { type: "button", onClick }, strings.cancel));
 }
 var SpaceBetween = styled("div", {
   display: "flex",
@@ -838,17 +838,17 @@ function goToPreviousArea(scrollElement) {
   if (!page || !scrollElement) {
     return;
   }
-  const viewerHeight = scrollElement.clientHeight;
+  const { height: viewerHeight, top: viewerTop } = scrollElement.getBoundingClientRect();
   const ignorableHeight = viewerHeight * 0.05;
-  const remainingHeight = scrollElement.scrollTop - Math.ceil(page.offsetTop) - 1;
-  scrollElement.scrollBy({ top: getPreviousYDiff(page) });
-  function getPreviousYDiff(page2) {
-    if (remainingHeight > ignorableHeight) {
-      const divisor = Math.ceil(remainingHeight / viewerHeight);
-      return -Math.ceil(remainingHeight / divisor);
-    } else {
-      return getPreviousPageBottomOrStart(page2);
-    }
+  const { top: pageTop } = page.getBoundingClientRect();
+  const remainingHeight = viewerTop - pageTop;
+  const needsPartialScroll = remainingHeight > ignorableHeight;
+  if (needsPartialScroll) {
+    const divisor = Math.ceil(remainingHeight / viewerHeight);
+    const yDiff = -Math.ceil(remainingHeight / divisor);
+    scrollElement.scrollBy({ top: yDiff });
+  } else {
+    goToPreviousRow(page);
   }
 }
 function goToNextArea(scrollElement) {
@@ -856,18 +856,17 @@ function goToNextArea(scrollElement) {
   if (!page || !scrollElement) {
     return;
   }
-  const viewerHeight = scrollElement.clientHeight;
+  const { height: viewerHeight, bottom: viewerBottom } = scrollElement.getBoundingClientRect();
   const ignorableHeight = viewerHeight * 0.05;
-  const scrollBottom = scrollElement.scrollTop + viewerHeight;
-  const remainingHeight = page.offsetTop + page.clientHeight - Math.ceil(scrollBottom) - 1;
-  scrollElement.scrollBy({ top: getNextYDiff(page) });
-  function getNextYDiff(page2) {
-    if (remainingHeight > ignorableHeight) {
-      const divisor = Math.ceil(remainingHeight / viewerHeight);
-      return Math.ceil(remainingHeight / divisor);
-    } else {
-      return getNextPageTopOrEnd(page2);
-    }
+  const { bottom: pageBottom } = page.getBoundingClientRect();
+  const remainingHeight = pageBottom - viewerBottom;
+  const needsPartialScroll = remainingHeight > ignorableHeight;
+  if (needsPartialScroll) {
+    const divisor = Math.ceil(remainingHeight / viewerHeight);
+    const yDiff = Math.ceil(remainingHeight / divisor);
+    scrollElement.scrollBy({ top: yDiff });
+  } else {
+    goToNextRow(page);
   }
 }
 function toWindowScroll({ middle, lastMiddle, noSyncScroll, forFullscreen, scrollElement }) {
@@ -926,42 +925,35 @@ function findOriginElement(src, page) {
     return visibleLinks[0];
   }
 }
-function getNextPageTopOrEnd(page) {
-  const scrollable = page.offsetParent;
-  if (!scrollable) {
-    return;
-  }
-  const pageBottom = page.offsetTop + page.clientHeight;
-  let cursor = page;
-  while (cursor.nextElementSibling) {
-    const next = cursor.nextElementSibling;
-    if (pageBottom <= next.offsetTop) {
-      return next.getBoundingClientRect().top;
+function goToNextRow(currentPage) {
+  const epsilon = 0.01;
+  const currentPageBottom = currentPage.getBoundingClientRect().bottom - epsilon;
+  let page = currentPage;
+  while (page.nextElementSibling) {
+    page = page.nextElementSibling;
+    const pageTop = page.getBoundingClientRect().top;
+    const isNextPage = currentPageBottom <= pageTop;
+    if (isNextPage) {
+      page.scrollIntoView({ behavior: "instant", block: "start" });
+      return;
     }
-    cursor = next;
   }
-  const { y, height } = cursor.getBoundingClientRect();
-  return y + height;
+  page.scrollIntoView({ behavior: "instant", block: "end" });
 }
-function getPreviousPageBottomOrStart(page) {
-  const scrollable = page.offsetParent;
-  if (!scrollable) {
-    return;
-  }
-  const pageTop = page.offsetTop;
-  let cursor = page;
-  while (cursor.previousElementSibling) {
-    const previous = cursor.previousElementSibling;
-    const previousBottom = previous.offsetTop + previous.clientHeight;
-    if (previousBottom <= pageTop) {
-      const { bottom } = previous.getBoundingClientRect();
-      const { height: height2 } = scrollable.getBoundingClientRect();
-      return bottom - height2;
+function goToPreviousRow(currentPage) {
+  const epsilon = 0.01;
+  const currentPageTop = currentPage.getBoundingClientRect().top + epsilon;
+  let page = currentPage;
+  while (page.previousElementSibling) {
+    page = page.previousElementSibling;
+    const pageBottom = page.getBoundingClientRect().bottom;
+    const isPreviousPage = pageBottom <= currentPageTop;
+    if (isPreviousPage) {
+      page.scrollIntoView({ behavior: "instant", block: "end" });
+      return;
     }
-    cursor = previous;
   }
-  const { y, height } = cursor.getBoundingClientRect();
-  return y - height;
+  page.scrollIntoView({ behavior: "instant", block: "start" });
 }
 function getCurrentPageFromScrollElement({ scrollElement, previousMiddle }) {
   const middle = getCurrentMiddleFromScrollElement({ scrollElement, previousMiddle });
@@ -2005,7 +1997,7 @@ var ActionName = styled("td", {
 function HelpTab() {
   const keyBindings = (0, import_jotai.useAtomValue)(keyBindingsAtom);
   const strings = (0, import_jotai.useAtomValue)(i18nAtom);
-  return  React.createElement(React.Fragment, null,  React.createElement("p", null, strings.keyBindings),  React.createElement("table", null, keyBindings.map(([action, keyBinding]) =>  React.createElement("tr", null,  React.createElement(ActionName, null, action),  React.createElement("td", null, keyBinding)))));
+  return  React.createElement(React.Fragment, null,  React.createElement("p", null, strings.keyBindings),  React.createElement("table", null, keyBindings.map(([action, keyBinding]) =>  React.createElement("tr", { key: action },  React.createElement(ActionName, null, action),  React.createElement("td", null, keyBinding)))));
 }
 function SettingsTab() {
   const [maxZoomOutExponent, setMaxZoomOutExponent] = (0, import_jotai.useAtom)(maxZoomOutExponentAtom);
