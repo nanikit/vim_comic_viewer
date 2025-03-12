@@ -201,17 +201,18 @@ function findOriginElement(src: string, page: HTMLElement) {
 }
 
 function getNextPageTopOrEnd(page: HTMLElement) {
-  const scrollable = page.offsetParent;
-  if (!scrollable) {
-    return;
-  }
+  // https://greasyfork.org/ko/scripts/418090/discussions/291840
+  // Environment: Firefox, Nvidia headed, devicePixelRatio = 1.25, innerHeight = 909
+  // Flex-box row could be overlapped by 0.00001px, so adjust with epsilon.
+  const epsilon = 0.01;
+  const pageBottom = page.getBoundingClientRect().bottom - epsilon;
 
-  const pageBottom = page.offsetTop + page.clientHeight;
   let cursor = page as HTMLElement;
   while (cursor.nextElementSibling) {
     const next = cursor.nextElementSibling as HTMLElement;
-    if (pageBottom <= next.offsetTop) {
-      return next.getBoundingClientRect().top;
+    const nextTop = next.getBoundingClientRect().top;
+    if (pageBottom <= nextTop) {
+      return nextTop;
     }
     cursor = next;
   }
@@ -221,20 +222,19 @@ function getNextPageTopOrEnd(page: HTMLElement) {
 }
 
 function getPreviousPageBottomOrStart(page: HTMLElement) {
-  const scrollable = page.offsetParent;
-  if (!scrollable) {
-    return;
-  }
+  const epsilon = 0.01;
+  const pageTop = page.getBoundingClientRect().top + epsilon;
 
-  const pageTop = page.offsetTop;
   let cursor = page as HTMLElement;
   while (cursor.previousElementSibling) {
     const previous = cursor.previousElementSibling as HTMLElement;
-    const previousBottom = previous.offsetTop + previous.clientHeight;
+    const previousBottom = previous.getBoundingClientRect().bottom;
     if (previousBottom <= pageTop) {
-      const { bottom } = previous.getBoundingClientRect();
+      const scrollable = page.offsetParent;
+      if (!scrollable) return;
+
       const { height } = scrollable.getBoundingClientRect();
-      return bottom - height;
+      return previousBottom - height;
     }
     cursor = previous;
   }
