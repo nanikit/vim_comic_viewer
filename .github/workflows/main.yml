@@ -26,21 +26,8 @@ jobs:
       - run: deno check src/mod.tsx
       - run: deno task build
 
-      # - id: chrome
-      #   uses: browser-actions/setup-chrome@v1
-
-      # - run: deno task test
-      #   env:
-      #     PUPPETEER_EXECUTABLE_PATH: ${{ steps.chrome.outputs.chrome-path }}
-      - run: docker build -f .devcontainer/Dockerfile --target test .
-
-      - name: Upload test failure artifacts
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: test-failure
-          path: test/failure/
-          if-no-files-found: ignore
+      - name: Build test image
+        run: docker build -f .devcontainer/Dockerfile --target test .
 
       - name: Push to main
         if: ${{ github.event_name == 'push' && success() }}
