@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        19.2.0
+// @version        20.0.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -109,9 +109,7 @@ function throttle(fn, timeframe) {
 				flush = null;
 			}
 		};
-		if (throttled.throttling) {
-			return;
-		}
+		if (throttled.throttling) return;
 		flush?.();
 	};
 	throttled.clear = () => {
@@ -305,13 +303,9 @@ i18nAtom.onMount = (set) => {
 function getLanguage() {
 	for (const language of navigator.languages) {
 		const locale = language.split("-")[0];
-		if (!locale) {
-			continue;
-		}
+		if (!locale) continue;
 		const translation = translations[locale];
-		if (translation) {
-			return translation;
-		}
+		if (translation) return translation;
 	}
 	return en_default;
 }
@@ -332,10 +326,10 @@ const SpaceBetween = styled("div", {
 const MAX_RETRY_COUNT = 6;
 const MAX_SAME_URL_RETRY_COUNT = 2;
 function isDelay(sourceOrDelay) {
-	return sourceOrDelay === undefined || typeof sourceOrDelay !== "string" && !sourceOrDelay.src;
+	return sourceOrDelay === void 0 || typeof sourceOrDelay !== "string" && !sourceOrDelay.src;
 }
 function toAdvancedObject(sourceOrDelay) {
-	return isDelay(sourceOrDelay) ? { src: undefined } : toAdvancedSource(sourceOrDelay);
+	return isDelay(sourceOrDelay) ? { src: void 0 } : toAdvancedSource(sourceOrDelay);
 }
 function toAdvancedSource(source) {
 	return typeof source === "string" ? {
@@ -344,26 +338,20 @@ function toAdvancedSource(source) {
 	} : source;
 }
 async function* getMediaIterable({ media, index, comic, maxSize }) {
-	if (!isDelay(media)) {
-		yield getUrl(media);
-	}
-	if (!comic) {
-		return;
-	}
+	if (!isDelay(media)) yield getUrl(media);
+	if (!comic) return;
 	let previous;
 	let retryCount = 0;
 	let sameUrlRetryCount = 0;
 	while (sameUrlRetryCount <= MAX_SAME_URL_RETRY_COUNT && retryCount <= MAX_RETRY_COUNT) {
-		const hadError = media !== undefined || retryCount > 0;
+		const hadError = media !== void 0 || retryCount > 0;
 		const medias = await comic({
 			cause: hadError ? "error" : "load",
 			page: index,
 			maxSize
 		});
 		const next = medias[index];
-		if (isDelay(next)) {
-			continue;
-		}
+		if (isDelay(next)) continue;
 		const url = getUrl(next);
 		yield url;
 		retryCount++;
@@ -387,7 +375,7 @@ async function gmFetch(url, init) {
 			referer: `${location.origin}/`,
 			...init?.headers
 		},
-		responseType: init?.type === "text" ? undefined : init?.type,
+		responseType: init?.type === "text" ? void 0 : init?.type,
 		data: init?.body
 	});
 	return response;
@@ -441,11 +429,8 @@ async function download(comic, options) {
 				onError?.(event.error);
 				continue;
 			}
-			if (event.url) {
-				resolvedCount++;
-			} else {
-				rejectedCount++;
-			}
+			if (event.url) resolvedCount++;
+			else rejectedCount++;
 			reportProgress();
 			return event;
 		}
@@ -466,9 +451,7 @@ async function download(comic, options) {
 			maxSize
 		};
 		for await (const url of getMediaIterable(mediaParams)) {
-			if (signal?.aborted) {
-				break;
-			}
+			if (signal?.aborted) break;
 			try {
 				const blob = await fetchBlobWithCacheIfPossible(url, signal);
 				yield {
@@ -490,12 +473,8 @@ async function download(comic, options) {
 		return { [name]: array };
 	}
 	function reportProgress({ transition } = {}) {
-		if (status !== "ongoing") {
-			return;
-		}
-		if (transition) {
-			status = transition;
-		}
+		if (status !== "ongoing") return;
+		if (transition) status = transition;
 		onProgress?.({
 			total: pages.length,
 			started: startedCount,
@@ -506,35 +485,23 @@ async function download(comic, options) {
 	}
 }
 function getExtension(url) {
-	if (!url) {
-		return ".txt";
-	}
+	if (!url) return ".txt";
 	const extension = url.match(/\.[^/?#]{3,4}?(?=[?#]|$)/);
 	return extension?.[0] || ".jpg";
 }
 function guessExtension(array) {
 	const { 0: a, 1: b, 2: c, 3: d } = array;
-	if (a === 255 && b === 216 && c === 255) {
-		return ".jpg";
-	}
-	if (a === 137 && b === 80 && c === 78 && d === 71) {
-		return ".png";
-	}
-	if (a === 82 && b === 73 && c === 70 && d === 70) {
-		return ".webp";
-	}
-	if (a === 71 && b === 73 && c === 70 && d === 56) {
-		return ".gif";
-	}
+	if (a === 255 && b === 216 && c === 255) return ".jpg";
+	if (a === 137 && b === 80 && c === 78 && d === 71) return ".png";
+	if (a === 82 && b === 73 && c === 70 && d === 70) return ".webp";
+	if (a === 71 && b === 73 && c === 70 && d === 56) return ".gif";
 }
 async function fetchBlobWithCacheIfPossible(url, signal) {
 	const response = await fetch(url, { signal });
 	return await response.blob();
 }
 async function fetchBlobIgnoringCors(url, { signal, fetchError }) {
-	if (isCrossOrigin(url) && !isGmFetchAvailable) {
-		return { error: new Error("It could be a CORS issue but cannot use GM.xmlhttpRequest", { cause: fetchError }) };
-	}
+	if (isCrossOrigin(url) && !isGmFetchAvailable) return { error: new Error("It could be a CORS issue but cannot use GM.xmlhttpRequest", { cause: fetchError }) };
 	try {
 		const response = await gmFetch(url, {
 			signal,
@@ -550,11 +517,8 @@ async function fetchBlobIgnoringCors(url, { signal, fetchError }) {
 			blob: response.response
 		};
 	} catch (error) {
-		if (isGmCancelled(error)) {
-			return { error: new Error("download aborted") };
-		} else {
-			return { error: fetchError };
-		}
+		if (isGmCancelled(error)) return { error: new Error("download aborted") };
+		else return { error: fetchError };
 	}
 }
 function isCrossOrigin(url) {
@@ -609,9 +573,7 @@ const startDownloadAtom = (0, jotai.atom)(null, async (get, set, options) => {
 	});
 	const viewerOptions = get(viewerOptionsAtom);
 	const source = options?.source ?? viewerOptions.source;
-	if (!source) {
-		return;
-	}
+	if (!source) return;
 	let toastId = null;
 	addEventListener("beforeunload", confirmDownloadAbort);
 	try {
@@ -628,9 +590,7 @@ const startDownloadAtom = (0, jotai.atom)(null, async (get, set, options) => {
 		removeEventListener("beforeunload", confirmDownloadAbort);
 	}
 	async function reportProgress(event) {
-		if (!toastId) {
-			return;
-		}
+		if (!toastId) return;
 		const { total, started, settled, rejected, status } = event;
 		const value = started / total * .1 + settled / total * .89;
 		switch (status) {
@@ -663,15 +623,11 @@ const startDownloadAtom = (0, jotai.atom)(null, async (get, set, options) => {
 	}
 });
 const downloadAndSaveAtom = (0, jotai.atom)(null, async (_get, set, options) => {
-	const zip$1 = await set(startDownloadAtom, options);
-	if (zip$1) {
-		await save(new Blob([zip$1]));
-	}
+	const zip = await set(startDownloadAtom, options);
+	if (zip) await save(new Blob([zip]));
 });
 function logIfNotAborted(error) {
-	if (isNotAbort(error)) {
-		console.error(error);
-	}
+	if (isNotAbort(error)) console.error(error);
 }
 function isNotAbort(error) {
 	return !/aborted/i.test(`${error}`);
@@ -722,16 +678,14 @@ function atomWithPreferences(key) {
 	const asyncAtomAtom = (0, jotai.atom)((get) => {
 		const preset = get(preferencesPresetAtom);
 		const qualifiedKey = `vim_comic_viewer.preferences.${preset}.${key}`;
-		return atomWithGmValue(qualifiedKey, undefined);
+		return atomWithGmValue(qualifiedKey, void 0);
 	});
 	const cacheAtom = (0, jotai_cache.atomWithCache)((get) => get(get(asyncAtomAtom)));
 	const manualAtom = (0, jotai.atom)((get) => get(cacheAtom), updater);
 	const loadableAtom = (0, jotai_utils.loadable)(manualAtom);
 	const effectiveAtom = (0, jotai.atom)((get) => {
 		const value = get(loadableAtom);
-		if (value.state === "hasData" && value.data !== undefined) {
-			return value.data;
-		}
+		if (value.state === "hasData" && value.data !== void 0) return value.data;
 		return get(scriptPreferencesAtom)[key] ?? defaultPreferences[key];
 	}, updater);
 	return [effectiveAtom, manualAtom];
@@ -744,28 +698,18 @@ globalCss.innerHTML = `html, body {
   overflow: hidden;
 }`;
 function hideBodyScrollBar(doHide) {
-	if (doHide) {
-		document.head.append(globalCss);
-	} else {
-		globalCss.remove();
-	}
+	if (doHide) document.head.append(globalCss);
+	else globalCss.remove();
 }
 async function setFullscreenElement(element) {
-	if (element) {
-		await element.requestFullscreen?.();
-	} else {
-		await document.exitFullscreen?.();
-	}
+	if (element) await element.requestFullscreen?.();
+	else await document.exitFullscreen?.();
 }
 function focusWithoutScroll(element) {
 	element?.focus({ preventScroll: true });
 }
 function isUserGesturePermissionError(error) {
 	return error?.message === "Permissions check failed";
-}
-function isDocumentNotActiveError(error) {
-	const message = error?.message;
-	return message?.match(/Failed to execute '.*?' on 'Document': Document not active/) ?? false;
 }
 const fullscreenElementAtom = (0, jotai.atom)(null);
 const viewerElementAtom = (0, jotai.atom)(null);
@@ -780,13 +724,9 @@ const scrollBarStyleFactorAtom = (0, jotai.atom)((get) => ({
 	viewerElement: get(viewerElementAtom)
 }), (get, set, factors) => {
 	const { fullscreenElement, viewerElement, isImmersive } = factors;
-	if (fullscreenElement !== undefined) {
-		set(fullscreenElementAtom, fullscreenElement);
-	}
-	if (viewerElement !== undefined) {
-		set(viewerElementAtom, viewerElement);
-	}
-	if (isImmersive !== undefined) {
+	if (fullscreenElement !== void 0) set(fullscreenElementAtom, fullscreenElement);
+	if (viewerElement !== void 0) set(viewerElementAtom, viewerElement);
+	if (isImmersive !== void 0) {
 		set(wasImmersiveAtom, isImmersive);
 		set(isImmersiveAtom, isImmersive);
 	}
@@ -799,9 +739,7 @@ const viewerFullscreenAtom = (0, jotai.atom)((get) => {
 }, async (get, _set, value) => {
 	const element = value ? get(viewerElementAtom) : null;
 	const { fullscreenElement } = get(scrollBarStyleFactorAtom);
-	if (element === fullscreenElement) {
-		return true;
-	}
+	if (element === fullscreenElement) return true;
 	const fullscreenChange = new Promise((resolve) => {
 		addEventListener("fullscreenchange", resolve, { once: true });
 	});
@@ -810,9 +748,7 @@ const viewerFullscreenAtom = (0, jotai.atom)((get) => {
 		await fullscreenChange;
 		return true;
 	} catch (error) {
-		if (isUserGesturePermissionError(error)) {
-			return false;
-		}
+		if (isUserGesturePermissionError(error)) return false;
 		throw error;
 	}
 });
@@ -844,9 +780,7 @@ const useBeforeRepaint = () => {
 	}, [task]);
 };
 function getCurrentRow({ elements, viewportHeight }) {
-	if (!elements.length) {
-		return;
-	}
+	if (!elements.length) return;
 	const scrollCenter = viewportHeight / 2;
 	const pages = elements.map((page) => ({
 		page,
@@ -858,9 +792,7 @@ function getCurrentRow({ elements, viewportHeight }) {
 	}
 }
 function isVisible(element) {
-	if ("checkVisibility" in element) {
-		return element.checkVisibility();
-	}
+	if ("checkVisibility" in element) return element.checkVisibility();
 	const { x, y, width, height } = element.getBoundingClientRect();
 	const elements = document.elementsFromPoint(x + width / 2, y + height / 2);
 	return elements.includes(element);
@@ -879,9 +811,7 @@ function getScrollPage(middle, container) {
 }
 function getCurrentMiddleFromScrollElement({ scrollElement, previousMiddle }) {
 	const elements = getPagesFromScrollElement(scrollElement);
-	if (!elements || !scrollElement) {
-		return null;
-	}
+	if (!elements || !scrollElement) return null;
 	return getPageScroll({
 		elements: [...elements],
 		viewportHeight: scrollElement.getBoundingClientRect().height,
@@ -889,9 +819,7 @@ function getCurrentMiddleFromScrollElement({ scrollElement, previousMiddle }) {
 	});
 }
 function getNewSizeIfResized({ scrollElement, previousSize }) {
-	if (!scrollElement) {
-		return;
-	}
+	if (!scrollElement) return;
 	const { width, height } = scrollElement.getBoundingClientRect();
 	const scrollHeight = scrollElement.scrollHeight;
 	const { width: previousWidth, height: previousHeight, scrollHeight: previousScrollHeight } = previousSize;
@@ -900,29 +828,22 @@ function getNewSizeIfResized({ scrollElement, previousSize }) {
 		width,
 		height,
 		scrollHeight
-	} : undefined;
+	} : void 0;
 }
 function navigateByPointer(scrollElement, event) {
 	const height = scrollElement?.clientHeight;
-	if (!height || event.button !== 0) {
-		return;
-	}
+	if (!height || event.button !== 0) return;
 	event.preventDefault();
 	const isTop = event.clientY < height / 2;
-	if (isTop) {
-		goToPreviousArea(scrollElement);
-	} else {
-		goToNextArea(scrollElement);
-	}
+	if (isTop) goToPreviousArea(scrollElement);
+	else goToNextArea(scrollElement);
 }
 function goToPreviousArea(scrollElement) {
 	const page = getCurrentPageFromScrollElement({
 		scrollElement,
 		previousMiddle: Infinity
 	});
-	if (!page || !scrollElement) {
-		return;
-	}
+	if (!page || !scrollElement) return;
 	const { height: viewerHeight, top: viewerTop } = scrollElement.getBoundingClientRect();
 	const ignorableHeight = viewerHeight * .05;
 	const { top: pageTop } = page.getBoundingClientRect();
@@ -932,18 +853,14 @@ function goToPreviousArea(scrollElement) {
 		const divisor = Math.ceil(remainingHeight / viewerHeight);
 		const yDiff = -Math.ceil(remainingHeight / divisor);
 		scrollElement.scrollBy({ top: yDiff });
-	} else {
-		goToPreviousRow(page);
-	}
+	} else goToPreviousRow(page);
 }
 function goToNextArea(scrollElement) {
 	const page = getCurrentPageFromScrollElement({
 		scrollElement,
 		previousMiddle: 0
 	});
-	if (!page || !scrollElement) {
-		return;
-	}
+	if (!page || !scrollElement) return;
 	const { height: viewerHeight, bottom: viewerBottom } = scrollElement.getBoundingClientRect();
 	const ignorableHeight = viewerHeight * .05;
 	const { bottom: pageBottom } = page.getBoundingClientRect();
@@ -953,23 +870,15 @@ function goToNextArea(scrollElement) {
 		const divisor = Math.ceil(remainingHeight / viewerHeight);
 		const yDiff = Math.ceil(remainingHeight / divisor);
 		scrollElement.scrollBy({ top: yDiff });
-	} else {
-		goToNextRow(page);
-	}
+	} else goToNextRow(page);
 }
 function toWindowScroll({ middle, lastMiddle, noSyncScroll, forFullscreen, scrollElement }) {
-	if (noSyncScroll || !forFullscreen && !hasNoticeableDifference(middle, lastMiddle)) {
-		return;
-	}
+	if (noSyncScroll || !forFullscreen && !hasNoticeableDifference(middle, lastMiddle)) return;
 	const page = getScrollPage(middle, scrollElement);
 	const src = page?.querySelector("img[src], video[src]")?.src;
-	if (!src) {
-		return;
-	}
+	if (!src) return;
 	const original = findOriginElement(src, page);
-	if (!original) {
-		return;
-	}
+	if (!original) return;
 	const rect = original.getBoundingClientRect();
 	const ratio = middle - Math.floor(middle);
 	const top = scrollY + rect.y + rect.height * ratio - innerHeight / 2;
@@ -977,9 +886,7 @@ function toWindowScroll({ middle, lastMiddle, noSyncScroll, forFullscreen, scrol
 }
 function getYDifferenceFromPrevious({ scrollable, middle }) {
 	const page = getScrollPage(middle, scrollable);
-	if (!page || !scrollable || scrollable.clientHeight < 1) {
-		return;
-	}
+	if (!page || !scrollable || scrollable.clientHeight < 1) return;
 	const { height: scrollableHeight } = scrollable.getBoundingClientRect();
 	const { y: pageY, height: pageHeight } = page.getBoundingClientRect();
 	const ratio = middle - Math.floor(middle);
@@ -988,29 +895,23 @@ function getYDifferenceFromPrevious({ scrollable, middle }) {
 }
 function getAbovePageIndex(scrollElement) {
 	const children = getPagesFromScrollElement(scrollElement);
-	if (!children || !scrollElement) {
-		return;
-	}
+	if (!children || !scrollElement) return;
 	const elements = [...children];
 	const currentRow = getCurrentRow({
 		elements,
 		viewportHeight: scrollElement.clientHeight
 	});
 	const firstPage = currentRow?.[0]?.page;
-	return firstPage ? elements.indexOf(firstPage) : undefined;
+	return firstPage ? elements.indexOf(firstPage) : void 0;
 }
 function findOriginElement(src, page) {
 	const fileName = src.split("/").pop()?.split("?")[0];
 	const candidates = document.querySelectorAll(`img[src*="${fileName}"], video[src*="${fileName}"]`);
 	const originals = [...candidates].filter((media) => media.src === src && media.parentElement !== page && isVisible(media));
-	if (originals.length === 1) {
-		return originals[0];
-	}
+	if (originals.length === 1) return originals[0];
 	const links = document.querySelectorAll(`a[href*="${fileName}"`);
 	const visibleLinks = [...links].filter(isVisible);
-	if (visibleLinks.length === 1) {
-		return visibleLinks[0];
-	}
+	if (visibleLinks.length === 1) return visibleLinks[0];
 }
 function goToNextRow(currentPage) {
 	const epsilon = .01;
@@ -1059,14 +960,12 @@ function getCurrentPageFromScrollElement({ scrollElement, previousMiddle }) {
 		scrollElement,
 		previousMiddle
 	});
-	if (!middle || !scrollElement) {
-		return null;
-	}
+	if (!middle || !scrollElement) return null;
 	return getScrollPage(middle, scrollElement);
 }
 function getPageScroll(params) {
 	const currentPage = getCurrentPageFromElements(params);
-	return currentPage ? getMiddle(currentPage) : undefined;
+	return currentPage ? getMiddle(currentPage) : void 0;
 	function getMiddle(page) {
 		const { viewportHeight, elements } = params;
 		const ratio = getInPageRatio({
@@ -1081,27 +980,17 @@ function getCurrentPageFromElements({ elements, viewportHeight, previousMiddle }
 		elements,
 		viewportHeight
 	});
-	if (!currentRow) {
-		return;
-	}
+	if (!currentRow) return;
 	return selectColumn(currentRow);
 	function selectColumn(row) {
 		const firstPage = row.find(({ page: page$1 }) => page$1 === elements[0]);
-		if (firstPage) {
-			return firstPage;
-		}
+		if (firstPage) return firstPage;
 		const lastPage = row.find(({ page: page$1 }) => page$1 === elements.at(-1));
-		if (lastPage) {
-			return lastPage;
-		}
+		if (lastPage) return lastPage;
 		const half = Math.floor(row.length / 2);
-		if (row.length % 2 === 1) {
-			return row[half];
-		}
+		if (row.length % 2 === 1) return row[half];
 		const page = row[half]?.page;
-		if (!page) {
-			return;
-		}
+		if (!page) return;
 		const centerNextTop = elements.indexOf(page);
 		const previousMiddlePage = previousMiddle < centerNextTop ? row[half - 1] : row[half];
 		return previousMiddlePage;
@@ -1111,14 +1000,10 @@ function getPagesFromScrollElement(scrollElement) {
 	return scrollElement?.firstElementChild?.children;
 }
 function toViewerScroll({ scrollable, lastWindowToViewerMiddle, noSyncScroll }) {
-	if (!scrollable || noSyncScroll) {
-		return;
-	}
+	if (!scrollable || noSyncScroll) return;
 	const viewerMedia = [...scrollable.querySelectorAll("img[src], video[src]")];
 	const urlToViewerPages = new Map();
-	for (const media$1 of viewerMedia) {
-		urlToViewerPages.set(media$1.src, media$1);
-	}
+	for (const media$1 of viewerMedia) urlToViewerPages.set(media$1.src, media$1);
 	const urls = [...urlToViewerPages.keys()];
 	const media = getUrlMedia(urls);
 	const siteMedia = media.filter((medium) => !viewerMedia.includes(medium));
@@ -1128,24 +1013,18 @@ function toViewerScroll({ scrollable, lastWindowToViewerMiddle, noSyncScroll }) 
 		elements: visibleMedia,
 		viewportHeight
 	});
-	if (!currentRow) {
-		return;
-	}
+	if (!currentRow) return;
 	const indexed = currentRow.map((sized) => [sized, getUrlIndex(sized.page, urls)]);
 	const last = lastWindowToViewerMiddle - .5;
 	const sorted = indexed.sort((a, b) => Math.abs(a[1] - last) - Math.abs(b[1] - last));
 	const [page, index] = sorted[0] ?? [];
-	if (!page || index === undefined) {
-		return;
-	}
+	if (!page || index === void 0) return;
 	const pageRatio = getInPageRatio({
 		page,
 		viewportHeight
 	});
 	const snappedRatio = Math.abs(pageRatio - .5) < .1 ? .5 : pageRatio;
-	if (!hasNoticeableDifference(index + snappedRatio, lastWindowToViewerMiddle)) {
-		return;
-	}
+	if (!hasNoticeableDifference(index + snappedRatio, lastWindowToViewerMiddle)) return;
 	return index + snappedRatio;
 }
 function getUrlMedia(urls) {
@@ -1170,9 +1049,7 @@ function getUrlIndex(medium, urls) {
 function getUrlIndexFromSrcset(media, urls) {
 	for (const url of getUrlsFromSources(media)) {
 		const index = urls.findIndex((x) => x === url);
-		if (index !== -1) {
-			return index;
-		}
+		if (index !== -1) return index;
 	}
 	return -1;
 }
@@ -1181,7 +1058,7 @@ function getUrlsFromSources(picture) {
 	return sources.flatMap((x) => getSrcFromSrcset(x.srcset));
 }
 function getSrcFromSrcset(srcset) {
-	return srcset.split(",").map((x) => x.split(/\s+/)[0]).filter((x) => x !== undefined);
+	return srcset.split(",").map((x) => x.split(/\s+/)[0]).filter((x) => x !== void 0);
 }
 const scrollElementStateAtom = (0, jotai.atom)(null);
 const scrollElementAtom = (0, jotai.atom)((get) => get(scrollElementStateAtom)?.div ?? null);
@@ -1202,9 +1079,7 @@ const transferWindowScrollToViewerAtom = (0, jotai.atom)(null, (get, set) => {
 		lastWindowToViewerMiddle,
 		noSyncScroll
 	});
-	if (!middle) {
-		return;
-	}
+	if (!middle) return;
 	set(pageScrollMiddleAtom, middle);
 	set(lastWindowToViewerMiddleAtom, middle);
 });
@@ -1220,7 +1095,7 @@ const transferViewerScrollToWindowAtom = (0, jotai.atom)(null, (get, set, { forF
 		noSyncScroll,
 		forFullscreen
 	});
-	if (top !== undefined) {
+	if (top !== void 0) {
 		set(lastViewerToWindowMiddleAtom, middle);
 		scroll({
 			behavior: "instant",
@@ -1230,12 +1105,8 @@ const transferViewerScrollToWindowAtom = (0, jotai.atom)(null, (get, set, { forF
 });
 const synchronizeScrollAtom = (0, jotai.atom)(null, (get, set) => {
 	const scrollElement = get(scrollElementAtom);
-	if (!scrollElement) {
-		return;
-	}
-	if (set(correctScrollAtom)) {
-		return;
-	}
+	if (!scrollElement) return;
+	if (set(correctScrollAtom)) return;
 	const middle = getCurrentMiddleFromScrollElement({
 		scrollElement,
 		previousMiddle: get(pageScrollMiddleAtom)
@@ -1252,9 +1123,7 @@ const correctScrollAtom = (0, jotai.atom)(null, (get, set) => {
 		scrollElement,
 		previousSize
 	});
-	if (!newSize) {
-		return false;
-	}
+	if (!newSize) return false;
 	set(scrollElementSizeAtom, newSize);
 	set(restoreScrollAtom);
 	return true;
@@ -1290,18 +1159,14 @@ const singlePageCountAtom = (0, jotai.atom)((get) => get(singlePageCountStorageA
 			scrollable: scrollElement,
 			middle
 		});
-		if (yDifference != null) {
-			scrollElement?.scrollBy({ top: yDifference });
-		}
+		if (yDifference != null) scrollElement?.scrollBy({ top: yDifference });
 		set(pageScrollMiddleAtom, middle);
 	} });
 });
 const anchorSinglePageCountAtom = (0, jotai.atom)(null, (get, set) => {
 	const scrollElement = get(scrollElementAtom);
 	const abovePageIndex = getAbovePageIndex(scrollElement);
-	if (abovePageIndex !== undefined) {
-		set(singlePageCountAtom, abovePageIndex);
-	}
+	if (abovePageIndex !== void 0) set(singlePageCountAtom, abovePageIndex);
 });
 
 const maxSizeStateAtom = (0, jotai.atom)({
@@ -1310,9 +1175,7 @@ const maxSizeStateAtom = (0, jotai.atom)({
 });
 const maxSizeAtom = (0, jotai.atom)((get) => get(maxSizeStateAtom), (get, set, size) => {
 	const current = get(maxSizeStateAtom);
-	if (size.width <= current.width && size.height <= current.height) {
-		return;
-	}
+	if (size.width <= current.width && size.height <= current.height) return;
 	set(maxSizeStateAtom, {
 		width: Math.max(size.width, current.width),
 		height: Math.max(size.height, current.height)
@@ -1322,30 +1185,20 @@ const mediaSourcesAtom = (0, jotai.atom)([]);
 const pageAtomsAtom = (0, jotai.atom)([]);
 const refreshMediaSourceAtom = (0, jotai.atom)(null, async (get, set, params) => {
 	const { source } = get(viewerOptionsAtom);
-	if (!source) {
-		return;
-	}
+	if (!source) return;
 	const medias = await source({
 		...params,
 		maxSize: get(maxSizeAtom)
 	});
-	if (source !== get(viewerOptionsAtom).source) {
-		return;
-	}
-	if (!Array.isArray(medias)) {
-		throw new Error(`Invalid comic source type: ${typeof medias}`);
-	}
+	if (source !== get(viewerOptionsAtom).source) return;
+	if (!Array.isArray(medias)) throw new Error(`Invalid comic source type: ${typeof medias}`);
 	set(mediaSourcesAtom, medias);
-	if (params.cause === "load" && params.page === undefined) {
-		set(pageAtomsAtom, medias.map((media, index) => createPageAtom({
-			initialSource: media,
-			index,
-			set
-		})));
-	}
-	if (params.page !== undefined) {
-		return medias[params.page];
-	}
+	if (params.cause === "load" && params.page === void 0) set(pageAtomsAtom, medias.map((media, index) => createPageAtom({
+		initialSource: media,
+		index,
+		set
+	})));
+	if (params.page !== void 0) return medias[params.page];
 });
 function createPageAtom(params) {
 	const { initialSource, index, set } = params;
@@ -1353,7 +1206,7 @@ function createPageAtom(params) {
 	let div = null;
 	const stateAtom = (0, jotai.atom)({
 		status: "loading",
-		source: initialSource ? toAdvancedObject(initialSource) : { src: undefined }
+		source: initialSource ? toAdvancedObject(initialSource) : { src: void 0 }
 	});
 	const loadAtom = (0, jotai.atom)(null, async (get, set$1, cause) => {
 		switch (cause) {
@@ -1362,9 +1215,7 @@ function createPageAtom(params) {
 				break;
 			case "error": break;
 		}
-		if (isComplete()) {
-			return;
-		}
+		if (isComplete()) return;
 		let newSource;
 		try {
 			newSource = await set$1(refreshMediaSourceAtom, {
@@ -1380,14 +1231,12 @@ function createPageAtom(params) {
 			}));
 			return;
 		}
-		if (isComplete()) {
-			return;
-		}
+		if (isComplete()) return;
 		if (isDelay(newSource)) {
 			set$1(stateAtom, {
 				status: "error",
 				urls: [],
-				source: { src: undefined }
+				source: { src: void 0 }
 			});
 			return;
 		}
@@ -1448,7 +1297,7 @@ function createPageAtom(params) {
 			imageProps: state.source && state.source.type !== "video" ? {
 				...mediaProps,
 				onLoad: setCompleteState
-			} : undefined,
+			} : void 0,
 			videoProps: state.source?.type === "video" ? {
 				...mediaProps,
 				controls: true,
@@ -1456,7 +1305,7 @@ function createPageAtom(params) {
 				loop: true,
 				muted: true,
 				onLoadedMetadata: setCompleteState
-			} : undefined
+			} : void 0
 		};
 		return page;
 	});
@@ -1479,7 +1328,7 @@ function createPageAtom(params) {
 			status: "loading",
 			source: {
 				...previous.source,
-				src: undefined
+				src: void 0
 			}
 		}));
 		await set(loadAtom, "error");
@@ -1502,15 +1351,11 @@ function createPageAtom(params) {
 			}
 		});
 	}
-	if (isDelay(initialSource)) {
-		set(loadAtom, "load");
-	}
+	if (isDelay(initialSource)) set(loadAtom, "load");
 	return aggregateAtom;
 }
 function getImageToViewerSizeRatio({ viewerSize, imgSize }) {
-	if (!imgSize.height && !imgSize.width) {
-		return 1;
-	}
+	if (!imgSize.height && !imgSize.width) return 1;
 	return Math.max((imgSize.height ?? 0) / viewerSize.height, (imgSize.width ?? 0) / viewerSize.width);
 }
 function shouldMediaBeOriginalSize({ maxZoomOutExponent, maxZoomInExponent, mediaRatio }) {
@@ -1529,17 +1374,13 @@ const setViewerImmersiveAtom = (0, jotai.atom)(null, async (get, set, value) => 
 	}
 });
 async function transactImmersive(get, set, value) {
-	if (get(isViewerImmersiveAtom) === value) {
-		return;
-	}
+	if (get(isViewerImmersiveAtom) === value) return;
 	if (value) {
 		set(externalFocusElementAtom, (previous) => previous ? previous : document.activeElement);
 		set(transferWindowScrollToViewerAtom);
 	}
 	const scrollable = get(scrollElementAtom);
-	if (!scrollable) {
-		return;
-	}
+	if (!scrollable) return;
 	const { fullscreenElement } = get(scrollBarStyleFactorAtom);
 	try {
 		if (get(isFullscreenPreferredAtom)) {
@@ -1554,12 +1395,9 @@ async function transactImmersive(get, set, value) {
 		}
 	} finally {
 		set(scrollBarStyleFactorAtom, { isImmersive: value });
-		if (value) {
-			focusWithoutScroll(scrollable);
-		} else {
-			if (fullscreenElement) {
-				set(transferViewerScrollToWindowAtom, { forFullscreen: true });
-			}
+		if (value) focusWithoutScroll(scrollable);
+		else {
+			if (fullscreenElement) set(transferViewerScrollToWindowAtom, { forFullscreen: true });
 			const externalFocusElement = get(externalFocusElementAtom);
 			focusWithoutScroll(externalFocusElement);
 		}
@@ -1595,7 +1433,7 @@ const fullscreenSynchronizationAtom = (0, jotai.atom)((get) => {
 	const shouldExitImmersive = isFullscreenPreferred && isViewerFullscreenExit && !isNavigationExit;
 	set(scrollBarStyleFactorAtom, {
 		fullscreenElement: element,
-		isImmersive: shouldExitImmersive ? false : undefined
+		isImmersive: shouldExitImmersive ? false : void 0
 	});
 });
 fullscreenSynchronizationAtom.onMount = (set) => {
@@ -1616,9 +1454,7 @@ const setViewerOptionsAtom = (0, jotai.atom)(null, async (get, set, options) => 
 		const { source } = options;
 		const previousOptions = get(viewerOptionsAtom);
 		const shouldLoadSource = source && source !== previousOptions.source;
-		if (!shouldLoadSource) {
-			return;
-		}
+		if (!shouldLoadSource) return;
 		set(viewerStatusAtom, (previous) => previous === "complete" ? "complete" : "loading");
 		set(viewerOptionsAtom, options);
 		await set(refreshMediaSourceAtom, { cause: "load" });
@@ -1630,11 +1466,7 @@ const setViewerOptionsAtom = (0, jotai.atom)(null, async (get, set, options) => 
 });
 const reloadErroredAtom = (0, jotai.atom)(null, (get, set) => {
 	stop();
-	for (const page of get(pageAtomsAtom).map(get)) {
-		if (page.state.status !== "complete") {
-			set(page.reloadAtom, "load");
-		}
-	}
+	for (const page of get(pageAtomsAtom).map(get)) if (page.state.status !== "complete") set(page.reloadAtom, "load");
 });
 const toggleImmersiveAtom = (0, jotai.atom)(null, async (get, set) => {
 	const hasPermissionIssue = get(viewerModeAtom) === "window" && get(isFullscreenPreferredAtom);
@@ -1646,14 +1478,10 @@ const toggleImmersiveAtom = (0, jotai.atom)(null, async (get, set) => {
 });
 const toggleFullscreenAtom = (0, jotai.atom)(null, async (get, set) => {
 	set(isFullscreenPreferredSettingsAtom, !get(isFullscreenPreferredSettingsAtom));
-	if (get(viewerModeAtom) === "normal") {
-		await set(setViewerImmersiveAtom, true);
-	}
+	if (get(viewerModeAtom) === "normal") await set(setViewerImmersiveAtom, true);
 });
 const blockSelectionAtom = (0, jotai.atom)(null, (_get, set, event) => {
-	if (event.detail >= 2) {
-		event.preventDefault();
-	}
+	if (event.detail >= 2) event.preventDefault();
 	if (event.buttons === 3) {
 		set(toggleImmersiveAtom);
 		event.preventDefault();
@@ -1661,9 +1489,7 @@ const blockSelectionAtom = (0, jotai.atom)(null, (_get, set, event) => {
 });
 
 async function waitUnloadFinishRoughly() {
-	for (let i = 0; i < 5; i++) {
-		await timeout(100);
-	}
+	for (let i = 0; i < 5; i++) await timeout(100);
 }
 function shouldShowF11Guide({ noticeCount }) {
 	const isUserFullscreen = innerHeight === screen.height || innerWidth === screen.width;
@@ -1672,9 +1498,7 @@ function shouldShowF11Guide({ noticeCount }) {
 const controllerPrimitiveAtom = (0, jotai.atom)(null);
 const controllerAtom = (0, jotai.atom)((get) => get(controllerPrimitiveAtom), (get, set) => {
 	const existing = get(controllerPrimitiveAtom);
-	if (existing) {
-		return existing;
-	}
+	if (existing) return existing;
 	const controller = new Controller(get, set);
 	set(controllerPrimitiveAtom, controller);
 	return controller;
@@ -1707,7 +1531,7 @@ const effectivePreferencesAtom = (0, jotai.atom)((get) => ({
 		]);
 	}
 	function updateIfDefined(atom$2, value) {
-		return value !== undefined ? set(atom$2, value) : Promise.resolve();
+		return value !== void 0 ? set(atom$2, value) : Promise.resolve();
 	}
 });
 var Controller = class {
@@ -1766,12 +1590,8 @@ var Controller = class {
 		return this.set(effectivePreferencesAtom, value);
 	};
 	setScriptPreferences = ({ manualPreset, preferences }) => {
-		if (manualPreset) {
-			this.set(preferencesPresetAtom, manualPreset);
-		}
-		if (preferences) {
-			this.set(scriptPreferencesAtom, preferences);
-		}
+		if (manualPreset) this.set(preferencesPresetAtom, manualPreset);
+		if (preferences) this.set(scriptPreferencesAtom, preferences);
 	};
 	setImmersive = (value) => {
 		return this.set(setViewerImmersiveAtom, value);
@@ -1792,9 +1612,7 @@ var Controller = class {
 		return this.get(rootAtom)?.unmount();
 	};
 	defaultElementKeyHandler = (event) => {
-		if (maybeNotHotkey(event)) {
-			return false;
-		}
+		if (maybeNotHotkey(event)) return false;
 		const isHandled = this.handleElementKey(event);
 		if (isHandled) {
 			event.stopPropagation();
@@ -1803,19 +1621,14 @@ var Controller = class {
 		return isHandled;
 	};
 	defaultGlobalKeyHandler = (event) => {
-		if (maybeNotHotkey(event)) {
-			return false;
-		}
+		if (maybeNotHotkey(event)) return false;
 		if ([
 			"KeyI",
 			"Numpad0",
 			"Enter"
 		].includes(event.code)) {
-			if (event.shiftKey) {
-				this.toggleFullscreen();
-			} else {
-				this.toggleImmersive();
-			}
+			if (event.shiftKey) this.toggleFullscreen();
+			else this.toggleImmersive();
 			return true;
 		}
 		return false;
@@ -1850,10 +1663,10 @@ var Controller = class {
 				this.downloader?.downloadAndSave();
 				return true;
 			case "Comma":
-				void this.addSinglePageCount(-1);
+				this.addSinglePageCount(-1);
 				return true;
 			case "Period":
-				void this.addSinglePageCount(1);
+				this.addSinglePageCount(1);
 				return true;
 			case "Slash":
 				this.set(anchorSinglePageCountAtom);
@@ -1877,9 +1690,7 @@ function maybeNotHotkey(event) {
 }
 const setScrollElementAtom = (0, jotai.atom)(null, async (get, set, div) => {
 	const previous = get(scrollElementStateAtom);
-	if (previous?.div === div) {
-		return;
-	}
+	if (previous?.div === div) return;
 	previous?.resizeObserver.disconnect();
 	if (div === null) {
 		set(scrollElementStateAtom, null);
@@ -1897,11 +1708,8 @@ const setScrollElementAtom = (0, jotai.atom)(null, async (get, set, div) => {
 	function navigateWithWheel(event) {
 		const unit = event.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? 10 : 1;
 		const diff = event.deltaY / unit;
-		if (diff >= 1) {
-			set(goNextAtom);
-		} else if (diff <= -1) {
-			set(goPreviousAtom);
-		}
+		if (diff >= 1) set(goNextAtom);
+		else if (diff <= -1) set(goPreviousAtom);
 		event.preventDefault();
 		event.stopPropagation();
 	}
@@ -2551,9 +2359,7 @@ function useHorizontalSwipe({ element, onPrevious, onNext }) {
 			lastX = continuedTouch.clientX;
 			const horizontalOffset = Math.abs(continuedTouch.clientX - startTouch.x);
 			const verticalOffset = Math.abs(continuedTouch.clientY - startTouch.y);
-			if (horizontalOffset > verticalOffset) {
-				event.preventDefault();
-			}
+			if (horizontalOffset > verticalOffset) event.preventDefault();
 		};
 		const resetSwipeRatioIfReleased = (event) => {
 			const continuedTouch = [...event.touches].find((touch) => touch.identifier === startTouch?.identifier);
@@ -2562,11 +2368,8 @@ function useHorizontalSwipe({ element, onPrevious, onNext }) {
 				resetTouch();
 				return;
 			}
-			if (lastRatio > 0) {
-				onPrevious?.();
-			} else {
-				onNext?.();
-			}
+			if (lastRatio > 0) onPrevious?.();
+			else onNext?.();
 			resetTouch();
 		};
 		function resetTouch() {
@@ -2702,17 +2505,13 @@ function InnerViewer(props) {
 		await setScrollElement(virtualContainerRef.current?.querySelector(selector));
 	}
 	(0, react.useEffect)(() => {
-		if (controller) {
-			onInitialized?.(controller);
-		}
+		if (controller) onInitialized?.(controller);
 	}, [controller, onInitialized]);
 	(0, react.useEffect)(() => {
 		setViewerOptions(options);
 	}, [options]);
 	(0, react.useEffect)(() => {
-		if (virtualContainer) {
-			initialize$1(virtualContainer);
-		}
+		if (virtualContainer) initialize$1(virtualContainer);
 	}, [initialize$1, virtualContainer]);
 	return  (0, react_jsx_runtime.jsxs)(Container, {
 		ref: (0, jotai.useSetAtom)(setViewerElementAtom),

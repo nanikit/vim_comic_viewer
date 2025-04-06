@@ -12,6 +12,5 @@ export default defineConfig({
     vcvInject: "vcv-inject-node-env",
   },
   external: ["vcv-inject-node-env"],
-  treeshake: false,
   plugins: [userscriptLinkPlugin(), denoVitePlugin() as RolldownPluginOption],
 });
