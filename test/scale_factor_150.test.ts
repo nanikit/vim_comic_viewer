@@ -1,12 +1,17 @@
 import { assertEquals } from "jsr:@std/assert";
 import { delay } from "jsr:@std/async/delay";
+import { pooledMap } from "jsr:@std/async/pool";
+import { expandGlob } from "jsr:@std/fs/expand-glob";
 import puppeteer from "npm:puppeteer";
 import { assertPixelsEqual, runTestHttpServer } from "./helpers.ts";
 
 Deno.test("With test page", async (test) => {
   const server = runTestHttpServer();
 
-  const headless = true;
+  const files = expandGlob("test/failure/*.webp");
+  await Array.fromAsync(pooledMap(99, files, (file) => Deno.remove(file.path)));
+
+  const headless = Deno.env.get("HEADED") ? false : true;
   const browser = await puppeteer.launch({
     headless,
     args: [
