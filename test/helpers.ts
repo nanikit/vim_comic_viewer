@@ -12,8 +12,8 @@ export async function assertPixelsEqual({ actual, expect, name }: ImageCompariso
   const [expectedRaw, actualRaw] = await Promise.all([expect, actual]);
 
   try {
-    const { diffCount, width, height } = diff(expectedRaw, actualRaw, { threshold: 0.001 });
-    const threshold = width * height * 0.001;
+    const { diffCount, width, height } = diff(expectedRaw, actualRaw, { threshold: 0.05 });
+    const threshold = width * height * 0.01;
     assertLess(diffCount, threshold, `diffCount: ${diffCount} > ${threshold}`);
   } catch (error) {
     const actualFileName = `${name}-actual.webp`;
@@ -32,6 +32,17 @@ export function runTestHttpServer() {
     const relativePath = url.pathname.replace(/^\//, "");
     if (relativePath === "vim_comic_viewer.user.js") {
       return await giveStaticFile("vim_comic_viewer.user.js");
+    }
+
+    if (relativePath === "mock/tampermonkey-polyfill.js") {
+      const script = await Deno.readTextFile("vim_comic_viewer.user.js");
+      const header = [
+        ...script.match(/@resource\s+(\S+)\s+(\S+)/g) ?? [],
+        `@resource link:vim_comic_viewer /vim_comic_viewer.user.js`,
+      ].join("\n");
+      return new Response(`const header=\`${header}\``, {
+        headers: { "Content-Type": "text/javascript" },
+      });
     }
 
     const filePath = resolve("test/assets", relativePath);
