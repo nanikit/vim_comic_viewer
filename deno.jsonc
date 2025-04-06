@@ -19,8 +19,11 @@
   },
   "tasks": {
     "hooks:install": "deno run --allow-read=deno.json,deno.jsonc,.git/hooks/ --allow-write=.git/hooks/ jsr:@hongminhee/deno-task-hooks",
-    "hooks:pre-commit": "deno task check",
-    "check": "deno fmt --check && deno lint && deno check src/mod.tsx",
+    "hooks:pre-commit": "deno task check:all",
+    "check:all": { "dependencies": ["fmt", "lint", "check"] },
+    "fmt": "deno fmt --check",
+    "lint": "deno lint",
+    "check": "deno check src/mod.tsx",
     "build": "deno run --allow-all npm:rolldown --config rolldown.config.mts",
     "watch": "deno run --allow-all npm:rolldown --config rolldown.config.mts --watch",
     "test": {
