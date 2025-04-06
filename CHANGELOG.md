@@ -4,6 +4,12 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+# 20.0.0
+
+- **Change build tool.**
+
+  It's now using rolldown. Output file did not change much.
+
 # 19.2.0
 
 - _Fix page skipping (maybe with hardware accelerated HiDPI)._
