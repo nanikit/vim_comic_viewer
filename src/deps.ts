@@ -49,4 +49,4 @@ export type {
 } from "react";
 
 // @deno-types="npm:@types/react-dom/client"
-export { createRoot, type Root } from "react-dom";
+export { createRoot, type Root } from "react-dom/client";
