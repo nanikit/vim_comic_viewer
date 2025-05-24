@@ -21,13 +21,13 @@ const keyBindingsAtom = atom((get) => {
     [
       strings.nextPage,
       <>
-        <kbd>j</kbd>, <kbd>↓</kbd>, <kbd>q</kbd>
+        <kbd>j</kbd>, <kbd>↓</kbd>, <kbd>q</kbd>, <kbd>PgDown</kbd>
       </>,
     ],
     [
       strings.previousPage,
       <>
-        <kbd>k</kbd>, <kbd>↑</kbd>
+        <kbd>k</kbd>, <kbd>↑</kbd>, <kbd>PgUp</kbd>
       </>,
     ],
     [strings.download, <kbd>;</kbd>],

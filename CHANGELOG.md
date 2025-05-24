@@ -4,6 +4,10 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+## 20.1.0
+
+- Add page down, page up key binding.
+
 # 20.0.0
 
 - **Change build tool.**
