@@ -6,9 +6,9 @@ tampermonkey에서 쓰려 만든 만화 뷰어 라이브러리입니다.
 
 - <kbd>i</kbd>, <kbd>Enter</kbd>, <kbd>NumPad0</kbd>: 전체 화면 전환
 
-- <kbd>j</kbd>, <kbd>↓</kbd>: 다음 페이지
+- <kbd>j</kbd>, <kbd>↓</kbd>, <kbd>q</kbd>, <kbd>PgDn</kbd>: 다음 페이지
 
-- <kbd>k</kbd>, <kbd>↑</kbd>: 이전 페이지
+- <kbd>k</kbd>, <kbd>↑</kbd>, <kbd>PgUp</kbd>: 이전 페이지
 
 - <kbd>;</kbd>: 전체 이미지 다운로드
 

@@ -244,10 +244,12 @@ class Controller {
       case "KeyJ":
       case "ArrowDown":
       case "KeyQ":
+      case "PageDown":
         this.goNext();
         return true;
       case "KeyK":
       case "ArrowUp":
+      case "PageUp":
         this.goPrevious();
         return true;
       case "KeyH":

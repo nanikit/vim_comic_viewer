@@ -47,7 +47,6 @@
     "overlayscrollbars-react": "npm:overlayscrollbars-react",
     "react-dom": "npm:react-dom",
     "react": "npm:react",
-    "react/jsx-runtime": "npm:@types/react/jsx-runtime",
     "tampermonkey": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/60ab8a805a1c5c4225027068e604ef4687cdf379/types/tampermonkey/index.d.ts",
     "react-toastify": "npm:react-toastify@10.0.5",
     "vcv-inject-node-env": "data:text/javascript,unsafeWindow.process=%7Benv:%7BNODE_ENV:%22production%22%7D%7D"

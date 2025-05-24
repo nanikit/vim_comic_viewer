@@ -7,9 +7,9 @@ Basic shortcut is
 
 - <kbd>i</kbd>, <kbd>Enter</kbd>, <kbd>NumPad0</kbd>: toggle fullscreen
 
-- <kbd>j</kbd>, <kbd>↓</kbd>: next page
+- <kbd>j</kbd>, <kbd>↓</kbd>, <kbd>q</kbd>, <kbd>PgDn</kbd>: next page
 
-- <kbd>k</kbd>, <kbd>↑</kbd>: previous page
+- <kbd>k</kbd>, <kbd>↑</kbd>, <kbd>PgUp</kbd>: previous page
 
 - <kbd>;</kbd>: download images
 

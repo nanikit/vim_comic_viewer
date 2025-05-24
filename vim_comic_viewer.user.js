@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        20.0.0
+// @version        20.1.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -1638,10 +1638,12 @@ var Controller = class {
 			case "KeyJ":
 			case "ArrowDown":
 			case "KeyQ":
+			case "PageDown":
 				this.goNext();
 				return true;
 			case "KeyK":
 			case "ArrowUp":
+			case "PageUp":
 				this.goPrevious();
 				return true;
 			case "KeyH":
@@ -1935,12 +1937,16 @@ const keyBindingsAtom = (0, jotai.atom)((get) => {
 			", ",
 			 (0, react_jsx_runtime.jsx)("kbd", { children: "↓" }),
 			", ",
-			 (0, react_jsx_runtime.jsx)("kbd", { children: "q" })
+			 (0, react_jsx_runtime.jsx)("kbd", { children: "q" }),
+			", ",
+			 (0, react_jsx_runtime.jsx)("kbd", { children: "PgDown" })
 		] })],
 		[strings.previousPage,  (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
 			 (0, react_jsx_runtime.jsx)("kbd", { children: "k" }),
 			", ",
-			 (0, react_jsx_runtime.jsx)("kbd", { children: "↑" })
+			 (0, react_jsx_runtime.jsx)("kbd", { children: "↑" }),
+			", ",
+			 (0, react_jsx_runtime.jsx)("kbd", { children: "PgUp" })
 		] })],
 		[strings.download,  (0, react_jsx_runtime.jsx)("kbd", { children: ";" })],
 		[strings.refresh,  (0, react_jsx_runtime.jsx)("kbd", { children: "'" })],
