@@ -158,7 +158,19 @@ export function createPageAtom(
     const maxZoomInExponent = get(maxZoomInExponentAtom);
     const maxZoomOutExponent = get(maxZoomOutExponentAtom);
 
-    const { src, width, height } = state.source ?? {};
+    const source = state.source;
+    const src = source && "src" in source ? source.src : undefined;
+    const width = source instanceof HTMLImageElement
+      ? source.naturalWidth
+      : source instanceof HTMLVideoElement
+      ? source.videoWidth
+      : undefined;
+    const height = source instanceof HTMLImageElement
+      ? source.naturalHeight
+      : source instanceof HTMLVideoElement
+      ? source.videoHeight
+      : undefined;
+
     const ratio = getImageToViewerSizeRatio({
       viewerSize: scrollElementSize,
       imgSize: { width, height },
@@ -194,10 +206,10 @@ export function createPageAtom(
       fullWidth: index < compactWidthIndex || canMessUpRow,
       shouldBeOriginalSize,
       divCss,
-      imageProps: state.source && state.source.type !== "video"
+      imageProps: source && source instanceof HTMLImageElement
         ? { ...mediaProps, onLoad: setCompleteState } satisfies ImageProps
         : undefined,
-      videoProps: state.source?.type === "video"
+      videoProps: source instanceof HTMLVideoElement
         ? {
           ...mediaProps,
           controls: true,
@@ -232,9 +244,9 @@ export function createPageAtom(
       return;
     }
 
-    set(stateAtom, (previous) => ({
+    set(stateAtom, () => ({
       status: "loading",
-      source: { ...previous.source, src: undefined },
+      source: { src: undefined },
     }));
     await set(loadAtom, "error");
   }
@@ -243,20 +255,7 @@ export function createPageAtom(
     const element = event.currentTarget;
     set(stateAtom, {
       status: "complete",
-      source: {
-        src: element.src,
-        ...(element instanceof HTMLImageElement
-          ? {
-            type: "image",
-            width: element.naturalWidth,
-            height: element.naturalHeight,
-          }
-          : {
-            type: "video",
-            width: element.videoWidth,
-            height: element.videoHeight,
-          }),
-      },
+      source: element,
     });
   }
 
@@ -266,7 +265,6 @@ export function createPageAtom(
 
   return aggregateAtom;
 }
-
 function getImageToViewerSizeRatio(
   { viewerSize, imgSize }: { viewerSize: Size; imgSize: Partial<Size> },
 ) {
