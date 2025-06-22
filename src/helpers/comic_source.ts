@@ -34,16 +34,11 @@ type Delay = SimpleDelay | AdvancedDelay;
 export type AdvancedObject = AdvancedSource | AdvancedDelay;
 
 type SimpleDelay = undefined;
-export type AdvancedDelay = { src: undefined } & SourceProps;
+export type AdvancedDelay = { src: undefined };
 type SimpleSource = string;
 
 /** Width and height are planned to be used for CLS prevention. */
-export type AdvancedSource = { src: string } & SourceProps;
-
-type SourceProps = Partial<Size> & {
-  /** @default "image" */
-  type?: MediaType;
-};
+export type AdvancedSource = HTMLImageElement | HTMLVideoElement;
 
 export type MediaType = "image" | "video";
 
@@ -60,8 +55,13 @@ export function toAdvancedObject(sourceOrDelay: MediaSourceOrDelay): AdvancedObj
   return isDelay(sourceOrDelay) ? { src: undefined } : toAdvancedSource(sourceOrDelay);
 }
 
-export function toAdvancedSource(source: MediaSource) {
-  return typeof source === "string" ? { type: "image", src: source } as const : source;
+export function toAdvancedSource(source: MediaSource): AdvancedSource {
+  if (typeof source === "string") {
+    const img = new Image();
+    img.src = source;
+    return img;
+  }
+  return source;
 }
 
 export async function* getMediaIterable(
@@ -104,6 +104,6 @@ export async function* getMediaIterable(
   }
 }
 
-function getUrl(source: MediaSource) {
+function getUrl(source: MediaSource): string {
   return typeof source === "string" ? source : source.src;
 }
