@@ -34,7 +34,10 @@ type Delay = undefined;
 
 type SimpleSource = string;
 
-/** Width and height are planned to be used for CLS prevention. */
+/**
+ * Width and height are planned to be used for CLS prevention.
+ * If provided element is already attached, it will be cloned.
+ */
 export type MediaElement = HTMLImageElement | HTMLVideoElement;
 
 type PromiseOrValue<T> = T | Promise<T>;
@@ -55,6 +58,10 @@ export function toMediaElement(source: MediaSourceOrDelay): MediaElement {
     const img = new Image();
     img.src = source;
     return img;
+  }
+
+  if (source.isConnected) {
+    return source.cloneNode(true) as MediaElement;
   }
 
   return source;

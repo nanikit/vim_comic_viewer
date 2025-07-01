@@ -114,12 +114,8 @@ export function createPageAtom(
   });
 
   const loadAtom = atom(null, async (get, set, cause: "load" | "error") => {
-    switch (cause) {
-      case "load":
-        triedUrls.length = 0;
-        break;
-      case "error":
-        break;
+    if (cause === "load") {
+      triedUrls.length = 0;
     }
 
     if (isComplete()) {
@@ -168,7 +164,6 @@ export function createPageAtom(
     const maxZoomOutExponent = get(maxZoomOutExponentAtom);
 
     const source = state.source;
-    const src = source && "src" in source ? source.src : undefined;
     const width = source instanceof HTMLImageElement
       ? source.naturalWidth
       : source instanceof HTMLVideoElement
@@ -193,7 +188,10 @@ export function createPageAtom(
     const isLarge = ratio > 1;
     const canMessUpRow = shouldBeOriginalSize && isLarge;
 
-    const mediaProps = { src, onError: reload };
+    const attributes = Object.fromEntries(
+      [...source.attributes].map(({ name, value }) => [name, value]),
+    );
+    const mediaProps = { ...attributes, onError: reload };
 
     const divCss = {
       ...(shouldBeOriginalSize
@@ -220,11 +218,11 @@ export function createPageAtom(
         : undefined,
       videoProps: source instanceof HTMLVideoElement
         ? {
-          ...mediaProps,
           controls: true,
           autoPlay: true,
           loop: true,
           muted: true,
+          ...mediaProps,
           onLoadedMetadata: setCompleteState,
         } satisfies VideoProps
         : undefined,
