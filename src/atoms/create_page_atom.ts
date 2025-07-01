@@ -70,7 +70,6 @@ export const maxSizeAtom = atom(
   },
 );
 
-export const mediaSourcesAtom = atom<MediaSourceOrDelay[]>([]);
 export const pageAtomsAtom = atom<Atom<PageModel>[]>([]);
 
 export const refreshMediaSourceAtom = atom(null, async (get, set, params: SourceRefreshParams) => {
@@ -88,7 +87,6 @@ export const refreshMediaSourceAtom = atom(null, async (get, set, params: Source
     throw new Error(`Invalid comic source type: ${typeof medias}`);
   }
 
-  set(mediaSourcesAtom, medias);
   if (params.cause === "load" && params.page === undefined) {
     set(
       pageAtomsAtom,
