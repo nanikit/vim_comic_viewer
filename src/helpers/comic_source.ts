@@ -46,16 +46,17 @@ export function isDelay(sourceOrDelay: MediaSourceOrDelay): sourceOrDelay is Del
   return sourceOrDelay === undefined;
 }
 
-export function toAdvancedObject(sourceOrDelay: MediaSourceOrDelay): MediaElement {
-  return isDelay(sourceOrDelay) ? new Image() : toAdvancedSource(sourceOrDelay);
-}
+export function toMediaElement(source: MediaSourceOrDelay): MediaElement {
+  if (isDelay(source)) {
+    return new Image();
+  }
 
-export function toAdvancedSource(source: MediaSource): MediaElement {
   if (typeof source === "string") {
     const img = new Image();
     img.src = source;
     return img;
   }
+
   return source;
 }
 
