@@ -11,8 +11,7 @@ import {
   type MediaElement,
   type MediaSourceOrDelay,
   type SourceRefreshParams,
-  toAdvancedObject,
-  toAdvancedSource,
+  toMediaElement,
 } from "../helpers/comic_source.ts";
 import type { Size } from "../helpers/size.ts";
 import { viewerOptionsAtom } from "./viewer_base_atoms.ts";
@@ -100,7 +99,7 @@ export function createPageAtom(
 
   const stateAtom = atom<PageState>({
     status: "loading",
-    source: initialSource ? toAdvancedObject(initialSource) : new Image(),
+    source: toMediaElement(initialSource),
   });
 
   const loadAtom = atom(null, async (get, set, cause: "load" | "error") => {
@@ -139,7 +138,7 @@ export function createPageAtom(
       return;
     }
 
-    const source = toAdvancedSource(newSource);
+    const source = toMediaElement(newSource);
     triedUrls.push(source.src);
     set(stateAtom, { status: "loading", source });
 
