@@ -1,10 +1,14 @@
+import { MediaElement } from "../../../helpers/comic_source.ts";
 import { getCurrentRow, getInPageRatio, hasNoticeableDifference, isVisible } from "./common.ts";
 
-export function toViewerScroll({ scrollable, lastWindowToViewerMiddle, noSyncScroll }: {
-  scrollable: HTMLDivElement | null;
-  lastWindowToViewerMiddle: number;
-  noSyncScroll: boolean;
-}) {
+export function toViewerScroll(
+  { scrollable, lastWindowToViewerMiddle, noSyncScroll, mediaElements }: {
+    scrollable: HTMLDivElement | null;
+    lastWindowToViewerMiddle: number;
+    noSyncScroll: boolean;
+    mediaElements: MediaElement[];
+  },
+) {
   if (!scrollable || noSyncScroll) {
     return;
   }
@@ -19,12 +23,14 @@ export function toViewerScroll({ scrollable, lastWindowToViewerMiddle, noSyncScr
   }
 
   const urls = [...urlToViewerPages.keys()];
-  const media = getUrlMedia(urls);
-  const siteMedia = media.filter((medium) => !viewerMedia.includes(medium as HTMLImageElement));
-  const visibleMedia = siteMedia.filter(isVisible);
+  const media = [...new Set([...getUrlMedia(urls), ...mediaElements])];
+  const visibleSiteMedia = media.filter(
+    (medium: MediaElement) =>
+      !viewerMedia.includes(medium as HTMLImageElement) && isVisible(medium),
+  );
 
   const viewportHeight = visualViewport?.height ?? innerHeight;
-  const currentRow = getCurrentRow({ elements: visibleMedia, viewportHeight });
+  const currentRow = getCurrentRow({ elements: visibleSiteMedia, viewportHeight });
   if (!currentRow) {
     return;
   }
