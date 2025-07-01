@@ -21,6 +21,7 @@ export type PageModel = {
   state: PageState;
   div: HTMLDivElement | null;
   setDiv: (newDiv: HTMLDivElement | null) => void;
+  sourceElement: MediaElement | null;
   reloadAtom: ReturnType<typeof atom<null, [cause: "load" | "error"], Promise<void>>>;
   fullWidth: boolean;
   shouldBeOriginalSize: boolean;
@@ -207,6 +208,7 @@ export function createPageAtom(
       setDiv: (newDiv: HTMLDivElement | null) => {
         div = newDiv;
       },
+      sourceElement: initialSource instanceof HTMLElement ? initialSource : null,
       reloadAtom: loadAtom,
       fullWidth: index < compactWidthIndex || canMessUpRow,
       shouldBeOriginalSize,

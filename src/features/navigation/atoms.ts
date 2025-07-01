@@ -1,3 +1,4 @@
+import { pageAtomsAtom } from "../../atoms/create_page_atom.ts";
 import { viewerOptionsAtom } from "../../atoms/viewer_base_atoms.ts";
 import { atom, RESET } from "../../deps.ts";
 import { beforeRepaintAtom } from "../../modules/use_before_repaint.ts";
@@ -32,8 +33,16 @@ export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   const scrollable = get(scrollElementAtom);
   const lastWindowToViewerMiddle = get(lastWindowToViewerMiddleAtom);
   const noSyncScroll = get(viewerOptionsAtom).noSyncScroll ?? false;
+  const mediaElements = get(pageAtomsAtom).map((atom) => get(atom).sourceElement).filter((x) =>
+    x !== null
+  );
 
-  const middle = toViewerScroll({ scrollable, lastWindowToViewerMiddle, noSyncScroll });
+  const middle = toViewerScroll({
+    scrollable,
+    lastWindowToViewerMiddle,
+    noSyncScroll,
+    mediaElements,
+  });
   if (!middle) {
     return;
   }
