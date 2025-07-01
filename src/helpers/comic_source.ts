@@ -25,22 +25,17 @@ export type ComicSourceParams = SourceRefreshParams & {
   maxSize: Size;
 };
 
-/** `undefined` and `{ src: undefined }` means delay the source loading. Viewer will request source again. */
+/** `undefined` means delay the source loading. Viewer will request source again. */
 export type MediaSourceOrDelay = MediaSource | Delay;
 
 /** Provided remote image. */
-export type MediaSource = SimpleSource | AdvancedSource;
-type Delay = SimpleDelay | AdvancedDelay;
-export type AdvancedObject = AdvancedSource | AdvancedDelay;
+export type MediaSource = SimpleSource | MediaElement;
+type Delay = undefined;
 
-type SimpleDelay = undefined;
-export type AdvancedDelay = { src: undefined };
 type SimpleSource = string;
 
 /** Width and height are planned to be used for CLS prevention. */
-export type AdvancedSource = HTMLImageElement | HTMLVideoElement;
-
-export type MediaType = "image" | "video";
+export type MediaElement = HTMLImageElement | HTMLVideoElement;
 
 type PromiseOrValue<T> = T | Promise<T>;
 
@@ -48,14 +43,14 @@ export const MAX_RETRY_COUNT = 6;
 export const MAX_SAME_URL_RETRY_COUNT = 2;
 
 export function isDelay(sourceOrDelay: MediaSourceOrDelay): sourceOrDelay is Delay {
-  return sourceOrDelay === undefined || (typeof sourceOrDelay !== "string" && !sourceOrDelay.src);
+  return sourceOrDelay === undefined;
 }
 
-export function toAdvancedObject(sourceOrDelay: MediaSourceOrDelay): AdvancedObject {
-  return isDelay(sourceOrDelay) ? { src: undefined } : toAdvancedSource(sourceOrDelay);
+export function toAdvancedObject(sourceOrDelay: MediaSourceOrDelay): MediaElement {
+  return isDelay(sourceOrDelay) ? new Image() : toAdvancedSource(sourceOrDelay);
 }
 
-export function toAdvancedSource(source: MediaSource): AdvancedSource {
+export function toAdvancedSource(source: MediaSource): MediaElement {
   if (typeof source === "string") {
     const img = new Image();
     img.src = source;

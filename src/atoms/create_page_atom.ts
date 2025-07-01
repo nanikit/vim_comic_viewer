@@ -5,11 +5,10 @@ import { atom } from "../deps.ts";
 import { scrollElementSizeAtom, singlePageCountAtom } from "../features/navigation/atoms.ts";
 import { maxZoomInExponentAtom, maxZoomOutExponentAtom } from "../features/preferences/atoms.ts";
 import {
-  type AdvancedObject,
-  type AdvancedSource,
   isDelay,
   MAX_RETRY_COUNT,
   MAX_SAME_URL_RETRY_COUNT,
+  type MediaElement,
   type MediaSourceOrDelay,
   type SourceRefreshParams,
   toAdvancedObject,
@@ -22,7 +21,7 @@ export type PageAtom = ReturnType<typeof createPageAtom>;
 
 type PageState =
   & {
-    source: AdvancedObject;
+    source: MediaElement;
   }
   & ({
     status: "loading";
@@ -31,7 +30,7 @@ type PageState =
     urls: string[];
   } | {
     status: "complete";
-    source: AdvancedSource;
+    source: MediaElement;
   });
 
 type VideoProps = React.DetailedHTMLProps<
@@ -101,7 +100,7 @@ export function createPageAtom(
 
   const stateAtom = atom<PageState>({
     status: "loading",
-    source: initialSource ? toAdvancedObject(initialSource) : { src: undefined },
+    source: initialSource ? toAdvancedObject(initialSource) : new Image(),
   });
 
   const loadAtom = atom(null, async (get, set, cause: "load" | "error") => {
@@ -136,7 +135,7 @@ export function createPageAtom(
     }
 
     if (isDelay(newSource)) {
-      set(stateAtom, { status: "error", urls: [], source: { src: undefined } });
+      set(stateAtom, { status: "error", urls: [], source: new Image() });
       return;
     }
 
@@ -246,7 +245,7 @@ export function createPageAtom(
 
     set(stateAtom, () => ({
       status: "loading",
-      source: { src: undefined },
+      source: new Image(),
     }));
     await set(loadAtom, "error");
   }
