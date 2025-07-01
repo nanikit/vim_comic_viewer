@@ -1,5 +1,5 @@
 import type { CSS } from "@stitches/react";
-import type { Setter } from "jotai";
+import type { Atom, Setter } from "jotai";
 import type React from "npm:@types/react";
 import { atom } from "../deps.ts";
 import { scrollElementSizeAtom, singlePageCountAtom } from "../features/navigation/atoms.ts";
@@ -16,7 +16,18 @@ import {
 import type { Size } from "../helpers/size.ts";
 import { viewerOptionsAtom } from "./viewer_base_atoms.ts";
 
-export type PageAtom = ReturnType<typeof createPageAtom>;
+export type PageModel = {
+  index: number;
+  state: PageState;
+  div: HTMLDivElement | null;
+  setDiv: (newDiv: HTMLDivElement | null) => void;
+  reloadAtom: ReturnType<typeof atom<null, [cause: "load" | "error"], Promise<void>>>;
+  fullWidth: boolean;
+  shouldBeOriginalSize: boolean;
+  divCss: CSS;
+  imageProps?: ImageProps;
+  videoProps?: VideoProps;
+};
 
 type PageState =
   & {
@@ -60,7 +71,7 @@ export const maxSizeAtom = atom(
 );
 
 export const mediaSourcesAtom = atom<MediaSourceOrDelay[]>([]);
-export const pageAtomsAtom = atom<PageAtom[]>([]);
+export const pageAtomsAtom = atom<Atom<PageModel>[]>([]);
 
 export const refreshMediaSourceAtom = atom(null, async (get, set, params: SourceRefreshParams) => {
   const { source } = get(viewerOptionsAtom);
@@ -147,7 +158,7 @@ export function createPageAtom(
     }
   });
 
-  const aggregateAtom = atom((get) => {
+  const aggregateAtom = atom<PageModel>((get) => {
     get(loadAtom);
 
     const state = get(stateAtom);
@@ -193,7 +204,7 @@ export function createPageAtom(
         : {}),
     } satisfies CSS;
 
-    const page = {
+    return {
       index,
       state,
       div,
@@ -218,8 +229,6 @@ export function createPageAtom(
         } satisfies VideoProps
         : undefined,
     };
-
-    return page;
   });
 
   async function reload() {
