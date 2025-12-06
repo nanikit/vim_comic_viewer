@@ -15,7 +15,7 @@ Deno.test("With test page", async (test) => {
   const browser = await puppeteer.launch({
     headless,
     args: [
-      ...(Deno.env.get("CI") ? ["--no-sandbox"] : []),
+      "--no-sandbox",
       ...(headless ? [] : ["--auto-open-devtools-for-tabs"]),
     ],
   });

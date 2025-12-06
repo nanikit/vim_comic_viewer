@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/base:1.2.3-ubuntu24.04 AS base
+FROM mcr.microsoft.com/devcontainers/base:2.1.2-ubuntu24.04 AS base
 
 RUN curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
   sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' && \
