@@ -1,6 +1,5 @@
 import type { CSS } from "@stitches/react";
 import type { Atom, Setter } from "jotai";
-import type React from "npm:@types/react";
 import { atom } from "../deps.ts";
 import { scrollElementSizeAtom, singlePageCountAtom } from "../features/navigation/atoms.ts";
 import { maxZoomInExponentAtom, maxZoomOutExponentAtom } from "../features/preferences/atoms.ts";

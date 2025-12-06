@@ -77,7 +77,8 @@ export const startDownloadAtom = atom(null, async (get, set, options?: UserDownl
 export const downloadAndSaveAtom = atom(null, async (_get, set, options?: UserDownloadOptions) => {
   const zip = await set(startDownloadAtom, options);
   if (zip) {
-    await save(new Blob([zip]));
+    // No issue at runtime, I wish fflate update type definition.
+    await save(new Blob([zip as unknown as ArrayBuffer]));
   }
 });
 
