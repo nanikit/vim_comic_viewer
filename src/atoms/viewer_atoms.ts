@@ -1,5 +1,6 @@
 import { atom, Getter, Setter } from "../deps.ts";
 import {
+  lastWindowToViewerMiddleAtom,
   scrollElementAtom,
   transferViewerScrollToWindowAtom,
   transferWindowScrollToViewerAtom,
@@ -144,7 +145,7 @@ export const setViewerOptionsAtom = atom(null, async (get, set, options: ViewerO
     set(viewerOptionsAtom, options);
 
     await set(refreshMediaSourceAtom, { cause: "load" });
-
+    set(lastWindowToViewerMiddleAtom, "reset");
     set(viewerStatusAtom, "complete");
   } catch (error) {
     set(viewerStatusAtom, "error");

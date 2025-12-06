@@ -4,11 +4,16 @@ import { getCurrentRow, getInPageRatio, hasNoticeableDifference, isVisible } fro
 export function toViewerScroll(
   { scrollable, lastWindowToViewerMiddle, noSyncScroll, mediaElements }: {
     scrollable: HTMLDivElement | null;
-    lastWindowToViewerMiddle: number;
+    lastWindowToViewerMiddle: number | "notFound" | "reset";
     noSyncScroll: boolean;
     mediaElements: MediaElement[];
   },
 ) {
+  if (lastWindowToViewerMiddle === "reset") {
+    return 0;
+  }
+  const lastMiddle = lastWindowToViewerMiddle === "notFound" ? 0 : lastWindowToViewerMiddle;
+
   if (!scrollable || noSyncScroll) {
     return;
   }
@@ -36,7 +41,7 @@ export function toViewerScroll(
   }
 
   const indexed = currentRow.map((sized) => [sized, getUrlIndex(sized.page, urls)] as const);
-  const last = lastWindowToViewerMiddle - 0.5;
+  const last = lastMiddle - 0.5;
   const sorted = indexed.sort((a, b) => Math.abs(a[1] - last) - Math.abs(b[1] - last));
   const [page, index] = sorted[0] ?? [];
   if (!page || index === undefined) {
@@ -45,7 +50,7 @@ export function toViewerScroll(
 
   const pageRatio = getInPageRatio({ page, viewportHeight });
   const snappedRatio = Math.abs(pageRatio - 0.5) < 0.1 ? 0.5 : pageRatio;
-  if (!hasNoticeableDifference(index + snappedRatio, lastWindowToViewerMiddle)) {
+  if (!hasNoticeableDifference(index + snappedRatio, lastMiddle)) {
     return;
   }
 

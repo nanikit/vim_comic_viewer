@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        20.1.0
+// @version        20.2.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -40,44 +40,55 @@
 // ==/UserScript==
 "use strict";
 
-var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
-	for (var name in all) __defProp(target, name, {
-		get: all[name],
-		enumerable: true
-	});
+var __export = (all, symbols) => {
+	let target = {};
+	for (var name in all) {
+		__defProp(target, name, {
+			get: all[name],
+			enumerable: true
+		});
+	}
+	if (symbols) {
+		__defProp(target, Symbol.toStringTag, { value: "Module" });
+	}
+	return target;
 };
 var __copyProps = (to, from, except, desc) => {
-	if (from && typeof from === "object" || typeof from === "function") for (var keys = __getOwnPropNames(from), i = 0, n = keys.length, key; i < n; i++) {
-		key = keys[i];
-		if (!__hasOwnProp.call(to, key) && key !== except) __defProp(to, key, {
-			get: ((k) => from[k]).bind(null, key),
-			enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
-		});
+	if (from && typeof from === "object" || typeof from === "function") {
+		for (var keys = __getOwnPropNames(from), i = 0, n = keys.length, key; i < n; i++) {
+			key = keys[i];
+			if (!__hasOwnProp.call(to, key) && key !== except) {
+				__defProp(to, key, {
+					get: ((k) => from[k]).bind(null, key),
+					enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+				});
+			}
+		}
 	}
 	return to;
 };
-var __reExport = (target, mod, secondTarget) => (__copyProps(target, mod, "default"), secondTarget && __copyProps(secondTarget, mod, "default"));
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", {
-	value: mod,
-	enumerable: true
-}) : target, mod));
+var __reExport = (target, mod, secondTarget, symbols) => {
+	if (symbols) {
+		__defProp(target, Symbol.toStringTag, { value: "Module" });
+		secondTarget && __defProp(secondTarget, Symbol.toStringTag, { value: "Module" });
+	}
+	__copyProps(target, mod, "default"), secondTarget && __copyProps(secondTarget, mod, "default");
+};
 require("vcv-inject-node-env");
-const __stitches_react = __toESM(require("@stitches/react"));
-const jotai = __toESM(require("jotai"));
-const jotai_cache = __toESM(require("jotai-cache"));
-const jotai_utils = __toESM(require("jotai/utils"));
-const __headlessui_react = __toESM(require("@headlessui/react"));
-const react = __toESM(require("react"));
-const react_dom_client = __toESM(require("react-dom/client"));
-const react_jsx_runtime = __toESM(require("react/jsx-runtime"));
-const react_toastify = __toESM(require("react-toastify"));
-const overlayscrollbars_react = __toESM(require("overlayscrollbars-react"));
+let __stitches_react = require("@stitches/react");
+let jotai = require("jotai");
+let jotai_cache = require("jotai-cache");
+let jotai_utils = require("jotai/utils");
+let __headlessui_react = require("@headlessui/react");
+let react = require("react");
+let react_dom_client = require("react-dom/client");
+let react_jsx_runtime = require("react/jsx-runtime");
+let react_toastify = require("react-toastify");
+let overlayscrollbars_react = require("overlayscrollbars-react");
 function deferred() {
 	let methods;
 	let state = "pending";
@@ -100,7 +111,7 @@ function deferred() {
 function throttle(fn, timeframe) {
 	let lastExecution = NaN;
 	let flush = null;
-	const throttled = (...args) => {
+	const throttled = ((...args) => {
 		flush = () => {
 			try {
 				fn.call(throttled, ...args);
@@ -111,7 +122,7 @@ function throttle(fn, timeframe) {
 		};
 		if (throttled.throttling) return;
 		flush?.();
-	};
+	});
 	throttled.clear = () => {
 		lastExecution = NaN;
 	};
@@ -126,8 +137,7 @@ function throttle(fn, timeframe) {
 	});
 	return throttled;
 }
-var deps_exports = {};
-__export(deps_exports, {
+var deps_exports =  __export({
 	Dialog: () => __headlessui_react.Dialog,
 	Fragment: () => react.Fragment,
 	Provider: () => jotai.Provider,
@@ -166,125 +176,67 @@ __reExport(deps_exports, require("fflate"));
 const rootAtom = (0, jotai.atom)(null);
 const viewerOptionsAtom = (0, jotai.atom)({});
 const viewerStatusAtom = (0, jotai.atom)("idle");
-var ___locale$1 = "en";
-var settings$1 = "Settings";
-var help$1 = "Help";
-var maxZoomOut$1 = "Maximum zoom out";
-var maxZoomIn$1 = "Maximum zoom in";
-var singlePageCount$1 = "single page count";
-var backgroundColor$1 = "Background color";
-var leftToRight$1 = "Left to right";
-var reset$1 = "Reset";
-var doYouReallyWantToReset$1 = "Do you really want to reset?";
-var errorIsOccurred$1 = "Error is occurred.";
-var failedToLoadImage$1 = "Failed to load image.";
-var loading$1 = "Loading...";
-var fullScreenRestorationGuide$1 = "Enter full screen yourself if you want to keep the viewer open in full screen.";
-var useFullScreen$1 = "Use full screen";
-var downloading$1 = "Downloading...";
-var cancel$1 = "CANCEL";
-var downloadComplete$1 = "Download complete.";
-var errorOccurredWhileDownloading$1 = "Error occurred while downloading.";
-var keyBindings$1 = "Key bindings";
-var toggleViewer$1 = "Toggle viewer";
-var toggleFullscreenSetting$1 = "Toggle fullscreen setting";
-var nextPage$1 = "Next page";
-var previousPage$1 = "Previous page";
-var download$2 = "Download";
-var refresh$1 = "Refresh";
-var increaseSinglePageCount$1 = "Increase single page count";
-var decreaseSinglePageCount$1 = "Decrease single page count";
-var anchorSinglePageCount$1 = "Set single page view until before current page";
 var en_default = {
-	"@@locale": ___locale$1,
-	settings: settings$1,
-	help: help$1,
-	maxZoomOut: maxZoomOut$1,
-	maxZoomIn: maxZoomIn$1,
-	singlePageCount: singlePageCount$1,
-	backgroundColor: backgroundColor$1,
-	leftToRight: leftToRight$1,
-	reset: reset$1,
-	doYouReallyWantToReset: doYouReallyWantToReset$1,
-	errorIsOccurred: errorIsOccurred$1,
-	failedToLoadImage: failedToLoadImage$1,
-	loading: loading$1,
-	fullScreenRestorationGuide: fullScreenRestorationGuide$1,
-	useFullScreen: useFullScreen$1,
-	downloading: downloading$1,
-	cancel: cancel$1,
-	downloadComplete: downloadComplete$1,
-	errorOccurredWhileDownloading: errorOccurredWhileDownloading$1,
-	keyBindings: keyBindings$1,
-	toggleViewer: toggleViewer$1,
-	toggleFullscreenSetting: toggleFullscreenSetting$1,
-	nextPage: nextPage$1,
-	previousPage: previousPage$1,
-	download: download$2,
-	refresh: refresh$1,
-	increaseSinglePageCount: increaseSinglePageCount$1,
-	decreaseSinglePageCount: decreaseSinglePageCount$1,
-	anchorSinglePageCount: anchorSinglePageCount$1
+	"@@locale": "en",
+	settings: "Settings",
+	help: "Help",
+	maxZoomOut: "Maximum zoom out",
+	maxZoomIn: "Maximum zoom in",
+	singlePageCount: "single page count",
+	backgroundColor: "Background color",
+	leftToRight: "Left to right",
+	reset: "Reset",
+	doYouReallyWantToReset: "Do you really want to reset?",
+	errorIsOccurred: "Error is occurred.",
+	failedToLoadImage: "Failed to load image.",
+	loading: "Loading...",
+	fullScreenRestorationGuide: "Enter full screen yourself if you want to keep the viewer open in full screen.",
+	useFullScreen: "Use full screen",
+	downloading: "Downloading...",
+	cancel: "CANCEL",
+	downloadComplete: "Download complete.",
+	errorOccurredWhileDownloading: "Error occurred while downloading.",
+	keyBindings: "Key bindings",
+	toggleViewer: "Toggle viewer",
+	toggleFullscreenSetting: "Toggle fullscreen setting",
+	nextPage: "Next page",
+	previousPage: "Previous page",
+	download: "Download",
+	refresh: "Refresh",
+	increaseSinglePageCount: "Increase single page count",
+	decreaseSinglePageCount: "Decrease single page count",
+	anchorSinglePageCount: "Set single page view until before current page"
 };
-var ___locale = "ko";
-var settings = "설정";
-var help = "도움말";
-var maxZoomOut = "최대 축소";
-var maxZoomIn = "최대 확대";
-var singlePageCount = "한쪽 페이지 수";
-var backgroundColor = "배경색";
-var leftToRight = "왼쪽부터 보기";
-var reset = "초기화";
-var doYouReallyWantToReset = "정말 초기화하시겠어요?";
-var errorIsOccurred = "에러가 발생했습니다.";
-var failedToLoadImage = "이미지를 불러오지 못했습니다.";
-var loading = "로딩 중...";
-var fullScreenRestorationGuide = "뷰어 전체 화면을 유지하려면 직접 전체 화면을 켜 주세요 (F11).";
-var useFullScreen = "전체 화면";
-var downloading = "다운로드 중...";
-var cancel = "취소";
-var downloadComplete = "다운로드 완료";
-var errorOccurredWhileDownloading = "다운로드 도중 오류가 발생했습니다";
-var keyBindings = "단축키";
-var toggleViewer = "뷰어 전환";
-var toggleFullscreenSetting = "전체화면 설정 전환";
-var nextPage = "다음 페이지";
-var previousPage = "이전 페이지";
-var download$1 = "다운로드";
-var refresh = "새로고침";
-var increaseSinglePageCount = "한쪽 페이지 수 늘리기";
-var decreaseSinglePageCount = "한쪽 페이지 수 줄이기";
-var anchorSinglePageCount = "현재 페이지 전까지 한쪽 페이지로 설정";
 var ko_default = {
-	"@@locale": ___locale,
-	settings,
-	help,
-	maxZoomOut,
-	maxZoomIn,
-	singlePageCount,
-	backgroundColor,
-	leftToRight,
-	reset,
-	doYouReallyWantToReset,
-	errorIsOccurred,
-	failedToLoadImage,
-	loading,
-	fullScreenRestorationGuide,
-	useFullScreen,
-	downloading,
-	cancel,
-	downloadComplete,
-	errorOccurredWhileDownloading,
-	keyBindings,
-	toggleViewer,
-	toggleFullscreenSetting,
-	nextPage,
-	previousPage,
-	download: download$1,
-	refresh,
-	increaseSinglePageCount,
-	decreaseSinglePageCount,
-	anchorSinglePageCount
+	"@@locale": "ko",
+	settings: "설정",
+	help: "도움말",
+	maxZoomOut: "최대 축소",
+	maxZoomIn: "최대 확대",
+	singlePageCount: "한쪽 페이지 수",
+	backgroundColor: "배경색",
+	leftToRight: "왼쪽부터 보기",
+	reset: "초기화",
+	doYouReallyWantToReset: "정말 초기화하시겠어요?",
+	errorIsOccurred: "에러가 발생했습니다.",
+	failedToLoadImage: "이미지를 불러오지 못했습니다.",
+	loading: "로딩 중...",
+	fullScreenRestorationGuide: "뷰어 전체 화면을 유지하려면 직접 전체 화면을 켜 주세요 (F11).",
+	useFullScreen: "전체 화면",
+	downloading: "다운로드 중...",
+	cancel: "취소",
+	downloadComplete: "다운로드 완료",
+	errorOccurredWhileDownloading: "다운로드 도중 오류가 발생했습니다",
+	keyBindings: "단축키",
+	toggleViewer: "뷰어 전환",
+	toggleFullscreenSetting: "전체화면 설정 전환",
+	nextPage: "다음 페이지",
+	previousPage: "이전 페이지",
+	download: "다운로드",
+	refresh: "새로고침",
+	increaseSinglePageCount: "한쪽 페이지 수 늘리기",
+	decreaseSinglePageCount: "한쪽 페이지 수 줄이기",
+	anchorSinglePageCount: "현재 페이지 전까지 한쪽 페이지로 설정"
 };
 const translations = {
 	en: en_default,
@@ -326,16 +278,17 @@ const SpaceBetween = styled("div", {
 const MAX_RETRY_COUNT = 6;
 const MAX_SAME_URL_RETRY_COUNT = 2;
 function isDelay(sourceOrDelay) {
-	return sourceOrDelay === void 0 || typeof sourceOrDelay !== "string" && !sourceOrDelay.src;
+	return sourceOrDelay === void 0;
 }
-function toAdvancedObject(sourceOrDelay) {
-	return isDelay(sourceOrDelay) ? { src: void 0 } : toAdvancedSource(sourceOrDelay);
-}
-function toAdvancedSource(source) {
-	return typeof source === "string" ? {
-		type: "image",
-		src: source
-	} : source;
+function toMediaElement(source) {
+	if (isDelay(source)) return new Image();
+	if (typeof source === "string") {
+		const img = new Image();
+		img.src = source;
+		return img;
+	}
+	if (source.isConnected) return source.cloneNode(true);
+	return source;
 }
 async function* getMediaIterable({ media, index, comic, maxSize }) {
 	if (!isDelay(media)) yield getUrl(media);
@@ -344,13 +297,11 @@ async function* getMediaIterable({ media, index, comic, maxSize }) {
 	let retryCount = 0;
 	let sameUrlRetryCount = 0;
 	while (sameUrlRetryCount <= MAX_SAME_URL_RETRY_COUNT && retryCount <= MAX_RETRY_COUNT) {
-		const hadError = media !== void 0 || retryCount > 0;
-		const medias = await comic({
-			cause: hadError ? "error" : "load",
+		const next = (await comic({
+			cause: media !== void 0 || retryCount > 0 ? "error" : "load",
 			page: index,
 			maxSize
-		});
-		const next = medias[index];
+		}))[index];
 		if (isDelay(next)) continue;
 		const url = getUrl(next);
 		yield url;
@@ -368,7 +319,7 @@ function getUrl(source) {
 const isGmFetchAvailable = typeof GM.xmlHttpRequest === "function";
 async function gmFetch(url, init) {
 	const method = init?.body ? "POST" : "GET";
-	const response = await GM.xmlHttpRequest({
+	return await GM.xmlHttpRequest({
 		method,
 		url,
 		headers: {
@@ -378,7 +329,6 @@ async function gmFetch(url, init) {
 		responseType: init?.type === "text" ? void 0 : init?.type,
 		data: init?.body
 	});
-	return response;
 }
 async function download(comic, options) {
 	const { onError, onProgress, signal } = options || {};
@@ -440,23 +390,21 @@ async function download(comic, options) {
 		};
 	}
 	async function* downloadImage({ media, pageIndex }) {
-		const maxSize = {
-			width: Infinity,
-			height: Infinity
-		};
 		const mediaParams = {
 			media,
 			index: pageIndex,
 			comic,
-			maxSize
+			maxSize: {
+				width: Infinity,
+				height: Infinity
+			}
 		};
 		for await (const url of getMediaIterable(mediaParams)) {
 			if (signal?.aborted) break;
 			try {
-				const blob = await fetchBlobWithCacheIfPossible(url, signal);
 				yield {
 					url,
-					blob
+					blob: await fetchBlobWithCacheIfPossible(url, signal)
 				};
 			} catch (error) {
 				yield await fetchBlobIgnoringCors(url, {
@@ -468,9 +416,7 @@ async function download(comic, options) {
 	}
 	async function toPair({ url, blob }, index) {
 		const array = new Uint8Array(await blob.arrayBuffer());
-		const pad = `${index}`.padStart(digit, "0");
-		const name = `${pad}${guessExtension(array) ?? getExtension(url)}`;
-		return { [name]: array };
+		return { [`${`${index}`.padStart(digit, "0")}${guessExtension(array) ?? getExtension(url)}`]: array };
 	}
 	function reportProgress({ transition } = {}) {
 		if (status !== "ongoing") return;
@@ -486,8 +432,7 @@ async function download(comic, options) {
 }
 function getExtension(url) {
 	if (!url) return ".txt";
-	const extension = url.match(/\.[^/?#]{3,4}?(?=[?#]|$)/);
-	return extension?.[0] || ".jpg";
+	return url.match(/\.[^/?#]{3,4}?(?=[?#]|$)/)?.[0] || ".jpg";
 }
 function guessExtension(array) {
 	const { 0: a, 1: b, 2: c, 3: d } = array;
@@ -497,8 +442,7 @@ function guessExtension(array) {
 	if (a === 71 && b === 73 && c === 70 && d === 56) return ".gif";
 }
 async function fetchBlobWithCacheIfPossible(url, signal) {
-	const response = await fetch(url, { signal });
-	return await response.blob();
+	return await (await fetch(url, { signal })).blob();
 }
 async function fetchBlobIgnoringCors(url, { signal, fetchError }) {
 	if (isCrossOrigin(url) && !isGmFetchAvailable) return { error: new Error("It could be a CORS issue but cannot use GM.xmlhttpRequest", { cause: fetchError }) };
@@ -517,7 +461,7 @@ async function fetchBlobIgnoringCors(url, { signal, fetchError }) {
 			blob: response.response
 		};
 	} catch (error) {
-		if (isGmCancelled(error)) return { error: new Error("download aborted") };
+		if (isGmCancelled(error)) return { error:  new Error("download aborted") };
 		else return { error: fetchError };
 	}
 }
@@ -527,8 +471,7 @@ function isCrossOrigin(url) {
 function isGmCancelled(error) {
 	return error instanceof Function;
 }
-var utils_exports = {};
-__export(utils_exports, {
+var utils_exports =  __export({
 	getSafeFileName: () => getSafeFileName,
 	insertCss: () => insertCss,
 	isTyping: () => isTyping,
@@ -623,8 +566,8 @@ const startDownloadAtom = (0, jotai.atom)(null, async (get, set, options) => {
 	}
 });
 const downloadAndSaveAtom = (0, jotai.atom)(null, async (_get, set, options) => {
-	const zip = await set(startDownloadAtom, options);
-	if (zip) await save(new Blob([zip]));
+	const zip$1 = await set(startDownloadAtom, options);
+	if (zip$1) await save(new Blob([zip$1]));
 });
 function logIfNotAborted(error) {
 	if (isNotAbort(error)) console.error(error);
@@ -664,31 +607,32 @@ const defaultPreferences = {
 	isFullscreenPreferred: false,
 	fullscreenNoticeCount: 0
 };
+
 const scriptPreferencesAtom = (0, jotai.atom)({});
+
 const preferencesPresetAtom = (0, jotai.atom)("default");
 const [backgroundColorAtom] = atomWithPreferences("backgroundColor");
 const [singlePageCountStorageAtom] = atomWithPreferences("singlePageCount");
+
 const [maxZoomOutExponentAtom] = atomWithPreferences("maxZoomOutExponent");
 const [maxZoomInExponentAtom] = atomWithPreferences("maxZoomInExponent");
 const [pageDirectionAtom] = atomWithPreferences("pageDirection");
 const [isFullscreenPreferredAtom, isFullscreenPreferredPromiseAtom] = atomWithPreferences("isFullscreenPreferred");
 const [fullscreenNoticeCountAtom, fullscreenNoticeCountPromiseAtom] = atomWithPreferences("fullscreenNoticeCount");
+
 const wasImmersiveAtom = atomWithSession("vim_comic_viewer.was_immersive", false);
 function atomWithPreferences(key) {
 	const asyncAtomAtom = (0, jotai.atom)((get) => {
-		const preset = get(preferencesPresetAtom);
-		const qualifiedKey = `vim_comic_viewer.preferences.${preset}.${key}`;
-		return atomWithGmValue(qualifiedKey, void 0);
+		return atomWithGmValue(`vim_comic_viewer.preferences.${get(preferencesPresetAtom)}.${key}`, void 0);
 	});
 	const cacheAtom = (0, jotai_cache.atomWithCache)((get) => get(get(asyncAtomAtom)));
 	const manualAtom = (0, jotai.atom)((get) => get(cacheAtom), updater);
 	const loadableAtom = (0, jotai_utils.loadable)(manualAtom);
-	const effectiveAtom = (0, jotai.atom)((get) => {
+	return [(0, jotai.atom)((get) => {
 		const value = get(loadableAtom);
 		if (value.state === "hasData" && value.data !== void 0) return value.data;
 		return get(scriptPreferencesAtom)[key] ?? defaultPreferences[key];
-	}, updater);
-	return [effectiveAtom, manualAtom];
+	}, updater), manualAtom];
 	function updater(get, set, update) {
 		return set(get(asyncAtomAtom), (value) => typeof update === "function" ? Promise.resolve(value).then(update) : update);
 	}
@@ -730,8 +674,7 @@ const scrollBarStyleFactorAtom = (0, jotai.atom)((get) => ({
 		set(wasImmersiveAtom, isImmersive);
 		set(isImmersiveAtom, isImmersive);
 	}
-	const canScrollBarDuplicate = !get(isViewerFullscreenAtom) && get(isImmersiveAtom);
-	hideBodyScrollBar(canScrollBarDuplicate);
+	hideBodyScrollBar(!get(isViewerFullscreenAtom) && get(isImmersiveAtom));
 });
 const viewerFullscreenAtom = (0, jotai.atom)((get) => {
 	get(isFullscreenPreferredAtom);
@@ -766,12 +709,186 @@ const isFullscreenPreferredSettingsAtom = (0, jotai.atom)((get) => get(isFullscr
 	const lock = await set(transitionLockAtom);
 	try {
 		const wasImmersive = get(wasImmersiveAtom);
-		const shouldEnterFullscreen = appliedValue && wasImmersive;
-		await set(viewerFullscreenAtom, shouldEnterFullscreen);
+		await set(viewerFullscreenAtom, appliedValue && wasImmersive);
 	} finally {
 		lock.deferred.resolve();
 	}
 });
+
+const maxSizeStateAtom = (0, jotai.atom)({
+	width: screen.width,
+	height: screen.height
+});
+const maxSizeAtom = (0, jotai.atom)((get) => get(maxSizeStateAtom), (get, set, size) => {
+	const current = get(maxSizeStateAtom);
+	if (size.width <= current.width && size.height <= current.height) return;
+	set(maxSizeStateAtom, {
+		width: Math.max(size.width, current.width),
+		height: Math.max(size.height, current.height)
+	});
+});
+const pageAtomsAtom = (0, jotai.atom)([]);
+const refreshMediaSourceAtom = (0, jotai.atom)(null, async (get, set, params) => {
+	const { source } = get(viewerOptionsAtom);
+	if (!source) return;
+	const medias = await source({
+		...params,
+		maxSize: get(maxSizeAtom)
+	});
+	if (source !== get(viewerOptionsAtom).source) return;
+	if (!Array.isArray(medias)) throw new Error(`Invalid comic source type: ${typeof medias}`);
+	if (params.cause === "load" && params.page === void 0) set(pageAtomsAtom, medias.map((media, index) => createPageAtom({
+		initialSource: media,
+		index,
+		set
+	})));
+	if (params.page !== void 0) return medias[params.page];
+});
+function createPageAtom(params) {
+	const { initialSource, index, set } = params;
+	const triedUrls = [];
+	let div = null;
+	const stateAtom = (0, jotai.atom)({
+		status: "loading",
+		source: toMediaElement(initialSource)
+	});
+	const loadAtom = (0, jotai.atom)(null, async (get, set$1, cause) => {
+		if (cause === "load") triedUrls.length = 0;
+		if (isComplete()) return;
+		let newSource;
+		try {
+			newSource = await set$1(refreshMediaSourceAtom, {
+				cause,
+				page: index
+			});
+		} catch (error) {
+			console.error(error);
+			set$1(stateAtom, (previous) => ({
+				...previous,
+				status: "error",
+				urls: Array.from(triedUrls)
+			}));
+			return;
+		}
+		if (isComplete()) return;
+		if (isDelay(newSource)) {
+			set$1(stateAtom, {
+				status: "error",
+				urls: [],
+				source: new Image()
+			});
+			return;
+		}
+		const source = toMediaElement(newSource);
+		triedUrls.push(source.src);
+		set$1(stateAtom, {
+			status: "loading",
+			source
+		});
+		function isComplete() {
+			return get(stateAtom).status === "complete";
+		}
+	});
+	const aggregateAtom = (0, jotai.atom)((get) => {
+		get(loadAtom);
+		const state = get(stateAtom);
+		const scrollElementSize = get(scrollElementSizeAtom);
+		const compactWidthIndex = get(singlePageCountAtom);
+		const maxZoomInExponent = get(maxZoomInExponentAtom);
+		const maxZoomOutExponent = get(maxZoomOutExponentAtom);
+		const source = state.source;
+		const width = source instanceof HTMLImageElement ? source.naturalWidth : source instanceof HTMLVideoElement ? source.videoWidth : void 0;
+		const height = source instanceof HTMLImageElement ? source.naturalHeight : source instanceof HTMLVideoElement ? source.videoHeight : void 0;
+		const ratio = getImageToViewerSizeRatio({
+			viewerSize: scrollElementSize,
+			imgSize: {
+				width,
+				height
+			}
+		});
+		const shouldBeOriginalSize = shouldMediaBeOriginalSize({
+			maxZoomInExponent,
+			maxZoomOutExponent,
+			mediaRatio: ratio
+		});
+		const canMessUpRow = shouldBeOriginalSize && ratio > 1;
+		const mediaProps = {
+			...Object.fromEntries([...source.attributes].map(({ name, value }) => [name, value])),
+			onError: reload
+		};
+		const divCss = {
+			...shouldBeOriginalSize ? {
+				minHeight: scrollElementSize.height,
+				height: "auto"
+			} : { height: scrollElementSize.height },
+			...state.status !== "complete" ? { aspectRatio: width && height ? `${width} / ${height}` : "3 / 4" } : {}
+		};
+		return {
+			index,
+			state,
+			div,
+			setDiv: (newDiv) => {
+				div = newDiv;
+			},
+			sourceElement: initialSource instanceof HTMLElement ? initialSource : null,
+			reloadAtom: loadAtom,
+			fullWidth: index < compactWidthIndex || canMessUpRow,
+			shouldBeOriginalSize,
+			divCss,
+			imageProps: source && source instanceof HTMLImageElement ? {
+				...mediaProps,
+				onLoad: setCompleteState
+			} : void 0,
+			videoProps: source instanceof HTMLVideoElement ? {
+				controls: true,
+				autoPlay: true,
+				loop: true,
+				muted: true,
+				...mediaProps,
+				onLoadedMetadata: setCompleteState
+			} : void 0
+		};
+	});
+	async function reload() {
+		const isOverMaxRetry = triedUrls.length > MAX_RETRY_COUNT;
+		const urlCountMap = triedUrls.reduce((acc, url) => {
+			acc[url] = (acc[url] ?? 0) + 1;
+			return acc;
+		}, {});
+		const isOverSameUrlRetry = Object.values(urlCountMap).some((count) => count > MAX_SAME_URL_RETRY_COUNT);
+		if (isOverMaxRetry || isOverSameUrlRetry) {
+			set(stateAtom, (previous) => ({
+				...previous,
+				status: "error",
+				urls: [...new Set(triedUrls)]
+			}));
+			return;
+		}
+		set(stateAtom, () => ({
+			status: "loading",
+			source: new Image()
+		}));
+		await set(loadAtom, "error");
+	}
+	function setCompleteState(event) {
+		const element = event.currentTarget;
+		set(stateAtom, {
+			status: "complete",
+			source: element
+		});
+	}
+	if (isDelay(initialSource)) set(loadAtom, "load");
+	return aggregateAtom;
+}
+function getImageToViewerSizeRatio({ viewerSize, imgSize }) {
+	if (!imgSize.height && !imgSize.width) return 1;
+	return Math.max((imgSize.height ?? 0) / viewerSize.height, (imgSize.width ?? 0) / viewerSize.width);
+}
+function shouldMediaBeOriginalSize({ maxZoomOutExponent, maxZoomInExponent, mediaRatio }) {
+	const minZoomRatio = Math.sqrt(2) ** maxZoomOutExponent;
+	const maxZoomRatio = Math.sqrt(2) ** maxZoomInExponent;
+	return minZoomRatio < mediaRatio || mediaRatio < 1 / maxZoomRatio;
+}
 const beforeRepaintAtom = (0, jotai.atom)({});
 const useBeforeRepaint = () => {
 	const { task } = (0, jotai.useAtomValue)(beforeRepaintAtom);
@@ -782,11 +899,10 @@ const useBeforeRepaint = () => {
 function getCurrentRow({ elements, viewportHeight }) {
 	if (!elements.length) return;
 	const scrollCenter = viewportHeight / 2;
-	const pages = elements.map((page) => ({
+	return elements.map((page) => ({
 		page,
 		rect: page.getBoundingClientRect()
-	}));
-	return pages.filter(isCenterCrossing);
+	})).filter(isCenterCrossing);
 	function isCenterCrossing({ rect: { y, height } }) {
 		return y <= scrollCenter && y + height >= scrollCenter;
 	}
@@ -794,8 +910,7 @@ function getCurrentRow({ elements, viewportHeight }) {
 function isVisible(element) {
 	if ("checkVisibility" in element) return element.checkVisibility();
 	const { x, y, width, height } = element.getBoundingClientRect();
-	const elements = document.elementsFromPoint(x + width / 2, y + height / 2);
-	return elements.includes(element);
+	return document.elementsFromPoint(x + width / 2, y + height / 2).includes(element);
 }
 function hasNoticeableDifference(middle, lastMiddle) {
 	return Math.abs(middle - lastMiddle) > .01;
@@ -823,8 +938,7 @@ function getNewSizeIfResized({ scrollElement, previousSize }) {
 	const { width, height } = scrollElement.getBoundingClientRect();
 	const scrollHeight = scrollElement.scrollHeight;
 	const { width: previousWidth, height: previousHeight, scrollHeight: previousScrollHeight } = previousSize;
-	const needsScrollRestoration = previousWidth === 0 || previousHeight === 0 || previousWidth !== width || previousHeight !== height || previousScrollHeight !== scrollHeight;
-	return needsScrollRestoration ? {
+	return previousWidth === 0 || previousHeight === 0 || previousWidth !== width || previousHeight !== height || previousScrollHeight !== scrollHeight ? {
 		width,
 		height,
 		scrollHeight
@@ -834,10 +948,10 @@ function navigateByPointer(scrollElement, event) {
 	const height = scrollElement?.clientHeight;
 	if (!height || event.button !== 0) return;
 	event.preventDefault();
-	const isTop = event.clientY < height / 2;
-	if (isTop) goToPreviousArea(scrollElement);
+	if (event.clientY < height / 2) goToPreviousArea(scrollElement);
 	else goToNextArea(scrollElement);
 }
+
 function goToPreviousArea(scrollElement) {
 	const page = getCurrentPageFromScrollElement({
 		scrollElement,
@@ -848,8 +962,7 @@ function goToPreviousArea(scrollElement) {
 	const ignorableHeight = viewerHeight * .05;
 	const { top: pageTop } = page.getBoundingClientRect();
 	const remainingHeight = viewerTop - pageTop;
-	const needsPartialScroll = remainingHeight > ignorableHeight;
-	if (needsPartialScroll) {
+	if (remainingHeight > ignorableHeight) {
 		const divisor = Math.ceil(remainingHeight / viewerHeight);
 		const yDiff = -Math.ceil(remainingHeight / divisor);
 		scrollElement.scrollBy({ top: yDiff });
@@ -865,8 +978,7 @@ function goToNextArea(scrollElement) {
 	const ignorableHeight = viewerHeight * .05;
 	const { bottom: pageBottom } = page.getBoundingClientRect();
 	const remainingHeight = pageBottom - viewerBottom;
-	const needsPartialScroll = remainingHeight > ignorableHeight;
-	if (needsPartialScroll) {
+	if (remainingHeight > ignorableHeight) {
 		const divisor = Math.ceil(remainingHeight / viewerHeight);
 		const yDiff = Math.ceil(remainingHeight / divisor);
 		scrollElement.scrollBy({ top: yDiff });
@@ -881,47 +993,38 @@ function toWindowScroll({ middle, lastMiddle, noSyncScroll, forFullscreen, scrol
 	if (!original) return;
 	const rect = original.getBoundingClientRect();
 	const ratio = middle - Math.floor(middle);
-	const top = scrollY + rect.y + rect.height * ratio - innerHeight / 2;
-	return top;
+	return scrollY + rect.y + rect.height * ratio - innerHeight / 2;
 }
 function getYDifferenceFromPrevious({ scrollable, middle }) {
 	const page = getScrollPage(middle, scrollable);
 	if (!page || !scrollable || scrollable.clientHeight < 1) return;
 	const { height: scrollableHeight } = scrollable.getBoundingClientRect();
 	const { y: pageY, height: pageHeight } = page.getBoundingClientRect();
-	const ratio = middle - Math.floor(middle);
-	const restoredYDiff = pageY + pageHeight * ratio - scrollableHeight / 2;
-	return restoredYDiff;
+	return pageY + pageHeight * (middle - Math.floor(middle)) - scrollableHeight / 2;
 }
 function getAbovePageIndex(scrollElement) {
 	const children = getPagesFromScrollElement(scrollElement);
 	if (!children || !scrollElement) return;
 	const elements = [...children];
-	const currentRow = getCurrentRow({
+	const firstPage = getCurrentRow({
 		elements,
 		viewportHeight: scrollElement.clientHeight
-	});
-	const firstPage = currentRow?.[0]?.page;
+	})?.[0]?.page;
 	return firstPage ? elements.indexOf(firstPage) : void 0;
 }
 function findOriginElement(src, page) {
 	const fileName = src.split("/").pop()?.split("?")[0];
-	const candidates = document.querySelectorAll(`img[src*="${fileName}"], video[src*="${fileName}"]`);
-	const originals = [...candidates].filter((media) => media.src === src && media.parentElement !== page && isVisible(media));
+	const originals = [...document.querySelectorAll(`img[src*="${fileName}"], video[src*="${fileName}"]`)].filter((media) => media.src === src && media.parentElement !== page && isVisible(media));
 	if (originals.length === 1) return originals[0];
-	const links = document.querySelectorAll(`a[href*="${fileName}"`);
-	const visibleLinks = [...links].filter(isVisible);
+	const visibleLinks = [...document.querySelectorAll(`a[href*="${fileName}"`)].filter(isVisible);
 	if (visibleLinks.length === 1) return visibleLinks[0];
 }
 function goToNextRow(currentPage) {
-	const epsilon = .01;
-	const currentPageBottom = currentPage.getBoundingClientRect().bottom - epsilon;
+	const currentPageBottom = currentPage.getBoundingClientRect().bottom - .01;
 	let page = currentPage;
 	while (page.nextElementSibling) {
 		page = page.nextElementSibling;
-		const pageTop = page.getBoundingClientRect().top;
-		const isNextPage = currentPageBottom <= pageTop;
-		if (isNextPage) {
+		if (currentPageBottom <= page.getBoundingClientRect().top) {
 			page.scrollIntoView({
 				behavior: "instant",
 				block: "start"
@@ -935,14 +1038,11 @@ function goToNextRow(currentPage) {
 	});
 }
 function goToPreviousRow(currentPage) {
-	const epsilon = .01;
-	const currentPageTop = currentPage.getBoundingClientRect().top + epsilon;
+	const currentPageTop = currentPage.getBoundingClientRect().top + .01;
 	let page = currentPage;
 	while (page.previousElementSibling) {
 		page = page.previousElementSibling;
-		const pageBottom = page.getBoundingClientRect().bottom;
-		const isPreviousPage = pageBottom <= currentPageTop;
-		if (isPreviousPage) {
+		if (page.getBoundingClientRect().bottom <= currentPageTop) {
 			page.scrollIntoView({
 				behavior: "instant",
 				block: "end"
@@ -991,45 +1091,41 @@ function getCurrentPageFromElements({ elements, viewportHeight, previousMiddle }
 		if (row.length % 2 === 1) return row[half];
 		const page = row[half]?.page;
 		if (!page) return;
-		const centerNextTop = elements.indexOf(page);
-		const previousMiddlePage = previousMiddle < centerNextTop ? row[half - 1] : row[half];
-		return previousMiddlePage;
+		return previousMiddle < elements.indexOf(page) ? row[half - 1] : row[half];
 	}
 }
 function getPagesFromScrollElement(scrollElement) {
 	return scrollElement?.firstElementChild?.children;
 }
-function toViewerScroll({ scrollable, lastWindowToViewerMiddle, noSyncScroll }) {
+function toViewerScroll({ scrollable, lastWindowToViewerMiddle, noSyncScroll, mediaElements }) {
+	if (lastWindowToViewerMiddle === "reset") return 0;
+	const lastMiddle = lastWindowToViewerMiddle === "notFound" ? 0 : lastWindowToViewerMiddle;
 	if (!scrollable || noSyncScroll) return;
 	const viewerMedia = [...scrollable.querySelectorAll("img[src], video[src]")];
-	const urlToViewerPages = new Map();
-	for (const media$1 of viewerMedia) urlToViewerPages.set(media$1.src, media$1);
+	const urlToViewerPages =  new Map();
+	for (const media of viewerMedia) urlToViewerPages.set(media.src, media);
 	const urls = [...urlToViewerPages.keys()];
-	const media = getUrlMedia(urls);
-	const siteMedia = media.filter((medium) => !viewerMedia.includes(medium));
-	const visibleMedia = siteMedia.filter(isVisible);
+	const visibleSiteMedia = [...new Set([...getUrlMedia(urls), ...mediaElements])].filter((medium) => !viewerMedia.includes(medium) && isVisible(medium));
 	const viewportHeight = visualViewport?.height ?? innerHeight;
 	const currentRow = getCurrentRow({
-		elements: visibleMedia,
+		elements: visibleSiteMedia,
 		viewportHeight
 	});
 	if (!currentRow) return;
 	const indexed = currentRow.map((sized) => [sized, getUrlIndex(sized.page, urls)]);
-	const last = lastWindowToViewerMiddle - .5;
-	const sorted = indexed.sort((a, b) => Math.abs(a[1] - last) - Math.abs(b[1] - last));
-	const [page, index] = sorted[0] ?? [];
+	const last = lastMiddle - .5;
+	const [page, index] = indexed.sort((a, b) => Math.abs(a[1] - last) - Math.abs(b[1] - last))[0] ?? [];
 	if (!page || index === void 0) return;
 	const pageRatio = getInPageRatio({
 		page,
 		viewportHeight
 	});
 	const snappedRatio = Math.abs(pageRatio - .5) < .1 ? .5 : pageRatio;
-	if (!hasNoticeableDifference(index + snappedRatio, lastWindowToViewerMiddle)) return;
+	if (!hasNoticeableDifference(index + snappedRatio, lastMiddle)) return;
 	return index + snappedRatio;
 }
 function getUrlMedia(urls) {
-	const media = document.querySelectorAll("img, video");
-	return [...media].filter((medium) => getUrlIndex(medium, urls) !== -1);
+	return [...document.querySelectorAll("img, video")].filter((medium) => getUrlIndex(medium, urls) !== -1);
 }
 function getUrlIndex(medium, urls) {
 	if (medium instanceof HTMLImageElement) {
@@ -1054,8 +1150,7 @@ function getUrlIndexFromSrcset(media, urls) {
 	return -1;
 }
 function getUrlsFromSources(picture) {
-	const sources = [...picture.querySelectorAll("source")];
-	return sources.flatMap((x) => getSrcFromSrcset(x.srcset));
+	return [...picture.querySelectorAll("source")].flatMap((x) => getSrcFromSrcset(x.srcset));
 }
 function getSrcFromSrcset(srcset) {
 	return srcset.split(",").map((x) => x.split(/\s+/)[0]).filter((x) => x !== void 0);
@@ -1069,30 +1164,26 @@ const scrollElementSizeAtom = (0, jotai.atom)({
 });
 const pageScrollMiddleAtom = (0, jotai.atom)(.5);
 const lastViewerToWindowMiddleAtom = (0, jotai.atom)(-1);
-const lastWindowToViewerMiddleAtom = (0, jotai.atom)(-1);
+
+const lastWindowToViewerMiddleAtom = (0, jotai.atom)("reset");
 const transferWindowScrollToViewerAtom = (0, jotai.atom)(null, (get, set) => {
-	const scrollable = get(scrollElementAtom);
-	const lastWindowToViewerMiddle = get(lastWindowToViewerMiddleAtom);
-	const noSyncScroll = get(viewerOptionsAtom).noSyncScroll ?? false;
 	const middle = toViewerScroll({
-		scrollable,
-		lastWindowToViewerMiddle,
-		noSyncScroll
+		scrollable: get(scrollElementAtom),
+		lastWindowToViewerMiddle: get(lastWindowToViewerMiddleAtom),
+		noSyncScroll: get(viewerOptionsAtom).noSyncScroll ?? false,
+		mediaElements: get(pageAtomsAtom).map((atom$2) => get(atom$2).sourceElement).filter((x) => x !== null)
 	});
-	if (!middle) return;
-	set(pageScrollMiddleAtom, middle);
-	set(lastWindowToViewerMiddleAtom, middle);
+	set(lastWindowToViewerMiddleAtom, middle ?? "notFound");
+	if (typeof middle === "number") set(pageScrollMiddleAtom, middle);
 });
 const transferViewerScrollToWindowAtom = (0, jotai.atom)(null, (get, set, { forFullscreen } = {}) => {
 	const middle = get(pageScrollMiddleAtom);
 	const scrollElement = get(scrollElementAtom);
-	const lastMiddle = get(lastViewerToWindowMiddleAtom);
-	const noSyncScroll = get(viewerOptionsAtom).noSyncScroll ?? false;
 	const top = toWindowScroll({
 		middle,
-		lastMiddle,
+		lastMiddle: get(lastViewerToWindowMiddleAtom),
 		scrollElement,
-		noSyncScroll,
+		noSyncScroll: get(viewerOptionsAtom).noSyncScroll ?? false,
 		forFullscreen
 	});
 	if (top !== void 0) {
@@ -1117,11 +1208,9 @@ const synchronizeScrollAtom = (0, jotai.atom)(null, (get, set) => {
 	}
 });
 const correctScrollAtom = (0, jotai.atom)(null, (get, set) => {
-	const scrollElement = get(scrollElementAtom);
-	const previousSize = get(scrollElementSizeAtom);
 	const newSize = getNewSizeIfResized({
-		scrollElement,
-		previousSize
+		scrollElement: get(scrollElementAtom),
+		previousSize: get(scrollElementSizeAtom)
 	});
 	if (!newSize) return false;
 	set(scrollElementSizeAtom, newSize);
@@ -1164,206 +1253,9 @@ const singlePageCountAtom = (0, jotai.atom)((get) => get(singlePageCountStorageA
 	} });
 });
 const anchorSinglePageCountAtom = (0, jotai.atom)(null, (get, set) => {
-	const scrollElement = get(scrollElementAtom);
-	const abovePageIndex = getAbovePageIndex(scrollElement);
+	const abovePageIndex = getAbovePageIndex(get(scrollElementAtom));
 	if (abovePageIndex !== void 0) set(singlePageCountAtom, abovePageIndex);
 });
-
-const maxSizeStateAtom = (0, jotai.atom)({
-	width: screen.width,
-	height: screen.height
-});
-const maxSizeAtom = (0, jotai.atom)((get) => get(maxSizeStateAtom), (get, set, size) => {
-	const current = get(maxSizeStateAtom);
-	if (size.width <= current.width && size.height <= current.height) return;
-	set(maxSizeStateAtom, {
-		width: Math.max(size.width, current.width),
-		height: Math.max(size.height, current.height)
-	});
-});
-const mediaSourcesAtom = (0, jotai.atom)([]);
-const pageAtomsAtom = (0, jotai.atom)([]);
-const refreshMediaSourceAtom = (0, jotai.atom)(null, async (get, set, params) => {
-	const { source } = get(viewerOptionsAtom);
-	if (!source) return;
-	const medias = await source({
-		...params,
-		maxSize: get(maxSizeAtom)
-	});
-	if (source !== get(viewerOptionsAtom).source) return;
-	if (!Array.isArray(medias)) throw new Error(`Invalid comic source type: ${typeof medias}`);
-	set(mediaSourcesAtom, medias);
-	if (params.cause === "load" && params.page === void 0) set(pageAtomsAtom, medias.map((media, index) => createPageAtom({
-		initialSource: media,
-		index,
-		set
-	})));
-	if (params.page !== void 0) return medias[params.page];
-});
-function createPageAtom(params) {
-	const { initialSource, index, set } = params;
-	const triedUrls = [];
-	let div = null;
-	const stateAtom = (0, jotai.atom)({
-		status: "loading",
-		source: initialSource ? toAdvancedObject(initialSource) : { src: void 0 }
-	});
-	const loadAtom = (0, jotai.atom)(null, async (get, set$1, cause) => {
-		switch (cause) {
-			case "load":
-				triedUrls.length = 0;
-				break;
-			case "error": break;
-		}
-		if (isComplete()) return;
-		let newSource;
-		try {
-			newSource = await set$1(refreshMediaSourceAtom, {
-				cause,
-				page: index
-			});
-		} catch (error) {
-			console.error(error);
-			set$1(stateAtom, (previous) => ({
-				...previous,
-				status: "error",
-				urls: Array.from(triedUrls)
-			}));
-			return;
-		}
-		if (isComplete()) return;
-		if (isDelay(newSource)) {
-			set$1(stateAtom, {
-				status: "error",
-				urls: [],
-				source: { src: void 0 }
-			});
-			return;
-		}
-		const source = toAdvancedSource(newSource);
-		triedUrls.push(source.src);
-		set$1(stateAtom, {
-			status: "loading",
-			source
-		});
-		function isComplete() {
-			return get(stateAtom).status === "complete";
-		}
-	});
-	const aggregateAtom = (0, jotai.atom)((get) => {
-		get(loadAtom);
-		const state = get(stateAtom);
-		const scrollElementSize = get(scrollElementSizeAtom);
-		const compactWidthIndex = get(singlePageCountAtom);
-		const maxZoomInExponent = get(maxZoomInExponentAtom);
-		const maxZoomOutExponent = get(maxZoomOutExponentAtom);
-		const { src, width, height } = state.source ?? {};
-		const ratio = getImageToViewerSizeRatio({
-			viewerSize: scrollElementSize,
-			imgSize: {
-				width,
-				height
-			}
-		});
-		const shouldBeOriginalSize = shouldMediaBeOriginalSize({
-			maxZoomInExponent,
-			maxZoomOutExponent,
-			mediaRatio: ratio
-		});
-		const isLarge = ratio > 1;
-		const canMessUpRow = shouldBeOriginalSize && isLarge;
-		const mediaProps = {
-			src,
-			onError: reload
-		};
-		const divCss = {
-			...shouldBeOriginalSize ? {
-				minHeight: scrollElementSize.height,
-				height: "auto"
-			} : { height: scrollElementSize.height },
-			...state.status !== "complete" ? { aspectRatio: width && height ? `${width} / ${height}` : "3 / 4" } : {}
-		};
-		const page = {
-			index,
-			state,
-			div,
-			setDiv: (newDiv) => {
-				div = newDiv;
-			},
-			reloadAtom: loadAtom,
-			fullWidth: index < compactWidthIndex || canMessUpRow,
-			shouldBeOriginalSize,
-			divCss,
-			imageProps: state.source && state.source.type !== "video" ? {
-				...mediaProps,
-				onLoad: setCompleteState
-			} : void 0,
-			videoProps: state.source?.type === "video" ? {
-				...mediaProps,
-				controls: true,
-				autoPlay: true,
-				loop: true,
-				muted: true,
-				onLoadedMetadata: setCompleteState
-			} : void 0
-		};
-		return page;
-	});
-	async function reload() {
-		const isOverMaxRetry = triedUrls.length > MAX_RETRY_COUNT;
-		const urlCountMap = triedUrls.reduce((acc, url) => {
-			acc[url] = (acc[url] ?? 0) + 1;
-			return acc;
-		}, {});
-		const isOverSameUrlRetry = Object.values(urlCountMap).some((count) => count > MAX_SAME_URL_RETRY_COUNT);
-		if (isOverMaxRetry || isOverSameUrlRetry) {
-			set(stateAtom, (previous) => ({
-				...previous,
-				status: "error",
-				urls: [...new Set(triedUrls)]
-			}));
-			return;
-		}
-		set(stateAtom, (previous) => ({
-			status: "loading",
-			source: {
-				...previous.source,
-				src: void 0
-			}
-		}));
-		await set(loadAtom, "error");
-	}
-	function setCompleteState(event) {
-		const element = event.currentTarget;
-		set(stateAtom, {
-			status: "complete",
-			source: {
-				src: element.src,
-				...element instanceof HTMLImageElement ? {
-					type: "image",
-					width: element.naturalWidth,
-					height: element.naturalHeight
-				} : {
-					type: "video",
-					width: element.videoWidth,
-					height: element.videoHeight
-				}
-			}
-		});
-	}
-	if (isDelay(initialSource)) set(loadAtom, "load");
-	return aggregateAtom;
-}
-function getImageToViewerSizeRatio({ viewerSize, imgSize }) {
-	if (!imgSize.height && !imgSize.width) return 1;
-	return Math.max((imgSize.height ?? 0) / viewerSize.height, (imgSize.width ?? 0) / viewerSize.width);
-}
-function shouldMediaBeOriginalSize({ maxZoomOutExponent, maxZoomInExponent, mediaRatio }) {
-	const minZoomRatio = Math.sqrt(2) ** maxZoomOutExponent;
-	const maxZoomRatio = Math.sqrt(2) ** maxZoomInExponent;
-	const isOver = minZoomRatio < mediaRatio || mediaRatio < 1 / maxZoomRatio;
-	return isOver;
-}
 const externalFocusElementAtom = (0, jotai.atom)(null);
 const setViewerImmersiveAtom = (0, jotai.atom)(null, async (get, set, value) => {
 	const lock = await set(transitionLockAtom);
@@ -1384,10 +1276,8 @@ async function transactImmersive(get, set, value) {
 	const { fullscreenElement } = get(scrollBarStyleFactorAtom);
 	try {
 		if (get(isFullscreenPreferredAtom)) {
-			const isAccepted = await set(viewerFullscreenAtom, value);
-			if (!isAccepted) {
-				const noticeCount = await get(fullscreenNoticeCountPromiseAtom) ?? 0;
-				if (shouldShowF11Guide({ noticeCount })) {
+			if (!await set(viewerFullscreenAtom, value)) {
+				if (shouldShowF11Guide({ noticeCount: await get(fullscreenNoticeCountPromiseAtom) ?? 0 })) {
 					showF11Guide();
 					return;
 				}
@@ -1398,8 +1288,7 @@ async function transactImmersive(get, set, value) {
 		if (value) focusWithoutScroll(scrollable);
 		else {
 			if (fullscreenElement) set(transferViewerScrollToWindowAtom, { forFullscreen: true });
-			const externalFocusElement = get(externalFocusElementAtom);
-			focusWithoutScroll(externalFocusElement);
+			focusWithoutScroll(get(externalFocusElementAtom));
 		}
 	}
 	function showF11Guide() {
@@ -1427,13 +1316,11 @@ const fullscreenSynchronizationAtom = (0, jotai.atom)((get) => {
 }, (get, set, element) => {
 	const isFullscreenPreferred = get(isFullscreenPreferredAtom);
 	const isFullscreen = element === get(scrollBarStyleFactorAtom).viewerElement;
-	const wasImmersive = get(isViewerImmersiveAtom);
-	const isViewerFullscreenExit = wasImmersive && !isFullscreen;
+	const isViewerFullscreenExit = get(isViewerImmersiveAtom) && !isFullscreen;
 	const isNavigationExit = get(isBeforeUnloadAtom);
-	const shouldExitImmersive = isFullscreenPreferred && isViewerFullscreenExit && !isNavigationExit;
 	set(scrollBarStyleFactorAtom, {
 		fullscreenElement: element,
-		isImmersive: shouldExitImmersive ? false : void 0
+		isImmersive: isFullscreenPreferred && isViewerFullscreenExit && !isNavigationExit ? false : void 0
 	});
 });
 fullscreenSynchronizationAtom.onMount = (set) => {
@@ -1453,11 +1340,11 @@ const setViewerOptionsAtom = (0, jotai.atom)(null, async (get, set, options) => 
 	try {
 		const { source } = options;
 		const previousOptions = get(viewerOptionsAtom);
-		const shouldLoadSource = source && source !== previousOptions.source;
-		if (!shouldLoadSource) return;
+		if (!(source && source !== previousOptions.source)) return;
 		set(viewerStatusAtom, (previous) => previous === "complete" ? "complete" : "loading");
 		set(viewerOptionsAtom, options);
 		await set(refreshMediaSourceAtom, { cause: "load" });
+		set(lastWindowToViewerMiddleAtom, "reset");
 		set(viewerStatusAtom, "complete");
 	} catch (error) {
 		set(viewerStatusAtom, "error");
@@ -1469,8 +1356,7 @@ const reloadErroredAtom = (0, jotai.atom)(null, (get, set) => {
 	for (const page of get(pageAtomsAtom).map(get)) if (page.state.status !== "complete") set(page.reloadAtom, "load");
 });
 const toggleImmersiveAtom = (0, jotai.atom)(null, async (get, set) => {
-	const hasPermissionIssue = get(viewerModeAtom) === "window" && get(isFullscreenPreferredAtom);
-	if (hasPermissionIssue) {
+	if (get(viewerModeAtom) === "window" && get(isFullscreenPreferredAtom)) {
 		await set(viewerFullscreenAtom, true);
 		return;
 	}
@@ -1513,11 +1399,7 @@ const effectivePreferencesAtom = (0, jotai.atom)((get) => ({
 	isFullscreenPreferred: get(isFullscreenPreferredAtom),
 	fullscreenNoticeCount: get(fullscreenNoticeCountAtom)
 }), (get, set, update) => {
-	if (typeof update === "function") {
-		const preferences = get(effectivePreferencesAtom);
-		const newPreferences = update(preferences);
-		return updatePreferences(newPreferences);
-	}
+	if (typeof update === "function") return updatePreferences(update(get(effectivePreferencesAtom)));
 	return updatePreferences(update);
 	function updatePreferences(preferences) {
 		return Promise.all([
@@ -1699,8 +1581,7 @@ const setScrollElementAtom = (0, jotai.atom)(null, async (get, set, div) => {
 		return;
 	}
 	const setScrollElementSize = () => {
-		const size = div.getBoundingClientRect();
-		set(maxSizeAtom, size);
+		set(maxSizeAtom, div.getBoundingClientRect());
 		set(correctScrollAtom);
 	};
 	const resizeObserver = new ResizeObserver(setScrollElementSize);
@@ -1886,7 +1767,7 @@ const CenterDialog = styled("div", {
 	borderRadius: "10px",
 	boxShadow: "0 0 10px 0 rgba(0, 0, 0, 0.2)"
 });
-function BackdropDialog({ onClose,...props }) {
+function BackdropDialog({ onClose, ...props }) {
 	const [isOpen, setIsOpen] = (0, react.useState)(false);
 	const close = async () => {
 		setIsOpen(false);
@@ -1958,8 +1839,7 @@ const keyBindingsAtom = (0, jotai.atom)((get) => {
 const ActionName = styled("td", { paddingRight: "1em" });
 function HelpTab() {
 	const keyBindings$2 = (0, jotai.useAtomValue)(keyBindingsAtom);
-	const strings = (0, jotai.useAtomValue)(i18nAtom);
-	return  (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [ (0, react_jsx_runtime.jsx)("p", { children: strings.keyBindings }),  (0, react_jsx_runtime.jsx)("table", { children: keyBindings$2.map(([action, keyBinding]) =>  (0, react_jsx_runtime.jsxs)("tr", { children: [ (0, react_jsx_runtime.jsx)(ActionName, { children: action }),  (0, react_jsx_runtime.jsx)("td", { children: keyBinding })] }, action)) })] });
+	return  (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [ (0, react_jsx_runtime.jsx)("p", { children: (0, jotai.useAtomValue)(i18nAtom).keyBindings }),  (0, react_jsx_runtime.jsx)("table", { children: keyBindings$2.map(([action, keyBinding]) =>  (0, react_jsx_runtime.jsxs)("tr", { children: [ (0, react_jsx_runtime.jsx)(ActionName, { children: action }),  (0, react_jsx_runtime.jsx)("td", { children: keyBinding })] }, action)) })] });
 }
 function SettingsTab() {
 	const [maxZoomOutExponent, setMaxZoomOutExponent] = (0, jotai.useAtom)(maxZoomOutExponentAtom);
@@ -2219,20 +2099,6 @@ function LeftBottomControl() {
 	};
 	return  (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [ (0, react_jsx_runtime.jsx)(LeftBottomFloat, { children:  (0, react_jsx_runtime.jsxs)(MenuActions, { children: [ (0, react_jsx_runtime.jsx)(SettingsButton, { onClick: () => setIsOpen((value) => !value) }),  (0, react_jsx_runtime.jsx)(DownloadButton, { onClick: () => downloadAndSave() })] }) }), isOpen &&  (0, react_jsx_runtime.jsx)(ViewerDialog, { onClose: closeDialog })] });
 }
-const stretch = keyframes({
-	"0%": {
-		top: "8px",
-		height: "64px"
-	},
-	"50%": {
-		top: "24px",
-		height: "32px"
-	},
-	"100%": {
-		top: "24px",
-		height: "32px"
-	}
-});
 const SpinnerContainer = styled("div", {
 	position: "absolute",
 	left: "0",
@@ -2248,7 +2114,20 @@ const SpinnerContainer = styled("div", {
 		width: "16px",
 		margin: "0 4px",
 		background: "#fff",
-		animation: `${stretch} 1.2s cubic-bezier(0, 0.5, 0.5, 1) infinite`
+		animation: `${keyframes({
+			"0%": {
+				top: "8px",
+				height: "64px"
+			},
+			"50%": {
+				top: "24px",
+				height: "32px"
+			},
+			"100%": {
+				top: "24px",
+				height: "32px"
+			}
+		})} 1.2s cubic-bezier(0, 0.5, 0.5, 1) infinite`
 	},
 	"div:nth-child(1)": { "animation-delay": "-0.24s" },
 	"div:nth-child(2)": { "animation-delay": "-0.12s" },
@@ -2282,7 +2161,7 @@ const LinkColumn = styled("div", {
 	"&:hover": { boxShadow: "2px 2px 5px" },
 	"&:active": { boxShadow: "0 0 2px" }
 });
-const Image = styled("img", {
+const Image$1 = styled("img", {
 	position: "relative",
 	height: "100%",
 	maxWidth: "100%",
@@ -2296,7 +2175,7 @@ const Video = styled("video", {
 	objectFit: "contain",
 	variants: { originalSize: { true: { height: "auto" } } }
 });
-const Page = ({ atom: atom$2,...props }) => {
+const Page = ({ atom: atom$2, ...props }) => {
 	const { imageProps, videoProps, fullWidth, reloadAtom, shouldBeOriginalSize, divCss, state: pageState, setDiv } = (0, jotai.useAtomValue)(atom$2);
 	const strings = (0, jotai.useAtomValue)(i18nAtom);
 	const reload = (0, jotai.useSetAtom)(reloadAtom);
@@ -2324,7 +2203,7 @@ const Page = ({ atom: atom$2,...props }) => {
 				originalSize: shouldBeOriginalSize,
 				...props
 			}),
-			imageProps &&  (0, react_jsx_runtime.jsx)(Image, {
+			imageProps &&  (0, react_jsx_runtime.jsx)(Image$1, {
 				...imageProps,
 				originalSize: shouldBeOriginalSize,
 				...props
@@ -2354,8 +2233,7 @@ function useHorizontalSwipe({ element, onPrevious, onNext }) {
 		const updateSwipeRatio = (event) => {
 			const continuedTouch = [...event.changedTouches].find((touch) => touch.identifier === startTouch?.identifier);
 			if (!continuedTouch || !startTouch || !lastX) return;
-			const isVerticalScroll = element.scrollTop !== startTouch.scrollTop;
-			if (isVerticalScroll) {
+			if (element.scrollTop !== startTouch.scrollTop) {
 				resetTouch();
 				return;
 			}
@@ -2363,13 +2241,10 @@ function useHorizontalSwipe({ element, onPrevious, onNext }) {
 			lastRatio = Math.max(-1, Math.min(lastRatio + ratioDelta, 1));
 			throttledSetSwipeRatio(lastRatio);
 			lastX = continuedTouch.clientX;
-			const horizontalOffset = Math.abs(continuedTouch.clientX - startTouch.x);
-			const verticalOffset = Math.abs(continuedTouch.clientY - startTouch.y);
-			if (horizontalOffset > verticalOffset) event.preventDefault();
+			if (Math.abs(continuedTouch.clientX - startTouch.x) > Math.abs(continuedTouch.clientY - startTouch.y)) event.preventDefault();
 		};
 		const resetSwipeRatioIfReleased = (event) => {
-			const continuedTouch = [...event.touches].find((touch) => touch.identifier === startTouch?.identifier);
-			if (continuedTouch) return;
+			if ([...event.touches].find((touch) => touch.identifier === startTouch?.identifier)) return;
 			if (Math.abs(lastRatio) < .7) {
 				resetTouch();
 				return;
@@ -2483,7 +2358,7 @@ const CenterText = styled("p", {
 	fontSize: "2em"
 });
 function InnerViewer(props) {
-	const { options, onInitialized,...otherProps } = props;
+	const { options, onInitialized, ...otherProps } = props;
 	const isFullscreen = (0, jotai.useAtomValue)(viewerFullscreenAtom);
 	const backgroundColor$2 = (0, jotai.useAtomValue)(backgroundColorAtom);
 	const status = (0, jotai.useAtomValue)(viewerStatusAtom);
@@ -2507,8 +2382,7 @@ function InnerViewer(props) {
 	(0, jotai.useAtomValue)(fullscreenSynchronizationAtom);
 	useBeforeRepaint();
 	async function setupScroll() {
-		const selector = "div[data-overlayscrollbars-viewport]";
-		await setScrollElement(virtualContainerRef.current?.querySelector(selector));
+		await setScrollElement(virtualContainerRef.current?.querySelector("div[data-overlayscrollbars-viewport]"));
 	}
 	(0, react.useEffect)(() => {
 		if (controller) onInitialized?.(controller);
@@ -2561,9 +2435,8 @@ function initialize(options) {
 	})));
 }
 const Viewer = (0, react.forwardRef)(({ options, onInitialized }) => {
-	const store = (0, react.useMemo)(jotai.createStore, []);
 	return  (0, react_jsx_runtime.jsx)(jotai.Provider, {
-		store,
+		store: (0, react.useMemo)(jotai.createStore, []),
 		children:  (0, react_jsx_runtime.jsx)(InnerViewer, {
 			options,
 			onInitialized
@@ -2576,9 +2449,9 @@ function getDefaultRoot() {
 	document.body.append(div);
 	return div;
 }
-exports.Viewer = Viewer
-exports.download = download
-exports.initialize = initialize
+exports.Viewer = Viewer;
+exports.download = download;
+exports.initialize = initialize;
 Object.defineProperty(exports, 'utils', {
   enumerable: true,
   get: function () {

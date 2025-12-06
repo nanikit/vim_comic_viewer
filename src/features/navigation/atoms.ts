@@ -26,8 +26,12 @@ export const scrollElementAtom = atom((get) => get(scrollElementStateAtom)?.div 
 export const scrollElementSizeAtom = atom({ width: 0, height: 0, scrollHeight: 0 });
 export const pageScrollMiddleAtom = atom(0.5);
 
-const lastViewerToWindowMiddleAtom = atom(-1);
-const lastWindowToViewerMiddleAtom = atom(-1);
+export const lastViewerToWindowMiddleAtom = atom(-1);
+/**
+ * 'notFound' means the same image is not found in the DOM.
+ * 'reset' means the setOptions is called.
+ */
+export const lastWindowToViewerMiddleAtom = atom<number | "notFound" | "reset">("reset");
 
 export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
   const scrollable = get(scrollElementAtom);
@@ -43,12 +47,11 @@ export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
     noSyncScroll,
     mediaElements,
   });
-  if (!middle) {
-    return;
-  }
 
-  set(pageScrollMiddleAtom, middle);
-  set(lastWindowToViewerMiddleAtom, middle);
+  set(lastWindowToViewerMiddleAtom, middle ?? "notFound");
+  if (typeof middle === "number") {
+    set(pageScrollMiddleAtom, middle);
+  }
 });
 
 export const transferViewerScrollToWindowAtom = atom(
