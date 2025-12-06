@@ -1,6 +1,6 @@
-import { assertLess } from "jsr:@std/assert/less";
-import { resolve } from "jsr:@std/path";
-import { diff } from "npm:@bokuweb/image-diff-wasm";
+import { diff } from "@bokuweb/image-diff-wasm";
+import { assertLess } from "@std/assert/less";
+import { resolve } from "@std/path";
 
 type ImageComparisonParams = {
   actual: Promise<Uint8Array>;

@@ -1,8 +1,8 @@
-import { assertEquals } from "jsr:@std/assert";
-import { delay } from "jsr:@std/async/delay";
-import { pooledMap } from "jsr:@std/async/pool";
-import { expandGlob } from "jsr:@std/fs/expand-glob";
-import puppeteer from "npm:puppeteer";
+import { assertEquals } from "@std/assert";
+import { delay } from "@std/async/delay";
+import { pooledMap } from "@std/async/pool";
+import { expandGlob } from "@std/fs/expand-glob";
+import puppeteer from "puppeteer";
 import { assertPixelsEqual, runTestHttpServer } from "./helpers.ts";
 
 Deno.test("With test page", async (test) => {

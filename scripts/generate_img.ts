@@ -1,5 +1,6 @@
-import { parseArgs } from "jsr:@std/cli/parse-args";
-import sharp from "npm:sharp";
+// deno-lint-ignore-file no-import-prefix
+import { parseArgs } from "jsr:@std/cli@^1/parse-args";
+import sharp from "npm:sharp@^0.34";
 
 await main();
 
