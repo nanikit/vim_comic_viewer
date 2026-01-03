@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        20.2.0
+// @version        20.3.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -201,11 +201,15 @@ var en_default = {
 	toggleFullscreenSetting: "Toggle fullscreen setting",
 	nextPage: "Next page",
 	previousPage: "Previous page",
+	nextSeries: "Next series",
+	previousSeries: "Previous series",
 	download: "Download",
 	refresh: "Refresh",
 	increaseSinglePageCount: "Increase single page count",
 	decreaseSinglePageCount: "Decrease single page count",
-	anchorSinglePageCount: "Set single page view until before current page"
+	anchorSinglePageCount: "Set single page view until before current page",
+	pressKey: "Press a key...",
+	resetToDefault: "Reset to default"
 };
 var ko_default = {
 	"@@locale": "ko",
@@ -232,11 +236,15 @@ var ko_default = {
 	toggleFullscreenSetting: "전체화면 설정 전환",
 	nextPage: "다음 페이지",
 	previousPage: "이전 페이지",
+	nextSeries: "다음 시리즈",
+	previousSeries: "이전 시리즈",
 	download: "다운로드",
 	refresh: "새로고침",
 	increaseSinglePageCount: "한쪽 페이지 수 늘리기",
 	decreaseSinglePageCount: "한쪽 페이지 수 줄이기",
-	anchorSinglePageCount: "현재 페이지 전까지 한쪽 페이지로 설정"
+	anchorSinglePageCount: "현재 페이지 전까지 한쪽 페이지로 설정",
+	pressKey: "키를 누르세요...",
+	resetToDefault: "기본값으로"
 };
 const translations = {
 	en: en_default,
@@ -1171,7 +1179,7 @@ const transferWindowScrollToViewerAtom = (0, jotai.atom)(null, (get, set) => {
 		scrollable: get(scrollElementAtom),
 		lastWindowToViewerMiddle: get(lastWindowToViewerMiddleAtom),
 		noSyncScroll: get(viewerOptionsAtom).noSyncScroll ?? false,
-		mediaElements: get(pageAtomsAtom).map((atom$2) => get(atom$2).sourceElement).filter((x) => x !== null)
+		mediaElements: get(pageAtomsAtom).map((atom$3) => get(atom$3).sourceElement).filter((x) => x !== null)
 	});
 	set(lastWindowToViewerMiddleAtom, middle ?? "notFound");
 	if (typeof middle === "number") set(pageScrollMiddleAtom, middle);
@@ -1381,6 +1389,106 @@ function shouldShowF11Guide({ noticeCount }) {
 	const isUserFullscreen = innerHeight === screen.height || innerWidth === screen.width;
 	return noticeCount < 3 && !isUserFullscreen;
 }
+const defaultKeyBindings = {
+	toggleViewer: [
+		"KeyI",
+		"Numpad0",
+		"Enter"
+	],
+	nextPage: [
+		"KeyJ",
+		"ArrowDown",
+		"KeyQ",
+		"PageDown"
+	],
+	previousPage: [
+		"KeyK",
+		"ArrowUp",
+		"PageUp"
+	],
+	nextSeries: [
+		"KeyL",
+		"ArrowRight",
+		"KeyW"
+	],
+	previousSeries: ["KeyH", "ArrowLeft"],
+	download: ["Semicolon"],
+	refresh: ["Quote"],
+	decreaseSinglePageCount: ["Comma"],
+	increaseSinglePageCount: ["Period"],
+	anchorSinglePageCount: ["Slash"]
+};
+const globalActions = ["toggleViewer"];
+const elementActions = [
+	"nextPage",
+	"previousPage",
+	"nextSeries",
+	"previousSeries",
+	"download",
+	"refresh",
+	"decreaseSinglePageCount",
+	"increaseSinglePageCount",
+	"anchorSinglePageCount"
+];
+const keyCodeDisplayNames = {
+	KeyI: "i",
+	KeyJ: "j",
+	KeyK: "k",
+	KeyH: "h",
+	KeyL: "l",
+	KeyQ: "q",
+	KeyW: "w",
+	Numpad0: "NumPad0",
+	Enter: "Enter⏎",
+	ArrowUp: "↑",
+	ArrowDown: "↓",
+	ArrowLeft: "←",
+	ArrowRight: "→",
+	PageUp: "PgUp",
+	PageDown: "PgDown",
+	Semicolon: ";",
+	Comma: ",",
+	Period: ".",
+	Slash: "/",
+	Quote: "'"
+};
+function getKeyDisplayName(code) {
+	return keyCodeDisplayNames[code] ?? code;
+}
+const keyBindingsStorageAtomAtom = (0, jotai.atom)((get) => {
+	return atomWithGmValue(`vim_comic_viewer.keybindings.${get(preferencesPresetAtom)}`, void 0);
+});
+const keyBindingsLoadableAtom = (0, jotai_utils.loadable)((0, jotai_cache.atomWithCache)((get) => get(get(keyBindingsStorageAtomAtom))));
+const keyBindingsAtom = (0, jotai.atom)((get) => {
+	const loaded = get(keyBindingsLoadableAtom);
+	const stored = loaded.state === "hasData" ? loaded.data : void 0;
+	return {
+		...defaultKeyBindings,
+		...stored
+	};
+}, async (get, set, update) => {
+	const storageAtom = get(keyBindingsStorageAtomAtom);
+	if (update === jotai_utils.RESET) {
+		await set(storageAtom, void 0);
+		return;
+	}
+	await set(storageAtom, {
+		...await get(storageAtom),
+		...update
+	});
+});
+const globalKeyToActionAtom = (0, jotai.atom)((get) => {
+	const bindings = get(keyBindingsAtom);
+	const map =  new Map();
+	for (const action of globalActions) for (const key of bindings[action]) map.set(key, action);
+	return map;
+});
+const elementKeyToActionAtom = (0, jotai.atom)((get) => {
+	const bindings = get(keyBindingsAtom);
+	const map =  new Map();
+	for (const action of elementActions) for (const key of bindings[action]) map.set(key, action);
+	return map;
+});
 const controllerPrimitiveAtom = (0, jotai.atom)(null);
 const controllerAtom = (0, jotai.atom)((get) => get(controllerPrimitiveAtom), (get, set) => {
 	const existing = get(controllerPrimitiveAtom);
@@ -1412,8 +1520,8 @@ const effectivePreferencesAtom = (0, jotai.atom)((get) => ({
 			updateIfDefined(fullscreenNoticeCountAtom, preferences.fullscreenNoticeCount)
 		]);
 	}
-	function updateIfDefined(atom$2, value) {
-		return value !== void 0 ? set(atom$2, value) : Promise.resolve();
+	function updateIfDefined(atom$3, value) {
+		return value !== void 0 ? set(atom$3, value) : Promise.resolve();
 	}
 });
 var Controller = class {
@@ -1504,11 +1612,7 @@ var Controller = class {
 	};
 	defaultGlobalKeyHandler = (event) => {
 		if (maybeNotHotkey(event)) return false;
-		if ([
-			"KeyI",
-			"Numpad0",
-			"Enter"
-		].includes(event.code)) {
+		if (this.get(globalKeyToActionAtom).get(event.code) === "toggleViewer") {
 			if (event.shiftKey) this.toggleFullscreen();
 			else this.toggleImmersive();
 			return true;
@@ -1516,46 +1620,43 @@ var Controller = class {
 		return false;
 	};
 	handleElementKey(event) {
-		switch (event.code) {
-			case "KeyJ":
-			case "ArrowDown":
-			case "KeyQ":
-			case "PageDown":
+		const action = this.get(elementKeyToActionAtom).get(event.code);
+		if (!action) return false;
+		return this.executeAction(action);
+	}
+	executeAction(action) {
+		switch (action) {
+			case "nextPage":
 				this.goNext();
 				return true;
-			case "KeyK":
-			case "ArrowUp":
-			case "PageUp":
+			case "previousPage":
 				this.goPrevious();
 				return true;
-			case "KeyH":
-			case "ArrowLeft":
+			case "previousSeries":
 				if (this.options.onPreviousSeries) {
 					this.options.onPreviousSeries();
 					return true;
 				}
 				return false;
-			case "KeyL":
-			case "ArrowRight":
-			case "KeyW":
+			case "nextSeries":
 				if (this.options.onNextSeries) {
 					this.options.onNextSeries();
 					return true;
 				}
 				return false;
-			case "Semicolon":
+			case "download":
 				this.downloader?.downloadAndSave();
 				return true;
-			case "Comma":
+			case "decreaseSinglePageCount":
 				this.addSinglePageCount(-1);
 				return true;
-			case "Period":
+			case "increaseSinglePageCount":
 				this.addSinglePageCount(1);
 				return true;
-			case "Slash":
+			case "anchorSinglePageCount":
 				this.set(anchorSinglePageCountAtom);
 				return true;
-			case "Quote":
+			case "refresh":
 				this.reloadErrored();
 				return true;
 			default: return false;
@@ -1793,54 +1894,149 @@ function BackdropDialog({ onClose, ...props }) {
 		})
 	});
 }
-const keyBindingsAtom = (0, jotai.atom)((get) => {
-	const strings = get(i18nAtom);
-	return [
-		[strings.toggleViewer,  (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
-			 (0, react_jsx_runtime.jsx)("kbd", { children: "i" }),
-			", ",
-			 (0, react_jsx_runtime.jsx)("kbd", { children: "Enter⏎" }),
-			", ",
-			 (0, react_jsx_runtime.jsx)("kbd", { children: "NumPad0" })
-		] })],
-		[strings.toggleFullscreenSetting,  (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
-			 (0, react_jsx_runtime.jsx)("kbd", { children: "⇧Shift" }),
-			"+(",
-			 (0, react_jsx_runtime.jsx)("kbd", { children: "i" }),
-			", ",
-			 (0, react_jsx_runtime.jsx)("kbd", { children: "Enter⏎" }),
-			", ",
-			 (0, react_jsx_runtime.jsx)("kbd", { children: "NumPad0" }),
-			")"
-		] })],
-		[strings.nextPage,  (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
-			 (0, react_jsx_runtime.jsx)("kbd", { children: "j" }),
-			", ",
-			 (0, react_jsx_runtime.jsx)("kbd", { children: "↓" }),
-			", ",
-			 (0, react_jsx_runtime.jsx)("kbd", { children: "q" }),
-			", ",
-			 (0, react_jsx_runtime.jsx)("kbd", { children: "PgDown" })
-		] })],
-		[strings.previousPage,  (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
-			 (0, react_jsx_runtime.jsx)("kbd", { children: "k" }),
-			", ",
-			 (0, react_jsx_runtime.jsx)("kbd", { children: "↑" }),
-			", ",
-			 (0, react_jsx_runtime.jsx)("kbd", { children: "PgUp" })
-		] })],
-		[strings.download,  (0, react_jsx_runtime.jsx)("kbd", { children: ";" })],
-		[strings.refresh,  (0, react_jsx_runtime.jsx)("kbd", { children: "'" })],
-		[strings.decreaseSinglePageCount,  (0, react_jsx_runtime.jsx)("kbd", { children: "," })],
-		[strings.increaseSinglePageCount,  (0, react_jsx_runtime.jsx)("kbd", { children: "." })],
-		[strings.anchorSinglePageCount,  (0, react_jsx_runtime.jsx)("kbd", { children: "/" })]
-	];
-});
-const ActionName = styled("td", { paddingRight: "1em" });
-function HelpTab() {
-	const keyBindings$2 = (0, jotai.useAtomValue)(keyBindingsAtom);
-	return  (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [ (0, react_jsx_runtime.jsx)("p", { children: (0, jotai.useAtomValue)(i18nAtom).keyBindings }),  (0, react_jsx_runtime.jsx)("table", { children: keyBindings$2.map(([action, keyBinding]) =>  (0, react_jsx_runtime.jsxs)("tr", { children: [ (0, react_jsx_runtime.jsx)(ActionName, { children: action }),  (0, react_jsx_runtime.jsx)("td", { children: keyBinding })] }, action)) })] });
+function KeyBindingsTab() {
+	const [bindings, setBindings] = (0, jotai.useAtom)(keyBindingsAtom);
+	const [editingAction, setEditingAction] = (0, react.useState)(null);
+	const strings = (0, jotai.useAtomValue)(i18nAtom);
+	(0, react.useEffect)(() => {
+		if (!editingAction) return;
+		const handler = (event) => {
+			event.preventDefault();
+			event.stopPropagation();
+			const newKeys = [...bindings[editingAction]];
+			if (!newKeys.includes(event.code)) {
+				newKeys.push(event.code);
+				setBindings({ [editingAction]: newKeys });
+			}
+			setEditingAction(null);
+		};
+		addEventListener("keydown", handler, { capture: true });
+		return () => removeEventListener("keydown", handler, { capture: true });
+	}, [
+		editingAction,
+		bindings,
+		setBindings
+	]);
+	const removeKey = (action, keyToRemove) => {
+		const newKeys = bindings[action].filter((k) => k !== keyToRemove);
+		setBindings({ [action]: newKeys });
+	};
+	const resetAction = (action) => {
+		setBindings({ [action]: defaultKeyBindings[action] });
+	};
+	const resetAll = () => {
+		setBindings(jotai_utils.RESET);
+	};
+	return  (0, react_jsx_runtime.jsxs)(Container$1, { children: [ (0, react_jsx_runtime.jsx)(ActionList, { children: [...globalActions, ...elementActions].map((action) =>  (0, react_jsx_runtime.jsxs)(ActionRow, { children: [
+		 (0, react_jsx_runtime.jsx)(ActionName, { children: strings[action] ?? action }),
+		 (0, react_jsx_runtime.jsxs)(KeysContainer, { children: [bindings[action].map((key) =>  (0, react_jsx_runtime.jsxs)(KeyBadge, { children: [ (0, react_jsx_runtime.jsx)("kbd", { children: getKeyDisplayName(key) }),  (0, react_jsx_runtime.jsx)(RemoveButton, {
+			onClick: () => removeKey(action, key),
+			children: "×"
+		})] }, key)), editingAction === action ?  (0, react_jsx_runtime.jsx)(KeyBadge, {
+			css: { background: "#ffffcc" },
+			children: strings.pressKey
+		}) :  (0, react_jsx_runtime.jsx)(AddButton, {
+			onClick: () => setEditingAction(action),
+			children: "+"
+		})] }),
+		 (0, react_jsx_runtime.jsx)(ResetActionButton, {
+			onClick: () => resetAction(action),
+			children: "↺"
+		})
+	] }, action)) }),  (0, react_jsx_runtime.jsx)(ResetAllButton, {
+		onClick: resetAll,
+		children: strings.resetToDefault
+	})] });
 }
+const Container$1 = styled("div", {
+	display: "flex",
+	flexDirection: "column",
+	gap: "1em"
+});
+const ActionList = styled("div", {
+	display: "flex",
+	flexDirection: "column",
+	gap: "0.5em"
+});
+const ActionRow = styled("div", {
+	display: "flex",
+	alignItems: "center",
+	gap: "0.5em",
+	padding: "0.3em 0",
+	borderBottom: "1px solid #eee"
+});
+const ActionName = styled("span", {
+	flex: "0 0 40%",
+	fontSize: "0.9em"
+});
+const KeysContainer = styled("div", {
+	flex: 1,
+	display: "flex",
+	flexWrap: "wrap",
+	gap: "0.3em",
+	alignItems: "center"
+});
+const KeyBadge = styled("span", {
+	display: "inline-flex",
+	alignItems: "center",
+	gap: "0.2em",
+	padding: "0.2em 0.4em",
+	background: "#f0f0f0",
+	border: "1px solid #ccc",
+	borderRadius: "0.3em",
+	fontSize: "0.85em",
+	"& kbd": { fontFamily: "inherit" }
+});
+const RemoveButton = styled("button", {
+	padding: 0,
+	width: "1.2em",
+	height: "1.2em",
+	background: "none",
+	border: "none",
+	borderRadius: "50%",
+	color: "#888",
+	cursor: "pointer",
+	fontSize: "1em",
+	lineHeight: 1,
+	"&:hover": {
+		background: "#ffcccc",
+		color: "#cc0000"
+	}
+});
+const AddButton = styled("button", {
+	padding: "0.2em 0.5em",
+	background: "none",
+	border: "1px dashed #888",
+	borderRadius: "0.3em",
+	color: "#888",
+	cursor: "pointer",
+	fontSize: "0.85em",
+	"&:hover": {
+		background: "#e8f5e9",
+		borderColor: "#4caf50",
+		color: "#4caf50"
+	}
+});
+const ResetActionButton = styled("button", {
+	padding: "0.2em 0.4em",
+	background: "none",
+	border: "none",
+	color: "#888",
+	cursor: "pointer",
+	fontSize: "1em",
+	"&:hover": { color: "#333" }
+});
+const ResetAllButton = styled("button", {
+	padding: "0.4em 0.8em",
+	alignSelf: "flex-start",
+	background: "none",
+	border: "1px solid #f44336",
+	borderRadius: "0.3em",
+	color: "#f44336",
+	cursor: "pointer",
+	fontSize: "0.9em",
+	"&:hover": { background: "#ffebee" }
+});
 function SettingsTab() {
 	const [maxZoomOutExponent, setMaxZoomOutExponent] = (0, jotai.useAtom)(maxZoomOutExponentAtom);
 	const [maxZoomInExponent, setMaxZoomInExponent] = (0, jotai.useAtom)(maxZoomInExponentAtom);
@@ -2045,11 +2241,11 @@ function ViewerDialog({ onClose }) {
 				children: strings.settings
 			}),  (0, react_jsx_runtime.jsx)(__headlessui_react.Tab, {
 				as: PlainTab,
-				children: strings.help
+				children: strings.keyBindings
 			})]
 		}),  (0, react_jsx_runtime.jsxs)(__headlessui_react.TabPanels, {
 			as: StyledTabPanels,
-			children: [ (0, react_jsx_runtime.jsx)(__headlessui_react.TabPanel, { children:  (0, react_jsx_runtime.jsx)(SettingsTab, {}) }),  (0, react_jsx_runtime.jsx)(__headlessui_react.TabPanel, { children:  (0, react_jsx_runtime.jsx)(HelpTab, {}) })]
+			children: [ (0, react_jsx_runtime.jsx)(__headlessui_react.TabPanel, { children:  (0, react_jsx_runtime.jsx)(SettingsTab, {}) }),  (0, react_jsx_runtime.jsx)(__headlessui_react.TabPanel, { children:  (0, react_jsx_runtime.jsx)(KeyBindingsTab, {}) })]
 		})] })
 	});
 }
@@ -2175,8 +2371,8 @@ const Video = styled("video", {
 	objectFit: "contain",
 	variants: { originalSize: { true: { height: "auto" } } }
 });
-const Page = ({ atom: atom$2, ...props }) => {
-	const { imageProps, videoProps, fullWidth, reloadAtom, shouldBeOriginalSize, divCss, state: pageState, setDiv } = (0, jotai.useAtomValue)(atom$2);
+const Page = ({ atom: atom$3, ...props }) => {
+	const { imageProps, videoProps, fullWidth, reloadAtom, shouldBeOriginalSize, divCss, state: pageState, setDiv } = (0, jotai.useAtomValue)(atom$3);
 	const strings = (0, jotai.useAtomValue)(i18nAtom);
 	const reload = (0, jotai.useSetAtom)(reloadAtom);
 	const { status } = pageState;
@@ -2407,10 +2603,10 @@ function InnerViewer(props) {
 				...otherProps,
 				children:  (0, react_jsx_runtime.jsx)(Pages, {
 					ltr: pageDirection === "leftToRight",
-					children: pageAtoms.map((atom$2) =>  (0, react_jsx_runtime.jsx)(Page, {
-						atom: atom$2,
+					children: pageAtoms.map((atom$3) =>  (0, react_jsx_runtime.jsx)(Page, {
+						atom: atom$3,
 						...viewerOptions.mediaProps
-					}, `${atom$2}`))
+					}, `${atom$3}`))
 				})
 			}),
 			 (0, react_jsx_runtime.jsx)(SideSeriesButtons, {}),

@@ -4,6 +4,10 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+## 20.3.0
+
+- _Add key binding customization._
+
 ## 20.2.0
 
 - setOptions now reset viewer scroll to top.

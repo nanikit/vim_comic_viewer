@@ -23,9 +23,13 @@
   "toggleFullscreenSetting": "Toggle fullscreen setting",
   "nextPage": "Next page",
   "previousPage": "Previous page",
+  "nextSeries": "Next series",
+  "previousSeries": "Previous series",
   "download": "Download",
   "refresh": "Refresh",
   "increaseSinglePageCount": "Increase single page count",
   "decreaseSinglePageCount": "Decrease single page count",
-  "anchorSinglePageCount": "Set single page view until before current page"
+  "anchorSinglePageCount": "Set single page view until before current page",
+  "pressKey": "Press a key...",
+  "resetToDefault": "Reset to default"
 }
