@@ -18,6 +18,8 @@ import {
   viewerModeAtom,
 } from "../atoms/viewer_atoms.ts";
 import { atom, Getter, Setter } from "../deps.ts";
+import { elementKeyToActionAtom, globalKeyToActionAtom } from "../features/keybindings/atoms.ts";
+import type { KeyAction } from "../features/keybindings/models.ts";
 import {
   anchorSinglePageCountAtom,
   goNextAtom,
@@ -228,7 +230,10 @@ class Controller {
       return false;
     }
 
-    if (["KeyI", "Numpad0", "Enter"].includes(event.code)) {
+    const globalKeyToAction = this.get(globalKeyToActionAtom);
+    const action = globalKeyToAction.get(event.code);
+
+    if (action === "toggleViewer") {
       if (event.shiftKey) {
         this.toggleFullscreen();
       } else {
@@ -240,46 +245,47 @@ class Controller {
   };
 
   private handleElementKey(event: KeyboardEvent) {
-    switch (event.code) {
-      case "KeyJ":
-      case "ArrowDown":
-      case "KeyQ":
-      case "PageDown":
+    const elementKeyToAction = this.get(elementKeyToActionAtom);
+    const action = elementKeyToAction.get(event.code);
+    if (!action) {
+      return false;
+    }
+    return this.executeAction(action);
+  }
+
+  private executeAction(action: KeyAction): boolean {
+    switch (action) {
+      case "nextPage":
         this.goNext();
         return true;
-      case "KeyK":
-      case "ArrowUp":
-      case "PageUp":
+      case "previousPage":
         this.goPrevious();
         return true;
-      case "KeyH":
-      case "ArrowLeft":
+      case "previousSeries":
         if (this.options.onPreviousSeries) {
           this.options.onPreviousSeries();
           return true;
         }
         return false;
-      case "KeyL":
-      case "ArrowRight":
-      case "KeyW":
+      case "nextSeries":
         if (this.options.onNextSeries) {
           this.options.onNextSeries();
           return true;
         }
         return false;
-      case "Semicolon":
+      case "download":
         this.downloader?.downloadAndSave();
         return true;
-      case "Comma":
+      case "decreaseSinglePageCount":
         void this.addSinglePageCount(-1);
         return true;
-      case "Period":
+      case "increaseSinglePageCount":
         void this.addSinglePageCount(1);
         return true;
-      case "Slash":
+      case "anchorSinglePageCount":
         this.set(anchorSinglePageCountAtom);
         return true;
-      case "Quote":
+      case "refresh":
         this.reloadErrored();
         return true;
       default:

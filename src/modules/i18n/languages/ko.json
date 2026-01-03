@@ -23,9 +23,13 @@
   "toggleFullscreenSetting": "전체화면 설정 전환",
   "nextPage": "다음 페이지",
   "previousPage": "이전 페이지",
+  "nextSeries": "다음 시리즈",
+  "previousSeries": "이전 시리즈",
   "download": "다운로드",
   "refresh": "새로고침",
   "increaseSinglePageCount": "한쪽 페이지 수 늘리기",
   "decreaseSinglePageCount": "한쪽 페이지 수 줄이기",
-  "anchorSinglePageCount": "현재 페이지 전까지 한쪽 페이지로 설정"
+  "anchorSinglePageCount": "현재 페이지 전까지 한쪽 페이지로 설정",
+  "pressKey": "키를 누르세요...",
+  "resetToDefault": "기본값으로"
 }

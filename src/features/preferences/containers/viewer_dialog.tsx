@@ -1,9 +1,9 @@
 import { TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { BackdropDialog } from "../../../components/backdrop_dialog.tsx";
 import { Tab, useAtomValue } from "../../../deps.ts";
+import { KeyBindingsTab } from "../../keybindings/containers/keybindings_tab.tsx";
 import { i18nAtom } from "../../../modules/i18n/atoms.ts";
 import { styled } from "../../../modules/stitches.ts";
-import { HelpTab } from "./tabs/help_tab.tsx";
 import { SettingsTab } from "./tabs/settings_tab.tsx";
 
 export function ViewerDialog({ onClose }: { onClose: () => void }) {
@@ -14,14 +14,14 @@ export function ViewerDialog({ onClose }: { onClose: () => void }) {
       <TabGroup>
         <TabList as={StyledTabList}>
           <Tab as={PlainTab}>{strings.settings}</Tab>
-          <Tab as={PlainTab}>{strings.help}</Tab>
+          <Tab as={PlainTab}>{strings.keyBindings}</Tab>
         </TabList>
         <TabPanels as={StyledTabPanels}>
           <TabPanel>
             <SettingsTab />
           </TabPanel>
           <TabPanel>
-            <HelpTab />
+            <KeyBindingsTab />
           </TabPanel>
         </TabPanels>
       </TabGroup>
