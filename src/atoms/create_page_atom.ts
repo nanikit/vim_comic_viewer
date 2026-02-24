@@ -4,13 +4,12 @@ import { atom } from "../deps.ts";
 import { scrollElementSizeAtom, singlePageCountAtom } from "../features/navigation/atoms.ts";
 import { maxZoomInExponentAtom, maxZoomOutExponentAtom } from "../features/preferences/atoms.ts";
 import {
-  isDelay,
   MAX_RETRY_COUNT,
   MAX_SAME_URL_RETRY_COUNT,
   type MediaElement,
-  type MediaSourceOrDelay,
+  type MediaSourceResolver,
+  normalizeMediaElement,
   type SourceRefreshParams,
-  toMediaElement,
 } from "../helpers/comic_source.ts";
 import type { Size } from "../helpers/size.ts";
 import { viewerOptionsAtom } from "./viewer_base_atoms.ts";
@@ -72,43 +71,49 @@ export const maxSizeAtom = atom(
 
 export const pageAtomsAtom = atom<Atom<PageModel>[]>([]);
 
-export const refreshMediaSourceAtom = atom(null, async (get, set, params: SourceRefreshParams) => {
-  const { source } = get(viewerOptionsAtom);
-  if (!source) {
-    return;
-  }
+type RefreshMediaSourceParams = SourceRefreshParams & { index?: number };
 
-  const medias = await source({ ...params, maxSize: get(maxSizeAtom) });
-  if (source !== get(viewerOptionsAtom).source) {
-    return;
-  }
+export const refreshMediaSourceAtom = atom(
+  null,
+  async (get, set, params: RefreshMediaSourceParams) => {
+    const { source } = get(viewerOptionsAtom);
+    if (!source) {
+      return;
+    }
 
-  if (!Array.isArray(medias)) {
-    throw new Error(`Invalid comic source type: ${typeof medias}`);
-  }
+    const medias = await source();
+    if (source !== get(viewerOptionsAtom).source) {
+      return;
+    }
 
-  if (params.cause === "load" && params.page === undefined) {
-    set(
-      pageAtomsAtom,
-      medias.map((media, index) => createPageAtom({ initialSource: media, index, set })),
-    );
-  }
+    if (!Array.isArray(medias)) {
+      throw new Error(`Invalid comic source type: ${typeof medias}`);
+    }
 
-  if (params.page !== undefined) {
-    return medias[params.page];
-  }
-});
+    if (params.cause === "load" && params.index === undefined) {
+      set(
+        pageAtomsAtom,
+        medias.map((media, index) => createPageAtom({ initialSource: media, index, set })),
+      );
+    }
+
+    if (params.index !== undefined) {
+      return medias[params.index];
+    }
+  },
+);
 
 export function createPageAtom(
-  params: { initialSource: MediaSourceOrDelay; index: number; set: Setter },
+  params: { initialSource: MediaSourceResolver; index: number; set: Setter },
 ) {
   const { initialSource, index, set } = params;
   const triedUrls: string[] = [];
   let div: HTMLDivElement | null = null;
+  let sourceElement: MediaElement | null = null;
 
   const stateAtom = atom<PageState>({
     status: "loading",
-    source: toMediaElement(initialSource),
+    source: new Image(),
   });
 
   const loadAtom = atom(null, async (get, set, cause: "load" | "error") => {
@@ -120,10 +125,10 @@ export function createPageAtom(
       return;
     }
 
-    let newSource: MediaSourceOrDelay;
+    let newSource: MediaSourceResolver | undefined = cause === "load" ? initialSource : undefined;
 
     try {
-      newSource = await set(refreshMediaSourceAtom, { cause, page: index });
+      newSource = await set(refreshMediaSourceAtom, { cause, index }) ?? newSource;
     } catch (error) {
       console.error(error);
       set(stateAtom, (previous) => ({
@@ -138,12 +143,26 @@ export function createPageAtom(
       return;
     }
 
-    if (isDelay(newSource)) {
+    if (!newSource) {
       set(stateAtom, { status: "error", urls: [], source: new Image() });
       return;
     }
 
-    const source = toMediaElement(newSource);
+    let loadedSource: MediaElement;
+    try {
+      loadedSource = await newSource({ cause });
+    } catch (error) {
+      console.error(error);
+      set(stateAtom, (previous) => ({
+        ...previous,
+        status: "error",
+        urls: Array.from(triedUrls),
+      }));
+      return;
+    }
+
+    sourceElement = loadedSource.isConnected ? loadedSource : null;
+    const source = normalizeMediaElement(loadedSource);
     triedUrls.push(source.src);
     set(stateAtom, { status: "loading", source });
 
@@ -187,7 +206,9 @@ export function createPageAtom(
     const canMessUpRow = shouldBeOriginalSize && isLarge;
 
     const attributes = Object.fromEntries(
-      [...source.attributes].map(({ name, value }) => [name, value]),
+      [...source.attributes]
+        .filter(({ name }) => name !== "style")
+        .map(({ name, value }) => [name, value]),
     );
     const mediaProps = { ...attributes, onError: reload };
 
@@ -207,7 +228,7 @@ export function createPageAtom(
       setDiv: (newDiv: HTMLDivElement | null) => {
         div = newDiv;
       },
-      sourceElement: initialSource instanceof HTMLElement ? initialSource : null,
+      sourceElement,
       reloadAtom: loadAtom,
       fullWidth: index < compactWidthIndex || canMessUpRow,
       shouldBeOriginalSize,
@@ -263,9 +284,7 @@ export function createPageAtom(
     });
   }
 
-  if (isDelay(initialSource)) {
-    set(loadAtom, "load");
-  }
+  set(loadAtom, "load");
 
   return aggregateAtom;
 }

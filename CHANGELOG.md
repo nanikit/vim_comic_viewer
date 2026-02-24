@@ -4,6 +4,13 @@
 - _Minor change is a one affecting user more or less._
 - Patch change is none of above or fix.
 
+## 21.0.0
+
+- **Change `ComicSource` type to
+  `() => PromiseOrValue<((params: SourceRefreshParams) => PromiseOrValue<MediaElement>)[]>`.**
+- **Remove `page` from `SourceRefreshParams`.**
+- **Remove `ComicSourceParams`, `MediaSource`, `MediaSourceOrDelay` API.**
+
 ## 20.3.0
 
 - _Add key binding customization._

@@ -1,5 +1,5 @@
 import { deferred, zip } from "../deps.ts";
-import { type ComicSource, getMediaIterable, type MediaSourceOrDelay } from "./comic_source.ts";
+import { type ComicSource, getMediaIterable, type MediaSourceResolver } from "./comic_source.ts";
 import { gmFetch, isGmFetchAvailable } from "./gm_fetch.ts";
 
 export type DownloadStatus = "ongoing" | "complete" | "error" | "cancelled";
@@ -27,13 +27,13 @@ export async function download(
   let rejectedCount = 0;
   let status: DownloadStatus = "ongoing";
 
-  const pages = await comic({ cause: "download", maxSize: { width: Infinity, height: Infinity } });
+  const pages = await comic();
   const digit = Math.floor(Math.log10(pages.length)) + 1;
 
   return archiveWithReport();
 
   async function archiveWithReport(): Promise<Uint8Array> {
-    const result = await Promise.all(pages.map(downloadWithReport));
+    const result = await Promise.all(pages.map((page) => downloadWithReport(page)));
 
     if (signal?.aborted) {
       reportProgress({ transition: "cancelled" });
@@ -59,15 +59,14 @@ export async function download(
   }
 
   async function downloadWithReport(
-    source: MediaSourceOrDelay,
-    pageIndex: number,
+    source: MediaSourceResolver,
   ): Promise<{ url: string; blob: Blob }> {
     const errors = [];
 
     startedCount++;
     reportProgress();
 
-    for await (const event of downloadImage({ media: source, pageIndex })) {
+    for await (const event of downloadImage({ media: source })) {
       if ("error" in event) {
         errors.push(event.error);
         onError?.(event.error);
@@ -90,10 +89,9 @@ export async function download(
   }
 
   async function* downloadImage(
-    { media, pageIndex }: { media: MediaSourceOrDelay; pageIndex: number },
+    { media }: { media: MediaSourceResolver },
   ): AsyncGenerator<{ error: unknown } | { url: string; blob: Blob }> {
-    const maxSize = { width: Infinity, height: Infinity };
-    const mediaParams = { media, index: pageIndex, comic, maxSize };
+    const mediaParams = { media, initialCause: "download" as const };
     for await (const url of getMediaIterable(mediaParams)) {
       if (signal?.aborted) {
         break;
