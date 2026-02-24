@@ -3,7 +3,6 @@ import { type ComicSource } from "../helpers/comic_source.ts";
 
 export type ViewerOptions = {
   source?: ComicSource;
-  mediaProps?: Record<string, string>;
   /** do not synchronize scroll position if true. */
   noSyncScroll?: boolean;
   onNextSeries?: () => void;

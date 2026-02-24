@@ -9,7 +9,9 @@
 - **Change `ComicSource` type to
   `() => PromiseOrValue<((params: SourceRefreshParams) => PromiseOrValue<MediaElement>)[]>`.**
 - **Remove `page` from `SourceRefreshParams`.**
+- **Remove `resize` from `SourceRefreshParams`.**
 - **Remove `ComicSourceParams`, `MediaSource`, `MediaSourceOrDelay` API.**
+- **Remove `ViewerOptions.mediaProps`. Set attributes in each `MediaElement` instead.**
 
 ## 20.3.0
 
