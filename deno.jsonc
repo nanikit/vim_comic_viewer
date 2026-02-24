@@ -24,8 +24,8 @@
     "fmt": "deno fmt --check",
     "lint": "deno lint",
     "check": "deno check src/mod.tsx",
-    "build": "deno run --allow-all npm:rolldown --config rolldown.config.mts",
-    "watch": "deno run --allow-all npm:rolldown --config rolldown.config.mts --watch",
+    "build": "deno run --allow-all npm:rolldown@1.0.0-rc.2 --config rolldown.config.mts",
+    "watch": "deno run --allow-all npm:rolldown@1.0.0-rc.2 --config rolldown.config.mts --watch",
     "test": {
       "command": "deno test -A ./test",
       "description": "Test with Chrome browser",
