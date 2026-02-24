@@ -10,12 +10,15 @@ export type MediaSourceResolver = (params: SourceRefreshParams) => PromiseOrValu
 
 export type SourceRefreshParams = {
   /** The cause of the comic source being loaded. */
-  cause: "load" | "download" | "resize" | "error";
+  cause: "load" | "download" | "error";
 };
 
 /**
  * Width and height are planned to be used for CLS prevention.
  * If provided element is already attached, it will be cloned.
+ *
+ * Set per-media attributes (for example, `crossorigin`, `referrerpolicy`, `alt`) directly on this
+ * element in your comic source resolver.
  */
 export type MediaElement = HTMLImageElement | HTMLVideoElement;
 

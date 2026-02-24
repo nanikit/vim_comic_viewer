@@ -4,7 +4,7 @@ import { Image, LinkColumn, Overlay, Spinner, Video } from "../components/spinne
 import { Atom, MouseEventHandler, useAtomValue, useSetAtom } from "../deps.ts";
 import { i18nAtom } from "../modules/i18n/atoms.ts";
 
-export const Page = ({ atom, ...props }: { atom: Atom<PageModel> }) => {
+export function Page({ atom }: { atom: Atom<PageModel> }) {
   const {
     imageProps,
     videoProps,
@@ -34,8 +34,8 @@ export const Page = ({ atom, ...props }: { atom: Atom<PageModel> }) => {
           <p>{pageState.urls?.join("\n")}</p>
         </LinkColumn>
       )}
-      {videoProps && <Video {...videoProps} originalSize={shouldBeOriginalSize} {...props} />}
-      {imageProps && <Image {...imageProps} originalSize={shouldBeOriginalSize} {...props} />}
+      {videoProps && <Video originalSize={shouldBeOriginalSize} {...videoProps} />}
+      {imageProps && <Image originalSize={shouldBeOriginalSize} {...imageProps} />}
     </Overlay>
   );
-};
+}
