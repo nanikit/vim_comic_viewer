@@ -6,7 +6,12 @@ define("main", (require, exports, module) => {
   async function main() {
     const urls = [...document.querySelectorAll("img")].map((x) => x.src);
     await (0, import_vim_comic_viewer.initialize)({
-      source: () => urls,
+      source: () =>
+        urls.map((url) => () => {
+          const img = new Image();
+          img.src = url;
+          return img;
+        }),
       noSyncScroll: true,
       onNextSeries: () => {
         window.onNextSeriesCount ??= 0;
