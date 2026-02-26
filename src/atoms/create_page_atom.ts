@@ -200,11 +200,10 @@ export function createPageAtom(
     const canMessUpRow = shouldBeOriginalSize && isLarge;
 
     const attributes = Object.fromEntries(
-      [...source.attributes]
-        .filter(({ name }) => name !== "style")
-        .map(({ name, value }) => [name, value]),
+      [...source.attributes].map(({ name, value }) => [name, value]),
     );
-    const mediaProps = { ...attributes, onError: reload };
+    const { width: _w, height: _h, style: _s, ...filteredAttributes } = attributes;
+    const mediaProps = { ...filteredAttributes, onError: reload };
 
     const divCss = {
       ...(shouldBeOriginalSize
