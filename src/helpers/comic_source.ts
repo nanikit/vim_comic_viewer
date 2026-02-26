@@ -24,7 +24,7 @@ export type MediaElement = HTMLImageElement | HTMLVideoElement;
 
 export type PromiseOrValue<T> = T | Promise<T>;
 
-export const MAX_RETRY_COUNT = 6;
+export const MAX_RETRY_COUNT = 3;
 export const MAX_SAME_URL_RETRY_COUNT = 2;
 
 export function normalizeMediaElement(source: MediaElement): MediaElement {

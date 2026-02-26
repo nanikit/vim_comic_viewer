@@ -5,7 +5,6 @@ import { scrollElementSizeAtom, singlePageCountAtom } from "../features/navigati
 import { maxZoomInExponentAtom, maxZoomOutExponentAtom } from "../features/preferences/atoms.ts";
 import {
   MAX_RETRY_COUNT,
-  MAX_SAME_URL_RETRY_COUNT,
   type MediaElement,
   type MediaSourceResolver,
   normalizeMediaElement,
@@ -17,6 +16,7 @@ import { viewerOptionsAtom } from "./viewer_base_atoms.ts";
 export type PageModel = {
   index: number;
   state: PageState;
+  mediaKey: number;
   div: HTMLDivElement | null;
   setDiv: (newDiv: HTMLDivElement | null) => void;
   sourceElement: MediaElement | null;
@@ -81,33 +81,34 @@ export const refreshMediaSourceAtom = atom(
       return;
     }
 
-    const medias = await source();
+    const resolvers = await source();
     if (source !== get(viewerOptionsAtom).source) {
       return;
     }
 
-    if (!Array.isArray(medias)) {
-      throw new Error(`Invalid comic source type: ${typeof medias}`);
+    if (!Array.isArray(resolvers)) {
+      throw new Error(`Invalid comic source, expected array, got ${typeof resolvers}`);
     }
 
     if (params.cause === "load" && params.index === undefined) {
       set(
         pageAtomsAtom,
-        medias.map((media, index) => createPageAtom({ initialSource: media, index, set })),
+        resolvers.map((media, index) => createPageAtom({ resolver: media, index, set })),
       );
     }
 
     if (params.index !== undefined) {
-      return medias[params.index];
+      return resolvers[params.index];
     }
   },
 );
 
 export function createPageAtom(
-  params: { initialSource: MediaSourceResolver; index: number; set: Setter },
+  params: { resolver: MediaSourceResolver; index: number; set: Setter },
 ) {
-  const { initialSource, index, set } = params;
-  const triedUrls: string[] = [];
+  const { resolver, index, set } = params;
+  const triedUrls = new Set<string>();
+  let tryCount = 0;
   let div: HTMLDivElement | null = null;
   let sourceElement: MediaElement | null = null;
 
@@ -117,40 +118,25 @@ export function createPageAtom(
   });
 
   const loadAtom = atom(null, async (get, set, cause: "load" | "error") => {
-    if (cause === "load") {
-      triedUrls.length = 0;
-    }
-
     if (isComplete()) {
       return;
     }
 
-    let newSource: MediaSourceResolver | undefined = cause === "load" ? initialSource : undefined;
-
-    try {
-      newSource = await set(refreshMediaSourceAtom, { cause, index }) ?? newSource;
-    } catch (error) {
-      console.error(error);
-      set(stateAtom, (previous) => ({
-        ...previous,
-        status: "error",
-        urls: Array.from(triedUrls),
-      }));
-      return;
-    }
-
-    if (isComplete()) {
-      return;
-    }
-
-    if (!newSource) {
+    if (!resolver) {
       set(stateAtom, { status: "error", urls: [], source: new Image() });
       return;
     }
 
+    if (cause === "load") {
+      tryCount = 0;
+      triedUrls.clear();
+    }
+    set(stateAtom, { status: "loading", source: new Image() });
+
     let loadedSource: MediaElement;
     try {
-      loadedSource = await newSource({ cause });
+      tryCount++;
+      loadedSource = await resolver({ cause });
     } catch (error) {
       console.error(error);
       set(stateAtom, (previous) => ({
@@ -163,7 +149,17 @@ export function createPageAtom(
 
     sourceElement = loadedSource.isConnected ? loadedSource : null;
     const source = normalizeMediaElement(loadedSource);
-    triedUrls.push(source.src);
+    triedUrls.add(source.src);
+    if (source instanceof HTMLImageElement && source.srcset) {
+      const urls = source.srcset.split(",").flatMap((x) => {
+        const url = x.split(/\s+/)[0];
+        return url ? [url] : [];
+      });
+      for (const url of urls) {
+        triedUrls.add(url);
+      }
+    }
+
     set(stateAtom, { status: "loading", source });
 
     function isComplete() {
@@ -172,8 +168,6 @@ export function createPageAtom(
   });
 
   const aggregateAtom = atom<PageModel>((get) => {
-    get(loadAtom);
-
     const state = get(stateAtom);
     const scrollElementSize = get(scrollElementSizeAtom);
     const compactWidthIndex = get(singlePageCountAtom);
@@ -224,6 +218,7 @@ export function createPageAtom(
     return {
       index,
       state,
+      mediaKey: tryCount,
       div,
       setDiv: (newDiv: HTMLDivElement | null) => {
         div = newDiv;
@@ -250,17 +245,7 @@ export function createPageAtom(
   });
 
   async function reload() {
-    const isOverMaxRetry = triedUrls.length > MAX_RETRY_COUNT;
-
-    const urlCountMap = triedUrls.reduce((acc, url) => {
-      acc[url] = (acc[url] ?? 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    const isOverSameUrlRetry = Object.values(urlCountMap).some((count) =>
-      count > MAX_SAME_URL_RETRY_COUNT
-    );
-
-    if (isOverMaxRetry || isOverSameUrlRetry) {
+    if (tryCount >= MAX_RETRY_COUNT) {
       set(stateAtom, (previous) => ({
         ...previous,
         status: "error",
@@ -269,10 +254,6 @@ export function createPageAtom(
       return;
     }
 
-    set(stateAtom, () => ({
-      status: "loading",
-      source: new Image(),
-    }));
     await set(loadAtom, "error");
   }
 

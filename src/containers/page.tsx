@@ -8,6 +8,7 @@ export function Page({ atom }: { atom: Atom<PageModel> }) {
   const {
     imageProps,
     videoProps,
+    mediaKey,
     fullWidth,
     reloadAtom,
     shouldBeOriginalSize,
@@ -21,7 +22,7 @@ export function Page({ atom }: { atom: Atom<PageModel> }) {
 
   const reloadErrored: MouseEventHandler = async (event) => {
     event.stopPropagation();
-    await reload("load");
+    await reload("error");
   };
 
   return (
@@ -34,8 +35,8 @@ export function Page({ atom }: { atom: Atom<PageModel> }) {
           <p>{pageState.urls?.join("\n")}</p>
         </LinkColumn>
       )}
-      {videoProps && <Video originalSize={shouldBeOriginalSize} {...videoProps} />}
-      {imageProps && <Image originalSize={shouldBeOriginalSize} {...imageProps} />}
+      {videoProps && <Video key={mediaKey} originalSize={shouldBeOriginalSize} {...videoProps} />}
+      {imageProps && <Image key={mediaKey} originalSize={shouldBeOriginalSize} {...imageProps} />}
     </Overlay>
   );
 }
