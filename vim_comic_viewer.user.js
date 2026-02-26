@@ -3,7 +3,7 @@
 // @name:ko        vim comic viewer
 // @description    Universal comic reader
 // @description:ko 만화 뷰어 라이브러리
-// @version        20.3.0
+// @version        21.0.0
 // @namespace      https://greasyfork.org/en/users/713014-nanikit
 // @exclude        *
 // @match          http://unused-field.space/
@@ -40,11 +40,12 @@
 // ==/UserScript==
 "use strict";
 
+Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (all, symbols) => {
+var __exportAll = (all, no_symbols) => {
 	let target = {};
 	for (var name in all) {
 		__defProp(target, name, {
@@ -52,7 +53,7 @@ var __export = (all, symbols) => {
 			enumerable: true
 		});
 	}
-	if (symbols) {
+	if (!no_symbols) {
 		__defProp(target, Symbol.toStringTag, { value: "Module" });
 	}
 	return target;
@@ -71,19 +72,13 @@ var __copyProps = (to, from, except, desc) => {
 	}
 	return to;
 };
-var __reExport = (target, mod, secondTarget, symbols) => {
-	if (symbols) {
-		__defProp(target, Symbol.toStringTag, { value: "Module" });
-		secondTarget && __defProp(secondTarget, Symbol.toStringTag, { value: "Module" });
-	}
-	__copyProps(target, mod, "default"), secondTarget && __copyProps(secondTarget, mod, "default");
-};
+var __reExport = (target, mod, secondTarget) => (__copyProps(target, mod, "default"), secondTarget && __copyProps(secondTarget, mod, "default"));
 require("vcv-inject-node-env");
-let __stitches_react = require("@stitches/react");
+let _stitches_react = require("@stitches/react");
 let jotai = require("jotai");
 let jotai_cache = require("jotai-cache");
 let jotai_utils = require("jotai/utils");
-let __headlessui_react = require("@headlessui/react");
+let _headlessui_react = require("@headlessui/react");
 let react = require("react");
 let react_dom_client = require("react-dom/client");
 let react_jsx_runtime = require("react/jsx-runtime");
@@ -137,12 +132,12 @@ function throttle(fn, timeframe) {
 	});
 	return throttled;
 }
-var deps_exports =  __export({
-	Dialog: () => __headlessui_react.Dialog,
+var deps_exports =  __exportAll({
+	Dialog: () => _headlessui_react.Dialog,
 	Fragment: () => react.Fragment,
 	Provider: () => jotai.Provider,
 	RESET: () => jotai_utils.RESET,
-	Tab: () => __headlessui_react.Tab,
+	Tab: () => _headlessui_react.Tab,
 	atom: () => jotai.atom,
 	atomWithCache: () => jotai_cache.atomWithCache,
 	atomWithStorage: () => jotai_utils.atomWithStorage,
@@ -150,7 +145,7 @@ var deps_exports =  __export({
 	createJSONStorage: () => jotai_utils.createJSONStorage,
 	createRef: () => react.createRef,
 	createRoot: () => react_dom_client.createRoot,
-	createStitches: () => __stitches_react.createStitches,
+	createStitches: () => _stitches_react.createStitches,
 	createStore: () => jotai.createStore,
 	deferred: () => deferred,
 	forwardRef: () => react.forwardRef,
@@ -269,7 +264,7 @@ function getLanguage() {
 	}
 	return en_default;
 }
-const { styled, css, keyframes } = (0, __stitches_react.createStitches)({});
+const { styled, css, keyframes } = (0, _stitches_react.createStitches)({});
 function DownloadCancel({ onClick }) {
 	const strings = (0, jotai.useAtomValue)(i18nAtom);
 	return  (0, react_jsx_runtime.jsxs)(SpaceBetween, { children: [ (0, react_jsx_runtime.jsx)("p", { children: strings.downloading }),  (0, react_jsx_runtime.jsx)("button", {
@@ -283,35 +278,18 @@ const SpaceBetween = styled("div", {
 	flexFlow: "row nowrap",
 	justifyContent: "space-between"
 });
-const MAX_RETRY_COUNT = 6;
+const MAX_RETRY_COUNT = 3;
 const MAX_SAME_URL_RETRY_COUNT = 2;
-function isDelay(sourceOrDelay) {
-	return sourceOrDelay === void 0;
-}
-function toMediaElement(source) {
-	if (isDelay(source)) return new Image();
-	if (typeof source === "string") {
-		const img = new Image();
-		img.src = source;
-		return img;
-	}
+function normalizeMediaElement(source) {
 	if (source.isConnected) return source.cloneNode(true);
 	return source;
 }
-async function* getMediaIterable({ media, index, comic, maxSize }) {
-	if (!isDelay(media)) yield getUrl(media);
-	if (!comic) return;
+async function* getMediaIterable({ media, initialCause = "load" }) {
 	let previous;
 	let retryCount = 0;
 	let sameUrlRetryCount = 0;
 	while (sameUrlRetryCount <= MAX_SAME_URL_RETRY_COUNT && retryCount <= MAX_RETRY_COUNT) {
-		const next = (await comic({
-			cause: media !== void 0 || retryCount > 0 ? "error" : "load",
-			page: index,
-			maxSize
-		}))[index];
-		if (isDelay(next)) continue;
-		const url = getUrl(next);
+		const url = getUrl(await media({ cause: retryCount > 0 ? "error" : initialCause }));
 		yield url;
 		retryCount++;
 		if (previous === url) {
@@ -322,7 +300,7 @@ async function* getMediaIterable({ media, index, comic, maxSize }) {
 	}
 }
 function getUrl(source) {
-	return typeof source === "string" ? source : source.src;
+	return normalizeMediaElement(source).src;
 }
 const isGmFetchAvailable = typeof GM.xmlHttpRequest === "function";
 async function gmFetch(url, init) {
@@ -344,17 +322,11 @@ async function download(comic, options) {
 	let resolvedCount = 0;
 	let rejectedCount = 0;
 	let status = "ongoing";
-	const pages = await comic({
-		cause: "download",
-		maxSize: {
-			width: Infinity,
-			height: Infinity
-		}
-	});
+	const pages = await comic();
 	const digit = Math.floor(Math.log10(pages.length)) + 1;
 	return archiveWithReport();
 	async function archiveWithReport() {
-		const result = await Promise.all(pages.map(downloadWithReport));
+		const result = await Promise.all(pages.map((page) => downloadWithReport(page)));
 		if (signal?.aborted) {
 			reportProgress({ transition: "cancelled" });
 			signal.throwIfAborted();
@@ -374,14 +346,11 @@ async function download(comic, options) {
 		signal?.addEventListener("abort", abort, { once: true });
 		return value;
 	}
-	async function downloadWithReport(source, pageIndex) {
+	async function downloadWithReport(source) {
 		const errors = [];
 		startedCount++;
 		reportProgress();
-		for await (const event of downloadImage({
-			media: source,
-			pageIndex
-		})) {
+		for await (const event of downloadImage({ media: source })) {
 			if ("error" in event) {
 				errors.push(event.error);
 				onError?.(event.error);
@@ -397,15 +366,10 @@ async function download(comic, options) {
 			blob: new Blob([errors.map((x) => `${x}`).join("\n\n")])
 		};
 	}
-	async function* downloadImage({ media, pageIndex }) {
+	async function* downloadImage({ media }) {
 		const mediaParams = {
 			media,
-			index: pageIndex,
-			comic,
-			maxSize: {
-				width: Infinity,
-				height: Infinity
-			}
+			initialCause: "download"
 		};
 		for await (const url of getMediaIterable(mediaParams)) {
 			if (signal?.aborted) break;
@@ -479,7 +443,7 @@ function isCrossOrigin(url) {
 function isGmCancelled(error) {
 	return error instanceof Function;
 }
-var utils_exports =  __export({
+var utils_exports =  __exportAll({
 	getSafeFileName: () => getSafeFileName,
 	insertCss: () => insertCss,
 	isTyping: () => isTyping,
@@ -489,10 +453,10 @@ var utils_exports =  __export({
 	waitDomContent: () => waitDomContent
 });
 const timeout = (millisecond) => new Promise((resolve) => setTimeout(resolve, millisecond));
-const waitDomContent = (document$1) => document$1.readyState === "loading" ? new Promise((r) => document$1.addEventListener("readystatechange", r, { once: true })) : true;
-const insertCss = (css$1) => {
+const waitDomContent = (document) => document.readyState === "loading" ? new Promise((r) => document.addEventListener("readystatechange", r, { once: true })) : true;
+const insertCss = (css) => {
 	const style = document.createElement("style");
-	style.innerHTML = css$1;
+	style.innerHTML = css;
 	document.head.append(style);
 };
 const isTyping = (event) => event.target?.tagName?.match?.(/INPUT|TEXTAREA/) || event.target?.isContentEditable;
@@ -574,8 +538,8 @@ const startDownloadAtom = (0, jotai.atom)(null, async (get, set, options) => {
 	}
 });
 const downloadAndSaveAtom = (0, jotai.atom)(null, async (_get, set, options) => {
-	const zip$1 = await set(startDownloadAtom, options);
-	if (zip$1) await save(new Blob([zip$1]));
+	const zip = await set(startDownloadAtom, options);
+	if (zip) await save(new Blob([zip]));
 });
 function logIfNotAborted(error) {
 	if (isNotAbort(error)) console.error(error);
@@ -739,57 +703,68 @@ const pageAtomsAtom = (0, jotai.atom)([]);
 const refreshMediaSourceAtom = (0, jotai.atom)(null, async (get, set, params) => {
 	const { source } = get(viewerOptionsAtom);
 	if (!source) return;
-	const medias = await source({
-		...params,
-		maxSize: get(maxSizeAtom)
-	});
+	const resolvers = await source();
 	if (source !== get(viewerOptionsAtom).source) return;
-	if (!Array.isArray(medias)) throw new Error(`Invalid comic source type: ${typeof medias}`);
-	if (params.cause === "load" && params.page === void 0) set(pageAtomsAtom, medias.map((media, index) => createPageAtom({
-		initialSource: media,
+	if (!Array.isArray(resolvers)) throw new Error(`Invalid comic source, expected array, got ${typeof resolvers}`);
+	if (params.cause === "load" && params.index === void 0) set(pageAtomsAtom, resolvers.map((media, index) => createPageAtom({
+		resolver: media,
 		index,
 		set
 	})));
-	if (params.page !== void 0) return medias[params.page];
+	if (params.index !== void 0) return resolvers[params.index];
 });
 function createPageAtom(params) {
-	const { initialSource, index, set } = params;
-	const triedUrls = [];
+	const { resolver, index, set } = params;
+	const triedUrls =  new Set();
+	let tryCount = 0;
 	let div = null;
+	let sourceElement = null;
 	const stateAtom = (0, jotai.atom)({
 		status: "loading",
-		source: toMediaElement(initialSource)
+		source: new Image()
 	});
-	const loadAtom = (0, jotai.atom)(null, async (get, set$1, cause) => {
-		if (cause === "load") triedUrls.length = 0;
+	const loadAtom = (0, jotai.atom)(null, async (get, set, cause) => {
 		if (isComplete()) return;
-		let newSource;
-		try {
-			newSource = await set$1(refreshMediaSourceAtom, {
-				cause,
-				page: index
-			});
-		} catch (error) {
-			console.error(error);
-			set$1(stateAtom, (previous) => ({
-				...previous,
-				status: "error",
-				urls: Array.from(triedUrls)
-			}));
-			return;
-		}
-		if (isComplete()) return;
-		if (isDelay(newSource)) {
-			set$1(stateAtom, {
+		if (!resolver) {
+			set(stateAtom, {
 				status: "error",
 				urls: [],
 				source: new Image()
 			});
 			return;
 		}
-		const source = toMediaElement(newSource);
-		triedUrls.push(source.src);
-		set$1(stateAtom, {
+		if (cause === "load") {
+			tryCount = 0;
+			triedUrls.clear();
+		}
+		set(stateAtom, {
+			status: "loading",
+			source: new Image()
+		});
+		let loadedSource;
+		try {
+			tryCount++;
+			loadedSource = await resolver({ cause });
+		} catch (error) {
+			console.error(error);
+			set(stateAtom, (previous) => ({
+				...previous,
+				status: "error",
+				urls: Array.from(triedUrls)
+			}));
+			return;
+		}
+		sourceElement = loadedSource.isConnected ? loadedSource : null;
+		const source = normalizeMediaElement(loadedSource);
+		triedUrls.add(source.src);
+		if (source instanceof HTMLImageElement && source.srcset) {
+			const urls = source.srcset.split(",").flatMap((x) => {
+				const url = x.split(/\s+/)[0];
+				return url ? [url] : [];
+			});
+			for (const url of urls) triedUrls.add(url);
+		}
+		set(stateAtom, {
 			status: "loading",
 			source
 		});
@@ -798,7 +773,6 @@ function createPageAtom(params) {
 		}
 	});
 	const aggregateAtom = (0, jotai.atom)((get) => {
-		get(loadAtom);
 		const state = get(stateAtom);
 		const scrollElementSize = get(scrollElementSizeAtom);
 		const compactWidthIndex = get(singlePageCountAtom);
@@ -820,8 +794,9 @@ function createPageAtom(params) {
 			mediaRatio: ratio
 		});
 		const canMessUpRow = shouldBeOriginalSize && ratio > 1;
+		const { width: _w, height: _h, style: _s, ...filteredAttributes } = Object.fromEntries([...source.attributes].map(({ name, value }) => [name, value]));
 		const mediaProps = {
-			...Object.fromEntries([...source.attributes].map(({ name, value }) => [name, value])),
+			...filteredAttributes,
 			onError: reload
 		};
 		const divCss = {
@@ -834,11 +809,12 @@ function createPageAtom(params) {
 		return {
 			index,
 			state,
+			mediaKey: tryCount,
 			div,
 			setDiv: (newDiv) => {
 				div = newDiv;
 			},
-			sourceElement: initialSource instanceof HTMLElement ? initialSource : null,
+			sourceElement,
 			reloadAtom: loadAtom,
 			fullWidth: index < compactWidthIndex || canMessUpRow,
 			shouldBeOriginalSize,
@@ -858,13 +834,7 @@ function createPageAtom(params) {
 		};
 	});
 	async function reload() {
-		const isOverMaxRetry = triedUrls.length > MAX_RETRY_COUNT;
-		const urlCountMap = triedUrls.reduce((acc, url) => {
-			acc[url] = (acc[url] ?? 0) + 1;
-			return acc;
-		}, {});
-		const isOverSameUrlRetry = Object.values(urlCountMap).some((count) => count > MAX_SAME_URL_RETRY_COUNT);
-		if (isOverMaxRetry || isOverSameUrlRetry) {
+		if (tryCount >= MAX_RETRY_COUNT) {
 			set(stateAtom, (previous) => ({
 				...previous,
 				status: "error",
@@ -872,10 +842,6 @@ function createPageAtom(params) {
 			}));
 			return;
 		}
-		set(stateAtom, () => ({
-			status: "loading",
-			source: new Image()
-		}));
 		await set(loadAtom, "error");
 	}
 	function setCompleteState(event) {
@@ -885,7 +851,7 @@ function createPageAtom(params) {
 			source: element
 		});
 	}
-	if (isDelay(initialSource)) set(loadAtom, "load");
+	set(loadAtom, "load");
 	return aggregateAtom;
 }
 function getImageToViewerSizeRatio({ viewerSize, imgSize }) {
@@ -1091,9 +1057,9 @@ function getCurrentPageFromElements({ elements, viewportHeight, previousMiddle }
 	if (!currentRow) return;
 	return selectColumn(currentRow);
 	function selectColumn(row) {
-		const firstPage = row.find(({ page: page$1 }) => page$1 === elements[0]);
+		const firstPage = row.find(({ page }) => page === elements[0]);
 		if (firstPage) return firstPage;
-		const lastPage = row.find(({ page: page$1 }) => page$1 === elements.at(-1));
+		const lastPage = row.find(({ page }) => page === elements.at(-1));
 		if (lastPage) return lastPage;
 		const half = Math.floor(row.length / 2);
 		if (row.length % 2 === 1) return row[half];
@@ -1179,7 +1145,7 @@ const transferWindowScrollToViewerAtom = (0, jotai.atom)(null, (get, set) => {
 		scrollable: get(scrollElementAtom),
 		lastWindowToViewerMiddle: get(lastWindowToViewerMiddleAtom),
 		noSyncScroll: get(viewerOptionsAtom).noSyncScroll ?? false,
-		mediaElements: get(pageAtomsAtom).map((atom$3) => get(atom$3).sourceElement).filter((x) => x !== null)
+		mediaElements: get(pageAtomsAtom).map((atom) => get(atom).sourceElement).filter((x) => x !== null)
 	});
 	set(lastWindowToViewerMiddleAtom, middle ?? "notFound");
 	if (typeof middle === "number") set(pageScrollMiddleAtom, middle);
@@ -1520,8 +1486,8 @@ const effectivePreferencesAtom = (0, jotai.atom)((get) => ({
 			updateIfDefined(fullscreenNoticeCountAtom, preferences.fullscreenNoticeCount)
 		]);
 	}
-	function updateIfDefined(atom$3, value) {
-		return value !== void 0 ? set(atom$3, value) : Promise.resolve();
+	function updateIfDefined(atom, value) {
+		return value !== void 0 ? set(atom, value) : Promise.resolve();
 	}
 });
 var Controller = class {
@@ -1802,7 +1768,7 @@ const LeftArrow = (props) => {
 		transform: "rotate(180)"
 	});
 };
-const Container = styled("div", {
+const Container$1 = styled("div", {
 	position: "relative",
 	height: "100%",
 	overflow: "hidden",
@@ -1927,7 +1893,7 @@ function KeyBindingsTab() {
 	const resetAll = () => {
 		setBindings(jotai_utils.RESET);
 	};
-	return  (0, react_jsx_runtime.jsxs)(Container$1, { children: [ (0, react_jsx_runtime.jsx)(ActionList, { children: [...globalActions, ...elementActions].map((action) =>  (0, react_jsx_runtime.jsxs)(ActionRow, { children: [
+	return  (0, react_jsx_runtime.jsxs)(Container, { children: [ (0, react_jsx_runtime.jsx)(ActionList, { children: [...globalActions, ...elementActions].map((action) =>  (0, react_jsx_runtime.jsxs)(ActionRow, { children: [
 		 (0, react_jsx_runtime.jsx)(ActionName, { children: strings[action] ?? action }),
 		 (0, react_jsx_runtime.jsxs)(KeysContainer, { children: [bindings[action].map((key) =>  (0, react_jsx_runtime.jsxs)(KeyBadge, { children: [ (0, react_jsx_runtime.jsx)("kbd", { children: getKeyDisplayName(key) }),  (0, react_jsx_runtime.jsx)(RemoveButton, {
 			onClick: () => removeKey(action, key),
@@ -1948,7 +1914,7 @@ function KeyBindingsTab() {
 		children: strings.resetToDefault
 	})] });
 }
-const Container$1 = styled("div", {
+const Container = styled("div", {
 	display: "flex",
 	flexDirection: "column",
 	gap: "1em"
@@ -2040,8 +2006,8 @@ const ResetAllButton = styled("button", {
 function SettingsTab() {
 	const [maxZoomOutExponent, setMaxZoomOutExponent] = (0, jotai.useAtom)(maxZoomOutExponentAtom);
 	const [maxZoomInExponent, setMaxZoomInExponent] = (0, jotai.useAtom)(maxZoomInExponentAtom);
-	const [singlePageCount$2, setSinglePageCount] = (0, jotai.useAtom)(singlePageCountAtom);
-	const [backgroundColor$2, setBackgroundColor] = (0, jotai.useAtom)(backgroundColorAtom);
+	const [singlePageCount, setSinglePageCount] = (0, jotai.useAtom)(singlePageCountAtom);
+	const [backgroundColor, setBackgroundColor] = (0, jotai.useAtom)(backgroundColorAtom);
 	const [pageDirection, setPageDirection] = (0, jotai.useAtom)(pageDirectionAtom);
 	const [isFullscreenPreferred, setIsFullscreenPreferred] = (0, jotai.useAtom)(isFullscreenPreferredSettingsAtom);
 	const zoomOutExponentInputId = (0, react.useId)();
@@ -2052,8 +2018,8 @@ function SettingsTab() {
 	const fullscreenInputId = (0, react.useId)();
 	const strings = (0, jotai.useAtomValue)(i18nAtom);
 	const [isResetConfirming, setResetConfirming] = (0, react.useState)(false);
-	const maxZoomOut$2 = formatMultiplier(maxZoomOutExponent);
-	const maxZoomIn$2 = formatMultiplier(maxZoomInExponent);
+	const maxZoomOut = formatMultiplier(maxZoomOutExponent);
+	const maxZoomIn = formatMultiplier(maxZoomInExponent);
 	function tryReset() {
 		if (!isResetConfirming) {
 			setResetConfirming(true);
@@ -2073,7 +2039,7 @@ function SettingsTab() {
 			children: [
 				strings.maxZoomOut,
 				": ",
-				maxZoomOut$2
+				maxZoomOut
 			]
 		}),  (0, react_jsx_runtime.jsx)("input", {
 			type: "number",
@@ -2090,7 +2056,7 @@ function SettingsTab() {
 			children: [
 				strings.maxZoomIn,
 				": ",
-				maxZoomIn$2
+				maxZoomIn
 			]
 		}),  (0, react_jsx_runtime.jsx)("input", {
 			type: "number",
@@ -2110,7 +2076,7 @@ function SettingsTab() {
 			min: 0,
 			step: 1,
 			id: singlePageCountInputId,
-			value: singlePageCount$2,
+			value: singlePageCount,
 			onChange: (event) => {
 				setSinglePageCount(event.currentTarget.valueAsNumber || 0);
 			}
@@ -2121,7 +2087,7 @@ function SettingsTab() {
 		}),  (0, react_jsx_runtime.jsx)(ColorInput, {
 			type: "color",
 			id: colorInputId,
-			value: backgroundColor$2,
+			value: backgroundColor,
 			onChange: (event) => {
 				setBackgroundColor(event.currentTarget.value);
 			}
@@ -2234,18 +2200,18 @@ function ViewerDialog({ onClose }) {
 	const strings = (0, jotai.useAtomValue)(i18nAtom);
 	return  (0, react_jsx_runtime.jsx)(BackdropDialog, {
 		onClose,
-		children:  (0, react_jsx_runtime.jsxs)(__headlessui_react.TabGroup, { children: [ (0, react_jsx_runtime.jsxs)(__headlessui_react.TabList, {
+		children:  (0, react_jsx_runtime.jsxs)(_headlessui_react.TabGroup, { children: [ (0, react_jsx_runtime.jsxs)(_headlessui_react.TabList, {
 			as: StyledTabList,
-			children: [ (0, react_jsx_runtime.jsx)(__headlessui_react.Tab, {
+			children: [ (0, react_jsx_runtime.jsx)(_headlessui_react.Tab, {
 				as: PlainTab,
 				children: strings.settings
-			}),  (0, react_jsx_runtime.jsx)(__headlessui_react.Tab, {
+			}),  (0, react_jsx_runtime.jsx)(_headlessui_react.Tab, {
 				as: PlainTab,
 				children: strings.keyBindings
 			})]
-		}),  (0, react_jsx_runtime.jsxs)(__headlessui_react.TabPanels, {
+		}),  (0, react_jsx_runtime.jsxs)(_headlessui_react.TabPanels, {
 			as: StyledTabPanels,
-			children: [ (0, react_jsx_runtime.jsx)(__headlessui_react.TabPanel, { children:  (0, react_jsx_runtime.jsx)(SettingsTab, {}) }),  (0, react_jsx_runtime.jsx)(__headlessui_react.TabPanel, { children:  (0, react_jsx_runtime.jsx)(KeyBindingsTab, {}) })]
+			children: [ (0, react_jsx_runtime.jsx)(_headlessui_react.TabPanel, { children:  (0, react_jsx_runtime.jsx)(SettingsTab, {}) }),  (0, react_jsx_runtime.jsx)(_headlessui_react.TabPanel, { children:  (0, react_jsx_runtime.jsx)(KeyBindingsTab, {}) })]
 		})] })
 	});
 }
@@ -2371,14 +2337,14 @@ const Video = styled("video", {
 	objectFit: "contain",
 	variants: { originalSize: { true: { height: "auto" } } }
 });
-const Page = ({ atom: atom$3, ...props }) => {
-	const { imageProps, videoProps, fullWidth, reloadAtom, shouldBeOriginalSize, divCss, state: pageState, setDiv } = (0, jotai.useAtomValue)(atom$3);
+function Page({ atom }) {
+	const { imageProps, videoProps, mediaKey, fullWidth, reloadAtom, shouldBeOriginalSize, divCss, state: pageState, setDiv } = (0, jotai.useAtomValue)(atom);
 	const strings = (0, jotai.useAtomValue)(i18nAtom);
 	const reload = (0, jotai.useSetAtom)(reloadAtom);
 	const { status } = pageState;
 	const reloadErrored = async (event) => {
 		event.stopPropagation();
-		await reload("load");
+		await reload("error");
 	};
 	return  (0, react_jsx_runtime.jsxs)(Overlay, {
 		ref: setDiv,
@@ -2395,18 +2361,16 @@ const Page = ({ atom: atom$3, ...props }) => {
 				]
 			}),
 			videoProps &&  (0, react_jsx_runtime.jsx)(Video, {
-				...videoProps,
 				originalSize: shouldBeOriginalSize,
-				...props
-			}),
+				...videoProps
+			}, mediaKey),
 			imageProps &&  (0, react_jsx_runtime.jsx)(Image$1, {
-				...imageProps,
 				originalSize: shouldBeOriginalSize,
-				...props
-			})
+				...imageProps
+			}, mediaKey)
 		]
 	});
-};
+}
 function useHorizontalSwipe({ element, onPrevious, onNext }) {
 	const [swipeRatio, setSwipeRatio] = (0, react.useState)(0);
 	(0, react.useEffect)(() => {
@@ -2556,9 +2520,8 @@ const CenterText = styled("p", {
 function InnerViewer(props) {
 	const { options, onInitialized, ...otherProps } = props;
 	const isFullscreen = (0, jotai.useAtomValue)(viewerFullscreenAtom);
-	const backgroundColor$2 = (0, jotai.useAtomValue)(backgroundColorAtom);
+	const backgroundColor = (0, jotai.useAtomValue)(backgroundColorAtom);
 	const status = (0, jotai.useAtomValue)(viewerStatusAtom);
-	const viewerOptions = (0, jotai.useAtomValue)(viewerOptionsAtom);
 	const pageDirection = (0, jotai.useAtomValue)(pageDirectionAtom);
 	const strings = (0, jotai.useAtomValue)(i18nAtom);
 	const mode = (0, jotai.useAtomValue)(viewerModeAtom);
@@ -2568,7 +2531,7 @@ function InnerViewer(props) {
 	const setScrollElement = (0, jotai.useSetAtom)(setScrollElementAtom);
 	const setViewerOptions = (0, jotai.useSetAtom)(setViewerOptionsAtom);
 	const pageAtoms = (0, jotai.useAtomValue)(pageAtomsAtom);
-	const [initialize$1] = (0, overlayscrollbars_react.useOverlayScrollbars)({
+	const [initialize] = (0, overlayscrollbars_react.useOverlayScrollbars)({
 		defer: true,
 		events: {
 			scroll: (0, jotai.useSetAtom)(synchronizeScrollAtom),
@@ -2587,11 +2550,11 @@ function InnerViewer(props) {
 		setViewerOptions(options);
 	}, [options]);
 	(0, react.useEffect)(() => {
-		if (virtualContainer) initialize$1(virtualContainer);
-	}, [initialize$1, virtualContainer]);
-	return  (0, react_jsx_runtime.jsxs)(Container, {
+		if (virtualContainer) initialize(virtualContainer);
+	}, [initialize, virtualContainer]);
+	return  (0, react_jsx_runtime.jsxs)(Container$1, {
 		ref: (0, jotai.useSetAtom)(setViewerElementAtom),
-		css: { backgroundColor: backgroundColor$2 },
+		css: { backgroundColor },
 		immersive: mode === "window",
 		children: [
 			 (0, react_jsx_runtime.jsx)(OverlayScroller, {
@@ -2603,10 +2566,7 @@ function InnerViewer(props) {
 				...otherProps,
 				children:  (0, react_jsx_runtime.jsx)(Pages, {
 					ltr: pageDirection === "leftToRight",
-					children: pageAtoms.map((atom$3) =>  (0, react_jsx_runtime.jsx)(Page, {
-						atom: atom$3,
-						...viewerOptions.mediaProps
-					}, `${atom$3}`))
+					children: pageAtoms.map((atom) =>  (0, react_jsx_runtime.jsx)(Page, { atom }, `${atom}`))
 				})
 			}),
 			 (0, react_jsx_runtime.jsx)(SideSeriesButtons, {}),
