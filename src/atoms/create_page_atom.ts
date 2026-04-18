@@ -12,6 +12,7 @@ import {
   type SourceRefreshParams,
 } from "../helpers/comic_source.ts";
 import type { Size } from "../helpers/size.ts";
+import { getStableMediaSize } from "./page_size.ts";
 import { viewerOptionsAtom } from "./viewer_base_atoms.ts";
 
 export type PageModel = {
@@ -32,6 +33,7 @@ export type PageModel = {
 type PageState =
   & {
     source: MediaElement;
+    rememberedSize?: Partial<Size>;
   }
   & ({
     status: "loading";
@@ -116,6 +118,7 @@ export function createPageAtom(
   const stateAtom = atom<PageState>({
     status: "loading",
     source: new Image(),
+    rememberedSize: undefined,
   });
 
   const loadAtom = atom(null, async (get, set, cause: "load" | "error") => {
@@ -132,7 +135,11 @@ export function createPageAtom(
       tryCount = 0;
       triedUrls.clear();
     }
-    set(stateAtom, { status: "loading", source: new Image() });
+    set(stateAtom, (previous) => ({
+      status: "loading",
+      source: new Image(),
+      rememberedSize: previous.rememberedSize,
+    }));
 
     let loadedSource: MediaElement;
     try {
@@ -150,6 +157,7 @@ export function createPageAtom(
 
     sourceElement = loadedSource.isConnected ? loadedSource : null;
     const source = normalizeMediaElement(loadedSource);
+    const rememberedSize = getStableMediaSize({ source: loadedSource });
     triedUrls.add(source.src);
     if (source instanceof HTMLImageElement && source.srcset) {
       const urls = source.srcset.split(",").flatMap((x) => {
@@ -161,7 +169,7 @@ export function createPageAtom(
       }
     }
 
-    set(stateAtom, { status: "loading", source });
+    set(stateAtom, { status: "loading", source, rememberedSize });
 
     function isComplete() {
       return get(stateAtom).status === "complete";
@@ -176,16 +184,10 @@ export function createPageAtom(
     const maxZoomOutExponent = get(maxZoomOutExponentAtom);
 
     const source = state.source;
-    const width = source instanceof HTMLImageElement
-      ? source.naturalWidth
-      : source instanceof HTMLVideoElement
-      ? source.videoWidth
-      : undefined;
-    const height = source instanceof HTMLImageElement
-      ? source.naturalHeight
-      : source instanceof HTMLVideoElement
-      ? source.videoHeight
-      : undefined;
+    const { width, height } = getStableMediaSize({
+      source,
+      rememberedSize: state.rememberedSize,
+    });
 
     const ratio = getImageToViewerSizeRatio({
       viewerSize: scrollElementSize,
@@ -259,9 +261,11 @@ export function createPageAtom(
 
   function setCompleteState(event: SyntheticEvent<HTMLImageElement | HTMLVideoElement>) {
     const element = event.currentTarget;
+    const rememberedSize = getStableMediaSize({ source: element });
     set(stateAtom, {
       status: "complete",
       source: element,
+      rememberedSize,
     });
   }
 
