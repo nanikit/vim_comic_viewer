@@ -17,6 +17,10 @@ Basic shortcut is
 
 - <kbd>'</kbd>: stop and reload not completed image
 
+## Links
+
+- [Greasyfork (distribution site)](https://greasyfork.org/scripts/417893-vim-comic-viewer)
+
 ## For developer
 
 Up to date example is [here](https://github.com/nanikit/comic_sources).
