@@ -20,5 +20,9 @@ tampermonkey에서 쓰려 만든 만화 뷰어 라이브러리입니다.
 
 최신 사용 예제는 [여기](https://github.com/nanikit/comic_sources) 있습니다.
 
+tracked 파일을 바꾸지 않고 TamperDAV나 deno_tamperdav로 테스트하려면 `.env.example`를 복사해
+`.env`를 만들고 `OUTPUT_SYNC`에 `Tampermonkey/sync` 디렉터리를 넣으세요. 그러면 `deno task build` 나
+`deno task watch` 시 생성된 userscript가 그 경로로 함께 동기화됩니다.
+
 1.0 이상이지만 라이브러리가 안정화 됐다는 의미는 아닙니다. breaking change가 많을 수 있고 있을
 때마다 메이저 버전을 올릴 겁니다.

@@ -25,5 +25,9 @@ Basic shortcut is
 
 Up to date example is [here](https://github.com/nanikit/comic_sources).
 
+To test with TamperDAV or deno_tamperdav without changing tracked files, create `.env` from
+`.env.example` and set `OUTPUT_SYNC` to your `Tampermonkey/sync` directory. The build tool reads
+that value and syncs the generated userscript on `deno task build` or `deno task watch`.
+
 Although its version is over 1.0 but it does not mean it is stable. I will change its major version
 whenever breaking change happens.
