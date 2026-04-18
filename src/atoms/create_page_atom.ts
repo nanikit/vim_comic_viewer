@@ -1,5 +1,6 @@
 import type { CSS } from "@stitches/react";
 import type { Atom, Setter } from "jotai";
+import type { SyntheticEvent } from "react";
 import { atom } from "../deps.ts";
 import { scrollElementSizeAtom, singlePageCountAtom } from "../features/navigation/atoms.ts";
 import { maxZoomInExponentAtom, maxZoomOutExponentAtom } from "../features/preferences/atoms.ts";
@@ -256,7 +257,7 @@ export function createPageAtom(
     await set(loadAtom, "error");
   }
 
-  function setCompleteState(event: React.SyntheticEvent<HTMLImageElement | HTMLVideoElement>) {
+  function setCompleteState(event: SyntheticEvent<HTMLImageElement | HTMLVideoElement>) {
     const element = event.currentTarget;
     set(stateAtom, {
       status: "complete",
