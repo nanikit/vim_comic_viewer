@@ -12,6 +12,7 @@ import {
   type SourceRefreshParams,
 } from "../helpers/comic_source.ts";
 import type { Size } from "../helpers/size.ts";
+import { currentNavigationTraceIdAtom, recordDebugEventAtom } from "./logger_atom.ts";
 import { getStableMediaSize } from "./page_size.ts";
 import { viewerOptionsAtom } from "./viewer_base_atoms.ts";
 
@@ -114,6 +115,7 @@ export function createPageAtom(
   let tryCount = 0;
   let div: HTMLDivElement | null = null;
   let sourceElement: MediaElement | null = null;
+  let requestTraceId: number | undefined;
 
   const stateAtom = atom<PageState>({
     status: "loading",
@@ -144,6 +146,15 @@ export function createPageAtom(
     let loadedSource: MediaElement;
     try {
       tryCount++;
+      requestTraceId = get(currentNavigationTraceIdAtom) ?? undefined;
+      set(recordDebugEventAtom, {
+        event: "page:media-request",
+        traceId: requestTraceId,
+        pageIndex: index,
+        cause,
+        tryCount,
+        rememberedSize: get(stateAtom).rememberedSize,
+      });
       loadedSource = await resolver({ cause });
     } catch (error) {
       console.error(error);
@@ -158,6 +169,17 @@ export function createPageAtom(
     sourceElement = loadedSource.isConnected ? loadedSource : null;
     const source = normalizeMediaElement(loadedSource);
     const rememberedSize = getStableMediaSize({ source: loadedSource });
+    set(recordDebugEventAtom, {
+      event: "page:media-resolved",
+      traceId: requestTraceId,
+      pageIndex: index,
+      cause,
+      tryCount,
+      status: "loading",
+      size: getStableMediaSize({ source }),
+      rememberedSize,
+      src: source.src,
+    });
     triedUrls.add(source.src);
     if (source instanceof HTMLImageElement && source.srcset) {
       const urls = source.srcset.split(",").flatMap((x) => {
@@ -262,6 +284,15 @@ export function createPageAtom(
   function setCompleteState(event: SyntheticEvent<HTMLImageElement | HTMLVideoElement>) {
     const element = event.currentTarget;
     const rememberedSize = getStableMediaSize({ source: element });
+    set(recordDebugEventAtom, {
+      event: "page:media-complete",
+      traceId: requestTraceId,
+      pageIndex: index,
+      status: "complete",
+      size: rememberedSize,
+      rememberedSize,
+      src: element.src,
+    });
     set(stateAtom, {
       status: "complete",
       source: element,

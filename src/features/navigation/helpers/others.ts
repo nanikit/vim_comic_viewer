@@ -1,4 +1,5 @@
 import type { Size } from "../../../helpers/size.ts";
+import type { NavigationDebugDecision } from "../../../atoms/debug_log.ts";
 import {
   getCurrentRow,
   getInPageRatio,
@@ -73,14 +74,19 @@ export function navigateByPointer(scrollElement: HTMLDivElement | null, event: R
 
 /** Returns difference of scrollTop to make the target section visible. */
 export function goToPreviousArea(scrollElement: HTMLDivElement | null) {
-  const page = getCurrentPageFromScrollElement({ scrollElement, previousMiddle: Infinity });
+  const context = getAreaNavigationContext({
+    direction: "previous",
+    scrollElement,
+    previousMiddle: Infinity,
+  });
+  const { decision, page, elements } = context;
   if (!page || !scrollElement) {
-    return;
+    return decision;
   }
 
   const { height: viewerHeight, top: viewerTop } = scrollElement.getBoundingClientRect();
   const ignorableHeight = viewerHeight * 0.05;
-  const { top: pageTop } = page.getBoundingClientRect();
+  const { top: pageTop, bottom: pageBottom } = page.getBoundingClientRect();
   const remainingHeight = viewerTop - pageTop;
   const needsPartialScroll = remainingHeight > ignorableHeight;
 
@@ -89,20 +95,52 @@ export function goToPreviousArea(scrollElement: HTMLDivElement | null) {
     const yDiff = -Math.ceil(remainingHeight / divisor);
     // Use scrollBy because scrollTop precision is not enough on HiDPI.
     scrollElement.scrollBy({ top: yDiff });
+    return {
+      ...decision,
+      remainingHeight,
+      ignorableHeight,
+      needsPartialScroll,
+      viewerTop,
+      viewerBottom: viewerTop + viewerHeight,
+      pageTop,
+      pageBottom,
+      operation: "scrollBy",
+      yDiff,
+      scrollTopAfter: scrollElement.scrollTop,
+    } satisfies NavigationDebugDecision;
   } else {
-    goToPreviousRow(page);
+    const targetPageIndex = goToPreviousRow(page, elements);
+    return {
+      ...decision,
+      remainingHeight,
+      ignorableHeight,
+      needsPartialScroll,
+      viewerTop,
+      viewerBottom: viewerTop + viewerHeight,
+      pageTop,
+      pageBottom,
+      operation: "scrollIntoView",
+      block: targetPageIndex === 0 ? "start" : "end",
+      targetPageIndex,
+      scrollTopAfter: scrollElement.scrollTop,
+    } satisfies NavigationDebugDecision;
   }
 }
 
 export function goToNextArea(scrollElement: HTMLDivElement | null) {
-  const page = getCurrentPageFromScrollElement({ scrollElement, previousMiddle: 0 });
+  const context = getAreaNavigationContext({
+    direction: "next",
+    scrollElement,
+    previousMiddle: 0,
+  });
+  const { decision, page, elements } = context;
   if (!page || !scrollElement) {
-    return;
+    return decision;
   }
 
   const { height: viewerHeight, bottom: viewerBottom } = scrollElement.getBoundingClientRect();
   const ignorableHeight = viewerHeight * 0.05;
-  const { bottom: pageBottom } = page.getBoundingClientRect();
+  const { top: pageTop, bottom: pageBottom } = page.getBoundingClientRect();
   const remainingHeight = pageBottom - viewerBottom;
   const needsPartialScroll = remainingHeight > ignorableHeight;
 
@@ -110,8 +148,35 @@ export function goToNextArea(scrollElement: HTMLDivElement | null) {
     const divisor = Math.ceil(remainingHeight / viewerHeight);
     const yDiff = Math.ceil(remainingHeight / divisor);
     scrollElement.scrollBy({ top: yDiff });
+    return {
+      ...decision,
+      remainingHeight,
+      ignorableHeight,
+      needsPartialScroll,
+      viewerTop: viewerBottom - viewerHeight,
+      viewerBottom,
+      pageTop,
+      pageBottom,
+      operation: "scrollBy",
+      yDiff,
+      scrollTopAfter: scrollElement.scrollTop,
+    } satisfies NavigationDebugDecision;
   } else {
-    goToNextRow(page);
+    const targetPageIndex = goToNextRow(page, elements);
+    return {
+      ...decision,
+      remainingHeight,
+      ignorableHeight,
+      needsPartialScroll,
+      viewerTop: viewerBottom - viewerHeight,
+      viewerBottom,
+      pageTop,
+      pageBottom,
+      operation: "scrollIntoView",
+      block: targetPageIndex === elements.length - 1 ? "end" : "start",
+      targetPageIndex,
+      scrollTopAfter: scrollElement.scrollTop,
+    } satisfies NavigationDebugDecision;
   }
 }
 
@@ -198,7 +263,7 @@ export function getPagesFromScrollElement(scrollElement: HTMLElement | null) {
   return scrollElement?.firstElementChild?.children;
 }
 
-function goToNextRow(currentPage: HTMLElement) {
+function goToNextRow(currentPage: HTMLElement, elements: HTMLElement[]) {
   // https://greasyfork.org/ko/scripts/418090/discussions/291840
   // Environment: Firefox, Nvidia headed, devicePixelRatio = 1.25, innerHeight = 909
   // Flex-box row could be overlapped by 0.00001px, so adjust with epsilon.
@@ -213,15 +278,16 @@ function goToNextRow(currentPage: HTMLElement) {
     const isNextPage = currentPageBottom <= pageTop;
     if (isNextPage) {
       page.scrollIntoView({ behavior: "instant", block: "start" });
-      return;
+      return elements.indexOf(page);
     }
   }
 
   // it is the last page, scroll to end
   page.scrollIntoView({ behavior: "instant", block: "end" });
+  return elements.indexOf(page);
 }
 
-function goToPreviousRow(currentPage: HTMLElement) {
+function goToPreviousRow(currentPage: HTMLElement, elements: HTMLElement[]) {
   const epsilon = 0.01;
   const currentPageTop = currentPage.getBoundingClientRect().top + epsilon;
 
@@ -233,23 +299,39 @@ function goToPreviousRow(currentPage: HTMLElement) {
     const isPreviousPage = pageBottom <= currentPageTop;
     if (isPreviousPage) {
       page.scrollIntoView({ behavior: "instant", block: "end" });
-      return;
+      return elements.indexOf(page);
     }
   }
 
   // it is the first page, scroll to start
   page.scrollIntoView({ behavior: "instant", block: "start" });
+  return elements.indexOf(page);
 }
 
-function getCurrentPageFromScrollElement(
-  { scrollElement, previousMiddle }: { scrollElement: HTMLElement | null; previousMiddle: number },
+function getAreaNavigationContext(
+  { direction, scrollElement, previousMiddle }: {
+    direction: "next" | "previous";
+    scrollElement: HTMLDivElement | null;
+    previousMiddle: number;
+  },
 ) {
-  const middle = getCurrentMiddleFromScrollElement({ scrollElement, previousMiddle });
-  if (!middle || !scrollElement) {
-    return null;
-  }
+  const currentMiddle = getCurrentMiddleFromScrollElement({ scrollElement, previousMiddle });
+  const elements = [...(getPagesFromScrollElement(scrollElement) ?? [])] as HTMLElement[];
+  const page = currentMiddle == null || !scrollElement
+    ? null
+    : getScrollPage(currentMiddle, scrollElement);
+  const currentPageIndex = page ? elements.indexOf(page) : undefined;
+  const decision = {
+    direction,
+    previousMiddle,
+    currentMiddle,
+    currentPageIndex,
+    pageCount: elements.length,
+    operation: page && scrollElement ? "noop" : "noop",
+    scrollTopBefore: scrollElement?.scrollTop,
+  } satisfies NavigationDebugDecision;
 
-  return getScrollPage(middle, scrollElement);
+  return { decision, page, elements };
 }
 
 function getPageScroll(

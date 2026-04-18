@@ -1,7 +1,8 @@
 import { pageAtomsAtom } from "../../atoms/create_page_atom.ts";
-import { loggerAtom } from "../../atoms/logger_atom.ts";
+import { beginNavigationTraceAtom, recordDebugEventAtom } from "../../atoms/logger_atom.ts";
+import type { DebugPageRect, NavigationDebugInput } from "../../atoms/debug_log.ts";
 import { viewerOptionsAtom } from "../../atoms/viewer_base_atoms.ts";
-import { atom, RESET } from "../../deps.ts";
+import { atom, type Getter, RESET } from "../../deps.ts";
 import { beforeRepaintAtom } from "../../modules/use_before_repaint.ts";
 import { singlePageCountStorageAtom } from "../preferences/atoms.ts";
 import {
@@ -12,7 +13,6 @@ import {
   getYDifferenceFromPrevious,
   goToNextArea,
   goToPreviousArea,
-  navigateByPointer,
   toWindowScroll,
 } from "./helpers/others.ts";
 import { toViewerScroll } from "./helpers/to_viewer_scroll.ts";
@@ -50,14 +50,21 @@ export const transferWindowScrollToViewerAtom = atom(null, (get, set) => {
     mediaElements,
   });
   set(lastWindowToViewerMiddleAtom, middle ?? "notFound");
-
-  if (typeof middle !== "number") {
-    set(loggerAtom, { event: "transferWindowScrollToViewer: no change", lastWindowToViewerMiddle });
-    return;
+  if (typeof middle === "number") {
+    set(pageScrollMiddleAtom, middle);
+    set(recordDebugEventAtom, {
+      event: "navigation:window-to-viewer-sync",
+      middle,
+      scrollTop: scrollable?.scrollTop ?? 0,
+      snapshot: getNavigationSnapshot(get),
+    });
+  } else {
+    set(recordDebugEventAtom, {
+      event: "navigation:window-to-viewer-sync-skipped",
+      lastWindowToViewerMiddle,
+      snapshot: getNavigationSnapshot(get),
+    });
   }
-
-  set(loggerAtom, { event: "transferWindowScrollToViewer: new middle", middle });
-  set(pageScrollMiddleAtom, middle);
 });
 
 export const transferViewerScrollToWindowAtom = atom(
@@ -70,14 +77,14 @@ export const transferViewerScrollToWindowAtom = atom(
 
     const top = toWindowScroll({ middle, lastMiddle, scrollElement, noSyncScroll, forFullscreen });
     if (top !== undefined) {
-      set(loggerAtom, {
-        event: "transferViewerScrollToWindow",
-        middle,
-        innerHeight,
-        top,
-        pageHeight: scrollElement?.clientHeight,
-      });
       set(lastViewerToWindowMiddleAtom, middle);
+      set(recordDebugEventAtom, {
+        event: "navigation:viewer-to-window-sync",
+        middle,
+        top,
+        forFullscreen: !!forFullscreen,
+        snapshot: getNavigationSnapshot(get),
+      });
       scroll({ behavior: "instant", top });
     }
   },
@@ -86,25 +93,10 @@ export const transferViewerScrollToWindowAtom = atom(
 export const synchronizeScrollAtom = atom(null, (get, set) => {
   const scrollElement = get(scrollElementAtom);
   if (!scrollElement) {
-    set(loggerAtom, { event: "synchronizeScroll: no scrollElement" });
     return;
   }
 
-  set(scrollTopAtom, scrollElement.scrollTop);
-  set(loggerAtom, {
-    event: "scrolled",
-    scrollTop: scrollElement.scrollTop,
-    pageRects: get(pageRectsAtom),
-  });
-
-  const previousSize = get(scrollElementSizeAtom);
   if (set(correctScrollAtom)) {
-    set(loggerAtom, {
-      event: "synchronizeScroll: corrected scroll",
-      previousSize,
-      currentSize: get(scrollElementSizeAtom),
-      scrollTop: scrollElement.scrollTop,
-    });
     return;
   }
 
@@ -113,13 +105,20 @@ export const synchronizeScrollAtom = atom(null, (get, set) => {
     previousMiddle: get(pageScrollMiddleAtom),
   });
   if (middle) {
-    set(loggerAtom, {
-      event: "synchronizeScroll: new middle",
+    set(pageScrollMiddleAtom, middle);
+    set(recordDebugEventAtom, {
+      event: "navigation:scroll-sync",
       middle,
       scrollTop: scrollElement.scrollTop,
+      snapshot: getNavigationSnapshot(get),
     });
-    set(pageScrollMiddleAtom, middle);
     set(transferViewerScrollToWindowAtom);
+  } else {
+    set(recordDebugEventAtom, {
+      event: "navigation:scroll-sync-skipped",
+      scrollTop: scrollElement.scrollTop,
+      snapshot: getNavigationSnapshot(get),
+    });
   }
 });
 
@@ -129,48 +128,89 @@ export const correctScrollAtom = atom(null, (get, set) => {
 
   const newSize = getNewSizeIfResized({ scrollElement, previousSize });
   if (!newSize) {
+    set(recordDebugEventAtom, {
+      event: "navigation:resize-skipped",
+      snapshot: getNavigationSnapshot(get),
+    });
     return false;
   }
 
   set(scrollElementSizeAtom, newSize);
+  set(recordDebugEventAtom, {
+    event: "navigation:resize",
+    size: newSize,
+    snapshot: getNavigationSnapshot(get),
+  });
   set(restoreScrollAtom);
   return true;
 });
 
-export const restoreScrollAtom = atom(null, (get, set) => {
+export const restoreScrollAtom = atom(null, (_get, set) => {
   const isRestored = set(restoreScrollWithLogAtom);
 
   if (isRestored) {
     // It handles shouldBeOriginalSize change.
-    set(beforeRepaintAtom, {
-      task: () => {
-        const previousSize = get(scrollElementSizeAtom);
-        if (set(correctScrollAtom)) {
-          set(loggerAtom, {
-            event: "restoreScroll: corrected scroll after repaint",
-            previousSize,
-            currentSize: get(scrollElementSizeAtom),
-            scrollTop: get(scrollElementAtom)?.scrollTop,
-          });
-        }
-      },
-    });
+    set(beforeRepaintAtom, { task: () => set(correctScrollAtom) });
   }
 });
 
-export const goNextAtom = atom(null, (get, set) => {
-  set(loggerAtom, { event: "goNext" });
-  goToNextArea(get(scrollElementAtom));
-});
+export const goNextAtom = atom(
+  null,
+  (get, set, input: NavigationDebugInput = { source: "api", action: "nextPage" }) => {
+    set(beginNavigationTraceAtom, {
+      source: input.source,
+      input,
+      before: getNavigationSnapshot(get),
+    });
+    const decision = goToNextArea(get(scrollElementAtom));
+    set(recordDebugEventAtom, {
+      event: "navigation:decision",
+      decision,
+      after: getNavigationSnapshot(get),
+    });
+    set(recordDebugEventAtom, { event: "navigation:end" });
+  },
+);
 
-export const goPreviousAtom = atom(null, (get, set) => {
-  set(loggerAtom, { event: "goPrevious" });
-  goToPreviousArea(get(scrollElementAtom));
-});
+export const goPreviousAtom = atom(
+  null,
+  (get, set, input: NavigationDebugInput = { source: "api", action: "previousPage" }) => {
+    set(beginNavigationTraceAtom, {
+      source: input.source,
+      input,
+      before: getNavigationSnapshot(get),
+    });
+    const decision = goToPreviousArea(get(scrollElementAtom));
+    set(recordDebugEventAtom, {
+      event: "navigation:decision",
+      decision,
+      after: getNavigationSnapshot(get),
+    });
+    set(recordDebugEventAtom, { event: "navigation:end" });
+  },
+);
 
 export const navigateAtom = atom(null, (get, set, event: React.MouseEvent) => {
-  set(loggerAtom, { event: "click" });
-  navigateByPointer(get(scrollElementAtom), event);
+  const scrollElement = get(scrollElementAtom);
+  const viewerHeight = scrollElement?.clientHeight;
+  if (!viewerHeight || event.button !== 0) {
+    return;
+  }
+
+  event.preventDefault();
+  const isTop = event.clientY < viewerHeight / 2;
+  const input = {
+    source: "click",
+    action: isTop ? "previousPage" : "nextPage",
+    clientY: event.clientY,
+    viewerHeight,
+    isTop,
+  } satisfies NavigationDebugInput;
+  if (isTop) {
+    set(goPreviousAtom, input);
+  } else {
+    set(goNextAtom, input);
+  }
 });
 
 export const singlePageCountAtom = atom(
@@ -210,30 +250,47 @@ const restoreScrollWithLogAtom = atom(null, (get, set) => {
   const yDifference = getYDifferenceFromPrevious({ scrollable: scrollElement, middle });
 
   if (yDifference != null && scrollElement) {
-    set(loggerAtom, {
-      event: "restoreScroll",
-      middle,
-      yDifference,
-      previousScrollTop: scrollElement.scrollTop,
-      scrollTop: scrollElement.scrollTop,
-    });
+    const scrollTopBefore = scrollElement.scrollTop;
     scrollElement.scrollBy({ top: yDifference });
+    set(recordDebugEventAtom, {
+      event: "navigation:restore",
+      yDiff: yDifference,
+      scrollTopBefore,
+      scrollTopAfter: scrollElement.scrollTop,
+      snapshot: getNavigationSnapshot(get),
+    });
     return true;
   }
 
-  set(loggerAtom, {
-    event: "restoreScroll: no need",
+  set(recordDebugEventAtom, {
+    event: "navigation:restore-skipped",
     middle,
     scrollTop: scrollElement?.scrollTop,
+    snapshot: getNavigationSnapshot(get),
   });
   return false;
 });
 
-const scrollTopAtom = atom(0);
-const pageRectsAtom = atom((get) => {
-  get(scrollTopAtom);
-  get(scrollElementSizeAtom);
+function getNavigationSnapshot(get: Getter) {
+  const scrollElement = get(scrollElementAtom);
+  const viewer = get(scrollElementSizeAtom);
+  const middle = get(pageScrollMiddleAtom);
+  return {
+    scrollTop: scrollElement?.scrollTop ?? 0,
+    viewer,
+    middle,
+    pageRects: getPageRects(scrollElement),
+  };
+}
 
-  const pages = getPagesFromScrollElement(get(scrollElementAtom));
-  return [...(pages ?? [])].map((page) => page.getBoundingClientRect());
-});
+function getPageRects(scrollElement: HTMLElement | null): DebugPageRect[] | undefined {
+  const pages = getPagesFromScrollElement(scrollElement);
+  if (!pages) {
+    return;
+  }
+
+  return [...pages].map((page, index) => {
+    const { top, bottom, height } = page.getBoundingClientRect();
+    return { index, top, bottom, height };
+  });
+}

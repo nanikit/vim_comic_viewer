@@ -20,6 +20,8 @@ import {
 import { atom, Getter, Setter } from "../deps.ts";
 import { elementKeyToActionAtom, globalKeyToActionAtom } from "../features/keybindings/atoms.ts";
 import type { KeyAction } from "../features/keybindings/models.ts";
+import type { NavigationDebugInput } from "./debug_log.ts";
+import { recordDebugEventAtom } from "./logger_atom.ts";
 import {
   anchorSinglePageCountAtom,
   goNextAtom,
@@ -250,16 +252,24 @@ class Controller {
     if (!action) {
       return false;
     }
-    return this.executeAction(action);
+    this.set(recordDebugEventAtom, {
+      event: "input:key",
+      code: event.code,
+      key: event.key,
+      repeat: event.repeat,
+      shiftKey: event.shiftKey,
+      action,
+    });
+    return this.executeAction(action, event);
   }
 
-  private executeAction(action: KeyAction): boolean {
+  private executeAction(action: KeyAction, event?: KeyboardEvent): boolean {
     switch (action) {
       case "nextPage":
-        this.goNext();
+        this.set(goNextAtom, toKeyboardInput(event, action));
         return true;
       case "previousPage":
-        this.goPrevious();
+        this.set(goPreviousAtom, toKeyboardInput(event, action));
         return true;
       case "previousSeries":
         if (this.options.onPreviousSeries) {
@@ -304,4 +314,17 @@ class Controller {
 function maybeNotHotkey(event: KeyboardEvent) {
   const { ctrlKey, altKey, metaKey } = event;
   return ctrlKey || altKey || metaKey || isTyping(event);
+}
+
+function toKeyboardInput(event: KeyboardEvent | undefined, action: "nextPage" | "previousPage") {
+  return event
+    ? {
+      source: "key",
+      action,
+      code: event.code,
+      key: event.key,
+      repeat: event.repeat,
+      shiftKey: event.shiftKey,
+    } satisfies NavigationDebugInput
+    : { source: "api", action } satisfies NavigationDebugInput;
 }
